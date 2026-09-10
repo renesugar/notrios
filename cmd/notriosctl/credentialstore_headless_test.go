@@ -97,3 +97,42 @@ func TestHeadlessCredentialStoreReporting(t *testing.T) {
 		}
 	})
 }
+
+// What a diagnostic is allowed to disclose.
+//
+// `paths` and `config show` replace the home directory with "~" by default and
+// both offer --no-redact. `doctor` did not: it printed absolute paths, username
+// and all -- and doctor is the command whose output gets pasted into an issue.
+// paths.Redact's own comment says resolved paths are printed "in `notriosctl
+// doctor`" and redacted there, so this was documented intent nobody had wired
+// up. Found in v0.9 I7 while establishing what a support bundle would have to
+// redact.
+func TestDoctorRedactsTheHomeDirectoryByDefault(t *testing.T) {
+	binary := sharedBinary(t, "notriosctl")
+	sandbox := t.TempDir()
+
+	for _, form := range []struct {
+		name string
+		args []string
+	}{
+		{"report", []string{"doctor"}},
+		{"json", []string{"doctor", "--json"}},
+	} {
+		t.Run(form.name, func(t *testing.T) {
+			result := runCLIIn(t, sandbox, binary, form.args...)
+			if strings.Contains(result.stdout, sandbox) {
+				t.Fatalf("doctor disclosed the home directory:\n%s", result.stdout)
+			}
+			if !strings.Contains(result.stdout, "~/") {
+				t.Fatalf("doctor printed no redacted path, so this proves nothing:\n%s", result.stdout)
+			}
+
+			// The escape hatch has to work, or somebody debugging a path
+			// problem cannot see the path.
+			plain := runCLIIn(t, sandbox, binary, append(append([]string{}, form.args...), "--no-redact")...)
+			if !strings.Contains(plain.stdout, sandbox) {
+				t.Fatalf("--no-redact did not print the real paths:\n%s", plain.stdout)
+			}
+		})
+	}
+}

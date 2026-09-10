@@ -1322,9 +1322,16 @@ type doctorReport struct {
 	failed   bool
 	asJSON   bool
 	finished bool
+	// home is the directory to replace with "~", or empty for --no-redact.
+	home string
 }
 
 func (r *doctorReport) add(ok, required bool, label, detail string) {
+	// RedactAll rather than Redact: a check's detail is a sentence with paths
+	// embedded in it, not a bare path, so prefix replacement would miss them.
+	if r.home != "" {
+		detail = paths.RedactAll(detail, r.home)
+	}
 	state := "ok"
 	if !ok {
 		if required {
@@ -1372,12 +1379,26 @@ func runDoctor(args []string) {
 	dbPath := fs.String("db", "", "SQLite database path override")
 	assetStore := fs.String("asset-store", "", "asset store directory override")
 	asJSON := fs.Bool("json", false, "print the checks as JSON instead of a report")
+	noRedact := fs.Bool("no-redact", false, "print the home directory instead of ~")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
 
-	run := &doctorReport{asJSON: *asJSON}
+	// doctor is the command whose output gets pasted into an issue, and it was
+	// the one surface that did not redact: `paths` and `config show` both
+	// replace the home directory with "~" by default and both offer
+	// --no-redact, while doctor printed absolute paths, username and all.
+	//
+	// paths.Redact's own comment says resolved paths are printed "in
+	// `notriosctl doctor`" and redacted there, so this was documented intent
+	// that was never wired up. Found in v0.9 I7 while testing what a support
+	// bundle would have to redact.
+	home := ""
+	if !*noRedact {
+		home, _ = os.UserHomeDir()
+	}
+	run := &doctorReport{asJSON: *asJSON, home: home}
 	report := run.add
 
 	report(true, true, "go runtime", runtime.Version())

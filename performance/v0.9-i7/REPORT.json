@@ -1,0 +1,77 @@
+{
+  "content_commit": "828451c4c1d4ce13ac8e2ed5f292fd87c42119cb",
+  "drills": [
+    {
+      "id": "diagnostics-redact-the-home-directory",
+      "observations": {
+        "credential_reference_printed": true,
+        "leaked": 0,
+        "no_redact_still_works": true,
+        "surfaces_checked": 4
+      },
+      "status": "pass"
+    },
+    {
+      "id": "nothing-reports-anywhere-by-default",
+      "observations": {
+        "fresh_sync_target": "none",
+        "frontend_telemetry": 0,
+        "telemetry_sdks": 0
+      },
+      "status": "pass"
+    },
+    {
+      "id": "library-lost-and-recovered-from-an-export",
+      "observations": {
+        "hits_after_loss": 0,
+        "hits_after_recovery": 1,
+        "hits_before": 1,
+        "library": "/tmp/notrios-i7-JR3oYT/recovery/.local/share/notrios"
+      },
+      "status": "pass"
+    }
+  ],
+  "item": "I7",
+  "matrix_rows": 6,
+  "milestone": "v0.9",
+  "not_verified": [
+    "Fifteen minutes is not a long-lived soak. It separates warm-up from a fast leak and cannot settle a slow one: the fitted slope over the settled window is +794 kB/hour against a 1.16 MB oscillation band, which this duration cannot distinguish from noise. Nothing here is extrapolated to longer runs, and a multi-hour soak is what would answer it.",
+    "The soak drives one endpoint on loopback with no concurrency and no writes. It would not find a leak that only appears under write load, under many connections, or in sync.",
+    "No emulator soak. adb is installed and no device or emulator is running, so the Android acceptance host H11 built was not exercised over time.",
+    "No crash was induced. The crash-reporting position is that nothing is reported anywhere, which is checked by absence -- no telemetry dependency, no sync target on a fresh profile -- and not by observing a panic and confirming where it went.",
+    "There is no support bundle to redact. What was tested is the diagnostics that exist: config show, paths and doctor. A bundle command, if one is ever added, inherits the requirement rather than the evidence.",
+    "A credential *reference* is printed by config show. It names where a credential lives rather than being one, and it is recorded here rather than treated as settled."
+  ],
+  "schema": "notrios.v09.i7-soak-recover-freeze.v1",
+  "soak": {
+    "analysis": {
+      "fast_leak_ruled_out": true,
+      "post_warmup_rss_max_kb": 23440,
+      "post_warmup_rss_min_kb": 22280,
+      "post_warmup_slope_kb_per_hour": 794.1,
+      "post_warmup_window_seconds": [
+        30,
+        900
+      ],
+      "reading": "Resident memory climbs about 6 MB in the first thirty seconds and then oscillates inside a 1.16 MB band for the remaining fourteen and a half minutes, while descriptors do not grow at all. That rules out the fast failures this is aimed at: a handle opened per request, or memory that climbs without returning. It does not rule out a slow leak. The least-squares slope over the settled window is +794 kB/hour, which is small against a 1.16 MB oscillation band and therefore indistinguishable from noise *at this duration* -- fourteen minutes cannot separate a 794 kB/hour trend from the sawtooth of a garbage-collected runtime. Saying it is noise would be a claim this run does not support; the honest statement is that a longer soak is what would settle it.",
+      "slow_leak_ruled_out": false,
+      "warm_up_kb": 6024
+    },
+    "complete": true,
+    "errors": 0,
+    "growth": {
+      "open_fds": -1,
+      "rss_kb": 6504,
+      "threads": 5
+    },
+    "ran_for_seconds": 900.0,
+    "requests": 347092
+  },
+  "supported_rows": 2,
+  "what_this_is": "A soak long enough to distinguish warm-up from a leak, drills for what a diagnostic may disclose and whether a lost library comes back, and a support matrix limited to what was executed.",
+  "what_was_found": [
+    "doctor did not redact. `paths` and `config show` replace the home directory with '~' by default and both offer --no-redact; doctor printed absolute paths, username and all -- and doctor is the command whose output gets pasted into an issue. paths.Redact's own comment says resolved paths are printed 'in notriosctl doctor' and redacted there, so this was documented intent nobody had wired up. Fixed, with --no-redact for parity, and tested.",
+    "An assertion in I4 tested nothing, and so did the first version of the recovery drill here. `notriosctl search` echoes the query back in its JSON -- {\"hits\": [], \"query\": \"x\"} -- so grepping the output for the search term matches an empty result. I4's restore check passed for that reason; the recovery drill concluded a library it had just deleted still held its notes. Both count hits now, and I4's drill was re-run: restored_hits is 1.",
+    "The desktop shell has never been executed in v0.9 evidence. CI compiles it and I3's containers are headless, so the matrix puts it at level 1 rather than letting it inherit the level 3 the command line earned in the same containers."
+  ]
+}

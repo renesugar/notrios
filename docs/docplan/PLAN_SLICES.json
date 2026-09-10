@@ -110,110 +110,131 @@
     {
       "id": "I5",
       "title": "Resolve signing, notarization and timestamping policy",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I5-A",
           "statement": "Each supported platform has a signing, notarization and timestamping policy somebody else can follow",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/POLICY.json"
         },
         {
           "id": "I5-B",
           "statement": "Secret handling keeps material out of pull-request jobs, logs, artifacts, backups and the repository",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/check_secret_exposure.py"
         },
         {
           "id": "I5-C",
           "statement": "What remains blocked without an owner account or native trust service is recorded as blocked",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/POLICY.json"
         }
       ]
     },
     {
       "id": "I6",
       "title": "Generate and verify the release evidence set",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I6-A",
           "statement": "Checksums, SBOM, dependency/license/security reports and provenance are generated and verified offline",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/verify_release_set.py"
         },
         {
           "id": "I6-B",
           "statement": "GitHub workflows are pinned by digest and least-privilege",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/check_workflow_hardening.py"
         },
         {
           "id": "I6-C",
           "statement": "A non-public release-candidate or draft flow is exercised without publishing",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/draft_release.sh"
+        },
+        {
+          "id": "I6-D",
+          "state": "done",
+          "statement": "The SBOM is cross-checked against independent generators, and a dated vulnerability scan is recorded rather than gated",
+          "evidence": "file:performance/v0.9-i6/SBOM_CROSSCHECK.json"
         }
       ]
     },
     {
       "id": "I7",
       "title": "Soak, recover, and freeze the support matrix",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I7-A",
           "statement": "Long-lived installed directory, REST and emulator soak tests run to completion with durations recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/SOAK.json"
         },
         {
           "id": "I7-B",
           "statement": "Support-bundle redaction, crash-reporting policy and disaster-recovery drills are executed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/DRILLS.jsonl"
         },
         {
           "id": "I7-C",
           "statement": "The desktop support matrix is frozen and names only what was executed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/MATRIX.json"
         }
       ]
     },
     {
       "id": "I8",
       "title": "Freeze the 1.0 compatibility surfaces",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I8-A",
           "statement": "REST, MCP, archive, sync, configuration, installer and Make lifecycle candidates are frozen with green suites",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i8/FROZEN.json"
         },
         {
           "id": "I8-B",
           "statement": "The shared C ABI is frozen and its ownership, leak, double-free and wrong-handle failures are exercised",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i8/EDGES.json"
         },
         {
           "id": "I8-C",
           "statement": "Concurrent-shutdown, cancellation and stream-limit behaviour is tested at the edges",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/abi/concurrency_test.go"
         }
       ]
     },
     {
       "id": "I9",
       "title": "Write the release-grade operational documentation",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I9-A",
           "statement": "Install, upgrade, rollback and backup/restore documentation is written for a reader with no repository",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/installation.md"
         },
         {
           "id": "I9-B",
           "statement": "Uninstall, purge, troubleshooting and artifact-verification documentation is written for that reader",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/troubleshooting.md"
         },
         {
           "id": "I9-C",
           "statement": "Every command shown is generated from or checked against the real command line",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/docaudit/registry.json"
         }
       ]
     },

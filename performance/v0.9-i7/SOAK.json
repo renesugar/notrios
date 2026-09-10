@@ -1,0 +1,227 @@
+{
+  "analysis": {
+    "fast_leak_ruled_out": true,
+    "post_warmup_rss_max_kb": 23440,
+    "post_warmup_rss_min_kb": 22280,
+    "post_warmup_slope_kb_per_hour": 794.1,
+    "post_warmup_window_seconds": [
+      30,
+      900
+    ],
+    "reading": "Resident memory climbs about 6 MB in the first thirty seconds and then oscillates inside a 1.16 MB band for the remaining fourteen and a half minutes, while descriptors do not grow at all. That rules out the fast failures this is aimed at: a handle opened per request, or memory that climbs without returning. It does not rule out a slow leak. The least-squares slope over the settled window is +794 kB/hour, which is small against a 1.16 MB oscillation band and therefore indistinguishable from noise *at this duration* -- fourteen minutes cannot separate a 794 kB/hour trend from the sawtooth of a garbage-collected runtime. Saying it is noise would be a claim this run does not support; the honest statement is that a longer soak is what would settle it.",
+    "slow_leak_ruled_out": false,
+    "warm_up_kb": 6024
+  },
+  "complete": true,
+  "daemon_stderr_tail": [
+    "2026/09/09 18:43:24 notriosd serving the web interface from /home/renes/projects/notrios/web/dist",
+    "2026/09/09 18:43:24 notriosd listening on http://127.0.0.1:18571 using db /tmp/notrios-soak-z6bgu97q/notes.sqlite"
+  ],
+  "errors": 0,
+  "growth": {
+    "open_fds": -1,
+    "rss_kb": 6504,
+    "threads": 5
+  },
+  "incomplete_because": null,
+  "ran_for_seconds": 900.0,
+  "requested_minutes": 15.0,
+  "requests": 347092,
+  "samples": [
+    {
+      "at_seconds": 0,
+      "open_fds": 10,
+      "rss_kb": 16504,
+      "threads": 6
+    },
+    {
+      "at_seconds": 30,
+      "open_fds": 9,
+      "rss_kb": 22528,
+      "threads": 11
+    },
+    {
+      "at_seconds": 60,
+      "open_fds": 9,
+      "rss_kb": 22900,
+      "threads": 11
+    },
+    {
+      "at_seconds": 90,
+      "open_fds": 9,
+      "rss_kb": 22604,
+      "threads": 11
+    },
+    {
+      "at_seconds": 120,
+      "open_fds": 9,
+      "rss_kb": 22828,
+      "threads": 11
+    },
+    {
+      "at_seconds": 150,
+      "open_fds": 9,
+      "rss_kb": 22908,
+      "threads": 11
+    },
+    {
+      "at_seconds": 180,
+      "open_fds": 9,
+      "rss_kb": 22924,
+      "threads": 11
+    },
+    {
+      "at_seconds": 210,
+      "open_fds": 9,
+      "rss_kb": 22576,
+      "threads": 11
+    },
+    {
+      "at_seconds": 240,
+      "open_fds": 9,
+      "rss_kb": 23384,
+      "threads": 11
+    },
+    {
+      "at_seconds": 270,
+      "open_fds": 9,
+      "rss_kb": 22868,
+      "threads": 11
+    },
+    {
+      "at_seconds": 300,
+      "open_fds": 9,
+      "rss_kb": 22280,
+      "threads": 11
+    },
+    {
+      "at_seconds": 330,
+      "open_fds": 9,
+      "rss_kb": 22952,
+      "threads": 11
+    },
+    {
+      "at_seconds": 360,
+      "open_fds": 9,
+      "rss_kb": 22980,
+      "threads": 11
+    },
+    {
+      "at_seconds": 390,
+      "open_fds": 9,
+      "rss_kb": 22960,
+      "threads": 11
+    },
+    {
+      "at_seconds": 420,
+      "open_fds": 9,
+      "rss_kb": 23092,
+      "threads": 11
+    },
+    {
+      "at_seconds": 450,
+      "open_fds": 9,
+      "rss_kb": 22820,
+      "threads": 11
+    },
+    {
+      "at_seconds": 480,
+      "open_fds": 9,
+      "rss_kb": 22668,
+      "threads": 11
+    },
+    {
+      "at_seconds": 510,
+      "open_fds": 9,
+      "rss_kb": 22612,
+      "threads": 11
+    },
+    {
+      "at_seconds": 540,
+      "open_fds": 9,
+      "rss_kb": 22328,
+      "threads": 11
+    },
+    {
+      "at_seconds": 570,
+      "open_fds": 9,
+      "rss_kb": 23440,
+      "threads": 11
+    },
+    {
+      "at_seconds": 600,
+      "open_fds": 9,
+      "rss_kb": 23044,
+      "threads": 11
+    },
+    {
+      "at_seconds": 630,
+      "open_fds": 9,
+      "rss_kb": 22684,
+      "threads": 11
+    },
+    {
+      "at_seconds": 660,
+      "open_fds": 9,
+      "rss_kb": 23172,
+      "threads": 11
+    },
+    {
+      "at_seconds": 690,
+      "open_fds": 9,
+      "rss_kb": 22948,
+      "threads": 11
+    },
+    {
+      "at_seconds": 720,
+      "open_fds": 9,
+      "rss_kb": 22452,
+      "threads": 11
+    },
+    {
+      "at_seconds": 750,
+      "open_fds": 9,
+      "rss_kb": 23308,
+      "threads": 11
+    },
+    {
+      "at_seconds": 780,
+      "open_fds": 9,
+      "rss_kb": 22980,
+      "threads": 11
+    },
+    {
+      "at_seconds": 810,
+      "open_fds": 9,
+      "rss_kb": 22740,
+      "threads": 11
+    },
+    {
+      "at_seconds": 840,
+      "open_fds": 9,
+      "rss_kb": 22736,
+      "threads": 11
+    },
+    {
+      "at_seconds": 870,
+      "open_fds": 9,
+      "rss_kb": 23148,
+      "threads": 11
+    },
+    {
+      "at_seconds": 900,
+      "open_fds": 9,
+      "rss_kb": 23008,
+      "threads": 11
+    },
+    {
+      "at_seconds": 900,
+      "open_fds": 9,
+      "rss_kb": 23008,
+      "threads": 11
+    }
+  ],
+  "schema": "notrios.v09.i7-soak.v1",
+  "target": "installed service over REST, loopback only",
+  "what_this_measures": "The slope, not the peak. A descriptor opened per request and never closed, or memory that climbs and never returns, is invisible in a one-second test and plain over minutes. Throughput is deliberately not measured: this is not a load test."
+}

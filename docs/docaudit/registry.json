@@ -2120,6 +2120,30 @@
       }
     },
     {
+      "id": "installation-backing-up-and-getting-your-notes-back-example-1",
+      "path": "docs/installation.md",
+      "section": "backing-up-and-getting-your-notes-back",
+      "language": "sh",
+      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7, which deletes the library between them and counts the hits that come back."
+      }
+    },
+    {
+      "id": "installation-backing-up-and-getting-your-notes-back-example-2",
+      "path": "docs/installation.md",
+      "section": "backing-up-and-getting-your-notes-back",
+      "language": "sh",
+      "sha256": "935abe66f1840dc1fd90d5b6db5495b00ec7cdcdd5da9164abddcf917ee4e43f",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body imports into this user's library. Executed against a disposable profile in performance/v0.9-i7's recovery drill."
+      }
+    },
+    {
       "id": "installation-clone-example-1",
       "path": "docs/installation.md",
       "section": "clone",
@@ -2129,6 +2153,18 @@
       "unrun_reason": {
         "code": "external-network",
         "detail": "Literal body requires a remote Git/HTTPS/SSH/rclone peer: git clone https://github.com/renesugar/notrios.git"
+      }
+    },
+    {
+      "id": "installation-going-back-to-an-earlier-version-example-1",
+      "path": "docs/installation.md",
+      "section": "going-back-to-an-earlier-version",
+      "language": "sh",
+      "sha256": "876d4ebf6f971f599a6e4324282e2b3047f22a8ae6c621afeae54f28c54ef130",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body installs an older package on the host as root. The refusal and the deliberate downgrade are both executed in performance/v0.9-i3 scenario 04."
       }
     },
     {
@@ -2156,6 +2192,30 @@
       }
     },
     {
+      "id": "installation-installing-from-the-package-example-1",
+      "path": "docs/installation.md",
+      "section": "installing-from-the-package",
+      "language": "sh",
+      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body installs a package on the host as root. The packaged install is executed instead in performance/v0.9-i3, in clean containers, where installing is the thing under test."
+      }
+    },
+    {
+      "id": "installation-installing-from-the-package-example-2",
+      "path": "docs/installation.md",
+      "section": "installing-from-the-package",
+      "language": "sh",
+      "sha256": "3b4ac066c2a15a6afb34207f797d8c9fd07a5bfc5646315d83af2cac78c4515a",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal and read-only, but it reports on whichever installation the host actually has rather than on a fixture, so running it here would assert about this machine. Its output forms are covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl#TestDoctorRedactsTheHomeDirectoryByDefault and by performance/v0.9-i3 scenario 01, which runs it on a machine with no keyring."
+      }
+    },
+    {
       "id": "installation-installing-to-an-end-user-location-example-1",
       "path": "docs/installation.md",
       "section": "installing-to-an-end-user-location",
@@ -2180,15 +2240,51 @@
       }
     },
     {
-      "id": "installation-prerequisites-example-1",
+      "id": "installation-prerequisites-for-building-from-source-example-1",
       "path": "docs/installation.md",
-      "section": "prerequisites",
+      "section": "prerequisites-for-building-from-source",
       "language": "sh",
       "sha256": "3aeb183a876d5aebe6545203e0724fcd0c808bd3685a2fcc3ffabd4a3b137ad7",
       "state": "unverified",
       "unrun_reason": {
         "code": "privileged-host-change",
         "detail": "Literal body invokes privileged/package/root host change: # Service + CLI + tests"
+      }
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-1",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "language": "sh",
+      "sha256": "3c5e757f2e6446cb997212d0aa805ae667bdcbb76327ea1bbea672f4b46eec9b",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body removes a package from the host as root. Removal, and that it leaves the user's library alone, are executed in performance/v0.9-i3 scenario 05, which removes, checks the library on disk, reinstalls and finds the note again."
+      }
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-2",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "language": "sh",
+      "sha256": "2f35b981e470a906b15d7584603a81e21d48eb41eb8ac9c9c1a2f85c9ad965e8",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal and read-only, but it reports this machine's resolved roots rather than a fixture's. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl and by performance/v0.9-i3 scenario 06, which asserts the writable roots stay outside /usr."
+      }
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-3",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "language": "sh",
+      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7's recovery drill."
       }
     },
     {
@@ -2272,6 +2368,18 @@
       }
     },
     {
+      "id": "installation-upgrading-example-1",
+      "path": "docs/installation.md",
+      "section": "upgrading",
+      "language": "sh",
+      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body installs a package on the host as root. Upgrading is executed in performance/v0.9-i3 scenario 03, which installs a prerelease, writes a note, upgrades and checks the note survived."
+      }
+    },
+    {
       "id": "installation-upgrading-from-before-08-example-1",
       "path": "docs/installation.md",
       "section": "upgrading-from-before-08",
@@ -2281,6 +2389,18 @@
       "unrun_reason": {
         "code": "shared-user-state",
         "detail": "Literal body relocates this user's library: notriosctl migrate copies into the resolved roots and retires the old directory. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl (TestMigrateDryRunThenMigrateMovesTheLibrary) which run it in a sandboxed HOME."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-1",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "1c3a5379c3697b98c9d81c5f5acb32d321db9786ce6fa28fadcc15bac246769d",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "Literal shell, but SHA256SUMS stands for a file from a downloaded release set that this repository does not contain. The same verification is executed against a real set by performance/v0.9-i6/verify_release_set.py."
       }
     },
     {
@@ -2985,6 +3105,18 @@
       "unrun_reason": {
         "code": "shared-user-state",
         "detail": "Literal body changes desktop/client/profile or global user state: notriosctl profile register --name work --db /srv/work/notes.sqlite"
+      }
+    },
+    {
+      "id": "troubleshooting-if-you-installed-the-package-example-1",
+      "path": "docs/troubleshooting.md",
+      "section": "if-you-installed-the-package",
+      "language": "sh",
+      "sha256": "3b4ac066c2a15a6afb34207f797d8c9fd07a5bfc5646315d83af2cac78c4515a",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal and read-only, but it reports on whichever installation the host actually has. Its output forms are covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl#TestDoctorRedactsTheHomeDirectoryByDefault and by performance/v0.9-i3 scenario 01, which runs it on a machine with no keyring."
       }
     }
   ],

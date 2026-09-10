@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "3315e3511027d04863328e11a16ac4e8ed488a82ae98bcc252a1f4f56d61d973",
+      "sha256": "2ea6350257123eaedecf46b118f29790ca806eb1616a742bd98a3bfb51ab401c",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1899,7 +1899,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "8bcdde32b7e7e5e59f776aaebd4e1b6f61e21157db801fa178e693548fe2b02a",
+      "sha256": "ff69315d669fd32dfeb8aa7887a13a013093249581daf5bfc92a8d4adde945f1",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -1914,9 +1914,79 @@
           "grade": "unverified"
         },
         {
-          "id": "prerequisites",
+          "id": "installing-from-the-package",
           "level": 2,
-          "title": "Prerequisites",
+          "title": "Installing from the package",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "verifying-what-you-downloaded",
+          "level": 3,
+          "title": "Verifying what you downloaded",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "upgrading",
+          "level": 3,
+          "title": "Upgrading",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "going-back-to-an-earlier-version",
+          "level": 3,
+          "title": "Going back to an earlier version",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "backing-up-and-getting-your-notes-back",
+          "level": 3,
+          "title": "Backing up, and getting your notes back",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "removing-notrios-when-you-installed-the-package",
+          "level": 3,
+          "title": "Removing Notrios when you installed the package",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "what-is-supported",
+          "level": 2,
+          "title": "What is supported",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "prerequisites-for-building-from-source",
+          "level": 2,
+          "title": "Prerequisites for building from source",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2721,7 +2791,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "9876af234e03a2bcef512f9e6ef6859eea454766b3c1055e398d20386a794a7a",
+      "sha256": "1e5b55e5c401adc35ea1e7c5b75f49a20e8e1e37b3a8e8c63df0909fbed62c84",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [
@@ -2729,6 +2799,16 @@
           "id": "troubleshooting",
           "level": 1,
           "title": "Troubleshooting",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Load",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "if-you-installed-the-package",
+          "level": 2,
+          "title": "If you installed the package",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/config#Load",
@@ -2823,14 +2903,14 @@
       "id": "published_markdown",
       "count": 18,
       "unit": "pages",
-      "sections": 267,
+      "sections": 275,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 18,
       "unit": "mirrored notes",
-      "sections": 267,
+      "sections": 275,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -2927,9 +3007,9 @@
       "executed": 0,
       "generated": 29,
       "claimed": 0,
-      "unverified": 238
+      "unverified": 246
     },
-    "denominator": 267,
+    "denominator": 275,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

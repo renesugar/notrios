@@ -121,6 +121,29 @@ def local_target(route, href):
         path=path[1:]
     elif path: path=(Path(route).parent/path).as_posix()
     else: path=route
+    # KNOWN LIMITATION, in two parts. A *relative* directory link resolves to a
+    # directory rather than to its index.html, so it is reported as a broken
+    # link that is not broken:
+    #
+    #     "/search/"   from index.html   -> "search/index.html"   correct
+    #     "./search/"  from index.html   -> "search"              directory
+    #     "../search/" from api/mcp.html -> "api/../search"        directory
+    #
+    # `as_posix()` above normalises the trailing slash away, so the test below
+    # cannot see it -- and, as the third line shows, it does not normalise ".."
+    # either. Whoever fixes this needs both: remember the trailing slash before
+    # normalising, and resolve the path lexically, or the route strings will not
+    # match the keys `parsed` is indexed by even where the filesystem would
+    # happily resolve them. Absolute links are unaffected: they skip the branch
+    # above and keep their slash.
+    #
+    # Nothing emits relative links today, so this is latent. It surfaced in v0.9
+    # I10 when `relativeURLs = true` was tried for dual-address compatibility
+    # (notrios.com and the renesugar.github.io/notrios/ fallback from one build):
+    # the validator reported 54 broken links against a site whose pages all
+    # existed. The fix is to remember the trailing slash before normalising --
+    # see the skipped test in test_validate_evidence.py, which describes the
+    # behaviour that should hold.
     if path.endswith("/"): path += "index.html"
     return path or "index.html",unquote(p.fragment)
 

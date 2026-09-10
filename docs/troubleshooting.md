@@ -2,6 +2,31 @@
 
 Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses most environment problems in one shot (see the [CLI reference](cli.md#doctor)).
 
+## If you installed the package
+
+Start here, before anything else on this page — the rest of it assumes a
+checkout you do not have.
+
+```sh
+notriosctl doctor
+```
+
+It prints one line per check and exits non-zero if a required one failed. Two
+answers are worth knowing in advance:
+
+- **"no sync credentials are stored yet, and the native store is unreachable
+  here"** is not a failure. It means this machine has no keyring — normal on a
+  server or in a container — and that you will need one before storing sync
+  keys. A profile that already holds sealed keys and cannot reach the store *is*
+  a failure, and says so.
+- Paths are printed with your home directory as `~`. That is deliberate, because
+  this output gets pasted into issues. Pass `--no-redact` when you need the
+  literal path.
+
+If you are reporting a problem, `notriosctl doctor` and `notriosctl paths` are
+the two outputs worth including; neither prints key material, and both redact
+your home directory by default.
+
 ## Building
 
 | Symptom | Fix |

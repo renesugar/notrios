@@ -33,6 +33,16 @@ MANIFEST = HERE / "MANIFEST.json"
 TAKEN_AT_CLOSE = {"I1": "notrios-v0.9-i1-3799c6f.zip",
                   "I3": "notrios-v0.9-i3-078ffc5.zip",
                   "I4": "notrios-v0.9-i4-d1d8ec0.zip",
+                  "I5": "notrios-v0.9-i5-02b15ed.zip",
+                  "I6": "notrios-v0.9-i6-e7a535c.zip",
+                  "I7": "notrios-v0.9-i7-f67f301.zip",
+                  "I8": "notrios-v0.9-i8-6d2a71c.zip",
+                  "I9": "notrios-v0.9-i9-eb217c3.zip",
+                  # Supersedes notrios-v0.9-i6-79f940f.zip. I6 gained a fourth slice
+                  # after it first closed -- the SBOM cross-check and the dated scan --
+                  # so the archive that represents the finished item is the one built
+                  # from the commit that finished it. The earlier archive is not
+                  # deleted; it stays in the evidence directory as what I6 was.
                   "I10": "notrios-v0.9-i10-b19721a.zip",
                   "I2": "notrios-v0.9-i2-e3f6de7.zip"}
 

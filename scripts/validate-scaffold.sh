@@ -148,6 +148,18 @@ python3 performance/v0.9-i3/validate_evidence.py
 # I4: the destructive-lifecycle record. The drills install and delete; this
 # reads what they recorded, so `make validate` never does either.
 python3 performance/v0.9-i4/validate_evidence.py
+# I5: the signing policy, and the workflow check that keeps signing material
+# out of pull-request jobs. Both run offline.
+python3 performance/v0.9-i5/validate_evidence.py
+# I6: the release evidence record, plus the workflow hardening gate that keeps
+# actions pinned by digest and permissions least-privilege.
+python3 performance/v0.9-i6/validate_evidence.py
+# I7: the soak, recovery drills and frozen support matrix. Reads the record;
+# the soak and the drills are not run here.
+python3 performance/v0.9-i7/validate_evidence.py
+# I8: re-derives the frozen 1.0 surfaces from source on every run, and checks
+# the ABI edges record. The sanitizer runs themselves are not run here.
+python3 performance/v0.9-i8/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

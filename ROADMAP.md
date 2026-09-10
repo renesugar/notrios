@@ -765,6 +765,33 @@ published, and no bundle leaves the machine or the reserve.
   can download, verify, install, launch, upgrade, uninstall/reinstall, and
   restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
   development headers.
+- **Give a packaged installation a supported way to delete its data.** The
+  bullet above promises an end user can install, upgrade, uninstall and restore
+  "without source code" — and deleting their notes is the one lifecycle act that
+  still needs the repository. `make purge` takes a verified backup before it
+  deletes anything, refuses without `FORCE=1` when nothing can answer a prompt,
+  never follows a symlink out of the profile, and excludes sync key material from
+  the backup it writes. All of that lives in `scripts/lifecycle.py`, and the
+  package ships none of it: `apt remove` deletes the program and correctly leaves
+  the notes, and from there the user is deleting directories by hand with no
+  backup taken for them.
+
+  Found in v0.9 I9 while writing the installation page for a reader who has only
+  the package. That page documents the gap rather than papering over it — it
+  shows `notriosctl paths --no-redact` and says to export first — but documenting
+  a missing safeguard is not the same as having one, and the drills in
+  `performance/v0.9-i4` describe protections a packaged user cannot reach.
+
+  **v1.0 rather than post-v1.0**, because this is the milestone that first puts
+  the installer in front of somebody who has no checkout, and "you can install
+  this but you cannot safely remove what it stored" is not a thing to ship in a
+  1.0. The likely shape is a `notriosctl purge` that carries the same guarantees
+  the Make target does; the work is moving them behind the command line rather
+  than inventing them, since `internal/store` already implements the backup and
+  verification that `lifecycle.py` drives. If it slips, it slips as a decision
+  recorded at that point, and the installation page keeps saying plainly that
+  the safeguard is not there.
+
 - Ship a signed, checksummed, SBOM/provenance-bearing Ubuntu installer as the
   minimum supported desktop artifact. Ship Windows and/or macOS installers only
   if their v0.8-v0.9 native build/install/runtime, signing/notarization,
@@ -936,6 +963,28 @@ requirements below are the ones H7 already carried.
   field for today; see `agent/OPEN_QUESTIONS.md`.
 - Native third-party clients over the public REST/MCP API or the versioned C ABI
   (C++/Qt, Rust/Tauri, additional Go/Wails clients).
+- **One documentation build that serves every address.** The site is published at
+  `https://notrios.com/`, and `https://renesugar.github.io/notrios/` remains the
+  address it falls back to if the custom domain ever lapses. Today a build is
+  correct for whichever `baseURL` it was built with: the Ledger theme resolves
+  every link through `site-url.html` precisely because `relURL` drops the
+  baseURL's path on a leading slash, so a project-site path is handled — but at
+  build time, for one address. Hugo's `relativeURLs` would make one build serve
+  both, and would also make a built `_site` directory browsable from disk.
+
+  **It is blocked on a validator defect, and turning it on without fixing that
+  would be worse than leaving it.** `local_target` in
+  `performance/v0.7-g18g/validate_evidence.py` resolves a relative directory
+  link to a directory instead of its `index.html`, and does not normalise `..`
+  either; trying `relativeURLs` in v0.9 I10 produced 54 broken-link errors
+  against a site whose pages all existed. The site was fine and the check was
+  not, which is the direction that invites someone to weaken the link check to
+  make the noise stop. `performance/v0.7-g18g/README.md` describes both halves,
+  and the test that would prove it fixed is in that directory, skipped rather
+  than deleted. Pagefind is the other thing to establish first: its bundle path
+  is fetched at runtime by JavaScript, and a relative path resolves against the
+  importing module rather than the page, so search needs checking in a browser
+  rather than in a build.
 - LadybugDB derived graph backend for advanced graph traversal and analytics.
 - Semantic/vector search.
 - More importers.
@@ -950,7 +999,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 10 items, 4 complete, 0 in progress, 5 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 10 items, 9 complete, 0 in progress, 0 not started, 1 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

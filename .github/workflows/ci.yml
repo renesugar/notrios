@@ -4,12 +4,18 @@ on:
   push:
   pull_request:
 
+# Least privilege, declared rather than inherited. Without this block a workflow
+# gets the repository's default token permissions, which can be read/write for
+# every scope; nothing in CI writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   go:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.25'
       - name: Install SQLite development headers
@@ -18,7 +24,7 @@ jobs:
       # it needs the web workspace's TypeScript to audit the frontend. This job
       # ran it without ever installing those dependencies, so the audit died on
       # MODULE_NOT_FOUND -- invisible until CI ran the script at all.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -38,8 +44,8 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           # One source of truth for the Node version, so CI cannot drift from
           # the machine the tests were written on. That skew hid a broken test
@@ -48,7 +54,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.25'
       - run: cd web && npm ci
@@ -63,11 +69,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [go, web]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.25'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
       - name: Install SQLite development headers
@@ -79,8 +85,8 @@ jobs:
   gui-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.25'
       - name: Install GUI build dependencies

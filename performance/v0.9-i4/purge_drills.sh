@@ -156,11 +156,19 @@ drill_backup_contents_and_restore() {
   tar -xf "$archive" -C "$restored"
   local db; db=$(find "$restored" -name notes.sqlite -print -quit)
   [ -n "$db" ] || fail "no library in the restored tree" || return 1
-  in_home "$home" "$ROOT/bin/notriosctl" search --db "$db" \
-    --asset-store "$restored/assets" "must not lose" 2>/dev/null | grep -qi "must not lose" \
-    || fail "the restored library does not hold the note" || return 1
+  # Count the hits; do not grep the output. `notriosctl search` echoes the query
+  # back in its JSON -- {"hits": [], "query": "must not lose"} -- so grepping the
+  # output for the search term matches on an *empty* result and reports a note
+  # that is not there. This assertion passed for exactly that reason and tested
+  # nothing. Found in v0.9 I7, when the same pattern claimed a library that had
+  # just been deleted still held its notes.
+  local hits
+  hits=$(in_home "$home" "$ROOT/bin/notriosctl" search --db "$db" \
+    --asset-store "$restored/assets" "must not lose" 2>/dev/null \
+    | python3 -c 'import json,sys; print(len(json.load(sys.stdin).get("hits", [])))' 2>/dev/null || echo 0)
+  [ "${hits:-0}" -ge 1 ] || fail "the restored library does not hold the note" || return 1
   record purge-backup-restores-and-excludes-sync-keys pass \
-    "{\"exit\":0,\"archive_holds_library\":true,\"archive_holds_keys\":false,\"restored_note_found\":true,\"library_before\":\"$library\"}"
+    "{\"exit\":0,\"archive_holds_library\":true,\"archive_holds_keys\":false,\"restored_hits\":$hits,\"library_before\":\"$library\"}"
 }
 
 drill_uninstall_keeps_data() {

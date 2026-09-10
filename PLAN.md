@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 4 complete, 0 in progress, 5 not started, 1 deferred.**
+**10 items: 9 complete, 0 in progress, 0 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -54,11 +54,11 @@ this section is archived when the plan completes and the rules are not.
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
 | I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
-| I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
-| I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
-| I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
-| I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
-| I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
+| I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
+| I6. Generate and verify the release evidence set | complete | 4/4 | — |
+| I7. Soak, recover, and freeze the support matrix | complete | 3/3 | — |
+| I8. Freeze the 1.0 compatibility surfaces | complete | 3/3 | — |
+| I9. Write the release-grade operational documentation | complete | 3/3 | — |
 | I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
 
 Nothing is half-finished.
@@ -387,7 +387,7 @@ the symlink drill, dropping the interruption limit, removing what the race
 record gave up, and claiming a drill observed nothing were each tried against
 the validator and each refused.
 
-## I5. Resolve signing, notarization and timestamping policy
+## I5. Resolve signing, notarization and timestamping policy — complete
 
 **Goal.** Every supported platform has a signing story that someone else can
 follow, and what is blocked is written down as blocked.
@@ -405,7 +405,54 @@ blocked rather than substituting something weaker and calling it done.
 **Working state.** A policy per platform, and an explicit list of what cannot be
 completed without which account or service.
 
-## I6. Generate and verify the release evidence set
+**Done, 2026-09-09. No key was created, deliberately.** Deciding what a key is
+for, whose it is, where it lives and how it rotates is this item; creating one
+first would invert that. I6 is where a signing step first appears, under the
+constraints recorded here. Nothing signs a release today — `build_deb.sh` and
+`package_release.sh` produce unsigned artifacts, which is what v0.8 allowed for
+internal evidence.
+
+**The boundary is enforced rather than promised.**
+`check_secret_exposure.py` refuses a workflow that could hand signing material
+to a pull request, and the reason is concrete here: `ci.yml` runs on both `push`
+and `pull_request`, and **a same-repository pull request receives repository
+secrets** — so a repository-level signing key would be readable from any branch
+anyone pushes. The policy is therefore environment secrets with required
+reviewers, never repository secrets. Three rules, each tried against a
+deliberately bad workflow and each refused: a secret in a workflow with a
+`pull_request` trigger, `pull_request_target` at all, and a secret used with no
+`environment` to gate it.
+
+**What the gate cannot enforce is written down beside it.** Whether a step
+echoes a secret to a log or writes it into an artifact is a runtime property of
+that step, not of the workflow file, and no static check settles it. The backup
+half of the boundary is enforced elsewhere: the purge backup excludes key
+material, drilled in I4.
+
+**The release key is not the evidence key**, and the reason is recorded rather
+than assumed: the reserve's key exists so the archive's integrity is independent
+of everything else, while a release key is used by automation on shipping's
+schedule and exposed to a build pipeline. Sharing one would make the archive
+only as trustworthy as the release pipeline's worst day.
+
+**Two values are derived rather than restated**, because a fact written twice
+becomes two facts. The RFC 3161 policy OID comes from
+`evidence/verify_evidence.py` — the code that will actually reject a mismatched
+timestamp — and the Ubuntu amd64 claim level comes from I3's report, which is
+what installed and ran the package. Both are checked; moving either alone fails.
+
+**Three platforms are blocked, and on machines and accounts rather than on
+effort.** arm64 has no machine and stays at H6a's level 2 — signing an artifact
+nobody has run would attest its origin and say nothing about whether it works.
+Windows needs an OV or EV certificate, which is an organisational identity check
+and, for EV, a hardware token or cloud HSM a hosted runner cannot hold. macOS
+needs Apple Developer Program membership, which is an owner account and cannot
+be delegated to a repository. Dropping a blocker's reason, drifting the claim
+level away from I3's evidence, changing the timestamp OID away from the
+verifier's, merging the release key with the evidence key, and removing
+signature verification from the steps were each tried and each refused.
+
+## I6. Generate and verify the release evidence set — complete
 
 **Goal.** A candidate carries checksums, an SBOM and provenance that verify
 offline.
@@ -424,7 +471,104 @@ to a pull-request trigger.
 **Working state.** Each artifact generated and independently verified, and the
 draft flow exercised without publishing.
 
-## I7. Soak, recover, and freeze the support matrix
+**Done, 2026-09-09.** The set is four artifacts — the package, `SHA256SUMS`, a
+CycloneDX 1.5 SBOM of 400 components, and an in-toto provenance statement — and
+it verifies offline by recomputation rather than read-back.
+
+**No SBOM tool was added.** None is installed, and the inputs were already here:
+G20's licence inventory, derived from `go.mod` for its own reasons, and the two
+npm lockfiles. That follows H6a's smallest-maintainable-toolchain rule and buys
+something better than convenience — **the SBOM is cross-checked against an
+inventory produced by different code for a different purpose**, and matches
+exactly: 39 Go modules, 353 + 8 npm packages. A generator and a verifier written
+from the same assumption fail together and look like agreement.
+
+Licence expressions are parsed rather than string-matched, because
+`(MPL-2.0 OR Apache-2.0)` is a choice between two acceptable licences and
+refusing it as "not a bare SPDX identifier" would reject a dependency whose
+terms are fine twice over.
+
+**All 17 actions are pinned to commit digests**, with the tag kept as a trailing
+comment so a reader can still tell which version a digest is. A tag is a pointer
+somebody else can move, and whoever controls it chooses what runs here with this
+repository's token. `ci.yml` declared no `permissions:` at all and inherited the
+repository default — read/write on every scope — for a workflow that only builds
+and tests; it declares `contents: read` now. The validator derives the pinned
+count from the workflows rather than reading it from the report, so the record
+cannot claim a hardening the repository does not have.
+
+**The same mistake twice, caught two different ways.** The draft script builds
+its upload list from `SHA256SUMS`, and that file does not list itself — so the
+first version would have uploaded every artifact **except the file a downloader
+checks the others against**. Running the dry flow showed it. Then the report
+generator made the identical mistake, and the validator refused the report. A
+dry run that only printed a command nobody read would have caught neither, which
+is the argument for running the flow rather than describing it.
+
+**The draft was not created.** Everything up to the API call is exercised: the
+set verifies, `gh` is authenticated, the candidate tag is free, and the exact
+command is printed for a person to read first. Creating a draft uploads
+artifacts to GitHub, and an upload is an external write the owner authorises
+separately — a draft is not public and creates no tag until published, but it is
+still an upload.
+
+**Follow-up slice I6-D, 2026-09-10: cross-checked, and scanned.** The tools were
+not installed when I6 was written, and the report carried "no security scanner
+ran" as a limit. The owner installed syft, cdxgen, grype and govulncheck, so the
+limit was closed rather than carried.
+
+**The cross-check found a defect no count check could have caught.** A scoped
+npm package's namespace is percent-encoded in a purl —
+`pkg:npm/%40antfu/install-pkg@1.1.0` — and this generator emitted a raw `@`.
+Agreement with syft was **124 of 361 before the fix and 268 of 270 after it**.
+The counts had been right all along and every scoped identifier was wrong, which
+is precisely the failure a second opinion exists to find: the verifier and the
+generator were written by one author from one assumption, and agreed with each
+other perfectly.
+
+The other two disagreements are explained rather than repaired. syft's 66 Go
+modules are a superset of the 39 this project ships — the extra ones are test
+and tooling dependencies the licence gate deliberately does not govern, and
+**every module we ship appears in syft's set**, which the validator now
+requires. cdxgen's 12 are the direct dependencies from `go.mod`, a subset of
+ours.
+
+**syft sees six GitHub Actions that this SBOM does not model at all.** I6 pinned
+those actions by digest, so what runs in CI is controlled — but the release
+evidence does not describe it. That gap is recorded, not closed.
+
+**And a warning worth acting on rather than reading.** cdxgen reports that SBOM
+generation invokes build tooling which inherits the environment, and named the
+API keys exported on this workstation. Its output carried none of them — checked
+— but generating an SBOM is itself a supply-chain surface, so the generators run
+with a scrubbed environment.
+
+**The scan is recorded and never gated, and the two tools show why.** grype
+reports 26 advisories against the dependency graph, 7 of them Critical.
+govulncheck, which walks the call graph, reports **0 reachable from this code**
+and 18 in modules merely required. Both are true and they answer different
+questions. Gating on the first would have failed the build on criticals the
+second shows this code never calls — and a vulnerability database changes daily,
+so a gate would turn a passing build red because somebody else published an
+advisory, carrying no information about this commit. What is gated is the
+record: that a scan ran, when, with what, and that its reachability half is
+present. Turning it into a gate, undating it, dropping reachability, hiding an
+undiscoverable module and dropping the CI-actions gap were each tried and each
+refused.
+
+**Reachability is Go-only.** Nothing equivalent ran for the 361 npm packages, so
+grype's findings there stay module-level and unreduced. Recorded as a limit.
+
+**What this does not establish, gated so it cannot shrink.** Nothing is signed
+or timestamped — I5 created no key deliberately, and the verifier refuses a set
+that records itself as signed while carrying no signature. The upload path,
+asset limits and notes rendering are unexercised. The SBOM covers dependencies
+rather than the package's contents. No vulnerability scanner ran; a CycloneDX
+document is not a scan result. And the provenance is a statement this repository
+wrote about its own build on a workstation, with no builder identity anybody
+else can check — SLSA build level 1 at most.
+
+## I7. Soak, recover, and freeze the support matrix — complete
 
 **Goal.** The candidate survives being left running, and its claims are limited
 to what was executed.
@@ -442,7 +586,57 @@ extrapolated.
 **Working state.** Soak runs completed with their durations recorded, drills
 executed, and a frozen matrix naming only what ran.
 
-## I8. Freeze the 1.0 compatibility surfaces
+**Done, 2026-09-10.** 900 seconds, 347,092 requests, 0 errors, and the
+measurement is the slope rather than the peak. Resident memory climbs about 6 MB
+in the first thirty seconds and then oscillates inside a 1.16 MB band for the
+remaining fourteen and a half minutes; descriptors do not grow at all.
+
+**That rules out a fast leak and not a slow one, and the record says so.** The
+fitted slope over the settled window is +794 kB/hour against a 1.16 MB
+oscillation band, which fifteen minutes cannot distinguish from the sawtooth of
+a garbage-collected runtime. My first draft called it noise; that was a claim
+the run does not support, and the validator now refuses any version of the
+record that says a slow leak is ruled out.
+
+**`doctor` did not redact, and it is the command people paste into issues.**
+`paths` and `config show` replace the home directory with `~` by default and
+both offer `--no-redact`; doctor printed absolute paths, username and all.
+`paths.Redact`'s own comment says resolved paths are printed *"in `notriosctl
+doctor`"* and redacted there — documented intent nobody had wired up. Fixed with
+`--no-redact` for parity, and the repository's own gates then caught the rest of
+it: `TestNoCommandHidesAFlagItAccepts` refused a flag the usage did not describe,
+which cascaded into the generated CLI documentation, G18a's section inventory
+and G18f's pinned hash. Four gates for one flag, each one correct.
+
+**An assertion that tested nothing, in two places.** `notriosctl search` echoes
+the query back in its JSON — `{"hits": [], "query": "x"}` — so grepping the
+output for the search term matches an *empty* result. I4's restore check passed
+for exactly that reason and had never tested anything; the first version of the
+recovery drill here concluded that a library it had just deleted still held its
+notes, and I nearly recorded that as a pass because a `|| true` swallowed the
+failure. Both count hits now. I4's drill was re-run and its record refreshed:
+`restored_hits: 1`, so the claim it always made is now the claim it checks.
+
+**The matrix claims only what ran: six rows, two supported.** The row most at
+risk was the desktop shell. CI *compiles* it and I3's containers are headless, so
+it sits at level 1 while the command line and service earned level 3 **in those
+same containers** — compiling a GUI proves it links, not that it runs. Windows
+and macOS are absent from release claims rather than listed as forthcoming, and
+the validator derives the shipped platform's level from I3's report so a row
+cannot be promoted by editing the matrix. Promoting the desktop shell, letting a
+postponed platform back into release claims, marking arm64 supported without
+running it, claiming a slow leak was ruled out, hiding descriptor growth and
+dropping the emulator limit were each tried and each refused.
+
+**What was not established.** Fifteen minutes is not a long-lived soak; the load
+is one endpoint on loopback with no writes or concurrency; no emulator soak ran;
+no crash was induced, so the crash-reporting position is checked by absence
+rather than by observing where a panic goes; there is no support bundle to
+redact, so what was tested is the diagnostics that exist; and `config show`
+prints a credential *reference*, which names where a credential lives rather
+than being one.
+
+## I8. Freeze the 1.0 compatibility surfaces — complete
 
 **Goal.** The interfaces 1.0 will promise are fixed and tested at their edges.
 
@@ -463,7 +657,62 @@ after this item are recorded as breaking, not folded in quietly.
 **Working state.** Each surface frozen with its compatibility test suite green,
 and each named ABI failure mode exercised.
 
-## I9. Write the release-grade operational documentation
+**Done, 2026-09-10. The freeze is live rather than a record.** Seven surfaces —
+91 CLI commands, 113 REST routes, 45 MCP tools, 34 Make targets, 12 ABI symbols,
+27 archive-contract files, 60 configuration keys — are re-derived from the source
+that defines them on every `make validate` and compared with what was frozen,
+naming what was added and removed. Adding a route is not forbidden; adding one
+silently is. The typed ABI is frozen too: `nm` proves the twelve names are there
+and `abidiff` proves their *signatures* are, because a parameter that changes
+from `size_t` to `int` keeps every name and breaks every caller.
+
+**Three derivations were wrong before they were right, and reading the counts
+caught all three.** `make_lifecycle` found 5 targets of 34 — the pattern excluded
+any target whose prerequisites contain `=`. `configuration` found **zero** keys,
+looking for `yaml:` tags in a package that uses `json:`; a freeze of an empty
+surface passes for ever. And the validator trusted the recorded hash rather than
+recomputing it, so a **truncated member list passed**: the summary agreed with
+live source while the list it summarised did not. That one was found by breaking
+the gate on purpose, which is the only reason it was found at all.
+
+**valgrind is the wrong instrument for a Go library, and wrong loudly.** Go grows
+a goroutine stack by allocating a larger one and copying the frames into it,
+rewriting pointers as it goes; to memcheck every one of those writes lands
+outside a known block. The first run produced **ten million** invalid-access
+reports, every frame in `runtime.*`, and a host that does nothing but call
+`notrios_abi_version()` produces them too — the control that settles it.
+Suppressions removed 9.5 million and it still hit memcheck's cap.
+
+**So each instrument runs where it works**, which the owner's note named
+exactly. AddressSanitizer crosses the c-shared boundary: 15 of 15 edge checks,
+zero reports. ThreadSanitizer cannot — it maps a large shadow region at process
+start, so through a c-shared library it fails with *"failed to allocate … bytes"*
+and, with the host instrumented too, *"unexpected memory mapping"*, with ASLR
+disabled as well. The race detector therefore runs on the Go side against the
+same dispatch, session and handle code the twelve entry points call into, with
+concurrency tests written for these edges: many callers on one session, close
+while calls are in flight, cancellation racing completion. It was **proved live
+before it was trusted** — a deliberately racy probe made it fire, then the probe
+was removed. valgrind stays behind a flag for leak accounting, the one number it
+still reports usefully.
+
+**Every named failure mode is refused cleanly.** Handles never issued
+(`INVALID_HANDLE`), a buffer released twice, a pointer the library never issued,
+an instance closed with a call outstanding (`STALE_HANDLE` afterwards), two
+threads on one instance, and a cancelled call polled to a verdict. One check was
+my own bug first: it polled ten thousand times in a tight loop and reported that
+a cancelled call never answered. It answers — the loop never let the runtime
+schedule the goroutine that would produce the verdict. Counting iterations
+measures the host's scheduling luck, so it uses a wall-clock deadline that
+yields.
+
+**What is not frozen is written down.** Behaviour: two releases can agree on
+every name here and disagree about what a call does. The sync wire protocol and
+the installer's on-disk layout are owned elsewhere. There is no fuzzing, `-msan`
+did not run, and nothing tests `dlclose`, a second `dlopen`, or two processes
+opening one profile.
+
+## I9. Write the release-grade operational documentation — complete
 
 **Goal.** Somebody with neither the repository nor a development environment can
 install, upgrade, roll back, back up, restore, uninstall, purge, troubleshoot
@@ -479,6 +728,54 @@ command line, the way the existing documentation gates require.
 
 **Working state.** Each document present, checked by the documentation gates,
 and naming no step that was never run.
+
+**Done, 2026-09-10.** The documentation was written for somebody with a clone,
+and said so in its first sentence: *"Notrios is currently **source-only**: there
+are no official prebuilt binaries, OS packages, or installers yet."* v0.8 built
+the package and v0.9 I3 installed and ran it in clean containers, so that
+sentence had been false for two milestones. `docs/installation.md` now leads
+with the packaged install — which needs no repository, no Go, no Node and no
+compiler — and building from a clone is the second half of the page.
+
+**Six new sections, each grounded in something this milestone executed.**
+Verifying a download against `SHA256SUMS`, and saying plainly that nothing is
+signed yet so a file claiming otherwise should not be believed. Upgrading, from
+I3's prerelease-to-release scenario. Going back to an earlier version, from the
+downgrade scenario that establishes apt refuses unasked and obeys when told,
+with the library untouched either way. Backing up and restoring, from I7's
+recovery drill. And a support table naming what actually ran — with the desktop
+shell at *compiled, never run here*, because inheriting the command line's level
+3 would be the easiest overclaim on the page.
+
+**One gap was found by writing the page, and is now documented rather than
+papered over.** The package ships no purge tool: `make purge` — which takes a
+verified backup, refuses without `FORCE=1` when nothing can answer a prompt, and
+excludes sync key material — lives in the repository. A packaged user therefore
+has **no supported way to delete their data**, and the page says so, shows them
+`notriosctl paths --no-redact` to find the roots, and tells them to export
+first, because nothing takes a backup for them that way. Pointing that reader at
+a Makefile they do not have would have been the easy thing to write.
+
+`docs/troubleshooting.md` opened with **Building**. It now opens with
+`notriosctl doctor` for the reader who has only the package, including the two
+answers worth knowing in advance — that an unreachable credential store is not a
+failure until sync keys exist, and that paths are redacted by default because
+this output gets pasted into issues.
+
+**Every command is registered, and none is executed here without a reason that
+names where it is.** Eleven new examples: three install or remove packages as
+root, four write into the reader's own library, two report on whichever machine
+the reader has, one reads a release set this repository does not contain. Each
+unrun reason names where the command *is* executed — I3's container matrix, I7's
+recovery drill, `verify_release_set.py` — because a documented command nobody
+runs is precisely what this gate exists to prevent.
+
+**Seven pinned counts moved together**, each with the rationale its file
+requires: the example registry, the docexec entries and topics, the audit's
+sections, unverified and denominator, G18a's grade baseline, G18d's registry
+assertions and regenerated report, and G18f's document hashes.
+`docs/troubleshooting.md` had never carried an example at all until now, which
+is its own small comment on who that page was written for.
 
 ## I10. Serve the documentation site from notrios.com — complete
 
@@ -554,11 +851,12 @@ at `/`, which is what the Pagefind `bundlePath` had assumed all along.
 
 **Open decisions**
 
-- **HTTPS enforcement — Blocking, owner's.** GitHub reports
-  `https_enforced: false` with an approved certificate for `notrios.com` and
-  `www.notrios.com`, so the site answers on plain HTTP. Turning it on is a
-  repository settings change, not a change in this repository, and it belongs to
-  the owner.
+- **HTTPS enforcement — Resolved by the owner, 2026-09-09.** It was off, with an
+  approved certificate for `notrios.com` and `www.notrios.com`, so the site
+  answered on plain HTTP. The owner enabled it: GitHub now reports
+  `https_enforced: true`, and `http://notrios.com/` returns a 301 to
+  `https://notrios.com/`. It was a repository settings change rather than a
+  change in this repository, which is why it was the owner's to make.
 
 ## Decisions register
 
