@@ -35,6 +35,7 @@ TAKEN_AT_CLOSE = {"I1": "notrios-v0.9-i1-3799c6f.zip",
                   "I4": "notrios-v0.9-i4-d1d8ec0.zip",
                   "I5": "notrios-v0.9-i5-02b15ed.zip",
                   "I6": "notrios-v0.9-i6-e7a535c.zip",
+                  "I7": "notrios-v0.9-i7-f67f301.zip",
                   # Supersedes notrios-v0.9-i6-79f940f.zip. I6 gained a fourth slice
                   # after it first closed -- the SBOM cross-check and the dated scan --
                   # so the archive that represents the finished item is the one built

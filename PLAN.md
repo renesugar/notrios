@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 6 complete, 0 in progress, 3 not started, 1 deferred.**
+**10 items: 7 complete, 0 in progress, 2 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -56,7 +56,7 @@ this section is archived when the plan completes and the rules are not.
 | I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
 | I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
 | I6. Generate and verify the release evidence set | complete | 4/4 | — |
-| I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
+| I7. Soak, recover, and freeze the support matrix | complete | 3/3 | — |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
 | I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
@@ -568,7 +568,7 @@ document is not a scan result. And the provenance is a statement this repository
 wrote about its own build on a workstation, with no builder identity anybody
 else can check — SLSA build level 1 at most.
 
-## I7. Soak, recover, and freeze the support matrix
+## I7. Soak, recover, and freeze the support matrix — complete
 
 **Goal.** The candidate survives being left running, and its claims are limited
 to what was executed.

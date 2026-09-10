@@ -166,7 +166,7 @@
     {
       "id": "I7",
       "title": "Soak, recover, and freeze the support matrix",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I7-A",

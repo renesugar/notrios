@@ -66,11 +66,20 @@
       "bytes": 25052871,
       "entries": 2455,
       "sha256": "17e99d3b1c35c74aff03cc5e9734e06a5be9bb15f460977ff4870b53ba0e1fdc"
+    },
+    {
+      "item": "I7",
+      "archive": "notrios-v0.9-i7-f67f301.zip",
+      "commit": "f67f30129446d7c3f1caa939b98a22e4f8c58bae",
+      "taken": "when the slice closed",
+      "bytes": 25072033,
+      "entries": 2464,
+      "sha256": "c913bd6bb91a4b22168b7367e5e289e835f7d51f9171b7c2a95736b31eff66ae"
     }
   ],
   "counts": {
-    "items": 7,
+    "items": 8,
     "retroactive": 0,
-    "total_bytes": 175015357
+    "total_bytes": 200087390
   }
 }
