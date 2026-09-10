@@ -765,6 +765,33 @@ published, and no bundle leaves the machine or the reserve.
   can download, verify, install, launch, upgrade, uninstall/reinstall, and
   restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
   development headers.
+- **Give a packaged installation a supported way to delete its data.** The
+  bullet above promises an end user can install, upgrade, uninstall and restore
+  "without source code" — and deleting their notes is the one lifecycle act that
+  still needs the repository. `make purge` takes a verified backup before it
+  deletes anything, refuses without `FORCE=1` when nothing can answer a prompt,
+  never follows a symlink out of the profile, and excludes sync key material from
+  the backup it writes. All of that lives in `scripts/lifecycle.py`, and the
+  package ships none of it: `apt remove` deletes the program and correctly leaves
+  the notes, and from there the user is deleting directories by hand with no
+  backup taken for them.
+
+  Found in v0.9 I9 while writing the installation page for a reader who has only
+  the package. That page documents the gap rather than papering over it — it
+  shows `notriosctl paths --no-redact` and says to export first — but documenting
+  a missing safeguard is not the same as having one, and the drills in
+  `performance/v0.9-i4` describe protections a packaged user cannot reach.
+
+  **v1.0 rather than post-v1.0**, because this is the milestone that first puts
+  the installer in front of somebody who has no checkout, and "you can install
+  this but you cannot safely remove what it stored" is not a thing to ship in a
+  1.0. The likely shape is a `notriosctl purge` that carries the same guarantees
+  the Make target does; the work is moving them behind the command line rather
+  than inventing them, since `internal/store` already implements the backup and
+  verification that `lifecycle.py` drives. If it slips, it slips as a decision
+  recorded at that point, and the installation page keeps saying plainly that
+  the safeguard is not there.
+
 - Ship a signed, checksummed, SBOM/provenance-bearing Ubuntu installer as the
   minimum supported desktop artifact. Ship Windows and/or macOS installers only
   if their v0.8-v0.9 native build/install/runtime, signing/notarization,
