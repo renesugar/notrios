@@ -36,3 +36,38 @@ scope/counts. As G18b established, Pagefind 1.5.2 varies hashed metadata/index
 shard names; the reproducibility contract is pinned inputs plus executable
 semantic checks, not a byte-identical Pagefind directory. `ROUTES.json`,
 `BUILD_CONTRACT.json`, and `MUTATION_MATRIX.json` are the reviewable contracts.
+
+## Known limitation: relative directory links
+
+`local_target` resolves a **relative** directory link to a directory rather
+than to its `index.html`, and reports it as a broken link that is not broken:
+
+| link | from | resolves to | |
+| --- | --- | --- | --- |
+| `/search/` | `index.html` | `search/index.html` | correct |
+| `./search/` | `index.html` | `search` | a directory |
+| `../search/` | `api/mcp.html` | `api/../search` | a directory, and unnormalised |
+
+`(Path(route).parent / path).as_posix()` normalises the trailing slash away
+before the `endswith("/")` test that would have appended `index.html`. The third
+row shows a second half to the same problem: `..` is not resolved either. A fix
+needs both — remember the trailing slash before normalising, *and* resolve the
+path lexically, or the route strings will not match the keys the parsed-page map
+is indexed by, even where the filesystem would resolve them happily. Absolute
+links are unaffected: they skip that branch and keep their slash.
+
+Nothing emits relative links today, so it is latent. It surfaced in v0.9 I10,
+when `relativeURLs = true` was tried so one build could serve both
+`https://notrios.com/` and the `https://renesugar.github.io/notrios/` fallback:
+the validator reported 54 broken links against a site whose pages all existed.
+The site was fine; the check was not.
+
+`test_validate_evidence.py` carries the test that would prove it fixed, skipped
+rather than deleted — asserting today's behaviour would record a defect as
+intended and fail the moment somebody repaired it. Whoever fixes it removes one
+decorator.
+
+**This matters before enabling relative URLs**, which remains an open option for
+dual-address compatibility. Doing that without fixing this would either bury the
+change under phantom failures or invite someone to weaken the link check to make
+them go away.

@@ -7,6 +7,27 @@ from pathlib import Path
 import validate_evidence as ve
 
 
+class RelativeDirectoryLinkLimitation(unittest.TestCase):
+    """A known limitation, written as the test that would prove it fixed.
+
+    It is skipped rather than deleted or inverted. Deleting it loses the
+    finding; asserting the current behaviour would record a defect as intended
+    and fail when somebody repairs it. Skipped, it describes what should hold,
+    costs nothing, and whoever fixes `local_target` removes one decorator.
+    """
+
+    @unittest.skip("known limitation: relative directory links resolve to a "
+                   "directory instead of its index.html; see local_target in "
+                   "validate_evidence.py")
+    def test_a_relative_directory_link_resolves_to_its_index(self):
+        # Absolute links already behave: the trailing slash survives.
+        self.assertEqual(ve.local_target("index.html", "/search/")[0], "search/index.html")
+        # Relative ones do not, because as_posix() drops the trailing slash
+        # before the check that would have appended index.html.
+        self.assertEqual(ve.local_target("index.html", "./search/")[0], "search/index.html")
+        self.assertEqual(ve.local_target("api/mcp.html", "../search/")[0], "search/index.html")
+
+
 class G18gEvidenceTest(unittest.TestCase):
     def test_source_contract_passes(self):
         frozen = ve.ROOT / "performance/v0.7-g18b/prototype/themes/hugo-theme-ledger"

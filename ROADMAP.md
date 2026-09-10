@@ -936,6 +936,28 @@ requirements below are the ones H7 already carried.
   field for today; see `agent/OPEN_QUESTIONS.md`.
 - Native third-party clients over the public REST/MCP API or the versioned C ABI
   (C++/Qt, Rust/Tauri, additional Go/Wails clients).
+- **One documentation build that serves every address.** The site is published at
+  `https://notrios.com/`, and `https://renesugar.github.io/notrios/` remains the
+  address it falls back to if the custom domain ever lapses. Today a build is
+  correct for whichever `baseURL` it was built with: the Ledger theme resolves
+  every link through `site-url.html` precisely because `relURL` drops the
+  baseURL's path on a leading slash, so a project-site path is handled — but at
+  build time, for one address. Hugo's `relativeURLs` would make one build serve
+  both, and would also make a built `_site` directory browsable from disk.
+
+  **It is blocked on a validator defect, and turning it on without fixing that
+  would be worse than leaving it.** `local_target` in
+  `performance/v0.7-g18g/validate_evidence.py` resolves a relative directory
+  link to a directory instead of its `index.html`, and does not normalise `..`
+  either; trying `relativeURLs` in v0.9 I10 produced 54 broken-link errors
+  against a site whose pages all existed. The site was fine and the check was
+  not, which is the direction that invites someone to weaken the link check to
+  make the noise stop. `performance/v0.7-g18g/README.md` describes both halves,
+  and the test that would prove it fixed is in that directory, skipped rather
+  than deleted. Pagefind is the other thing to establish first: its bundle path
+  is fetched at runtime by JavaScript, and a relative path resolves against the
+  importing module rather than the page, so search needs checking in a browser
+  rather than in a build.
 - LadybugDB derived graph backend for advanced graph traversal and analytics.
 - Semantic/vector search.
 - More importers.
