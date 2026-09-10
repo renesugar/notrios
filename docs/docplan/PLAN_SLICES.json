@@ -110,22 +110,25 @@
     {
       "id": "I5",
       "title": "Resolve signing, notarization and timestamping policy",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I5-A",
           "statement": "Each supported platform has a signing, notarization and timestamping policy somebody else can follow",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/POLICY.json"
         },
         {
           "id": "I5-B",
           "statement": "Secret handling keeps material out of pull-request jobs, logs, artifacts, backups and the repository",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/check_secret_exposure.py"
         },
         {
           "id": "I5-C",
           "statement": "What remains blocked without an owner account or native trust service is recorded as blocked",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/POLICY.json"
         }
       ]
     },

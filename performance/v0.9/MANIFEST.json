@@ -48,11 +48,20 @@
       "bytes": 25008681,
       "entries": 2437,
       "sha256": "14cd8b7e5952489a7e7a7443cc6188014488caa665998587184b0285612858c5"
+    },
+    {
+      "item": "I5",
+      "archive": "notrios-v0.9-i5-02b15ed.zip",
+      "commit": "02b15ed57eb8fb078093b48c021bdee27fdda638",
+      "taken": "when the slice closed",
+      "bytes": 25022880,
+      "entries": 2443,
+      "sha256": "fcbe086e8b4dce81539760b3d541bcc33a3f5b5c8165cca992733ca380d6eaeb"
     }
   ],
   "counts": {
-    "items": 5,
+    "items": 6,
     "retroactive": 0,
-    "total_bytes": 124939606
+    "total_bytes": 149962486
   }
 }

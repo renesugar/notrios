@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 4 complete, 0 in progress, 5 not started, 1 deferred.**
+**10 items: 5 complete, 0 in progress, 4 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -54,7 +54,7 @@ this section is archived when the plan completes and the rules are not.
 | I2. Migrate the desktop shell to Wails v3, or record the postponement | deferred | 0/3 | 3 |
 | I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
 | I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
-| I5. Resolve signing, notarization and timestamping policy | not-started | 0/3 | 3 |
+| I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
 | I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
@@ -387,7 +387,7 @@ the symlink drill, dropping the interruption limit, removing what the race
 record gave up, and claiming a drill observed nothing were each tried against
 the validator and each refused.
 
-## I5. Resolve signing, notarization and timestamping policy
+## I5. Resolve signing, notarization and timestamping policy — complete
 
 **Goal.** Every supported platform has a signing story that someone else can
 follow, and what is blocked is written down as blocked.
