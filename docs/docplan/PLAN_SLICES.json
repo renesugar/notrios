@@ -171,17 +171,20 @@
         {
           "id": "I7-A",
           "statement": "Long-lived installed directory, REST and emulator soak tests run to completion with durations recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/SOAK.json"
         },
         {
           "id": "I7-B",
           "statement": "Support-bundle redaction, crash-reporting policy and disaster-recovery drills are executed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/DRILLS.jsonl"
         },
         {
           "id": "I7-C",
           "statement": "The desktop support matrix is frozen and names only what was executed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i7/MATRIX.json"
         }
       ]
     },

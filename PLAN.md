@@ -586,6 +586,56 @@ extrapolated.
 **Working state.** Soak runs completed with their durations recorded, drills
 executed, and a frozen matrix naming only what ran.
 
+**Done, 2026-09-10.** 900 seconds, 347,092 requests, 0 errors, and the
+measurement is the slope rather than the peak. Resident memory climbs about 6 MB
+in the first thirty seconds and then oscillates inside a 1.16 MB band for the
+remaining fourteen and a half minutes; descriptors do not grow at all.
+
+**That rules out a fast leak and not a slow one, and the record says so.** The
+fitted slope over the settled window is +794 kB/hour against a 1.16 MB
+oscillation band, which fifteen minutes cannot distinguish from the sawtooth of
+a garbage-collected runtime. My first draft called it noise; that was a claim
+the run does not support, and the validator now refuses any version of the
+record that says a slow leak is ruled out.
+
+**`doctor` did not redact, and it is the command people paste into issues.**
+`paths` and `config show` replace the home directory with `~` by default and
+both offer `--no-redact`; doctor printed absolute paths, username and all.
+`paths.Redact`'s own comment says resolved paths are printed *"in `notriosctl
+doctor`"* and redacted there — documented intent nobody had wired up. Fixed with
+`--no-redact` for parity, and the repository's own gates then caught the rest of
+it: `TestNoCommandHidesAFlagItAccepts` refused a flag the usage did not describe,
+which cascaded into the generated CLI documentation, G18a's section inventory
+and G18f's pinned hash. Four gates for one flag, each one correct.
+
+**An assertion that tested nothing, in two places.** `notriosctl search` echoes
+the query back in its JSON — `{"hits": [], "query": "x"}` — so grepping the
+output for the search term matches an *empty* result. I4's restore check passed
+for exactly that reason and had never tested anything; the first version of the
+recovery drill here concluded that a library it had just deleted still held its
+notes, and I nearly recorded that as a pass because a `|| true` swallowed the
+failure. Both count hits now. I4's drill was re-run and its record refreshed:
+`restored_hits: 1`, so the claim it always made is now the claim it checks.
+
+**The matrix claims only what ran: six rows, two supported.** The row most at
+risk was the desktop shell. CI *compiles* it and I3's containers are headless, so
+it sits at level 1 while the command line and service earned level 3 **in those
+same containers** — compiling a GUI proves it links, not that it runs. Windows
+and macOS are absent from release claims rather than listed as forthcoming, and
+the validator derives the shipped platform's level from I3's report so a row
+cannot be promoted by editing the matrix. Promoting the desktop shell, letting a
+postponed platform back into release claims, marking arm64 supported without
+running it, claiming a slow leak was ruled out, hiding descriptor growth and
+dropping the emulator limit were each tried and each refused.
+
+**What was not established.** Fifteen minutes is not a long-lived soak; the load
+is one endpoint on loopback with no writes or concurrency; no emulator soak ran;
+no crash was induced, so the crash-reporting position is checked by absence
+rather than by observing where a panic goes; there is no support bundle to
+redact, so what was tested is the diagnostics that exist; and `config show`
+prints a credential *reference*, which names where a credential lives rather
+than being one.
+
 ## I8. Freeze the 1.0 compatibility surfaces
 
 **Goal.** The interfaces 1.0 will promise are fixed and tested at their edges.

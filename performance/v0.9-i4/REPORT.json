@@ -1,5 +1,5 @@
 {
-  "content_commit": "91ae3e503e466bd0147b100c95397e0cf904b939",
+  "content_commit": "828451c4c1d4ce13ac8e2ed5f292fd87c42119cb",
   "counts": {
     "drills": 9,
     "passed": 9
@@ -36,8 +36,8 @@
         "archive_holds_keys": false,
         "archive_holds_library": true,
         "exit": 0,
-        "library_before": "/tmp/notrios-i4-FTnTkh/restore/.local/share/notrios",
-        "restored_note_found": true
+        "library_before": "/tmp/notrios-i4-bQuv4f/restore/.local/share/notrios",
+        "restored_hits": 1
       },
       "status": "pass"
     },
@@ -45,7 +45,7 @@
       "id": "uninstall-leaves-user-data",
       "observations": {
         "binary_removed": true,
-        "library": "/tmp/notrios-i4-FTnTkh/uninstall/.local/share/notrios",
+        "library": "/tmp/notrios-i4-bQuv4f/uninstall/.local/share/notrios",
         "library_present": true
       },
       "status": "pass"
@@ -71,7 +71,7 @@
     {
       "id": "external-data-root-is-used-where-it-actually-is",
       "observations": {
-        "library": "/tmp/notrios-i4-FTnTkh/elsewhere-share/notrios",
+        "library": "/tmp/notrios-i4-bQuv4f/elsewhere-share/notrios",
         "under_xdg_override": true
       },
       "status": "pass"
@@ -109,7 +109,8 @@
     "The first version of these drills ran with the working directory inside the checkout, so notriosctl resolved source mode, the notes went into the developer's own library and purge backups landed in the repository root. Purge refused to delete anything because a relative root is not an absolute purge target -- which is the only reason that mistake was harmless. install_home now refuses to drill unless the resolved mode is 'installed'.",
     "The first library check asked the installed notriosctl whether the note survived, and purge removes that binary -- so every successful purge reported 'the library is gone' whether or not it was. The library is checked on the filesystem now.",
     "`tar -tf | grep -q` under `pipefail` reports failure when grep exits early and tar dies of SIGPIPE, so a backup that contained the library was reported as one that did not.",
-    "A purge run while a daemon holds the library succeeds: it writes and verifies the backup, then deletes, and the running daemon is not consulted. Nothing is unrecoverable -- the backup is written before anything is removed, and on Linux the daemon keeps serving the open file until it exits -- but the user is not told that a process is still running against what they just deleted. The drill asserts the property that matters (nothing is deleted without a backup) and records the behaviour rather than blessing it. Whether purge should notice a live daemon and say so is a decision for I7's crash and recovery work, where the runtime state is already the subject."
+    "A purge run while a daemon holds the library succeeds: it writes and verifies the backup, then deletes, and the running daemon is not consulted. Nothing is unrecoverable -- the backup is written before anything is removed, and on Linux the daemon keeps serving the open file until it exits -- but the user is not told that a process is still running against what they just deleted. The drill asserts the property that matters (nothing is deleted without a backup) and records the behaviour rather than blessing it. Whether purge should notice a live daemon and say so is a decision for I7's crash and recovery work, where the runtime state is already the subject.",
+    "The restore assertion tested nothing, and v0.9 I7 found it. It grepped `notriosctl search` output for the note's title -- and search echoes the query back in its JSON, {\"hits\": [], \"query\": \"must not lose\"}, so the grep matched an empty result. The claim was true, the check was not: the drill now counts hits and records restored_hits: 1. The same pattern was about to make I7's recovery drill conclude that a library it had just deleted still held its notes."
   ],
   "why_these_faults": "They are unprivileged and deterministic. A read-only parent directory is 'the backup cannot be written'; `ulimit -f` is 'the backup does not fit', which is the capacity fault without needing a filesystem to fill; a symlink out of the profile is 'deletion reaching data it was never pointed at'. None need root, so they run where the developer runs and in CI."
 }

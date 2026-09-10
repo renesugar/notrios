@@ -154,6 +154,9 @@ python3 performance/v0.9-i5/validate_evidence.py
 # I6: the release evidence record, plus the workflow hardening gate that keeps
 # actions pinned by digest and permissions least-privilege.
 python3 performance/v0.9-i6/validate_evidence.py
+# I7: the soak, recovery drills and frozen support matrix. Reads the record;
+# the soak and the drills are not run here.
+python3 performance/v0.9-i7/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

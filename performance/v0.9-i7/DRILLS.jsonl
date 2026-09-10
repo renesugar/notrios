@@ -1,0 +1,3 @@
+{"drill": "diagnostics-redact-the-home-directory", "observations": {"credential_reference_printed": true, "leaked": 0, "no_redact_still_works": true, "surfaces_checked": 4}, "status": "pass"}
+{"drill": "nothing-reports-anywhere-by-default", "observations": {"fresh_sync_target": "none", "frontend_telemetry": 0, "telemetry_sdks": 0}, "status": "pass"}
+{"drill": "library-lost-and-recovered-from-an-export", "observations": {"hits_after_loss": 0, "hits_after_recovery": 1, "hits_before": 1, "library": "/tmp/notrios-i7-JR3oYT/recovery/.local/share/notrios"}, "status": "pass"}

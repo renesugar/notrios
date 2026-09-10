@@ -1,0 +1,71 @@
+{
+  "claim_ladder": "performance/v0.8-h6a/FINDINGS.json -- 1 generated, 2 structurally inspected, 3 natively installed and executed, 4 supported (3 plus a maintainer's commitment)",
+  "content_commit": "828451c4c1d4ce13ac8e2ed5f292fd87c42119cb",
+  "desktop_stack": {
+    "framework": "Wails v2",
+    "native": "GTK3 and webkit2gtk-4.1",
+    "why_not_v3": "v0.9 I2 postponed the Wails v3 migration to post-v1.0 because v3 was still v3.0.0-beta.19, and a release candidate is not hardened on a beta. What ships is what was hardened."
+  },
+  "frozen_on": "2026-09-10",
+  "item": "I7",
+  "milestone": "v0.9",
+  "schema": "notrios.v09.i7-support-matrix.v1",
+  "surfaces": [
+    {
+      "claim_level": 3,
+      "evidence": "performance/v0.9-i3/REPORT.json -- installed and run in clean containers with no source tree, Go, Node or compiler, as an unprivileged user",
+      "executed": true,
+      "platform": "Ubuntu 24.04, amd64",
+      "supported": true,
+      "surface": "command line and background service"
+    },
+    {
+      "claim_level": 1,
+      "evidence": "CI compiles it (.github/workflows/ci.yml, gui-build) and nothing in v0.9 runs it. I3's containers are headless with no display, so the .desktop entry was checked and no window was ever opened.",
+      "executed": false,
+      "platform": "Ubuntu 24.04, amd64",
+      "supported": false,
+      "surface": "desktop shell (Wails v2, GTK3 / webkit2gtk-4.1)",
+      "why_it_matters": "The CLI and the service reached level 3 in the same containers, and it would be easy to let the desktop inherit that. It cannot: compiling a GUI proves it links, not that it runs. This is the row most likely to be overclaimed, which is why it is stated first among the things that are not supported."
+    },
+    {
+      "claim_level": 3,
+      "evidence": "v0.8 H15-G and H28 interface journeys, and web tests run in CI on every push",
+      "executed": true,
+      "platform": "browsers driven by the journey suite",
+      "supported": true,
+      "surface": "web interface"
+    },
+    {
+      "blocked_on": "no arm64 machine. H6a left the arm64 package at level 2, structurally inspected, and v0.9 I3 installed only amd64. Signing an artifact nobody has run would attest its origin and say nothing about whether it works.",
+      "claim_level": 2,
+      "evidence": "H6a structurally inspected the arm64 package; no arm64 machine has run it",
+      "executed": false,
+      "platform": "Ubuntu 24.04, arm64",
+      "supported": false,
+      "surface": "command line and background service"
+    },
+    {
+      "absent_from_release_claims": true,
+      "blocked_on": "an OV or EV code-signing certificate from a CA, which requires an organisational identity check; EV additionally requires a hardware token or cloud HSM, which a hosted runner cannot hold without a signing service. And a native runner: H6a found a cross-built Windows artifact is level 1 evidence and nothing here can execute it.",
+      "claim_level": 1,
+      "evidence": "H6a: a cross-built artifact is not native evidence and nothing here can execute it",
+      "executed": false,
+      "platform": "Windows",
+      "supported": false,
+      "surface": "all"
+    },
+    {
+      "absent_from_release_claims": true,
+      "blocked_on": "Apple Developer Program membership, which is an owner account and cannot be delegated to this repository, and native hardware: H6a established nothing about macOS can be determined on this machine.",
+      "claim_level": 0,
+      "evidence": "H6a: nothing about macOS can be established on this machine",
+      "executed": false,
+      "platform": "macOS",
+      "supported": false,
+      "surface": "all"
+    }
+  ],
+  "the_rule_this_matrix_follows": "A platform is supported when it has been installed and executed and somebody commits to keeping it working. Everything else is named with its level and its blocker. Windows and macOS are absent from release claims rather than listed as forthcoming.",
+  "what_this_is": "What this project supports, limited to what was executed. A support matrix is a promise somebody will hold us to, so every row names the evidence that entitles it and a platform with no evidence is absent rather than optimistic."
+}

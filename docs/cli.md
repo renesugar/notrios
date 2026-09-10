@@ -13,7 +13,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl collections show --collection <id> [--json] [--db ...]
 - notriosctl compatibility archive-v2 [--reader current-v2|previous-loose-v2] <archive-dir|manifest.json>
 - notriosctl config show [--config config.yaml] [--json] [--no-redact]
-- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path] [--json]
+- notriosctl doctor [--config config.yaml] [--db path] [--asset-store path] [--json] [--no-redact]
 - notriosctl export archive [--db ...] [--query "tag:todo"] <out-dir> [--collection id]
 - notriosctl export archive-v2 [--db ...] [--target full_archive|subset_transfer] [--notebooks id,id] [--tags a,b] [--query "tag:todo"] [--documents id,id] [--match any|all] [--pack] [--overwrite] [--no-verify] <out-dir> [--max-documents N] [--pack-bytes N] [--records-per-object N]
 - notriosctl fix [--db ...] [--kinds a,b] [--document id] [--apply] [--list-kinds] [--allow-review] [--max-documents N]
