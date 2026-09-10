@@ -54,7 +54,11 @@ class G18aEvidenceTests(unittest.TestCase):
         # 265 -> 266 in v0.8 H19: the search section, for the one everyday
         # capability that had no command at all.
         # 266 -> 267 in v0.8 H27: the attachment section.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 267)
+        # 267 -> 273 in v0.9 I9: docs/installation.md was rewritten to lead with
+        # the packaged install, adding six sections a reader without a
+        # repository needs -- verifying a download, upgrading, going back,
+        # backing up and restoring, and what is actually supported.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 275)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

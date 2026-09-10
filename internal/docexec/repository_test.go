@@ -141,7 +141,36 @@ func TestRepositoryExamples(t *testing.T) {
 	// bracketed-flag form whose command is covered by executed tests and by an
 	// executed journey.
 	// 151 -> 152 entries in v0.8 H27: the attachment synopsis in docs/cli.md.
-	if report.Executed != 65 || report.Entries != 152 || len(report.Topics) != 14 {
+	// 152 -> 159 entries in v0.9 I9, and executed stays 65. docs/installation.md
+	// was written for somebody with a clone: it opened by saying Notrios is
+	// "source-only: there are no official prebuilt binaries, OS packages, or
+	// installers yet", which v0.8 made false and v0.9 I3 disproved by installing
+	// the package in clean containers. It now leads with the packaged install and
+	// gains the operational half a reader without a repository needs -- verifying
+	// a download, upgrading, going back, and getting notes out and back in --
+	// seven new examples, plus one whose id moved because its section was renamed.
+	//
+	// None of the seven is executed here and each says why. Three install a
+	// package on the host as root; two write into this user's own library; one
+	// reads whichever installation the host happens to have; one operates on a
+	// downloaded release set this repository does not contain. Every one of them
+	// is executed somewhere it can be: the installs and the downgrade in
+	// performance/v0.9-i3's container matrix, the export and re-import in
+	// performance/v0.9-i7's recovery drill, the checksum in
+	// performance/v0.9-i6/verify_release_set.py. A documented command nobody runs
+	// is the thing this gate exists to prevent, so the reasons name where each
+	// one does run rather than merely excusing it.
+	//
+	// 159 -> 163: removal and troubleshooting for the same reader. The package
+	// ships no purge tool -- `make purge` lives in the repository -- so a
+	// packaged user has no supported way to delete their data, and the page says
+	// that plainly and shows them where the roots are instead of pointing at a
+	// Makefile they do not have. docs/troubleshooting.md gains a section that
+	// starts with `notriosctl doctor`, because the rest of that page assumes a
+	// checkout the reader does not have either. Topics go 14 -> 15 with it:
+	// docs/troubleshooting.md had no example at all until now, which is its own
+	// small comment on who that page was written for. executedTopics stays 13.
+	if report.Executed != 65 || report.Entries != 163 || len(report.Topics) != 15 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

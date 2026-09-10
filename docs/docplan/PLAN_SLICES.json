@@ -221,17 +221,20 @@
         {
           "id": "I9-A",
           "statement": "Install, upgrade, rollback and backup/restore documentation is written for a reader with no repository",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/installation.md"
         },
         {
           "id": "I9-B",
           "statement": "Uninstall, purge, troubleshooting and artifact-verification documentation is written for that reader",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/troubleshooting.md"
         },
         {
           "id": "I9-C",
           "statement": "Every command shown is generated from or checked against the real command line",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/docaudit/registry.json"
         }
       ]
     },

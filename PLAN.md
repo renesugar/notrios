@@ -729,6 +729,54 @@ command line, the way the existing documentation gates require.
 **Working state.** Each document present, checked by the documentation gates,
 and naming no step that was never run.
 
+**Done, 2026-09-10.** The documentation was written for somebody with a clone,
+and said so in its first sentence: *"Notrios is currently **source-only**: there
+are no official prebuilt binaries, OS packages, or installers yet."* v0.8 built
+the package and v0.9 I3 installed and ran it in clean containers, so that
+sentence had been false for two milestones. `docs/installation.md` now leads
+with the packaged install — which needs no repository, no Go, no Node and no
+compiler — and building from a clone is the second half of the page.
+
+**Six new sections, each grounded in something this milestone executed.**
+Verifying a download against `SHA256SUMS`, and saying plainly that nothing is
+signed yet so a file claiming otherwise should not be believed. Upgrading, from
+I3's prerelease-to-release scenario. Going back to an earlier version, from the
+downgrade scenario that establishes apt refuses unasked and obeys when told,
+with the library untouched either way. Backing up and restoring, from I7's
+recovery drill. And a support table naming what actually ran — with the desktop
+shell at *compiled, never run here*, because inheriting the command line's level
+3 would be the easiest overclaim on the page.
+
+**One gap was found by writing the page, and is now documented rather than
+papered over.** The package ships no purge tool: `make purge` — which takes a
+verified backup, refuses without `FORCE=1` when nothing can answer a prompt, and
+excludes sync key material — lives in the repository. A packaged user therefore
+has **no supported way to delete their data**, and the page says so, shows them
+`notriosctl paths --no-redact` to find the roots, and tells them to export
+first, because nothing takes a backup for them that way. Pointing that reader at
+a Makefile they do not have would have been the easy thing to write.
+
+`docs/troubleshooting.md` opened with **Building**. It now opens with
+`notriosctl doctor` for the reader who has only the package, including the two
+answers worth knowing in advance — that an unreachable credential store is not a
+failure until sync keys exist, and that paths are redacted by default because
+this output gets pasted into issues.
+
+**Every command is registered, and none is executed here without a reason that
+names where it is.** Eleven new examples: three install or remove packages as
+root, four write into the reader's own library, two report on whichever machine
+the reader has, one reads a release set this repository does not contain. Each
+unrun reason names where the command *is* executed — I3's container matrix, I7's
+recovery drill, `verify_release_set.py` — because a documented command nobody
+runs is precisely what this gate exists to prevent.
+
+**Seven pinned counts moved together**, each with the rationale its file
+requires: the example registry, the docexec entries and topics, the audit's
+sections, unverified and denominator, G18a's grade baseline, G18d's registry
+assertions and regenerated report, and G18f's document hashes.
+`docs/troubleshooting.md` had never carried an example at all until now, which
+is its own small comment on who that page was written for.
+
 ## I10. Serve the documentation site from notrios.com — complete
 
 **Goal.** The documentation is published at `https://notrios.com/`, and the

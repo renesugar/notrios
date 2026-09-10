@@ -50,8 +50,12 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 148 -> 150 in v0.8 H26: the tags show synopsis and its shell example.
     # 150 -> 151 in v0.8 H19: the search synopsis.
     # 151 -> 152 in v0.8 H27: the attachment synopsis.
-    assert len(examples) == report["entries"] == 152
-    assert len({item["id"] for item in examples}) == 152
+    # 152 -> 159 in v0.9 I9: docs/installation.md now leads with the packaged
+    # install and carries the operational sections a reader without a
+    # repository needs. Executed is unchanged; every new example names where
+    # it is executed instead.
+    assert len(examples) == report["entries"] == 163
+    assert len({item["id"] for item in examples}) == 163
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -80,7 +84,7 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 84 -> 85 in v0.8 H26: the tags show synopsis, illustrative like the rest.
     # 85 -> 86 in v0.8 H19: the search synopsis, illustrative like the rest.
     # 86 -> 87 in v0.8 H27: the attachment synopsis, illustrative like the rest.
-    assert len(unverified) == report["unverified"] == 87
+    assert len(unverified) == report["unverified"] == 98
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

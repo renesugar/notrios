@@ -1,14 +1,158 @@
 # Installation and building
 
-Notrios is currently **source-only**: there are no official prebuilt binaries, OS packages, or installers yet. You build it from a clone of the repository. The only tested platform is **Ubuntu Linux** (development and CI both run on Ubuntu; the GUI compile is checked on `ubuntu-latest`). Other Linux distributions with the same libraries will likely work but are untested; macOS and Windows are not currently built or tested, and no support is claimed for them.
+There are two ways to install Notrios, and this page is ordered for the first
+one: **from the Ubuntu package**, which needs no repository, no Go, no Node and
+no compiler. Building from a clone is the second half of the page.
 
-## Prerequisites
+**There is no published download yet.** The package is built from this
+repository and has not been released anywhere, so today you either receive one
+or build one. What has been established is that it *works* once you have it: it
+installs on a clean Ubuntu 24.04 with only its declared dependencies, runs as an
+unprivileged user, survives upgrade, removal and reinstallation, and keeps your
+notes when the program is removed. That was measured rather than assumed — see
+[what is supported](#what-is-supported).
+
+The only tested platform is **Ubuntu 24.04 on amd64**. arm64 is built and never
+run; Windows and macOS are neither built nor tested here, and no support is
+claimed for them.
+
+## Installing from the package
+
+You need the `.deb` and nothing else. `apt` resolves the dependencies:
+
+```sh
+sudo apt install ./notrios_0.8.0-1_amd64.deb
+```
+
+That installs `/usr/bin/notrios`, `/usr/bin/notriosd` and `/usr/bin/notriosctl`,
+the built interface and help under `/usr/share/notrios`, the `notrios://`
+desktop entry, and a user service that is **installed and not enabled**. Nothing
+starts on its own.
+
+Check the installation before trusting it:
+
+```sh
+notriosctl doctor
+```
+
+`doctor` reports each check and exits non-zero if a required one failed. On a
+machine with no keyring — a server, a container — it will tell you that no
+credential store is reachable and that this is not a failure until you store
+sync keys. Paths are printed with your home directory shown as `~`; pass
+`--no-redact` when you need the literal path.
+
+### Verifying what you downloaded
+
+A release set carries `SHA256SUMS` beside the artifacts:
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
+**Nothing is signed yet.** The signing policy is decided — a detached OpenPGP
+signature over each artifact and an RFC 3161 timestamp over it — and no key has
+been created, so there is no signature to check and you should not believe a
+file that claims otherwise. A checksum tells you the download is intact; it does
+not tell you who made it.
+
+### Upgrading
+
+Install the newer package over the older one. Your library is not touched:
+
+```sh
+sudo apt install ./notrios_0.8.0-1_amd64.deb
+```
+
+The binaries are replaced and the notes stay where they are, in your home
+directory rather than anywhere the package manager owns.
+
+### Going back to an earlier version
+
+`apt` refuses to go backwards unless you ask it to, which is deliberate:
+
+```sh
+sudo apt install --allow-downgrades ./notrios_0.8.0~rc1-1_amd64.deb
+```
+
+Without the flag the refusal leaves the newer package installed and your library
+untouched. With it, the older program is installed and your library is still
+untouched — a rollback moves the program, never the notes. If the older version
+predates a schema migration, see [upgrading from before 0.8](#upgrading-from-before-08).
+
+### Backing up, and getting your notes back
+
+Export writes a portable archive you can copy anywhere:
+
+```sh
+notriosctl export archive ~/notrios-backup
+```
+
+To restore into an empty or replacement library:
+
+```sh
+notriosctl import archive ~/notrios-backup
+```
+
+That is the recovery path for a lost library, and it is the one to rehearse
+before you need it. `purge` also writes a verified backup before it deletes
+anything — see [removing your data as well](#removing-your-data-as-well) — but a
+backup you took on purpose is better than one a deletion made for you.
+
+### Removing Notrios when you installed the package
+
+Removing the program and removing your notes are two different acts, and the
+package only does the first:
+
+```sh
+sudo apt remove notrios
+```
+
+That deletes every file the package installed and **leaves your notes,
+configuration, profiles, keys, state and cache exactly where they are**. Install
+the package again and they are still there. That was measured, not assumed:
+`performance/v0.9-i3` removes the package, checks the library on disk, reinstalls
+and finds the note again.
+
+**There is no packaged way to delete your data, and you should know that before
+you need it.** `make purge` — which takes a verified backup first, refuses
+without `FORCE=1` when nothing can answer a prompt, and excludes sync key
+material from the backup — lives in the repository, and the package does not
+ship it. With only the package installed, deleting your library is something you
+do yourself. Find out where it is first:
+
+```sh
+notriosctl paths --no-redact
+```
+
+Delete the `data`, `config`, `state` and `cache` roots it prints, and understand
+that nothing takes a backup for you when you do it that way. Export first if the
+notes matter:
+
+```sh
+notriosctl export archive ~/notrios-backup
+```
+
+## What is supported
+
+| Surface | Platform | Status |
+|---|---|---|
+| command line and service | Ubuntu 24.04 amd64 | installed and run |
+| web interface | browsers driven by the journey suite | exercised |
+| desktop shell | Ubuntu 24.04 amd64 | **compiled, never run here** |
+| command line and service | Ubuntu 24.04 arm64 | built, never run |
+| anything | Windows, macOS | not built, not claimed |
+
+The desktop shell is the row worth reading twice: continuous integration
+compiles it, and nothing in this project has launched its window, so it is not
+claimed as supported.
+
+## Prerequisites for building from source
 
 | Requirement | Version | Needed for |
 |---|---|---|
 | Go | 1.25 or newer (`go.mod` says `go 1.25.0`; CI uses 1.25) | everything |
 | C toolchain | Ubuntu `build-essential` | the SQLite store is a cgo wrapper over the vendored SQLite amalgamation, compiled from source into the binary |
-| Node.js + npm | Node 22 (CI-tested); Node ≥ 20.19 may work | building the web UI and the documentation site |
+| Node.js + npm | the version in `.nvmrc`, which CI reads too | building the web UI and the documentation site |
 | `libgtk-3-dev`, `libwebkit2gtk-4.1-dev` | Ubuntu packages | **GUI builds only** (`make gui`) |
 | Python 3 | Ubuntu `python3` | repository validation scripts only (not needed at runtime) |
 | `zip` | Ubuntu package | release archives only (`scripts/package_release.sh`) |
