@@ -471,6 +471,56 @@ to a pull-request trigger.
 **Working state.** Each artifact generated and independently verified, and the
 draft flow exercised without publishing.
 
+**Done, 2026-09-09.** The set is four artifacts — the package, `SHA256SUMS`, a
+CycloneDX 1.5 SBOM of 400 components, and an in-toto provenance statement — and
+it verifies offline by recomputation rather than read-back.
+
+**No SBOM tool was added.** None is installed, and the inputs were already here:
+G20's licence inventory, derived from `go.mod` for its own reasons, and the two
+npm lockfiles. That follows H6a's smallest-maintainable-toolchain rule and buys
+something better than convenience — **the SBOM is cross-checked against an
+inventory produced by different code for a different purpose**, and matches
+exactly: 39 Go modules, 353 + 8 npm packages. A generator and a verifier written
+from the same assumption fail together and look like agreement.
+
+Licence expressions are parsed rather than string-matched, because
+`(MPL-2.0 OR Apache-2.0)` is a choice between two acceptable licences and
+refusing it as "not a bare SPDX identifier" would reject a dependency whose
+terms are fine twice over.
+
+**All 17 actions are pinned to commit digests**, with the tag kept as a trailing
+comment so a reader can still tell which version a digest is. A tag is a pointer
+somebody else can move, and whoever controls it chooses what runs here with this
+repository's token. `ci.yml` declared no `permissions:` at all and inherited the
+repository default — read/write on every scope — for a workflow that only builds
+and tests; it declares `contents: read` now. The validator derives the pinned
+count from the workflows rather than reading it from the report, so the record
+cannot claim a hardening the repository does not have.
+
+**The same mistake twice, caught two different ways.** The draft script builds
+its upload list from `SHA256SUMS`, and that file does not list itself — so the
+first version would have uploaded every artifact **except the file a downloader
+checks the others against**. Running the dry flow showed it. Then the report
+generator made the identical mistake, and the validator refused the report. A
+dry run that only printed a command nobody read would have caught neither, which
+is the argument for running the flow rather than describing it.
+
+**The draft was not created.** Everything up to the API call is exercised: the
+set verifies, `gh` is authenticated, the candidate tag is free, and the exact
+command is printed for a person to read first. Creating a draft uploads
+artifacts to GitHub, and an upload is an external write the owner authorises
+separately — a draft is not public and creates no tag until published, but it is
+still an upload.
+
+**What this does not establish, gated so it cannot shrink.** Nothing is signed
+or timestamped — I5 created no key deliberately, and the verifier refuses a set
+that records itself as signed while carrying no signature. The upload path,
+asset limits and notes rendering are unexercised. The SBOM covers dependencies
+rather than the package's contents. No vulnerability scanner ran; a CycloneDX
+document is not a scan result. And the provenance is a statement this repository
+wrote about its own build on a workstation, with no builder identity anybody
+else can check — SLSA build level 1 at most.
+
 ## I7. Soak, recover, and freeze the support matrix
 
 **Goal.** The candidate survives being left running, and its claims are limited

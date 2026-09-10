@@ -1,0 +1,54 @@
+{
+  "content_commit": "ae7ea68bc6c3c30945f7553c0fdd23c4348d41d4",
+  "draft_flow": {
+    "found_by_running_it": "The first version built its asset list from SHA256SUMS and so would have uploaded every artifact except the file a downloader checks them against. A dry run that only printed a command nobody read would not have caught that.",
+    "state": "exercised dry; nothing uploaded",
+    "what_dry_establishes": "The set verifies, gh is authenticated, the candidate tag is free, and the exact command is printed for a person to read before it runs. Everything except the API call.",
+    "why_not_executed": "Creating a draft uploads artifacts to GitHub, which is an external write the owner authorises separately. v0.9's boundary is that this milestone is not an end-user release; a draft is not public and creates no tag until published, but it is still an upload."
+  },
+  "item": "I6",
+  "milestone": "v0.9",
+  "no_sbom_tool_was_added": {
+    "decision": "generate from the repository's own inputs",
+    "why": "No SBOM tool is installed here and none was added. H6a's rule was the smallest maintainable toolchain, and the inputs are already in the repository: G20's licence inventory, itself derived from go.mod, and the two npm lockfiles. Generating from those runs offline and cannot disagree with the licence gate, because the verifier checks it against exactly that inventory."
+  },
+  "not_verified": [
+    "No signature and no timestamp. I5 created no key deliberately; the provenance records the set as unsigned and the verifier refuses a set that claims otherwise without one.",
+    "No draft was created, so the upload path, asset size limits and the rendering of the notes are unexercised.",
+    "The SBOM covers dependencies, not the contents of the .deb. It says what the software was built from, not what the package ships.",
+    "No security scanner ran. G20's advisory review and npm audit are what exist; this item added no vulnerability scanning, and a CycloneDX document is not a scan result.",
+    "Provenance is not attested: it is a statement this repository wrote about its own build, on a workstation, with no builder identity anybody else can check. SLSA build level 1 at most."
+  ],
+  "release_set": {
+    "artifacts": [
+      "PROVENANCE.json",
+      "SBOM.cdx.json",
+      "SHA256SUMS",
+      "notrios_0.8.0-1_amd64.deb"
+    ],
+    "cross_checked_against": "performance/v0.7-g20/DEPENDENCY_LICENSES.json",
+    "note_on_sha256sums": "SHA256SUMS covers the other artifacts and is itself one of them, so the record carries its hash separately. Reading the artifact list *from* that file forgets the file -- which this milestone did twice, once in the draft script's upload list and once here, and the validator caught the second.",
+    "sbom": {
+      "components": 400,
+      "format": "CycloneDX 1.5",
+      "go_modules": 39,
+      "npm_packages": 361,
+      "without_declared_licence": 1
+    },
+    "sha256": {
+      "PROVENANCE.json": "31df26b9693cfafc6538dcaa30a38e302b2ff3db4354af405e35d82a786289f4",
+      "SBOM.cdx.json": "c1611232f001a0d90e8b89dde09b5ddf575e69875860a58382c4932b763b2155",
+      "SHA256SUMS": "6e0400c788686e5eb051b4eba2b83778c2c557ed81515c065c4413c0e185148f",
+      "notrios_0.8.0-1_amd64.deb": "6cccc3235cce46f9ca559d185fb7736c4f0228ce99b86ad0f3dddaaa1ead63c1"
+    },
+    "signing_state": "unsigned"
+  },
+  "schema": "notrios.v09.i6-release-evidence.v1",
+  "what_this_is": "The artifacts and evidence a release would carry, generated and then verified by code that recomputes rather than reads back, plus the workflow hardening that keeps CI's supply chain and permissions from decaying quietly.",
+  "why_cross_checking": "A generator and a verifier written from the same assumption fail together and look like agreement. The SBOM is produced from the lockfiles and checked against an inventory G20 derives for its own reasons, so a disagreement between them is visible.",
+  "workflow_hardening": {
+    "actions_pinned_by_digest": 17,
+    "permissions": "ci.yml declared none and so inherited the repository default, which can be read/write on every scope, for a workflow that only builds and tests. It declares contents: read now.",
+    "why": "actions/checkout@v4 is a tag, and a tag is a pointer somebody else can move: whoever controls it chooses what runs in this repository's CI with this repository's token. Pinning to a digest makes an upgrade a reviewable commit here. The tag is kept as a trailing comment so a reader can still tell which version a digest is."
+  }
+}
