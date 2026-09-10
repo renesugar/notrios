@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 5 complete, 0 in progress, 4 not started, 1 deferred.**
+**10 items: 6 complete, 0 in progress, 3 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -55,7 +55,7 @@ this section is archived when the plan completes and the rules are not.
 | I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
 | I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
 | I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
-| I6. Generate and verify the release evidence set | not-started | 0/3 | 3 |
+| I6. Generate and verify the release evidence set | complete | 3/3 | — |
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
@@ -452,7 +452,7 @@ level away from I3's evidence, changing the timestamp OID away from the
 verifier's, merging the release key with the evidence key, and removing
 signature verification from the steps were each tried and each refused.
 
-## I6. Generate and verify the release evidence set
+## I6. Generate and verify the release evidence set — complete
 
 **Goal.** A candidate carries checksums, an SBOM and provenance that verify
 offline.

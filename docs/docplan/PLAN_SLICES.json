@@ -135,22 +135,25 @@
     {
       "id": "I6",
       "title": "Generate and verify the release evidence set",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I6-A",
           "statement": "Checksums, SBOM, dependency/license/security reports and provenance are generated and verified offline",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/verify_release_set.py"
         },
         {
           "id": "I6-B",
           "statement": "GitHub workflows are pinned by digest and least-privilege",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/check_workflow_hardening.py"
         },
         {
           "id": "I6-C",
           "statement": "A non-public release-candidate or draft flow is exercised without publishing",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/draft_release.sh"
         }
       ]
     },
