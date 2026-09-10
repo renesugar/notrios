@@ -60,17 +60,17 @@
     },
     {
       "item": "I6",
-      "archive": "notrios-v0.9-i6-79f940f.zip",
-      "commit": "79f940f2ac898462ee790ec2e64d4a287342ce43",
+      "archive": "notrios-v0.9-i6-e7a535c.zip",
+      "commit": "e7a535c3ae7ff408af03fb2d785e636969b51abc",
       "taken": "when the slice closed",
-      "bytes": 25042473,
-      "entries": 2451,
-      "sha256": "17293cf87b9c8955616c9fc1d15f0ee39921170dc1493cb17a594f13668c22a0"
+      "bytes": 25052871,
+      "entries": 2455,
+      "sha256": "17e99d3b1c35c74aff03cc5e9734e06a5be9bb15f460977ff4870b53ba0e1fdc"
     }
   ],
   "counts": {
     "items": 7,
     "retroactive": 0,
-    "total_bytes": 175004959
+    "total_bytes": 175015357
   }
 }
