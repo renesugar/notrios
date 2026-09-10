@@ -46,7 +46,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 8 complete, 0 in progress, 1 not started, 1 deferred.**
+**10 items: 9 complete, 0 in progress, 0 not started, 1 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -58,7 +58,7 @@ this section is archived when the plan completes and the rules are not.
 | I6. Generate and verify the release evidence set | complete | 4/4 | — |
 | I7. Soak, recover, and freeze the support matrix | complete | 3/3 | — |
 | I8. Freeze the 1.0 compatibility surfaces | complete | 3/3 | — |
-| I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
+| I9. Write the release-grade operational documentation | complete | 3/3 | — |
 | I10. Serve the documentation site from notrios.com | complete | 2/2 | — |
 
 Nothing is half-finished.
@@ -712,7 +712,7 @@ the installer's on-disk layout are owned elsewhere. There is no fuzzing, `-msan`
 did not run, and nothing tests `dlclose`, a second `dlopen`, or two processes
 opening one profile.
 
-## I9. Write the release-grade operational documentation
+## I9. Write the release-grade operational documentation — complete
 
 **Goal.** Somebody with neither the repository nor a development environment can
 install, upgrade, roll back, back up, restore, uninstall, purge, troubleshoot

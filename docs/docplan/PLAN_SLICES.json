@@ -216,7 +216,7 @@
     {
       "id": "I9",
       "title": "Write the release-grade operational documentation",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "I9-A",

@@ -84,11 +84,20 @@
       "bytes": 25102479,
       "entries": 2477,
       "sha256": "13301fce24be980b0ea11597698a22de8c8890c7a74f8c1233c0e36de864ae8c"
+    },
+    {
+      "item": "I9",
+      "archive": "notrios-v0.9-i9-eb217c3.zip",
+      "commit": "eb217c34121f210ac5387db12ba43b92ec0a4f0c",
+      "taken": "when the slice closed",
+      "bytes": 25108988,
+      "entries": 2477,
+      "sha256": "5bf9d77b8f512ba7d5bce4c2fccfab0b2f5cd477a0720a5db16d7665072fa9d5"
     }
   ],
   "counts": {
-    "items": 9,
+    "items": 10,
     "retroactive": 0,
-    "total_bytes": 225189869
+    "total_bytes": 250298857
   }
 }
