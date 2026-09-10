@@ -36,7 +36,8 @@ COVERAGE_BEGINS = (0, 8)
 REGISTRY = {
     "v0.8": ("plans/v0.8/000-v0.8-plan.md", "performance/v0.8e/MANIFEST.json"),
     "v0.8e": ("plans/v0.8e/000-v0.8e-plan.md", "performance/v0.8e/MANIFEST_V08E.json"),
-    "v0.9": ("PLAN.md", "performance/v0.9/MANIFEST.json"),
+    "v0.9": ("plans/v0.9/000-v0.9-plan.md", "performance/v0.9/MANIFEST.json"),
+    "v1.0": ("PLAN.md", "performance/v1.0/MANIFEST.json"),
 }
 
 FINISHED = {"complete", "deferred"}
