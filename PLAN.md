@@ -405,6 +405,53 @@ blocked rather than substituting something weaker and calling it done.
 **Working state.** A policy per platform, and an explicit list of what cannot be
 completed without which account or service.
 
+**Done, 2026-09-09. No key was created, deliberately.** Deciding what a key is
+for, whose it is, where it lives and how it rotates is this item; creating one
+first would invert that. I6 is where a signing step first appears, under the
+constraints recorded here. Nothing signs a release today — `build_deb.sh` and
+`package_release.sh` produce unsigned artifacts, which is what v0.8 allowed for
+internal evidence.
+
+**The boundary is enforced rather than promised.**
+`check_secret_exposure.py` refuses a workflow that could hand signing material
+to a pull request, and the reason is concrete here: `ci.yml` runs on both `push`
+and `pull_request`, and **a same-repository pull request receives repository
+secrets** — so a repository-level signing key would be readable from any branch
+anyone pushes. The policy is therefore environment secrets with required
+reviewers, never repository secrets. Three rules, each tried against a
+deliberately bad workflow and each refused: a secret in a workflow with a
+`pull_request` trigger, `pull_request_target` at all, and a secret used with no
+`environment` to gate it.
+
+**What the gate cannot enforce is written down beside it.** Whether a step
+echoes a secret to a log or writes it into an artifact is a runtime property of
+that step, not of the workflow file, and no static check settles it. The backup
+half of the boundary is enforced elsewhere: the purge backup excludes key
+material, drilled in I4.
+
+**The release key is not the evidence key**, and the reason is recorded rather
+than assumed: the reserve's key exists so the archive's integrity is independent
+of everything else, while a release key is used by automation on shipping's
+schedule and exposed to a build pipeline. Sharing one would make the archive
+only as trustworthy as the release pipeline's worst day.
+
+**Two values are derived rather than restated**, because a fact written twice
+becomes two facts. The RFC 3161 policy OID comes from
+`evidence/verify_evidence.py` — the code that will actually reject a mismatched
+timestamp — and the Ubuntu amd64 claim level comes from I3's report, which is
+what installed and ran the package. Both are checked; moving either alone fails.
+
+**Three platforms are blocked, and on machines and accounts rather than on
+effort.** arm64 has no machine and stays at H6a's level 2 — signing an artifact
+nobody has run would attest its origin and say nothing about whether it works.
+Windows needs an OV or EV certificate, which is an organisational identity check
+and, for EV, a hardware token or cloud HSM a hosted runner cannot hold. macOS
+needs Apple Developer Program membership, which is an owner account and cannot
+be delegated to a repository. Dropping a blocker's reason, drifting the claim
+level away from I3's evidence, changing the timestamp OID away from the
+verifier's, merging the release key with the evidence key, and removing
+signature verification from the steps were each tried and each refused.
+
 ## I6. Generate and verify the release evidence set
 
 **Goal.** A candidate carries checksums, an SBOM and provenance that verify

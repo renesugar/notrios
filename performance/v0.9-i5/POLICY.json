@@ -1,0 +1,88 @@
+{
+  "content_commit": "d99b8101d26bbd23f0a30f80a90270dd42c7deae",
+  "enforced_by": {
+    "check_secret_exposure.py": "Refuses a workflow that could hand signing material to a pull request: a secret in a workflow with a pull_request trigger, pull_request_target at all, or a secret used without an environment to gate it.",
+    "what_it_cannot_enforce": "Whether a secret is echoed to a log or written into an artifact is a property of what a step does at runtime, not of the workflow file, so no static check can settle it. What is enforced is the part that can be: a secret cannot be reachable from a pull request, and its use must pass an environment gate a reviewer controls. GitHub also masks known secret values in logs, which helps and is not a guarantee -- a transformed secret is not masked. The backup half of the boundary is enforced elsewhere: the purge backup excludes key material, drilled in I4."
+  },
+  "item": "I5",
+  "key_custody": {
+    "never": "Not in the repository, not in a pull-request job, not echoed to a log, not written into a release artifact, and not included in a purge backup. The first four are enforced by check_secret_exposure.py; the last is already enforced by the purge backup, which excludes key material and is drilled in I4.",
+    "release_key_is_not_the_evidence_key": {
+      "decision": "separate keys",
+      "why": "The evidence reserve signs with a pinned subkey whose primary is offline, and its whole value is that the archive's integrity is independent of everything else. A release key is used by automation, on a schedule set by shipping, and is exposed to a build pipeline. Sharing one key would make the archive only as trustworthy as the release pipeline's worst day, and would mean a release-key rotation invalidated the chain of custody over evidence that has nothing to do with releases."
+    },
+    "rotation": "A release key is rotated by publishing the new public key, signing the first release with both, and recording the changeover date. Nothing re-signs old artifacts: their signatures stay valid under the old key, which is why the timestamp matters more than the key's current status.",
+    "where_it_lives": "A GitHub Actions *environment* secret, in an environment with required reviewers -- not a repository secret. ci.yml runs on push and pull_request, and a same-repository pull request receives repository secrets, so a repository-level signing key would be readable from any branch anyone pushes. The passphrase is a second secret in the same environment."
+  },
+  "milestone": "v0.9",
+  "not_resolved_here": [
+    "No key has been created. This item decides the policy; creating a production key before deciding what it is for, whose it is and how it rotates would invert that.",
+    "No release workflow exists yet. I6 builds the release evidence set and is where a signing step would first appear, under the constraints recorded here.",
+    "Whether the project publishes an apt repository. That would add a Release-file signature and a published key, and is a distribution decision rather than a signing one.",
+    "Windows and macOS remain deferred to post-v1.0 with the hardware they need, so their entries record a policy nobody can execute yet rather than a plan for this milestone."
+  ],
+  "platforms": [
+    {
+      "artifacts": [
+        "notrios_<version>-<revision>_amd64.deb",
+        "SHA256SUMS"
+      ],
+      "claim_level": 3,
+      "id": "ubuntu-24.04-amd64",
+      "mechanism": "detached OpenPGP signature over each artifact and over SHA256SUMS, plus an RFC 3161 timestamp over the .deb's signature",
+      "not_chosen": {
+        "apt repository InRelease signing": "That is the right mechanism for an apt repository and this project does not publish one; v1.0 ships through a GitHub Release. If an apt repository is ever published, its Release file is signed and this entry gains a second mechanism rather than swapping.",
+        "dpkg-sig": "apt does not verify a per-.deb signature on a file you downloaded, so it would look like protection while the command a user actually runs -- `apt install ./notrios.deb` -- checks nothing."
+      },
+      "produce": [
+        "sha256sum notrios_<version>-<revision>_amd64.deb > SHA256SUMS",
+        "gpg --detach-sign --armor --local-user <release-key> notrios_<version>-<revision>_amd64.deb",
+        "gpg --detach-sign --armor --local-user <release-key> SHA256SUMS",
+        "openssl ts -query -data notrios_<version>-<revision>_amd64.deb.asc -sha256 -cert -out ts.tsq",
+        "curl -sSH 'Content-Type: application/timestamp-query' --data-binary @ts.tsq http://timestamp.digicert.com -o ts.tsr"
+      ],
+      "status": "available",
+      "verify": [
+        "gpg --import notrios-release-key.asc",
+        "gpg --verify notrios_<version>-<revision>_amd64.deb.asc notrios_<version>-<revision>_amd64.deb",
+        "sha256sum -c SHA256SUMS",
+        "openssl ts -verify -data notrios_<version>-<revision>_amd64.deb.asc -in ts.tsr -CAfile digicert-root.pem"
+      ]
+    },
+    {
+      "blocked_on": "no arm64 machine. H6a left the arm64 package at level 2, structurally inspected, and v0.9 I3 installed only amd64. Signing an artifact nobody has run would attest its origin and say nothing about whether it works.",
+      "claim_level": 2,
+      "id": "ubuntu-24.04-arm64",
+      "mechanism": "identical to amd64; the policy does not differ by architecture",
+      "status": "blocked"
+    },
+    {
+      "blocked_on": "an OV or EV code-signing certificate from a CA, which requires an organisational identity check; EV additionally requires a hardware token or cloud HSM, which a hosted runner cannot hold without a signing service. And a native runner: H6a found a cross-built Windows artifact is level 1 evidence and nothing here can execute it.",
+      "claim_level": 1,
+      "id": "windows-amd64",
+      "mechanism": "Authenticode over the installer and the executables, with an RFC 3161 timestamp so signatures outlive the certificate",
+      "status": "blocked"
+    },
+    {
+      "blocked_on": "Apple Developer Program membership, which is an owner account and cannot be delegated to this repository, and native hardware: H6a established nothing about macOS can be determined on this machine.",
+      "claim_level": 0,
+      "id": "macos",
+      "mechanism": "Developer ID Application signature, then notarization with notarytool, then stapling the ticket so Gatekeeper accepts the artifact offline",
+      "status": "blocked"
+    }
+  ],
+  "schema": "notrios.v09.i5-signing-policy.v1",
+  "timestamping": {
+    "authority": "DigiCert",
+    "policy_oid": "2.16.840.1.114412.7.1",
+    "requirements": [
+      "SHA-256 message imprint",
+      "nonce present and matched",
+      "certificate valid at genTime"
+    ],
+    "standard": "RFC 3161",
+    "what_it_does_not_attest": "When the software was built or the work was done. Only when the signature was stamped.",
+    "why_it_matters": "A signature proves who; a timestamp proves when, and keeps proving it after the key expires or is revoked. The same authority and the same pinned policy OID the evidence reserve already uses, verified by the same code path in evidence/verify_evidence.py, so there is one verification story rather than two."
+  },
+  "what_this_is": "What signing, notarization and timestamping mean for each platform this project ships or intends to ship, written so somebody who is not the author can carry it out or say why they cannot. Nothing signs a release today: scripts/build_deb.sh and scripts/package_release.sh produce unsigned artifacts, which is what v0.8 explicitly allowed for internal evidence."
+}
