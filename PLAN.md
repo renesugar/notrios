@@ -55,7 +55,7 @@ this section is archived when the plan completes and the rules are not.
 | I3. Promote the Ubuntu installer through clean native environments | complete | 3/3 | — |
 | I4. Harden the destructive lifecycle, and decide the profile race | complete | 4/4 | — |
 | I5. Resolve signing, notarization and timestamping policy | complete | 3/3 | — |
-| I6. Generate and verify the release evidence set | complete | 3/3 | — |
+| I6. Generate and verify the release evidence set | complete | 4/4 | — |
 | I7. Soak, recover, and freeze the support matrix | not-started | 0/3 | 3 |
 | I8. Freeze the 1.0 compatibility surfaces | not-started | 0/3 | 3 |
 | I9. Write the release-grade operational documentation | not-started | 0/3 | 3 |
@@ -511,6 +511,53 @@ command is printed for a person to read first. Creating a draft uploads
 artifacts to GitHub, and an upload is an external write the owner authorises
 separately — a draft is not public and creates no tag until published, but it is
 still an upload.
+
+**Follow-up slice I6-D, 2026-09-10: cross-checked, and scanned.** The tools were
+not installed when I6 was written, and the report carried "no security scanner
+ran" as a limit. The owner installed syft, cdxgen, grype and govulncheck, so the
+limit was closed rather than carried.
+
+**The cross-check found a defect no count check could have caught.** A scoped
+npm package's namespace is percent-encoded in a purl —
+`pkg:npm/%40antfu/install-pkg@1.1.0` — and this generator emitted a raw `@`.
+Agreement with syft was **124 of 361 before the fix and 268 of 270 after it**.
+The counts had been right all along and every scoped identifier was wrong, which
+is precisely the failure a second opinion exists to find: the verifier and the
+generator were written by one author from one assumption, and agreed with each
+other perfectly.
+
+The other two disagreements are explained rather than repaired. syft's 66 Go
+modules are a superset of the 39 this project ships — the extra ones are test
+and tooling dependencies the licence gate deliberately does not govern, and
+**every module we ship appears in syft's set**, which the validator now
+requires. cdxgen's 12 are the direct dependencies from `go.mod`, a subset of
+ours.
+
+**syft sees six GitHub Actions that this SBOM does not model at all.** I6 pinned
+those actions by digest, so what runs in CI is controlled — but the release
+evidence does not describe it. That gap is recorded, not closed.
+
+**And a warning worth acting on rather than reading.** cdxgen reports that SBOM
+generation invokes build tooling which inherits the environment, and named the
+API keys exported on this workstation. Its output carried none of them — checked
+— but generating an SBOM is itself a supply-chain surface, so the generators run
+with a scrubbed environment.
+
+**The scan is recorded and never gated, and the two tools show why.** grype
+reports 26 advisories against the dependency graph, 7 of them Critical.
+govulncheck, which walks the call graph, reports **0 reachable from this code**
+and 18 in modules merely required. Both are true and they answer different
+questions. Gating on the first would have failed the build on criticals the
+second shows this code never calls — and a vulnerability database changes daily,
+so a gate would turn a passing build red because somebody else published an
+advisory, carrying no information about this commit. What is gated is the
+record: that a scan ran, when, with what, and that its reachability half is
+present. Turning it into a gate, undating it, dropping reachability, hiding an
+undiscoverable module and dropping the CI-actions gap were each tried and each
+refused.
+
+**Reachability is Go-only.** Nothing equivalent ran for the 361 npm packages, so
+grype's findings there stay module-level and unreduced. Recorded as a limit.
 
 **What this does not establish, gated so it cannot shrink.** Nothing is signed
 or timestamped — I5 created no key deliberately, and the verifier refuses a set

@@ -56,3 +56,26 @@ unexercised, the SBOM covers dependencies rather than the package's contents, no
 vulnerability scanner ran, and the provenance is a statement this repository
 wrote about its own build on a workstation — SLSA build level 1 at most, with no
 builder identity anybody else can check.
+
+## I6-D: cross-checked against other people's tools, and scanned
+
+```sh
+bash performance/v0.9-i6/cross_check_sbom.sh   # syft, cdxgen, grype, govulncheck
+```
+
+**It found a defect immediately.** Scoped npm purls need their namespace
+percent-encoded — `pkg:npm/%40antfu/install-pkg@1.1.0` — and this generator
+emitted a raw `@`. Agreement with syft went from 124/361 to 268/270. The counts
+were right and the identifiers were wrong, which no count check can see.
+
+**The scan is recorded, never gated.** grype: 26 advisories, 7 Critical, against
+the dependency graph. govulncheck: **0 reachable from this code**, 18 in modules
+merely required. Gating on the first would fail the build on criticals the
+second shows are never called — and an advisory database changes daily, so a
+gate would turn a build red with nothing here changed. The validator gates the
+record's shape and refuses if anybody converts it into a gate.
+
+**Generators run with a scrubbed environment.** cdxgen warns that SBOM
+generation invokes build tooling which inherits whatever is exported, and named
+this workstation's API keys. Its output carried none of them — checked — but the
+warning is right.

@@ -6,6 +6,11 @@
     "what_dry_establishes": "The set verifies, gh is authenticated, the candidate tag is free, and the exact command is printed for a person to read before it runs. Everything except the API call.",
     "why_not_executed": "Creating a draft uploads artifacts to GitHub, which is an external write the owner authorises separately. v0.9's boundary is that this milestone is not an end-user release; a draft is not public and creates no tag until published, but it is still an upload."
   },
+  "follow_up_slice": {
+    "id": "I6-D",
+    "what": "SBOM cross-checked against syft and cdxgen, and a dated vulnerability scan recorded rather than gated.",
+    "why_it_was_added": "The tools were not installed when I6 was first written, and the report recorded 'no security scanner ran' as a limit. The owner installed syft, cdxgen, grype and govulncheck, so the limit could be closed instead of carried."
+  },
   "item": "I6",
   "milestone": "v0.9",
   "no_sbom_tool_was_added": {
@@ -16,8 +21,8 @@
     "No signature and no timestamp. I5 created no key deliberately; the provenance records the set as unsigned and the verifier refuses a set that claims otherwise without one.",
     "No draft was created, so the upload path, asset size limits and the rendering of the notes are unexercised.",
     "The SBOM covers dependencies, not the contents of the .deb. It says what the software was built from, not what the package ships.",
-    "No security scanner ran. G20's advisory review and npm audit are what exist; this item added no vulnerability scanning, and a CycloneDX document is not a scan result.",
-    "Provenance is not attested: it is a statement this repository wrote about its own build, on a workstation, with no builder identity anybody else can check. SLSA build level 1 at most."
+    "Provenance is not attested: it is a statement this repository wrote about its own build, on a workstation, with no builder identity anybody else can check. SLSA build level 1 at most.",
+    "Reachability is established for Go only. govulncheck analyses the Go call graph; nothing equivalent ran for the 361 npm packages, so grype's findings there are module-level and unreduced. A scan result is also true only on the day it was taken."
   ],
   "release_set": {
     "artifacts": [

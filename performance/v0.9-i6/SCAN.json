@@ -1,0 +1,29 @@
+{
+  "govulncheck": {
+    "granularity": "call graph: only vulnerabilities this code can actually reach",
+    "in_required_modules": 18,
+    "reachable_from_this_code": 0,
+    "verbatim": "=== Symbol Results === No vulnerabilities found. Your code is affected by 0 vulnerabilities. This scan also found 0 vulnerabilities in packages you import and 18 vulnerabilities in modules you require, but your code doesn't appear to call these vulnerabilities. Use '-show verbose' for more details.",
+    "version": "Go: go1.27.0"
+  },
+  "grype": {
+    "by_severity": {
+      "Critical": 7,
+      "High": 9,
+      "Medium": 9,
+      "Unknown": 1
+    },
+    "granularity": "module and package versions, without reachability",
+    "matches": 26,
+    "version": "0.118.0"
+  },
+  "reading": "grype's severity counts describe the dependency graph; govulncheck's describe this program. Both are true and they answer different questions, which is exactly why the first must not gate a build: it would have blocked on criticals that the second shows this code never calls.",
+  "scanned_at": "2026-09-10T01:26:51Z",
+  "schema": "notrios.v09.i6-vulnerability-scan.v1",
+  "subject": "dist/release-set/SBOM.cdx.json",
+  "this_is_not_a_gate": {
+    "decision": "recorded, never a build gate",
+    "why": "A vulnerability database changes daily. Gating on it means a build that passed this morning fails this afternoon because somebody else published an advisory, with nothing here changed -- a red build that carries no information about this commit. It is also the rule this project already holds: no probabilistic or time-varying result becomes a build gate. What belongs in a gate is the *record*: that a scan was run, when, with what, and what it said."
+  },
+  "what_to_do_with_it": "Review at release time and when upgrading dependencies. A reachable finding is a defect to fix; an unreachable one is a reason to upgrade when convenient, and a reason not to panic."
+}

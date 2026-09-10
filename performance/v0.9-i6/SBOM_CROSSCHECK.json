@@ -1,0 +1,47 @@
+{
+  "each_answers_a_different_question": {
+    "cdxgen": "the direct Go dependencies declared in go.mod",
+    "notrios": "the dependency set the licence gate governs: the build module graph and the npm lockfiles",
+    "syft": "what is discoverable on disk, including built binaries and the workflows"
+  },
+  "generated_at": "2026-09-10T01:26:51Z",
+  "github_actions_seen_by_syft": [
+    "pkg:github/actions/checkout@v4",
+    "pkg:github/actions/deploy-pages@v4",
+    "pkg:github/actions/setup-go@v5",
+    "pkg:github/actions/setup-node@v4",
+    "pkg:github/actions/upload-pages-artifact@v3",
+    "pkg:github/peaceiris/actions-hugo@v3"
+  ],
+  "go": {
+    "cdxgen": 12,
+    "cdxgen_outside_notrios": [],
+    "notrios": 39,
+    "notrios_missing_from_syft": [],
+    "reading": "Every module this project ships appears in syft's larger set, and cdxgen's direct dependencies are a subset of it. The extra modules syft reports are test and tooling dependencies from the module graph, which the licence gate deliberately does not govern.",
+    "syft": 66,
+    "syft_only_count": 27
+  },
+  "npm": {
+    "notrios": 361,
+    "notrios_only_count": 93,
+    "overlap": 268,
+    "reading": "syft was run with node_modules excluded, so it reads fewer packages than the lockfiles declare. The overlap is what matters, and it is what the purl fix below repaired.",
+    "syft": 270,
+    "syft_only": [
+      "pkg:npm/%40notrios/docs-site-build@0.7.0",
+      "pkg:npm/notrios-web@0.8.0"
+    ]
+  },
+  "schema": "notrios.v09.i6-sbom-crosscheck.v1",
+  "tools": {
+    "cdxgen": "\u001b[1mCycloneDX Generator 12.8.4\u001b[0m",
+    "syft": "Application:   syft"
+  },
+  "what_it_found": [
+    "The npm purls were wrong. A scoped package's namespace is percent-encoded in a purl -- pkg:npm/%40antfu/install-pkg@1.1.0 -- and this generator emitted a raw '@'. Agreement with syft was 124 of 361 before the fix and 268 of 270 after it. No count check could have found this: the counts were right and every identifier was wrong, which is the failure a cross-check exists for.",
+    "syft reports 6 GitHub Actions as components (pkg:github/actions/checkout, pkg:github/actions/deploy-pages, pkg:github/actions/setup-go, pkg:github/actions/setup-node, pkg:github/actions/upload-pages-artifact, pkg:github/peaceiris/actions-hugo). This project's SBOM does not model them at all, so what runs in CI is a supply-chain surface the release evidence does not describe. I6 pinned those actions by digest; describing them in an SBOM is a separate gap and is recorded, not closed.",
+    "cdxgen warns that SBOM generation invokes build tooling which inherits the environment, and named the API keys exported on this workstation. Its output carried none of them -- checked -- but the point stands, so the generators are run with a scrubbed environment here."
+  ],
+  "why": "A generator and a verifier written by one author from one assumption fail together and look like agreement. These tools were written by other people for other reasons, so where they disagree there is something to learn."
+}

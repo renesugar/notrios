@@ -20,6 +20,7 @@ import json
 import pathlib
 import subprocess
 import sys
+from urllib.parse import quote
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 INVENTORY = ROOT / "performance/v0.7-g20/DEPENDENCY_LICENSES.json"
@@ -57,8 +58,18 @@ def npm_components(lockfile: pathlib.Path) -> list[dict]:
         version = package.get("version")
         if not version:
             continue
+        # A scoped package's namespace is percent-encoded in a purl:
+        # "pkg:npm/%40antfu/install-pkg@1.1.0", not "@antfu". Emitting the raw
+        # "@" produced identifiers that looked right and matched nothing --
+        # found by cross-checking against syft, which agreed on 124 of 361 npm
+        # components until this was fixed. A count check could never have caught
+        # it, because the count was right and every identifier was wrong.
+        purl_name = name
+        if name.startswith("@") and "/" in name:
+            scope, _, bare = name.partition("/")
+            purl_name = f"{quote(scope, safe='')}/{bare}"
         entry = {"type": "library", "name": name, "version": version,
-                 "purl": f"pkg:npm/{name}@{version}",
+                 "purl": f"pkg:npm/{purl_name}@{version}",
                  "properties": [{"name": "notrios:lockfile",
                                  "value": lockfile.relative_to(ROOT).as_posix()}]}
         if package.get("license"):

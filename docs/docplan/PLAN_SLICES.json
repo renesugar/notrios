@@ -154,6 +154,12 @@
           "statement": "A non-public release-candidate or draft flow is exercised without publishing",
           "state": "done",
           "evidence": "file:performance/v0.9-i6/draft_release.sh"
+        },
+        {
+          "id": "I6-D",
+          "state": "done",
+          "statement": "The SBOM is cross-checked against independent generators, and a dated vulnerability scan is recorded rather than gated",
+          "evidence": "file:performance/v0.9-i6/SBOM_CROSSCHECK.json"
         }
       ]
     },

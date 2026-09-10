@@ -73,6 +73,35 @@ def main() -> None:
     require(released["signing_state"] == "unsigned",
             "the record claims a signed set; I5 created no key")
 
+    # I6-D: the cross-check and the scan. Their *shape* is gated; their findings
+    # never are. A vulnerability count that gates a build is a build that breaks
+    # because somebody else published an advisory.
+    crosscheck = json.loads((HERE / "SBOM_CROSSCHECK.json").read_text(encoding="utf-8"))
+    require(crosscheck["schema"] == "notrios.v09.i6-sbom-crosscheck.v1",
+            "wrong cross-check schema")
+    require(crosscheck["tools"].get("syft") and crosscheck["tools"].get("cdxgen"),
+            "the cross-check no longer records which tools it compared against")
+    require(not crosscheck["go"]["notrios_missing_from_syft"],
+            "a module this project ships is not discoverable by an independent tool: "
+            f"{crosscheck['go']['notrios_missing_from_syft']}")
+    require(not crosscheck["go"]["cdxgen_outside_notrios"],
+            "cdxgen reports a direct dependency this SBOM does not carry: "
+            f"{crosscheck['go']['cdxgen_outside_notrios']}")
+    require(crosscheck["what_it_found"], "the cross-check no longer says what it found")
+    require(crosscheck["github_actions_seen_by_syft"],
+            "the cross-check no longer records the CI actions this SBOM does not model")
+
+    scan = json.loads((HERE / "SCAN.json").read_text(encoding="utf-8"))
+    require(scan["schema"] == "notrios.v09.i6-vulnerability-scan.v1", "wrong scan schema")
+    require(scan.get("scanned_at"), "the scan is undated, so it says nothing about when")
+    require(scan["this_is_not_a_gate"]["decision"] == "recorded, never a build gate",
+            "the scan has been turned into a gate; a database that changes daily cannot decide "
+            "whether this commit builds")
+    require(scan["grype"].get("matches") is not None, "the scan records no grype result")
+    require(scan["govulncheck"].get("reachable_from_this_code") is not None,
+            "the scan records no reachability result, which is the half that describes this "
+            "program rather than its dependency graph")
+
     limits = report["not_verified"]
     require(len(limits) >= 5, "the report has stopped saying what it did not verify")
     text = " ".join(limits).lower()
@@ -81,7 +110,10 @@ def main() -> None:
 
     print(f"I6 release evidence valid: {len(released['artifacts'])} artifacts, "
           f"{sbom['components']} SBOM components matching the licence inventory, "
-          f"{pinned} actions pinned, {len(limits)} limits recorded")
+          f"{pinned} actions pinned, {len(limits)} limits recorded; "
+          f"cross-checked against syft and cdxgen, scan dated {scan['scanned_at']} "
+          f"({scan['grype']['matches']} advisories, "
+          f"{scan['govulncheck']['reachable_from_this_code']} reachable) and not gated")
 
 
 if __name__ == "__main__":
