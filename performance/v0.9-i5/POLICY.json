@@ -1,4 +1,12 @@
 {
+  "amended": [
+    {
+      "not_re_archived": "I5's handoff archive records the item as it closed, at 02b15ed, and this amendment does not change what closed it: no ledger state moved and no slice was added. That is the difference from I6, which gained a fourth slice and so was re-archived from the commit that finished it.",
+      "on": "2026-09-10",
+      "what": "Named GitHub artifact attestations as the provenance half of the policy.",
+      "why": "The policy covered who stands behind an artifact -- a detached OpenPGP signature by a key this project holds -- and said nothing about how a consumer establishes where the artifact came from. v0.9 I6 recorded exactly that hole: its provenance is a statement this repository wrote about its own build, on a workstation, with no builder identity anybody else can check."
+    }
+  ],
   "content_commit": "d99b8101d26bbd23f0a30f80a90270dd42c7deae",
   "enforced_by": {
     "check_secret_exposure.py": "Refuses a workflow that could hand signing material to a pull request: a secret in a workflow with a pull_request trigger, pull_request_target at all, or a secret used without an environment to gate it.",
@@ -19,7 +27,8 @@
     "No key has been created. This item decides the policy; creating a production key before deciding what it is for, whose it is and how it rotates would invert that.",
     "No release workflow exists yet. I6 builds the release evidence set and is where a signing step would first appear, under the constraints recorded here.",
     "Whether the project publishes an apt repository. That would add a Release-file signature and a published key, and is a distribution decision rather than a signing one.",
-    "Windows and macOS remain deferred to post-v1.0 with the hardware they need, so their entries record a policy nobody can execute yet rather than a plan for this milestone."
+    "Windows and macOS remain deferred to post-v1.0 with the hardware they need, so their entries record a policy nobody can execute yet rather than a plan for this milestone.",
+    "The attestation half is named and not implemented: the package is not built in a workflow, so nothing attests it yet. Recorded against v1.0."
   ],
   "platforms": [
     {
@@ -71,6 +80,27 @@
       "status": "blocked"
     }
   ],
+  "provenance": {
+    "mechanism": "GitHub artifact attestations, via actions/attest-build-provenance",
+    "prerequisite": {
+      "detail": "Nothing in CI builds the package. scripts/build_deb.sh runs on a workstation, and an attestation can only attest what a workflow built, so the .deb build has to move into GitHub Actions -- with dpkg-dev and the frontend build -- and that output has to become the artifact people download. Until then there is nothing to attest and this section describes an intention rather than a practice.",
+      "permissions": "id-token: write and attestations: write, declared on the job that needs them rather than inherited. performance/v0.9-i6/check_workflow_hardening.py refuses a workflow that declares no permissions at all, and least privilege means these two appear only where they are used.",
+      "state": "not met",
+      "tracked_in": "ROADMAP.md, under v1.0"
+    },
+    "verify": [
+      "gh attestation verify notrios_<version>-<revision>_amd64.deb --repo renesugar/notrios",
+      "gh attestation download notrios_<version>-<revision>_amd64.deb --repo renesugar/notrios",
+      "gh attestation trusted-root > trusted_root.jsonl   # for verifying offline later"
+    ],
+    "what_it_attests": "That a named workflow, running from a named commit, produced these exact bytes. Sigstore keyless signing binds a short-lived certificate to the workflow's OIDC identity and logs it, so the claim is verifiable by somebody who trusts GitHub and Sigstore rather than by somebody who has this project's public key.",
+    "why_it_does_not_replace_the_key": {
+      "decision": "ship both -- attestations for how it was built, a maintainer key for who stands behind it",
+      "different_claims": "An attestation says this artifact came out of that build. A detached OpenPGP signature says the holder of this key approved it. A reproducible build with impeccable provenance can still be a build of something nobody meant to ship.",
+      "different_trust_roots": "Attestation verification is rooted in GitHub and Sigstore and needs gh or cosign, plus a bundle and trusted root to work offline. `gpg --verify` needs a public key and nothing else -- which is the property this project's evidence reserve is built on, deliberately: exact OpenPGP and RFC 3161 identities rather than ambient trust.",
+      "neither_is_checked_by_apt": "`apt install ./notrios.deb` verifies neither. Verification stays a deliberate act the user takes before installing, which is why the installation page shows it as one."
+    }
+  },
   "schema": "notrios.v09.i5-signing-policy.v1",
   "timestamping": {
     "authority": "DigiCert",

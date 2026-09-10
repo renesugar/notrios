@@ -765,6 +765,38 @@ published, and no bundle leaves the machine or the reserve.
   can download, verify, install, launch, upgrade, uninstall/reinstall, and
   restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
   development headers.
+- **Attest the Ubuntu package with GitHub artifact attestations, and build it in
+  a workflow so there is something to attest.** v0.9 I6 produced an in-toto
+  provenance statement and recorded its own limit: it is a statement this
+  repository wrote about its own build, on a workstation, with no builder
+  identity anybody else can check — SLSA build level 1 at most.
+  `actions/attest-build-provenance` closes that half. It signs the provenance
+  with Sigstore keyless signing, binding a short-lived certificate to the
+  workflow's OIDC identity and logging it, so a consumer can run
+  `gh attestation verify notrios_<version>_amd64.deb --repo renesugar/notrios`
+  and learn which workflow, from which commit, produced those exact bytes. No
+  key to hold, rotate or lose.
+
+  **The prerequisite is the work.** Nothing in CI builds the package today —
+  `make deb` runs on a workstation — and an attestation can only attest what a
+  workflow built. So this means moving the `.deb` build into Actions, with
+  `dpkg-dev` and the frontend build, and making that output the artifact people
+  download. It also needs `id-token: write` and `attestations: write`, which the
+  workflow-hardening gate in `performance/v0.9-i6` will require to be declared
+  narrowly rather than inherited.
+
+  **It does not replace a maintainer key, and the two claims should not be
+  blurred.** An attestation says *this artifact came out of that build*; a
+  detached OpenPGP signature says *the holder of this key approved it*. The
+  first is rooted in GitHub's and Sigstore's infrastructure and verified with
+  `gh` or `cosign`; the second survives independently of GitHub and is verified
+  with `gpg --verify` and nothing else — which matters for a project whose
+  evidence reserve is deliberately built on exact OpenPGP and RFC 3161
+  identities rather than ambient trust. Ship both: attestations for how it was
+  built, a key for who stands behind it. Neither is checked by
+  `apt install ./notrios.deb`, which verifies nothing either way, so
+  verification stays a deliberate act the user takes first.
+
 - **Give a packaged installation a supported way to delete its data.** The
   bullet above promises an end user can install, upgrade, uninstall and restore
   "without source code" — and deleting their notes is the one lifecycle act that

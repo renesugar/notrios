@@ -88,6 +88,35 @@ def main() -> None:
     require("environment" in custody["where_it_lives"],
             "key custody no longer requires an environment-scoped secret")
 
+    # The provenance half, and its prerequisite derived rather than believed.
+    provenance = policy["provenance"]
+    require(provenance.get("mechanism"), "the policy no longer names a provenance mechanism")
+    require(provenance.get("verify"), "the provenance entry has no verification steps")
+    require(any("gh attestation verify" in step for step in provenance["verify"]),
+            "the verification steps no longer include verifying the attestation")
+    require("ship both" in provenance["why_it_does_not_replace_the_key"]["decision"],
+            "the policy no longer says an attestation and a maintainer key are different claims "
+            "to be shipped together")
+
+    # Whether the prerequisite is met is a fact about the workflows, so it is
+    # read from them. If a workflow starts building the package, "not met" stops
+    # being true and this record has to be brought up to date rather than
+    # quietly describing a world that has moved.
+    builds_in_ci = False
+    workflows = ROOT / ".github" / "workflows"
+    if workflows.is_dir():
+        for path in workflows.glob("*.y*ml"):
+            text = path.read_text(encoding="utf-8")
+            if "build_deb" in text or re.search(r"\bmake\s+deb\b", text):
+                builds_in_ci = True
+    state = provenance["prerequisite"]["state"]
+    require(state == ("met" if builds_in_ci else "not met"),
+            f"the policy records the attestation prerequisite as {state!r}, but "
+            f"{'a workflow now builds the package' if builds_in_ci else 'nothing in CI builds the package'}")
+    if not builds_in_ci:
+        require(provenance["prerequisite"].get("detail"),
+                "the unmet prerequisite no longer says what is missing")
+
     require(policy["not_resolved_here"], "the policy no longer says what it did not resolve")
 
     exposure = subprocess.run([sys.executable, str(HERE / "check_secret_exposure.py")],
