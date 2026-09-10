@@ -657,6 +657,61 @@ after this item are recorded as breaking, not folded in quietly.
 **Working state.** Each surface frozen with its compatibility test suite green,
 and each named ABI failure mode exercised.
 
+**Done, 2026-09-10. The freeze is live rather than a record.** Seven surfaces —
+91 CLI commands, 113 REST routes, 45 MCP tools, 34 Make targets, 12 ABI symbols,
+27 archive-contract files, 60 configuration keys — are re-derived from the source
+that defines them on every `make validate` and compared with what was frozen,
+naming what was added and removed. Adding a route is not forbidden; adding one
+silently is. The typed ABI is frozen too: `nm` proves the twelve names are there
+and `abidiff` proves their *signatures* are, because a parameter that changes
+from `size_t` to `int` keeps every name and breaks every caller.
+
+**Three derivations were wrong before they were right, and reading the counts
+caught all three.** `make_lifecycle` found 5 targets of 34 — the pattern excluded
+any target whose prerequisites contain `=`. `configuration` found **zero** keys,
+looking for `yaml:` tags in a package that uses `json:`; a freeze of an empty
+surface passes for ever. And the validator trusted the recorded hash rather than
+recomputing it, so a **truncated member list passed**: the summary agreed with
+live source while the list it summarised did not. That one was found by breaking
+the gate on purpose, which is the only reason it was found at all.
+
+**valgrind is the wrong instrument for a Go library, and wrong loudly.** Go grows
+a goroutine stack by allocating a larger one and copying the frames into it,
+rewriting pointers as it goes; to memcheck every one of those writes lands
+outside a known block. The first run produced **ten million** invalid-access
+reports, every frame in `runtime.*`, and a host that does nothing but call
+`notrios_abi_version()` produces them too — the control that settles it.
+Suppressions removed 9.5 million and it still hit memcheck's cap.
+
+**So each instrument runs where it works**, which the owner's note named
+exactly. AddressSanitizer crosses the c-shared boundary: 15 of 15 edge checks,
+zero reports. ThreadSanitizer cannot — it maps a large shadow region at process
+start, so through a c-shared library it fails with *"failed to allocate … bytes"*
+and, with the host instrumented too, *"unexpected memory mapping"*, with ASLR
+disabled as well. The race detector therefore runs on the Go side against the
+same dispatch, session and handle code the twelve entry points call into, with
+concurrency tests written for these edges: many callers on one session, close
+while calls are in flight, cancellation racing completion. It was **proved live
+before it was trusted** — a deliberately racy probe made it fire, then the probe
+was removed. valgrind stays behind a flag for leak accounting, the one number it
+still reports usefully.
+
+**Every named failure mode is refused cleanly.** Handles never issued
+(`INVALID_HANDLE`), a buffer released twice, a pointer the library never issued,
+an instance closed with a call outstanding (`STALE_HANDLE` afterwards), two
+threads on one instance, and a cancelled call polled to a verdict. One check was
+my own bug first: it polled ten thousand times in a tight loop and reported that
+a cancelled call never answered. It answers — the loop never let the runtime
+schedule the goroutine that would produce the verdict. Counting iterations
+measures the host's scheduling luck, so it uses a wall-clock deadline that
+yields.
+
+**What is not frozen is written down.** Behaviour: two releases can agree on
+every name here and disagree about what a call does. The sync wire protocol and
+the installer's on-disk layout are owned elsewhere. There is no fuzzing, `-msan`
+did not run, and nothing tests `dlclose`, a second `dlopen`, or two processes
+opening one profile.
+
 ## I9. Write the release-grade operational documentation
 
 **Goal.** Somebody with neither the repository nor a development environment can

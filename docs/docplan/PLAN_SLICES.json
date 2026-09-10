@@ -196,17 +196,20 @@
         {
           "id": "I8-A",
           "statement": "REST, MCP, archive, sync, configuration, installer and Make lifecycle candidates are frozen with green suites",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i8/FROZEN.json"
         },
         {
           "id": "I8-B",
           "statement": "The shared C ABI is frozen and its ownership, leak, double-free and wrong-handle failures are exercised",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i8/EDGES.json"
         },
         {
           "id": "I8-C",
           "statement": "Concurrent-shutdown, cancellation and stream-limit behaviour is tested at the edges",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/abi/concurrency_test.go"
         }
       ]
     },

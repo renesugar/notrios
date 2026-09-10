@@ -1,0 +1,42 @@
+# valgrind cannot model Go's stacks, and says so a million times.
+#
+# Go grows a goroutine stack by allocating a bigger one and *copying* the old
+# frames into it, rewriting pointers as it goes (runtime.copystack,
+# runtime.adjustframe). To memcheck, which tracks addressability per byte, every
+# one of those writes lands outside any block it knows about. The reports are
+# artefacts of the runtime's design, not defects in this library: a host that
+# does nothing but call notrios_abi_version() produces them too.
+#
+# Suppressing them is what makes the remaining count mean something. What is not
+# suppressed -- invalid frees, and leaks -- is what this run is actually for.
+{
+   go-stack-copy-write
+   Memcheck:Addr8
+   fun:runtime.*
+}
+{
+   go-stack-copy-write-1
+   Memcheck:Addr1
+   fun:runtime.*
+}
+{
+   go-stack-copy-write-4
+   Memcheck:Addr4
+   fun:runtime.*
+}
+{
+   go-stack-copy-write-2
+   Memcheck:Addr2
+   fun:runtime.*
+}
+{
+   go-stack-copy-memmove
+   Memcheck:Addr8
+   fun:memmove
+   fun:runtime.*
+}
+{
+   go-runtime-cond
+   Memcheck:Cond
+   fun:runtime.*
+}

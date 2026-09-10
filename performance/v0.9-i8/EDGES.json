@@ -1,0 +1,79 @@
+{
+  "go": "go version go1.27.0 linux/amd64",
+  "instrumentation": {
+    "chosen": [
+      "go test -race ./internal/abi/",
+      "go build -asan + C edges host"
+    ],
+    "valgrind_kept_for": "leak accounting only, behind I8_VALGRIND=1. It is the one number memcheck still reports usefully here.",
+    "why": "valgrind is the wrong instrument for a Go c-shared library, and wrong loudly. Go grows a goroutine stack by allocating a larger one and copying the frames into it, rewriting pointers as it goes; to memcheck, which tracks addressability per byte, every one of those writes lands outside a known block. The first run of this host produced ten million invalid-access reports with every frame in runtime.* -- newstack, copystack, adjustframe, memmove -- and a host that does nothing but call notrios_abi_version() produces them too, which is the control that settles it. Targeted suppressions removed 9.5 million and the run still reached memcheck's cap. Go ships instruments that model its runtime, so those are what run -- each where it works. AddressSanitizer crosses the c-shared boundary and is clean. ThreadSanitizer cannot: it maps a large shadow region at process start, so through a c-shared library it fails with 'failed to allocate ... bytes at address', and with the host instrumented too it fails with 'unexpected memory mapping' -- with ASLR disabled as well. So the race detector runs on the Go side, against the same dispatch, session and handle code the twelve entry points call into, with concurrency tests written for these edges. The detector was proved live before it was trusted: a deliberately racy probe made it fire, then the probe was removed."
+  },
+  "not_verified": [
+    "No fuzzing. The handles used here are wrong in the obvious ways -- never issued, already closed, released twice -- not in arbitrary ways.",
+    "Single process, single library load. Nothing tests dlclose, a second dlopen, or two instances opening the same profile from separate processes.",
+    "-msan did not run. It needs a clang-based toolchain wiring this build does not have, so uninitialised-memory reads are unexercised.",
+    "The race detector observed the schedules this host produced. It reports races it sees; it does not prove there are none.",
+    "The ABI's typed surface -- signatures rather than names -- is checked by abidiff separately. These runs prove the twelve exported names are unchanged."
+  ],
+  "ran_at": "2026-09-10T04:36:03Z",
+  "schema": "notrios.v09.i8-abi-edges.v2",
+  "symbols": [
+    "notrios_abi_version",
+    "notrios_buffer_release",
+    "notrios_call_cancel",
+    "notrios_call_poll",
+    "notrios_call_start",
+    "notrios_capabilities",
+    "notrios_event_poll",
+    "notrios_instance_close",
+    "notrios_instance_open",
+    "notrios_stream_close",
+    "notrios_stream_open",
+    "notrios_stream_read"
+  ],
+  "valgrind": {
+    "ran": false
+  },
+  "variants": {
+    "asan": {
+      "address_sanitizer_reports": 0,
+      "check_names": [
+        "poll a call handle that was never issued (refused with 3)",
+        "cancel a call handle that was never issued (refused with 3)",
+        "read a stream handle that was never issued (refused with 3)",
+        "close a stream handle that was never issued (refused with 3)",
+        "poll against an instance handle that was never issued (refused with 3)",
+        "a buffer is released once",
+        "the same buffer is refused a second release (refused with 1)",
+        "a pointer the library never issued is refused (refused with 1)",
+        "a cancelled call reaches a verdict rather than blocking",
+        "a finished call handle is not reusable (refused with 4)",
+        "two threads drive one instance concurrently",
+        "the instance closes with a call outstanding",
+        "an outstanding call is refused after its instance closed (refused with 4)",
+        "a closed instance is refused a second close (refused with 4)",
+        "a closed instance refuses new calls (refused with 4)"
+      ],
+      "checks": 15,
+      "data_races": 0,
+      "exit_status": 0,
+      "failed": [],
+      "passed": 15,
+      "ran": true,
+      "subject": "the C edges host against an -asan library"
+    },
+    "race": {
+      "address_sanitizer_reports": 0,
+      "check_names": [
+        "github.com/renesugar/notrios/internal/abi\t10.934s"
+      ],
+      "checks": 1,
+      "data_races": 0,
+      "exit_status": 0,
+      "failed": [],
+      "passed": 1,
+      "ran": true,
+      "subject": "internal/abi under go test -race"
+    }
+  }
+}
