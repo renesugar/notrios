@@ -178,13 +178,29 @@ exists.
 
 **Open decisions**
 
-- **Required reviewers on the `production` environment — Blocking, the owner's,
-  and the reason is specific.** A passphrase-less key in an environment with no
-  protection rules can be used by any workflow run that names that environment,
-  and a workflow file is something a branch can change. The key is therefore as
-  protected as the ability to run a workflow against `production` — which is
-  what a required reviewer fixes. Recommended: require a reviewer, and restrict
-  the environment to protected branches and tags.
+- **Restricting which refs can deploy to `production` — Blocking, the owner's.
+  Not required reviewers: this is a solo project.** Required reviewers are the
+  wrong instrument here and the owner said so. Even where a single account can
+  approve its own deployment, a reviewer who is also the person triggering the
+  run is a click, not a second pair of eyes — it buys a prompt and calls it a
+  control.
+
+  **The actual exposure is narrower and fixable alone.** `production` has
+  `deployment_branch_policy: null`, so *any* branch or tag can deploy to it. A
+  passphrase-less key in that environment is therefore as protected as the
+  ability to push a branch carrying a workflow that names the environment — and
+  a workflow file is something a branch can change. Restricting the environment
+  to a tag policy of `v*` closes that without anyone else: a branch push then
+  cannot reach the environment at all, whatever its workflow file says. It is
+  preventive rather than a prompt, which is the better shape for one person.
+
+  Recommended: a custom deployment policy on `production` admitting tags
+  matching `v*` and no branches, paired with J1's `on: push: tags: ['v*']`
+  trigger, so the two agree. `github-pages` already carries a `branch_policy`,
+  so the mechanism is one this repository uses.
+
+  **Without reviewers, the blast-radius decision below matters more, not less.**
+  A key that any tag-triggered run can use should be a key that can only sign.
 - **The passphrase-less design — Taken as the default, and the reasoning holds
   with one caveat.** A passphrase stored beside the key it unlocks adds no
   layer, GitHub's secret store is the vault, and `gpg --batch` cannot answer a
@@ -193,8 +209,9 @@ exists.
   last obstacle *after* exfiltration, so everything now rests on who can cause
   that environment to run — which is the decision above, and why the two belong
   together.
-- **What goes in the secret: the whole key, or a signing subkey — Non-blocking
-  default: as created, with a recommendation to narrow it.** The key's primary
+- **What goes in the secret: the whole key, or a signing subkey — Recommended
+  before the first signed release, and more strongly now that reviewers are
+  ruled out.** The key's primary
   can certify as well as sign, and the secret holds the primary. A compromise
   therefore yields the identity itself — the ability to certify other keys and
   issue new subkeys — not merely the ability to sign a release. The evidence key
@@ -504,6 +521,6 @@ This is an index only; each decision is owned and explained inside its item.
 | Whether Windows or macOS ship | J6, J9 | Non-blocking default: postponed and absent from release claims unless their gates pass |
 | What the REST and MCP surfaces promise at 1.0 | J4 | Non-blocking default: what I8 froze, minus anything the review withdraws |
 | Publishing the release | J10 | **Blocking.** The owner authorizes the tag and the publication |
-| Required reviewers on the `production` environment | J2 | **Blocking.** It has no protection rules today, and a passphrase-less key is as protected as the ability to run a workflow against it |
-| Whether the CI secret holds the primary key or only a signing subkey | J2 | Non-blocking default: as created; recommended to narrow to a subkey before the first signed release |
+| Which refs may deploy to `production` | J2 | **Blocking.** It admits any branch or tag today; a tag policy of `v*` is the solo-appropriate control, not required reviewers |
+| Whether the CI secret holds the primary key or only a signing subkey | J2 | Recommended: narrow to a signing subkey before the first signed release — it bounds the blast radius, which matters more without reviewers |
 | How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |
