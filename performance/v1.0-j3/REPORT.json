@@ -1,0 +1,84 @@
+{
+  "content_commit": "e3e8a37c020a5011c55757d2c56021a109115a8a",
+  "counts": {
+    "drills": 6,
+    "passed": 6
+  },
+  "drills": [
+    {
+      "id": "unattended-purge-refuses-without-confirm",
+      "observations": {
+        "exit": 1,
+        "library_intact": true,
+        "names_the_flag": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-cannot-be-written",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-does-not-fit",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-backup-restores-and-excludes-sync-keys",
+      "observations": {
+        "archive_holds_keys": false,
+        "archive_holds_library": true,
+        "restored_hits": 1
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-does-not-delete-through-a-symlink",
+      "observations": {
+        "exit": 0,
+        "neighbour_survived": true,
+        "target_survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-a-backup-destination-it-would-delete",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    }
+  ],
+  "item": "J3",
+  "milestone": "v1.0",
+  "not_verified": [
+    "The four I4 drills that are about the installed-file half rather than the data half: uninstall leaving user data, a modified artifact being kept, an external data root, and a purge racing a running daemon. Those exercise `make uninstall` and lifecycle.py, which this command deliberately does not do -- removing the program is apt's job or the Make target's.",
+    "No packaged (.deb) installation was used. The drills install with `make install` into an isolated HOME, because that is what can be done without root; v0.9 I3's container matrix is where the packaged form is exercised.",
+    "Interruption. Nothing kills a purge between the verified backup and the deletion.",
+    "The Go and Python backup formats are not compared. Both write a tar and a manifest of the same shape, and nothing asserts that one can read the other's."
+  ],
+  "oracle_equivalence": {
+    "held_by": "internal/purge/oracle_test.go against performance/v0.8-h3/PURGE_ORACLE_FIXTURES.json",
+    "proved_by_breaking": [
+      "following a symlink instead of refusing it",
+      "reclassifying cache as irreplaceable",
+      "dropping /usr from the forbidden roots"
+    ],
+    "why": "The decision procedure for 'may Notrios delete this path' now exists twice -- H3's reference in Python and this port in Go -- because the .deb ships no Python and the user most in need of the safeguards could not reach them. Two implementations of a deletion rule is the worst possible duplication, so the port drives H3's own thirty fixtures by name and reads the expected verdict and rule from them rather than restating them. A fixture case the port does not exercise fails too."
+  },
+  "schema": "notrios.v10.j3-packaged-purge.v1",
+  "still_owed": {
+    "the_fix": "Have `make purge` delegate its data half to `notriosctl purge`. The ordering is the interesting part: lifecycle.py currently backs up, uninstalls, then deletes -- and delegation means deleting the data while the binary that does it still exists, so the uninstall has to move after rather than before.",
+    "what": "scripts/lifecycle.py keeps its own purge, so the backup and deletion halves exist twice. Only the oracle halves are gated against each other.",
+    "why_it_matters": "The oracle decides whether a path may be deleted; the other half decides what must happen first. A divergence there is a purge that deletes without the backup somebody was promised."
+  },
+  "what_this_is": "The drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`. The point is not that the command works: it is that every safeguard a developer gets, a packaged user now gets too. A drill that passes for the Make target and fails for the command is the gap this item exists to close."
+}

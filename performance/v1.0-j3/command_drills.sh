@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# J3 — the drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`.
+#
+#   bash performance/v1.0-j3/command_drills.sh
+#
+# The point is not that the command works. It is that every safeguard a
+# developer gets, a packaged user now gets too -- so these are I4's drills with
+# the Make target swapped for the command, and a drill that passes there and
+# fails here is the gap this item exists to close.
+#
+# Each drill installs into its own HOME outside the checkout, for the reason I4
+# learned the hard way: inside a checkout the CLI resolves source mode and the
+# drill measures the developer's own library.
+set -uo pipefail
+
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+HERE=$ROOT/performance/v1.0-j3
+RESULTS=${J3_RESULTS:-$HERE/DRILLS.jsonl}
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/notrios-j3-XXXXXX")
+trap 'chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK"' EXIT
+: > "$RESULTS"
+
+in_home() { local home=$1; shift; ( cd "$home" && env -i PATH="$PATH" HOME="$home" "$@" ); }
+
+install_home() {
+  local home=$WORK/$1; mkdir -p "$home"
+  ( cd "$ROOT" && env -i PATH="$PATH" HOME="$home" prefix="$home/.local" \
+      python3 scripts/lifecycle.py install ) >"$home/install.log" 2>&1 || return 1
+  # The command under test is the one just built, not whatever install staged.
+  cp "$ROOT/bin/notriosctl" "$home/.local/bin/notriosctl"
+  local mode
+  mode=$(in_home "$home" "$home/.local/bin/notriosctl" paths 2>/dev/null | awk -F': ' '/^mode:/{print $2}')
+  [ "$mode" = installed ] || { echo "resolved mode is '$mode', not installed" >&2; return 1; }
+  in_home "$home" "$home/.local/bin/notriosctl" notes create \
+    --title "the note this drill must not lose" --body body >/dev/null 2>&1 || return 1
+  printf '%s' "$home"
+}
+
+library_of() { in_home "$1" "$1/.local/bin/notriosctl" paths --no-redact 2>/dev/null | awk '$1=="data"{print $2}'; }
+library_intact() { [ -f "$1/notes.sqlite" ]; }
+record() { python3 - "$1" "$2" "$3" >> "$RESULTS" <<'PY'
+import json, sys
+print(json.dumps({"drill": sys.argv[1], "status": sys.argv[2],
+                  "observations": json.loads(sys.argv[3])}, sort_keys=True))
+PY
+}
+fail() { echo "   $1" >&2; return 1; }
+
+# I4: an unattended purge refuses without the flag that says you meant it.
+drill_unattended_refusal() {
+  local home; home=$(install_home unattended) || return 1
+  local library; library=$(library_of "$home")
+  local out code
+  out=$(in_home "$home" "$home/.local/bin/notriosctl" purge </dev/null 2>&1); code=$?
+  library_intact "$library" || fail "the library is gone after a refused purge" || return 1
+  [ "$code" -ne 0 ] || fail "an unattended purge did not refuse" || return 1
+  grep -qi -- "--confirm" <<<"$out" || fail "the refusal did not say how to automate it deliberately" || return 1
+  record unattended-purge-refuses-without-confirm pass \
+    "{\"exit\":$code,\"library_intact\":true,\"names_the_flag\":true}"
+}
+
+# I4: the backup cannot be written, so nothing is deleted.
+drill_backup_unwritable() {
+  local home; home=$(install_home unwritable) || return 1
+  local library; library=$(library_of "$home")
+  local state="$home/.local/state"; mkdir -p "$state"; chmod a-w "$state"
+  local code
+  in_home "$home" "$home/.local/bin/notriosctl" purge --confirm >/dev/null 2>&1; code=$?
+  chmod u+w "$state"
+  library_intact "$library" || fail "the library was deleted although the backup could not be written" || return 1
+  [ "$code" -ne 0 ] || fail "purge succeeded with nowhere to put the backup" || return 1
+  record purge-refuses-when-the-backup-cannot-be-written pass "{\"exit\":$code,\"library_intact\":true}"
+}
+
+# I4: the backup does not fit, so nothing is deleted.
+drill_backup_too_large() {
+  local home; home=$(install_home toolarge) || return 1
+  local library; library=$(library_of "$home")
+  local code
+  ( ulimit -f 8; in_home "$home" "$home/.local/bin/notriosctl" purge --confirm ) >/dev/null 2>&1; code=$?
+  library_intact "$library" || fail "the library was deleted although the backup did not fit" || return 1
+  [ "$code" -ne 0 ] || fail "purge succeeded although the backup could not be written in full" || return 1
+  record purge-refuses-when-the-backup-does-not-fit pass "{\"exit\":$code,\"library_intact\":true}"
+}
+
+# I4: the backup holds the library, excludes sync keys, and restores.
+drill_backup_contents_and_restore() {
+  local home; home=$(install_home restore) || return 1
+  local state; state=$(in_home "$home" "$home/.local/bin/notriosctl" paths --no-redact 2>/dev/null | awk '$1=="state"{print $2}')
+  mkdir -p "$state"; printf '{"k":1}' > "$state/sync-keys.json"
+  local out; out=$(in_home "$home" "$home/.local/bin/notriosctl" purge --confirm 2>&1) || {
+    echo "$out" | tail -3 >&2; fail "a purge with a writable destination failed" || return 1; }
+  local archive; archive=$(find "$home" -name backup.tar -print -quit)
+  [ -n "$archive" ] || fail "the purge left no backup" || return 1
+  local listing=$WORK/listing.txt; tar -tf "$archive" > "$listing"
+  grep -qiE "sync-keys" "$listing" && fail "the purge backup contains sync key material" || true
+  grep -qiE "sync-keys" "$listing" && return 1
+  grep -q "notes.sqlite" "$listing" || fail "the backup does not contain the library" || return 1
+
+  # A backup nobody has restored is a hope.
+  local restored=$WORK/restored; mkdir -p "$restored"; tar -xf "$archive" -C "$restored"
+  local db; db=$(find "$restored" -name notes.sqlite -print -quit)
+  [ -n "$db" ] || fail "no library in the restored tree" || return 1
+  local hits
+  hits=$(in_home "$home" "$ROOT/bin/notriosctl" search --db "$db" --asset-store "$restored/data/assets" \
+         "must not lose" 2>/dev/null | python3 -c 'import json,sys; print(len(json.load(sys.stdin).get("hits",[])))' 2>/dev/null || echo 0)
+  [ "${hits:-0}" -ge 1 ] || fail "the restored library does not hold the note" || return 1
+  record purge-backup-restores-and-excludes-sync-keys pass \
+    "{\"archive_holds_library\":true,\"archive_holds_keys\":false,\"restored_hits\":$hits}"
+}
+
+# I4: a symlinked root is not followed out of the profile.
+drill_symlinked_data_root() {
+  local home; home=$(install_home symlinked) || return 1
+  local library; library=$(library_of "$home")
+  local outside=$WORK/outside-the-profile; mkdir -p "$outside"
+  mv "$library" "$outside/real-library"
+  printf 'not part of any notrios profile\n' > "$outside/bystander.txt"
+  ln -s "$outside/real-library" "$library"
+  local code
+  in_home "$home" "$home/.local/bin/notriosctl" purge --confirm >/dev/null 2>&1; code=$?
+  [ -f "$outside/bystander.txt" ] || fail "purge deleted a file outside the profile by following a symlink" || return 1
+  record purge-does-not-delete-through-a-symlink pass \
+    "{\"exit\":$code,\"neighbour_survived\":true,\"target_survived\":$([ -e "$outside/real-library" ] && echo true || echo false)}"
+}
+
+# J3's own: a backup destination inside what the run would delete is refused.
+drill_backup_destination_guard() {
+  local home; home=$(install_home guard) || return 1
+  local library; library=$(library_of "$home")
+  local out code
+  out=$(in_home "$home" "$home/.local/bin/notriosctl" purge --confirm --backup-dir "$library/backup" 2>&1); code=$?
+  library_intact "$library" || fail "the library was deleted despite a self-destroying backup path" || return 1
+  [ "$code" -ne 0 ] || fail "a backup destination inside the purge target was accepted" || return 1
+  grep -qi "delete its own backup" <<<"$out" || fail "the refusal did not say why" || return 1
+  record purge-refuses-a-backup-destination-it-would-delete pass "{\"exit\":$code,\"library_intact\":true}"
+}
+
+status=0
+for drill in drill_unattended_refusal drill_backup_unwritable drill_backup_too_large \
+             drill_backup_contents_and_restore drill_symlinked_data_root \
+             drill_backup_destination_guard; do
+  echo "== $drill" >&2
+  "$drill" || { record "${drill#drill_}" fail '{}'; status=1; }
+done
+python3 - "$RESULTS" <<'PY'
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+print(f"{len(rows)} drills, {sum(1 for r in rows if r['status']=='pass')} passed")
+for r in rows: print(f"  {r['status']:4}  {r['drill']}")
+PY
+exit $status

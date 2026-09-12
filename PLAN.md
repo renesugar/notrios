@@ -419,13 +419,37 @@ the CLI surface I8 froze, and validation refused until the freeze was
 re-recorded. The change is an addition — 91 commands to 92, nothing renamed or
 removed — so it is compatible.
 
+**Drilled against the command, with I4's own drills.** Six of them, in
+`performance/v1.0-j3`: the unattended refusal, a backup that cannot be written,
+a backup that does not fit, the backup that holds the library and excludes sync
+keys and **restores** — counted by hits rather than grepped, which is I7's
+lesson — the symlink that is not followed out of the profile, and one this item
+adds.
+
+**The one it adds came from giving the user a choice.** `--backup-dir` lets
+somebody name a destination, and the obvious wrong answer is inside the library
+they are about to delete. Every run now asserts the destination is *refused* by
+the oracle. H3 proved that property for the default location; this checks it
+rather than trusting the layout, and a destination inside the data root is
+refused with the library intact.
+
+**The validator had the hole it was written to prevent.** It compared the report
+and the run by drill *name* only, and read the restore counts from the run log —
+so a report claiming the restore recovered nothing, or that sync keys reached
+the backup, passed. Found by probing it, which is the only reason it was found.
+It compares observations now.
+
 **Still owed, and recorded rather than glossed:** `scripts/lifecycle.py` still
-has its own purge, so the dangerous logic now exists twice. The oracle halves
-are gated against each other; the backup and deletion halves are not. Making
-`make purge` delegate to `notriosctl purge` is the remaining work, and its
-ordering is the interesting part — the data must be purged while the binary that
-does it still exists, so delegation means purging before uninstalling rather
-than after.
+has its own purge, so the backup and deletion halves exist twice while only the
+oracle halves are gated against each other. A divergence there is a purge that
+deletes without the backup somebody was promised. The fix is to have
+`make purge` delegate its data half to the command, and the ordering is the
+interesting part — lifecycle.py backs up, uninstalls, then deletes, and
+delegation means deleting the data while the binary that does it still exists,
+so the uninstall has to move after rather than before. Four of I4's nine drills
+are also not carried over, because they exercise the installed-file half this
+command deliberately does not touch; the record names each one rather than
+running fewer quietly.
 
 ## J4. Stabilise the REST and MCP surfaces for 1.0
 

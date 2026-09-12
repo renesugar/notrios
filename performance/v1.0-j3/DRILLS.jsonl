@@ -1,0 +1,6 @@
+{"drill": "unattended-purge-refuses-without-confirm", "observations": {"exit": 1, "library_intact": true, "names_the_flag": true}, "status": "pass"}
+{"drill": "purge-refuses-when-the-backup-cannot-be-written", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}
+{"drill": "purge-refuses-when-the-backup-does-not-fit", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}
+{"drill": "purge-backup-restores-and-excludes-sync-keys", "observations": {"archive_holds_keys": false, "archive_holds_library": true, "restored_hits": 1}, "status": "pass"}
+{"drill": "purge-does-not-delete-through-a-symlink", "observations": {"exit": 0, "neighbour_survived": true, "target_survived": true}, "status": "pass"}
+{"drill": "purge-refuses-a-backup-destination-it-would-delete", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}

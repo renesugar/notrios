@@ -76,6 +76,24 @@ func runPurge(args []string) {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+		// The backup must not land anywhere this same run would delete. H3
+		// proved the property for the default location; this asserts it on
+		// every run rather than trusting the layout -- which matters more here
+		// than it does for the Make target, because --backup-dir lets the user
+		// name a destination, and the obvious wrong answer is somewhere inside
+		// the library they are about to remove.
+		owned := make([]string, 0, len(roots))
+		for _, path := range roots {
+			owned = append(owned, path)
+		}
+		verdict := purge.Decide(destination, purge.Environment{OwnedRoots: owned, Home: userHome})
+		if verdict.Verdict != purge.Refuse {
+			fmt.Fprintf(os.Stderr,
+				"the backup destination %s is not refused by the purge oracle (%s),\n"+
+					"which means this run could delete its own backup. Refusing.\n",
+				destination, verdict)
+			os.Exit(1)
+		}
 	}
 
 	if *asJSON {
