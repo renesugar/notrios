@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**11 items: 3 complete, 0 in progress, 8 not started, 0 deferred.**
+**12 items: 3 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -72,6 +72,7 @@ this section is archived when the plan completes and the rules are not.
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
+| J12. Make the README true, and generate what can be generated | not-started | 0/4 | 4 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -812,6 +813,18 @@ covers **program files only**. The user's data is precisely what it does not
 list, and the user's data is what a purge deletes, so the manifest cannot
 answer "did the purge work". This item extends the report to both.
 
+**It must also cover every registered profile, including the external ones.**
+Asked whether such a report already named external libraries, the answer was no,
+and not by a small margin: the closest thing that exists is `notriosctl doctor`,
+which reports the *default* database and asset store and does not mention
+profiles at all. A user with several profiles gets a structure report about one
+of them. J3-D taught the shape of the answer — read the registry, resolve each
+profile's database, asset store and config path, and mark the ones outside the
+owned roots — and this item is where it becomes a report rather than a line in a
+purge plan. Two consequences follow: the report is the thing that tells somebody
+where their libraries are *before* they purge, and the post-purge check must not
+expect an external library to be gone, because purge deliberately keeps it.
+
 **Why the check is a shell script and not a Go test.** Everything Notrios
 installed is gone after a purge, including anything that could read a manifest
 and including the manifest itself. The verification has to survive the thing it
@@ -850,3 +863,64 @@ This is an index only; each decision is owned and explained inside its item.
 | Which refs may deploy to `production` | J2 | **Answered 2026-09-11.** Restricted to `main` (protected, PR-required, no force push) and tags `v*`; required reviewers correctly rejected as a team instrument |
 | Whether the CI secret holds the primary key or only a signing subkey | J2 → J10 | **Deferred 2026-09-11.** Safe for now because the key has signed nothing, so reissuing costs a keygen; revisit before the first release anyone relies on |
 | How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |
+
+## J12. Make the README true, and generate what can be generated
+
+**Goal.** The repository's front page answers what it claims to answer, and the
+parts of it that go stale are derived from tracked data rather than edited by
+hand.
+
+**Scope.** Six defects, all reported by the owner reading it:
+
+- **The project status is wrong.** It says `v0.8 (current, 0.8.0)` and does not
+  mention v0.9 at all. The plan and roadmap already carry generated blocks —
+  `go run ./cmd/docplan --write` writes both — and the README has none, which is
+  why it is the document that drifted. It gets one.
+- **The opening paragraphs are long enough to hide their own structure.** They
+  are read first and by the reader with the least context.
+- **Quick start omits the lifecycle.** `make install`, `make uninstall` and
+  `make purge` are not there, and `make clean` and `make clobber` are named
+  nowhere with an explanation of what they remove. A reader cannot tell which
+  targets touch their data — which, given that one of them deletes a library, is
+  the least acceptable omission on the page.
+- **Configuration points nowhere.** The README has a brief section and one
+  example file, and there is no `docs/configuration.md` for it to refer to. The
+  configuration surface is 63 JSON-tagged keys with a recorded owner
+  (`internal/config#Config`), and one example is not documentation of 63 keys.
+- **Serving the documentation site locally is undocumented.** `make docs`
+  builds `_site/`, and nothing tells a reader that, or that
+  `python3 -m http.server 8000 --directory _site` is enough to read it.
+- **`_site` goes stale silently.** Nothing in `make validate` rebuilds it;
+  `make g18g-validate` does and is only reached by `scripts/package_release.sh`.
+  A checkout can carry months-old rendered documentation while every gate is
+  green, and the owner found exactly that.
+
+**Why the generated block matters more than the correction.** Editing the
+version row fixes today and guarantees the same bug next milestone. Every other
+generated surface in this repository — the plan's progress table, the roadmap's
+status line, the docs inventory, the licence inventory — is derived and gated,
+and each of those was made derived *after* a hand-maintained copy went wrong.
+This is the same lesson arriving at the README.
+
+**A trap worth naming before somebody hits it.**
+`scripts/build_docs_site.sh` pins the document count at **exactly 18**
+`docs/**/*.md` files, deliberately, so that a page appearing on the published
+site is a decision somebody made. Adding `docs/configuration.md` makes it 19 and
+the docs build fails — and it fails at packaging time, not in `make validate`,
+which is the same late-failure the script's own comment complains about. The
+pin is bumped as part of adding the page, and this is where the note lives so it
+is read before the build breaks.
+
+**Boundaries.** No instruction is written that has not been run. The
+configuration document is checked against `internal/config` rather than
+described from memory, and a key documented but absent — or present but
+undocumented — fails rather than reads well.
+
+**Dependencies.** None on the other items; the configuration document overlaps
+J9's documentation work and is deliberately separate, because J9 is about the
+supported matrix and this is about the front door.
+
+**Working state.** A README whose status block is generated and gated, whose
+quick start covers every target that touches a user's files, and which points at
+a configuration document that exists; a documentation site a reader can serve
+locally, with instructions that were followed to write them.

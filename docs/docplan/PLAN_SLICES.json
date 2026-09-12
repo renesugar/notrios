@@ -258,6 +258,33 @@
           "statement": "A shell check reads a pre-purge manifest and confirms every path is gone, and fails when one is left"
         }
       ]
+    },
+    {
+      "id": "J12",
+      "title": "Make the README true, and generate what can be generated",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J12-A",
+          "statement": "The README's project status is generated from the ledger and gated, like the plan's and the roadmap's",
+          "state": "not-started"
+        },
+        {
+          "id": "J12-B",
+          "statement": "The opening is readable and Quick start covers install, uninstall, purge, clean and clobber",
+          "state": "not-started"
+        },
+        {
+          "id": "J12-C",
+          "statement": "docs/configuration.md documents every configuration key, checked against internal/config, and the README points at it",
+          "state": "not-started"
+        },
+        {
+          "id": "J12-D",
+          "statement": "The documentation site can be built and served locally, said in the README, and _site staleness is detectable",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

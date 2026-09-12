@@ -761,6 +761,27 @@ published, and no bundle leaves the machine or the reserve.
 - Stable REST API.
 - Stable MCP tool/resource schemas.
 - Large-scale performance tests with hundreds of thousands of documents/resources.
+- **A README that is true, with the parts that go stale generated from tracked
+  data.** Reported by the owner reading it: the project status still says
+  `v0.8 (current, 0.8.0)` and never mentions v0.9; the quick start omits
+  `make install`, `make uninstall` and `make purge` and explains neither `clean`
+  nor `clobber`, so a reader cannot tell which targets touch their own files;
+  the configuration section refers to a detailed document that does not exist;
+  and nothing says how to serve the built documentation site locally. The
+  version row is the tell — every other derived surface here is generated and
+  gated *because* a hand-maintained copy went wrong first, and the README is the
+  one front-facing document with no generated block at all.
+- **A configuration reference.** `internal/config#Config` is a recorded surface
+  of 63 JSON-tagged keys and the documentation for it is one example file. Note
+  before starting: `scripts/build_docs_site.sh` pins the published document
+  count at exactly 18, deliberately, and it fails at packaging time rather than
+  in `make validate` — so a new page under `docs/` breaks the docs build until
+  the pin is bumped.
+- **A way to notice `_site` has gone stale.** `make docs` builds it and
+  `make g18g-validate` rebuilds and checks it, but neither is reached by
+  `make validate`; only `scripts/package_release.sh` runs the latter. A checkout
+  can carry months-old rendered documentation with every gate green, which is
+  what the owner found.
 - Publish a user-authorized GitHub Release from reviewed `main` so an end user
   can download, verify, install, launch, upgrade, uninstall/reinstall, and
   restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
@@ -1071,7 +1092,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 11 items, 3 complete, 0 in progress, 8 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 12 items, 3 complete, 0 in progress, 9 not started, 0 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 
