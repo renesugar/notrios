@@ -1004,6 +1004,46 @@ requirements below are the ones H7 already carried.
   build time, for one address. Hugo's `relativeURLs` would make one build serve
   both, and would also make a built `_site` directory browsable from disk.
 
+  **Previewing the built site locally, measured 2026-09-11.** Which local shape
+  works depends on the `baseURL` the build used, and **you cannot tell which by
+  looking at the directory** — which is the problem this entry is about, in
+  miniature.
+
+  A build whose `baseURL` carries a path (`…github.io/notrios/`, or the
+  `example.github.io/notrios/` placeholder that stood there until I10) emits
+  `/notrios/css/…`, and needs the repository-name directory the real project
+  site has:
+
+  ```bash
+  mkdir -p _preview/notrios && cp -a _site/. _preview/notrios/
+  python3 -m http.server 8000 --directory _preview   # then http://localhost:8000/notrios/
+  ```
+
+  A build for the apex domain (`https://notrios.com/`, which is what
+  `docs-site/hugo.toml` says now) emits root-absolute `/css/…` and is served
+  from the root:
+
+  ```bash
+  bash scripts/build_docs_site.sh _site
+  python3 -m http.server 8000 --directory _site      # then http://localhost:8000/
+  ```
+
+  **Using the wrong one looks like it works.** The page returns 200 and every
+  stylesheet 404s: with an apex build copied into `_preview/notrios/`, the file
+  really is at `/notrios/docs.css` and the HTML asks for `/docs.css`. Both
+  directions were checked over a local HTTP server from the same tree.
+
+  **The trap is a stale `_site`.** `_site/` is git-ignored, so whatever is on
+  disk is whatever was last built — and a tree built before I10 previews
+  correctly in the `notrios/` shape while the live site is served from the root.
+  Rebuild before previewing, or you are testing the site you used to have.
+  Neither shape works from `file://`, where a root-absolute path means a
+  filesystem root; a local HTTP server is the minimum.
+
+  So no single directory layout serves both addresses from one build today, and
+  the shape to use is a property of the build rather than of the site. That is
+  what `relativeURLs` would buy, and why this entry exists.
+
   **It is blocked on a validator defect, and turning it on without fixing that
   would be worse than leaving it.** `local_target` in
   `performance/v0.7-g18g/validate_evidence.py` resolves a relative directory
@@ -1031,7 +1071,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 10 items, 0 complete, 0 in progress, 10 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 11 items, 0 complete, 0 in progress, 11 not started, 0 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

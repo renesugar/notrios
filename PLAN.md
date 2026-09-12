@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**10 items: 0 complete, 0 in progress, 10 not started, 0 deferred.**
+**11 items: 0 complete, 0 in progress, 11 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -71,6 +71,7 @@ this section is archived when the plan completes and the rules are not.
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
+| J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -104,6 +105,19 @@ with `gh attestation verify --repo renesugar/notrios`, and
 `performance/v0.9-i5/POLICY.json` recording the prerequisite as met — which its
 validator derives from the workflows rather than believing.
 
+**The environment is already provisioned.** A `production` environment exists on
+the repository and holds `GPG_RELEASE_PRIVATE_KEY`, so the release workflow this
+item writes has somewhere to run and J2 has somewhere to sign from. It has **no
+protection rules**, which J2 records as a blocking decision; the attestation half
+does not depend on that, because attestations need no secret of ours at all —
+`id-token: write` is a per-run OIDC token, not a stored credential. That is part
+of their appeal.
+
+**The release trigger is a tag, not a push.** `on: push: tags: ['v*']` with
+`environment: production`, so the workflow cannot run from an ordinary branch
+push and `check_secret_exposure.py` keeps holding: no `pull_request` trigger on
+a workflow that names a secret.
+
 ## J2. Create the release signing key, and sign what ships
 
 **Goal.** Somebody who downloads the package can establish who stands behind it,
@@ -134,10 +148,64 @@ owner: it is their identity.
 `verify_release_set.py` accepting a set that records itself as signed because it
 carries signatures.
 
+**The key exists already, created by the owner on 2026-09-11.** RSA-4096,
+fingerprint `1234C691AC0776A18524D55687027B1DD464695E`,
+`Rene Sugar <rene.sugar@gmail.com>`. Its public half is at
+`keys/release-public.asc` and the private half is a `production` environment
+secret named `GPG_RELEASE_PRIVATE_KEY`. Three facts were checked rather than
+taken on trust:
+
+- **It is not the evidence key**, which I5 requires. The evidence primary is
+  `AEE5F82F…8098` and its signing subkey `4ABEB98A…4005`; this is a different
+  key entirely, so a release-key rotation cannot disturb the reserve's chain of
+  custody.
+- **`keys/release-public.asc` is present in the working tree and is not tracked
+  by git**, and nothing ignores it. Committing it is part of this item: the
+  public key has to travel with the source, because a verifier who fetches the
+  key from the same release page as the artifact has verified very little.
+- **The `production` environment has no protection rules at all.** `gh api
+  repos/renesugar/notrios/environments` reports `protection_rules: []`. The
+  secret is scoped to the environment, which is the important half, but I5's
+  policy says "an environment with required reviewers", and required reviewers
+  are what make each use of the key a deliberate act rather than a consequence
+  of a push. That is a settings change, not a repository change, so it is an
+  open decision below rather than something this item can do.
+
+**Scope this adds.** Commit the public key; write the release workflow that
+imports the private key and signs; and have `verify_release_set.py` check a
+signature against the committed public key rather than merely noticing one
+exists.
+
 **Open decisions**
 
-- **Who holds the release key — Blocking, the owner's.** It is an identity
-  claim about a person or project, and cannot be delegated to a repository.
+- **Required reviewers on the `production` environment — Blocking, the owner's,
+  and the reason is specific.** A passphrase-less key in an environment with no
+  protection rules can be used by any workflow run that names that environment,
+  and a workflow file is something a branch can change. The key is therefore as
+  protected as the ability to run a workflow against `production` — which is
+  what a required reviewer fixes. Recommended: require a reviewer, and restrict
+  the environment to protected branches and tags.
+- **The passphrase-less design — Taken as the default, and the reasoning holds
+  with one caveat.** A passphrase stored beside the key it unlocks adds no
+  layer, GitHub's secret store is the vault, and `gpg --batch` cannot answer a
+  prompt: all three are correct, and this is ordinary practice for a key that
+  exists only for automation. The caveat is that "no passphrase" removes the
+  last obstacle *after* exfiltration, so everything now rests on who can cause
+  that environment to run — which is the decision above, and why the two belong
+  together.
+- **What goes in the secret: the whole key, or a signing subkey — Non-blocking
+  default: as created, with a recommendation to narrow it.** The key's primary
+  can certify as well as sign, and the secret holds the primary. A compromise
+  therefore yields the identity itself — the ability to certify other keys and
+  issue new subkeys — not merely the ability to sign a release. The evidence key
+  deliberately keeps its primary offline and ships only a signing subkey for
+  exactly this reason, and the same split would apply here:
+  `gpg --export-secret-subkeys` puts only the subkey in CI. Recommended before
+  the first signed release, because rotating a compromised primary means
+  reissuing the identity.
+- **Who holds the release key — Answered 2026-09-11: the owner, under their own
+  identity.** It is an identity claim about a person, and the key's user ID says
+  so.
 
 ## J3. Give a packaged installation a supported way to delete its data
 
@@ -164,9 +232,18 @@ checkout to fall back on. The CLI surface changes, so
 
 **Dependencies.** None.
 
+**Where the backup goes, which the owner specified.** `make purge` writes its
+backup under the state root — a place chosen so the backup cannot land somewhere
+the same run would delete — and then tells the user where it is. The command
+must do the same and must write it to **a location the user knows about**,
+because a backup somebody cannot find is not a backup. Opting out stays
+possible and stays loud: `make purge` requires `NO_BACKUP=1` and prints a
+warning that nothing will be copied anywhere before it is deleted, and the
+command keeps that shape rather than inventing a gentler one.
+
 **Working state.** `notriosctl purge` drilled by the v0.9 I4 harness against a
 packaged installation, with every drill that passes for the Make target passing
-for the command.
+for the command, and the backup location printed where the user will read it.
 
 ## J4. Stabilise the REST and MCP surfaces for 1.0
 
@@ -208,8 +285,64 @@ library of that size was used.
 
 **Dependencies.** None.
 
-**Working state.** Recorded timings and resource use at the target size, and an
-honest statement of what degraded.
+**Where the corpus comes from — the owner supplied the sources, sizes measured
+2026-09-11.** Three kinds, and they answer different questions:
+
+| Source | Size | What it is good for |
+|---|---|---|
+| `/home/renes/projects/recipedb/recipe_joplin` | 5.1 GB | a very large Joplin RAW import, notes only |
+| `/home/renes/projects/recipedb/recipe_vault` | 1.6 GB | the **same data** as an Obsidian vault |
+| `/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18` | 1.5 GB | a large Joplin RAW export **with resources** |
+| `/media/renes/HD2/twitter/twitter-…dd40.zip` | 3.1 GB | a large single-archive Twitter/X import |
+| `github.com/renesugar/movenotes-v3` | — | generates Joplin and Obsidian corpora to order |
+
+Scratch space for generated corpora: `/media/renes/HD2` (13 GB in use) and
+`/media/renes/SEAGATE2TB` — **but not the second one for anything large**: the
+evidence reserve lives there, and a performance run is not a reason to fill the
+volume that holds the signed archive.
+
+**The recipe pair is the most useful thing here and the least obvious.** The same
+corpus in two import formats makes it possible to separate *importer* cost from
+*store* cost: if Joplin and Obsidian imports of identical data diverge, the
+difference is the importer, and nothing else in the measurement has to be held
+constant to see it.
+
+**Open decisions**
+
+- **How the bulk corpus is generated — Non-blocking default: import the real
+  ones first, generate only to fill gaps.** The supplied directories are real
+  libraries with real shapes, and a generator produces whatever distribution its
+  author imagined. The default is therefore to measure the real corpora, and to
+  generate only for sizes and resource mixes they do not reach. `movenotes-v3`
+  is the generator for that, cloned fresh rather than used in place, because the
+  owner is modifying the local copy.
+- **Whether a generator becomes a dependency of this module — Non-blocking
+  default: no.** A corpus generator is a tool, not part of the product, and
+  every module in `go.mod` is something the licence gate governs, the SBOM
+  carries and a release inherits. If `gofakeit` or similar is used, it belongs
+  behind its own module under `performance/`, the way the H10 Wails v3 prototype
+  did — Go's internal-package rule is path-based, so a nested module can still
+  import `internal/`. A `go get` at the repository root adds a requirement that
+  nothing imports, which `go mod tidy` then removes and the G20 hash gate
+  notices in between.
+- **Whether to write SQLite libraries directly — Recommended against, and this
+  is worth stating.** Generating text is easy — `gofakeit` is MIT and would pass
+  the licence gate — and writing rows straight into a library would be the
+  fastest way to a large database. It would also measure a
+  library no importer ever produced: schema invariants, revision chains, asset
+  references and search projections all get established *by* the write path, and
+  a corpus that skipped it would flatter every later measurement. Generate
+  import files and import them. If direct writes are ever needed for size, they
+  are labelled as synthetic and never used for correctness claims.
+- **What resource files the corpus uses — Non-blocking default: the archive with
+  resources, plus a small generated set for formats it lacks.** The Joplin
+  export carries real attachments; `OpenPrinting/sample-files`,
+  `xeor/test_files` and `TestingFilesGenerator` cover PDF, PNG, ZIP and DOCX at
+  chosen sizes if a gap appears. Anything downloaded is treated as untrusted
+  input, which is the standing rule for imported material.
+
+**Working state.** Recorded timings and resource use at the target size, which
+corpus produced each number, and an honest statement of what degraded.
 
 ## J6. Ship the versioned no-GUI library and header artifacts
 
@@ -316,6 +449,51 @@ establish that the evidence predates disclosure.
 **Working state.** A published, verified release, and a reserve volume sealed
 before it.
 
+## J11. Report the installation's structure and manifest, and verify a purge against it
+
+**Goal.** A user, or a script, can ask where every Notrios file and directory
+is — and after a purge, confirm that they are gone.
+
+**Scope.** A report with two parts, from `notriosctl` or an adjacent tool:
+
+- **structure** — every directory that holds Notrios files or data, and
+- **manifest** — every Notrios file and data file, by absolute path.
+
+Plus a `bash` check that reads a manifest taken before a purge and confirms each
+path is absent afterwards.
+
+**Why the existing manifest is not enough.** `scripts/lifecycle.py` already
+writes `MANIFEST.json` into the data root, recording what the installer put
+where — prefix, bindir, datadir and a sorted list of installed entries. It
+covers **program files only**. The user's data is precisely what it does not
+list, and the user's data is what a purge deletes, so the manifest cannot
+answer "did the purge work". This item extends the report to both.
+
+**Why the check is a shell script and not a Go test.** Everything Notrios
+installed is gone after a purge, including anything that could read a manifest
+and including the manifest itself. The verification has to survive the thing it
+verifies, which means it runs outside the installation, from a copy of the
+manifest taken beforehand, in a language the machine already has.
+
+**Two uses, both of them concrete.** After `make install` on a clean machine,
+the report *is* the record of what a clean install looks like — which is the
+thing v0.9 I3's container matrix asserted piecemeal and never captured whole.
+After a purge, the same report taken beforehand becomes the oracle for whether
+the deletion was complete.
+
+**Boundaries.** The report names paths; it does not print note content, and it
+redacts the home directory to `~` by default like `paths`, `config show` and —
+since v0.9 I7 — `doctor`, with `--no-redact` for the literal form. A manifest is
+a list of where things are, and that is exactly what somebody pastes into an
+issue.
+
+**Dependencies.** J3, so the purge it verifies is the one a packaged user can
+run.
+
+**Working state.** A structure-and-manifest report for a clean install, a shell
+check that passes on a completed purge, and — proved by running it — fails when
+a single file is left behind.
+
 ## Decisions register
 
 This is an index only; each decision is owned and explained inside its item.
@@ -326,3 +504,6 @@ This is an index only; each decision is owned and explained inside its item.
 | Whether Windows or macOS ship | J6, J9 | Non-blocking default: postponed and absent from release claims unless their gates pass |
 | What the REST and MCP surfaces promise at 1.0 | J4 | Non-blocking default: what I8 froze, minus anything the review withdraws |
 | Publishing the release | J10 | **Blocking.** The owner authorizes the tag and the publication |
+| Required reviewers on the `production` environment | J2 | **Blocking.** It has no protection rules today, and a passphrase-less key is as protected as the ability to run a workflow against it |
+| Whether the CI secret holds the primary key or only a signing subkey | J2 | Non-blocking default: as created; recommended to narrow to a subkey before the first signed release |
+| How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |

@@ -215,6 +215,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J11",
+      "title": "Report the installation's structure and manifest, and verify a purge against it",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J11-A",
+          "state": "not-started",
+          "statement": "A report lists every directory holding Notrios files or data, and every file by absolute path"
+        },
+        {
+          "id": "J11-B",
+          "state": "not-started",
+          "statement": "A clean install's structure and manifest are captured as a record"
+        },
+        {
+          "id": "J11-C",
+          "state": "not-started",
+          "statement": "A shell check reads a pre-purge manifest and confirms every path is gone, and fails when one is left"
+        }
+      ]
     }
   ]
 }
