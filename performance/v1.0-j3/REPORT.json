@@ -1,5 +1,5 @@
 {
-  "content_commit": "e3e8a37c020a5011c55757d2c56021a109115a8a",
+  "content_commit": "c57f8d6bb717d33cc15bb70a4bf6b17e2749041d",
   "counts": {
     "drills": 6,
     "passed": 6
@@ -60,10 +60,11 @@
   "item": "J3",
   "milestone": "v1.0",
   "not_verified": [
-    "The four I4 drills that are about the installed-file half rather than the data half: uninstall leaving user data, a modified artifact being kept, an external data root, and a purge racing a running daemon. Those exercise `make uninstall` and lifecycle.py, which this command deliberately does not do -- removing the program is apt's job or the Make target's.",
+    "The four I4 drills that are about the installed-file half rather than the data half: uninstall leaving user data, a modified artifact being kept, an external data root, and a purge racing a running daemon. Those exercise `make uninstall` and the half of lifecycle.py that survived delegation, which this command deliberately does not do -- removing the program is apt's job or the Make target's. scripts/test_lifecycle.py runs them there.",
     "No packaged (.deb) installation was used. The drills install with `make install` into an isolated HOME, because that is what can be done without root; v0.9 I3's container matrix is where the packaged form is exercised.",
     "Interruption. Nothing kills a purge between the verified backup and the deletion.",
-    "The Go and Python backup formats are not compared. Both write a tar and a manifest of the same shape, and nothing asserts that one can read the other's."
+    "There is no longer a Python backup format to compare against: `make purge` runs this command rather than writing its own archive, so the two formats cannot diverge because there is one. What is untested is reading an archive written by the *previous* Python implementation; no migration path is claimed for a backup taken before this change.",
+    "Profiles outside the resolved roots. The drills use one profile in the default location, so nothing here exercises a second profile, and nothing exercises a profile on another volume -- see still_owed, which is about exactly that path being invisible rather than merely untested."
   ],
   "oracle_equivalence": {
     "held_by": "internal/purge/oracle_test.go against performance/v0.8-h3/PURGE_ORACLE_FIXTURES.json",
@@ -76,9 +77,9 @@
   },
   "schema": "notrios.v10.j3-packaged-purge.v1",
   "still_owed": {
-    "the_fix": "Have `make purge` delegate its data half to `notriosctl purge`. The ordering is the interesting part: lifecycle.py currently backs up, uninstalls, then deletes -- and delegation means deleting the data while the binary that does it still exists, so the uninstall has to move after rather than before.",
-    "what": "scripts/lifecycle.py keeps its own purge, so the backup and deletion halves exist twice. Only the oracle halves are gated against each other.",
-    "why_it_matters": "The oracle decides whether a path may be deleted; the other half decides what must happen first. A divergence there is a purge that deletes without the backup somebody was promised."
+    "what": "Nothing populates the oracle's ExternalProfilePaths. The rule exists, two H3 fixtures exercise it, and both callers pass an empty list -- the Python did too, before it delegated, so this is not a regression of the port. A profile whose data lives outside the six resolved roots is therefore never deleted, which is right, and never enumerated, backed up or mentioned either, which is not: the rule's own wording is \"enumerated and backed up, never deleted automatically\", and only the second half of that is true.",
+    "why_it_matters": "A user with several profiles is told what purge will remove, and an external library is silently absent from that list. They cannot act on a warning nobody gives, and the one thing they might have wanted to keep is the one thing the backup does not contain.",
+    "the_fix": "Read the profile registry in `notriosctl purge`, resolve each profile's database and asset store, and pass the ones outside the owned roots as ExternalProfilePaths -- then report them as enumerated-not-deleted in the plan and carry them in the backup. I4's external-data-root drill is the one to run against it."
   },
   "what_this_is": "The drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`. The point is not that the command works: it is that every safeguard a developer gets, a packaged user now gets too. A drill that passes for the Make target and fails for the command is the gap this item exists to close."
 }

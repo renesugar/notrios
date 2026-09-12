@@ -60,7 +60,23 @@ purge only *asked* it where the roots were; it builds and installs the real one.
 
 ## Still owed
 
-Four of I4's nine drills are not carried over, because they exercise the
+Nothing populates the oracle's `ExternalProfilePaths`. The rule is there, two of
+H3's fixtures exercise it, and **both callers pass an empty list** — the Python
+did too, before it delegated, so this is not something the port lost. A profile
+whose data lives outside the six resolved roots is therefore never deleted,
+which is right, and never enumerated, backed up or mentioned either, which is
+not. The rule's own wording is "enumerated and backed up, never deleted
+automatically", and only the second half of that is true today.
+
+It matters because of what the user is shown. Purge prints what it will remove
+and asks one question about it; an external library is silently absent from that
+list, so somebody with several profiles cannot act on a warning nobody gives.
+The fix is to read the profile registry in the command, resolve each profile's
+database and asset store, pass the ones outside the owned roots, and then report
+them as enumerated-not-deleted. I4's external-data-root drill is the one to run
+against it.
+
+Four of I4's nine drills are also not carried over, because they exercise the
 installed-file half this command deliberately does not touch: they belong to
 `make purge`, and `scripts/test_lifecycle.py` runs them. `DRILLS.jsonl` names
 each one rather than running fewer quietly, and the validator fails if one stops

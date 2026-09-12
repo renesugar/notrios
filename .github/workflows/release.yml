@@ -127,7 +127,37 @@ jobs:
             echo "::error::the imported key $imported is not the published key $published" >&2
             exit 1
           fi
-          echo "signing key: $imported"
+
+          # The secret carries the signing subkey, not the primary key.
+          #
+          # The fingerprint check above cannot see the difference: a
+          # --export-secret-subkeys export still imports a stub for the primary,
+          # so the first fpr line is the primary fingerprint either way. What
+          # distinguishes them is field 15 of the sec record -- '+' when the
+          # primary's secret material is present, '#' when it is only a stub --
+          # measured on a throwaway key rather than read off a manual page. The
+          # signing subkey's own secret must be present, which is the same field
+          # on the ssb record that advertises the sign capability.
+          #
+          # Fail-closed and here rather than in review: a secret nobody can read
+          # back is exactly the kind of claim that needs a gate rather than a
+          # note saying it was done.
+          colons=$(gpg --batch --with-colons --list-secret-keys)
+          primary=$(printf '%s\n' "$colons" | awk -F: '$1=="sec"{print $15; exit}')
+          if [ "$primary" != "#" ]; then
+            echo "::error::the release secret carries the primary key's secret material" \
+                 "(sec field 15 is '$primary', want '#'). Re-export it with" \
+                 "gpg --export-secret-subkeys so a compromised runner cannot certify" \
+                 "new subkeys or new identities." >&2
+            exit 1
+          fi
+          subkey=$(printf '%s\n' "$colons" | awk -F: '$1=="ssb" && $12 ~ /s/ {print $15; exit}')
+          if [ "$subkey" != "+" ]; then
+            echo "::error::no signing subkey secret in the release secret (ssb field 15 is" \
+                 "'$subkey', want '+'), so nothing here can sign." >&2
+            exit 1
+          fi
+          echo "signing key: $imported (primary stubbed, signing subkey present)"
 
       - name: Sign the release set
         run: |
