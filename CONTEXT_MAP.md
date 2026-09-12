@@ -204,6 +204,13 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/paths/` — the single answer to "where does this file go?". H3 found
   the question answered in twenty-five places and the interesting defects were
   all disagreements between two of them rather than mistakes inside any one.
+- `internal/purge/` — the decision procedure for "may Notrios delete this
+  path?", and the backup that must succeed before it does. A port of H3's
+  reference oracle, made because the safeguards lived in `scripts/lifecycle.py`
+  and a packaged installation ships no Python, so the user most in need of them
+  could not reach them. Two implementations of a deletion rule is the worst
+  possible duplication, so `oracle_test.go` drives H3's own thirty fixtures and
+  fails if the two ever disagree.
 - `internal/profiles/` — the explicit local registry mapping a logical database
   ID to a database on this machine plus G3 runtime-profile config/identity and
   process-isolation validation; stable links resolve only unambiguous matches

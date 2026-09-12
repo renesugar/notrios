@@ -2,9 +2,641 @@
   "schema": "notrios.docfeatures.registry.v1",
   "features": [
     {
+      "id": "attachments",
+      "title": "Attach and manage files",
+      "summary": "Attach files to notes, read them back out, see what references what, and find attachments nothing points at any more.",
+      "cli": [
+        "notriosctl resources report",
+        "notriosctl resources add",
+        "notriosctl resources get",
+        "notriosctl notes resources"
+      ],
+      "rest": [
+        "POST /api/v1/resources",
+        "GET /api/v1/resources/{resource_id}",
+        "DELETE /api/v1/resources/{resource_id}",
+        "GET /api/v1/resources/{resource_id}/content",
+        "GET /api/v1/resources/reports/reference",
+        "GET /api/v1/documents/{document_id}/resources",
+        "POST /api/v1/documents/{document_id}/resources/{resource_id}",
+        "DELETE /api/v1/documents/{document_id}/resources/{resource_id}"
+      ],
+      "mcp": [
+        "list_document_resources",
+        "read_resource"
+      ],
+      "surface_note": "Where the link goes in your prose is yours, and the two surfaces differ because only one of them knows where you are typing. In the interface, attaching a file inserts the Markdown at the cursor and leaves the note unsaved. At a terminal, `resources add` puts the file in the library and prints its `resource://` URI without touching the body; `notes append` or `notes prepend` place it once you have decided where it belongs. The bytes are stored once and addressed by their content, so the same file attached twice is stored once.",
+      "gui": [
+        "Upload image/PDF/resource \u2014 the file field in the note inspector",
+        "Attachments \u2014 a sync centre tab"
+      ]
+    },
+    {
+      "id": "batch-operations",
+      "title": "Reorganise many notes at once",
+      "summary": "Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action.",
+      "cli": [
+        "notriosctl notes duplicate"
+      ],
+      "rest": [
+        "POST /api/v1/batch"
+      ],
+      "mcp": [
+        "run_batch"
+      ],
+      "gui": [
+        "result-check",
+        "selection-panel",
+        "selection-move",
+        "selection-add-tag",
+        "selection-trash"
+      ],
+      "surface_note": "At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` \u2014 without it the command shows the notes it would act on and stops \u2014 and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped \u2014 a tag it already had, a notebook it was already in \u2014 is not a note that failed."
+    },
+    {
+      "id": "browse-and-rename-tags",
+      "title": "See and rename tags",
+      "summary": "See the tags a library uses, ask whether one exists, and rename a tag \u2014 or a whole branch of them \u2014 everywhere at once.",
+      "cli": [
+        "notriosctl tags list",
+        "notriosctl tags show",
+        "notriosctl tags rename"
+      ],
+      "rest": [
+        "GET /api/v1/tags",
+        "POST /api/v1/tags/rename",
+        "GET /api/v1/documents/{document_id}/tags"
+      ],
+      "mcp": [
+        "list_tags"
+      ],
+      "surface_note": "`tags show` exits non-zero when a tag does not exist, so a script can test for one without parsing anything, and `--prefix` asks for one branch of the hierarchy rather than the whole vocabulary. A rename shows what it would change before it changes it, and a change described as a merge means the destination already exists and the two tags become one. Listing the notes that carry a tag is a search \u2014 `tag:todo` \u2014 rather than a second thing this reports.",
+      "gui": [
+        "Tags in the sidebar with note counts",
+        "Rename the tag \u2014 beside each tag",
+        "Show me what changes \u2014 the dry run",
+        "Rename \u2014 applies what the report described"
+      ]
+    },
+    {
+      "id": "collections",
+      "title": "See where notes came from",
+      "summary": "Notes you import stay marked with where they came from, so material brought in from somewhere else is distinguishable from what you wrote yourself \u2014 and you can search within one source or across all of them.",
+      "rest": [
+        "GET /api/v1/collections",
+        "POST /api/v1/collections",
+        "GET /api/v1/collections/{collection_id}",
+        "PATCH /api/v1/collections/{collection_id}"
+      ],
+      "mcp": [
+        "list_collections"
+      ],
+      "surface_note": "A collection is provenance rather than a place notes live: an import files notes into a notebook, which is what you browse, and marks them with a collection identifier alongside. A search spans every collection and `collection:` narrows it to one; `notriosctl collections list` says which exist and how many notes name each. Collections are made by an import naming one rather than by a command of their own, and the note inspector shows the row only when a note came from somewhere, because printing `default` on everything you wrote here would say nothing. A collection's name and description can be edited over REST, since renaming a label changes no provenance.",
+      "gui": [
+        "Collection \u2014 shown in the note inspector when a note came from somewhere",
+        "collection: in the search box"
+      ],
+      "cli": [
+        "notriosctl collections list",
+        "notriosctl collections show"
+      ]
+    },
+    {
+      "id": "export-and-archive",
+      "title": "Export your library",
+      "summary": "Write a portable archive of the whole library or a chosen part of it, check one against this version before trusting it, verify one, and restore one when you mean to.",
+      "cli": [
+        "notriosctl export archive",
+        "notriosctl export archive-v2",
+        "notriosctl verify archive-v2",
+        "notriosctl restore archive-v2",
+        "notriosctl compatibility archive-v2"
+      ],
+      "surface_note": "Exporting names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route; in a browser the control is shown and disabled with that reason. The interface writes a complete archive; choosing a subset by notebook, tag or query stays at the command line, because choosing a subset means seeing what it selects first.",
+      "gui": [
+        "Export this library",
+        "Verify the archive"
+      ]
+    },
+    {
+      "id": "graph",
+      "title": "See the shape of the link graph",
+      "summary": "See what surrounds a note, find the path between two of them, and get a report on the notes nothing links to, the ones that link to nothing, and the few that everything runs through.",
+      "cli": [
+        "notriosctl graph report",
+        "notriosctl graph export"
+      ],
+      "rest": [
+        "POST /api/v1/graph",
+        "POST /api/v1/graph/path",
+        "GET /api/v1/graph/report",
+        "POST /api/v1/graph/report/note"
+      ],
+      "mcp": [
+        "get_graph",
+        "get_graph_report",
+        "find_graph_path"
+      ],
+      "gui": [
+        "Reports"
+      ]
+    },
+    {
+      "id": "import-notes",
+      "title": "Import from another application",
+      "summary": "Bring in what you already have elsewhere: a Joplin export, an Obsidian vault, a Twitter or X archive, a ChatGPT or Claude export, or another Notrios archive. Every importer shows you what it would do before it does it.",
+      "cli": [
+        "notriosctl import joplin-raw",
+        "notriosctl import obsidian",
+        "notriosctl import twitter",
+        "notriosctl import chatgpt",
+        "notriosctl import claude",
+        "notriosctl import archive"
+      ],
+      "surface_note": "Importing names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route at all; in a browser the control is shown and disabled with that reason rather than hidden. The desktop application handles Joplin, Obsidian and Notrios archives, and merges only \u2014 replace, fork and adopt stay at the command line because they change which library this is. Twitter, ChatGPT and Claude imports are command line only.",
+      "gui": [
+        "Import from Joplin",
+        "Import from Obsidian",
+        "Import from Notrios"
+      ]
+    },
+    {
+      "id": "jobs",
+      "title": "Watch and steer long-running work",
+      "summary": "Imports, exports and synchronizations run as jobs rather than as a window you have to keep open. List them, look at one, cancel it, retry it, or reset one that is stuck.",
+      "cli": [
+        "notriosctl jobs list",
+        "notriosctl jobs show",
+        "notriosctl jobs status",
+        "notriosctl jobs cancel",
+        "notriosctl jobs retry"
+      ],
+      "rest": [
+        "GET /api/v1/jobs",
+        "GET /api/v1/jobs/{job_id}",
+        "POST /api/v1/jobs/{job_id}/cancel",
+        "POST /api/v1/jobs/{job_id}/retry",
+        "POST /api/v1/jobs/{job_id}/reset"
+      ],
+      "mcp": [
+        "list_jobs",
+        "get_job",
+        "cancel_sync_job",
+        "retry_sync_job"
+      ],
+      "surface_note": "The interface has the sync centre's list of recent synchronization jobs, with Cancel on one still running and Retry on one that failed or was cancelled \u2014 a retry resumes from the last verified checkpoint rather than from the beginning. Import, export and snapshot jobs do not appear there, and there is no general job list, no inspect and no reset in the interface yet; the command line, REST and MCP have all of it.",
+      "gui": [
+        "Recent synchronization jobs \u2014 kind, state and progress",
+        "Cancel \u2014 while a sync job is running or queued",
+        "Retry \u2014 on a sync job that failed or was cancelled"
+      ]
+    },
+    {
+      "id": "links-between-notes",
+      "title": "Link notes to each other",
+      "summary": "Get a stable link to a note or to one of its sections, follow one, check that a draft's links still resolve before you save it, and register Notrios as the program that opens `notrios://` links.",
+      "cli": [
+        "notriosctl link",
+        "notriosctl open",
+        "notriosctl register-url-handler",
+        "notriosctl notes links"
+      ],
+      "rest": [
+        "GET /api/v1/links/suggest",
+        "POST /api/v1/links/check",
+        "POST /api/v1/links/resolve",
+        "GET /api/v1/documents/{document_id}/links"
+      ],
+      "mcp": [
+        "list_document_links"
+      ],
+      "gui": [
+        "Insert a link and check it \u2014 executed (insert-and-check-link)"
+      ]
+    },
+    {
+      "id": "maintenance",
+      "title": "Keep a library healthy",
+      "summary": "Find what has rotted \u2014 broken links, attachments nothing points at, notes referring to things that are gone \u2014 fix what can be fixed mechanically, reclaim the space, and check that this installation is set up the way you think it is.",
+      "cli": [
+        "notriosctl lint",
+        "notriosctl fix",
+        "notriosctl gc",
+        "notriosctl doctor",
+        "notriosctl paths",
+        "notriosctl config show",
+        "notriosctl version",
+        "notriosctl seed-help"
+      ],
+      "rest": [
+        "GET /api/v1/admin/lint/report",
+        "GET /api/v1/admin/gc/report",
+        "GET /api/v1/status",
+        "GET /healthz"
+      ],
+      "mcp": [
+        "get_lint_report"
+      ],
+      "surface_note": "Reporting and repairing are in the interface and at the command line. Over REST the lint surface is read-only on purpose: that is the surface a program reaches, and repairs to somebody's notes should not be one call away from one. Every repair writes a revision against the revision it was planned on, so a note edited in between is refused rather than repaired against text nobody read. Reclaiming space stays `notriosctl gc --apply`, because it deletes blobs and there is no revision to go back to. `doctor`, `paths` and `config show` are command line only.",
+      "gui": [
+        "Health \u2014 the lint report and the collection plan",
+        "Show me what would be repaired",
+        "Repair them \u2014 in the desktop application only"
+      ]
+    },
+    {
+      "id": "mcp-endpoint",
+      "title": "Let an AI assistant use your library",
+      "summary": "Notrios speaks MCP, so an assistant can read your library and, within a scope you grant, change it. What it may touch is yours to decide, and establishing trust between replicas and managing credentials are outside every scope.",
+      "rest": [
+        "GET /mcp",
+        "POST /mcp"
+      ],
+      "surface_note": "This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window \u2014 a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached."
+    },
+    {
+      "id": "organise-notebooks",
+      "title": "Organise notes into notebooks",
+      "summary": "Make notebooks, nest them inside each other, move notes between them, and see what deleting a notebook would take with it before you agree to it.",
+      "cli": [
+        "notriosctl notebooks create",
+        "notriosctl notebooks list",
+        "notriosctl notes move"
+      ],
+      "rest": [
+        "GET /api/v1/notebooks",
+        "POST /api/v1/notebooks",
+        "GET /api/v1/notebooks/tree",
+        "GET /api/v1/notebooks/{notebook_id}",
+        "PATCH /api/v1/notebooks/{notebook_id}",
+        "DELETE /api/v1/notebooks/{notebook_id}",
+        "GET /api/v1/notebooks/{notebook_id}/deletion-preview",
+        "GET /api/v1/notebooks/{notebook_id}/notes",
+        "POST /api/v1/documents/{document_id}/notebook"
+      ],
+      "mcp": [
+        "list_notebooks",
+        "get_notebook_tree",
+        "get_notebook_notes",
+        "move_note_to_notebook"
+      ],
+      "gui": [
+        "Choose a notebook for a new note \u2014 executed (new-note-in-notebook)",
+        "Review a notebook deletion \u2014 executed (delete-notebook-review)"
+      ],
+      "surface_note": "`notebooks list` prints a table of names and identifiers, with `--json` for the structured form \u2014 the identifier is what a query and the note commands take, so finding it should not mean reading a JSON object at a terminal. Deleting a notebook shows what it holds first, on every surface that offers it."
+    },
+    {
+      "id": "profiles",
+      "title": "Keep separate libraries",
+      "summary": "Run more than one library on a machine \u2014 personal notes, work notes, a blog \u2014 each with its own database, its own settings and its own address.",
+      "cli": [
+        "notriosctl profile create",
+        "notriosctl profile list",
+        "notriosctl profile show",
+        "notriosctl profile register",
+        "notriosctl profile forget",
+        "notriosctl profile start",
+        "notriosctl profile validate"
+      ],
+      "surface_note": "Switching between profiles is in the interface; making, registering and forgetting them is command-line work, and a browser cannot manage them at all. The absence from REST and MCP is deliberate rather than unfinished: `profile create` names a directory to keep a library in and `profile start` launches a process, so a route that accepted those would let a caller point the service at any directory and start something.",
+      "gui": [
+        "Active profile \u2014 the selector in the sync centre's Setup tab"
+      ]
+    },
+    {
+      "id": "publishing",
+      "title": "Publish a subset of your notes",
+      "summary": "Publish a chosen part of your library and nothing else. Review exactly what would be included and what would be held back, save that choice as a profile, and publish only after agreeing to the plan you were shown.",
+      "cli": [
+        "notriosctl publish plan",
+        "notriosctl publish run",
+        "notriosctl publish profile save",
+        "notriosctl publish profile list",
+        "notriosctl publish profile delete"
+      ],
+      "rest": [
+        "POST /api/v1/selection/plan"
+      ],
+      "mcp": [
+        "plan_selection"
+      ],
+      "surface_note": "The review is the feature rather than a step before it, so it is in the interface, and the counts lead with what is withheld and which links get rewritten rather than with what is sent. `publish run` re-plans and refuses unless what it computes still matches what you reviewed. Profiles are read here and never written: a profile carries a target, a selection and a privacy policy, and a form that quietly defaulted one is how something private gets published, so authoring stays `notriosctl publish profile save`.",
+      "gui": [
+        "Publish a subset of your notes \u2014 choosing a saved profile",
+        "Review what this would publish",
+        "Publish this review \u2014 in the desktop application only"
+      ]
+    },
+    {
+      "id": "query-blocks",
+      "title": "Live query blocks inside a note",
+      "summary": "Put a query inside a note and have its results render where it sits, so a note can show what currently matches instead of a list somebody has to keep up to date.",
+      "rest": [
+        "POST /api/v1/note-queries/run"
+      ],
+      "mcp": [
+        "run_note_query"
+      ],
+      "surface_note": "A query block is a rendering rather than a command: the note carries a fenced query and the interface shows what it matches in place, which is a line rather than a gap. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.",
+      "gui": [
+        "Query blocks render in the preview, in place"
+      ]
+    },
+    {
+      "id": "read-notes",
+      "title": "Read a note and its structure",
+      "summary": "Open a note whole, or take just the part you need: the body, an outline of its headings, one of its blocks, a range of lines, or an earlier revision. The structured views exist so a program can work on part of a note without parsing the rest.",
+      "rest": [
+        "GET /api/v1/documents/{document_id}",
+        "GET /api/v1/documents/{document_id}/body",
+        "GET /api/v1/documents/{document_id}/blocks",
+        "GET /api/v1/documents/{document_id}/lines",
+        "GET /api/v1/documents/{document_id}/outline",
+        "GET /api/v1/documents/{document_id}/revisions",
+        "GET /api/v1/documents/{document_id}/revisions/{revision_id}"
+      ],
+      "mcp": [
+        "get_document",
+        "get_documents",
+        "get_document_blocks",
+        "get_document_outline",
+        "get_note_line_range"
+      ],
+      "gui": [
+        "All notes",
+        "Search query"
+      ],
+      "surface_note": "The command line prints a note as Markdown with front matter, so another application can read it as a file, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions are on REST and MCP only \u2014 they are for programs working inside a note, and a terminal has `notes show` and a text editor.",
+      "cli": [
+        "notriosctl notes show",
+        "notriosctl notes outline",
+        "notriosctl notes resources",
+        "notriosctl notes links"
+      ]
+    },
+    {
+      "id": "remote-media",
+      "title": "Bring remote images into the library",
+      "summary": "A note that points at an image on somebody else's server stops working when that server does. Find those images, see what the policy decided about each one, and copy the allowed ones in so the note stops depending on anyone.",
+      "cli": [
+        "notriosctl localize"
+      ],
+      "rest": [
+        "POST /api/v1/documents/{document_id}/remote-media/scan",
+        "POST /api/v1/documents/{document_id}/remote-media/localize",
+        "GET /api/v1/media-policy",
+        "POST /api/v1/media-policy/check-url"
+      ],
+      "mcp": [
+        "scan_remote_media",
+        "localize_remote_media",
+        "request_resource_fetch"
+      ],
+      "surface_note": "Localizing is offered where you are editing, because it rewrites the note. It is deliberately not a general downloader: every fetch goes through the domain policy, quarantine, hashing and size limits, so a note cannot be made to pull an arbitrary address into your library. The scan that lists them downloads nothing \u2014 each decision is made from the address alone.",
+      "gui": [
+        "Remote media list \u2014 shown on a note that points at images on the web",
+        "Localize allowed media"
+      ]
+    },
+    {
+      "id": "remove-your-data",
+      "title": "Remove your data, on purpose",
+      "summary": "Delete this library's notes, configuration, state and cache, after a backup that is written and verified before anything is removed. It shows you what it would delete before it deletes it, tells you where the backup is, and refuses rather than guessing when nothing can answer the question. Removing the program is a separate act -- `apt remove` or `make uninstall` -- and both leave your notes exactly where they are.",
+      "cli": [
+        "notriosctl purge"
+      ],
+      "surface_note": "Command line only, deliberately. There is no REST or MCP surface for deleting a library: those exist to be called by something else, and the one operation that cannot be undone should be reached by a person who typed it."
+    },
+    {
+      "id": "saved-searches",
+      "title": "Notebooks that are really saved searches",
+      "summary": "Save a query as a notebook, so a view you would otherwise retype becomes something you open.",
+      "rest": [
+        "GET /api/v1/search-notebooks",
+        "POST /api/v1/search-notebooks",
+        "DELETE /api/v1/search-notebooks/{search_notebook_id}"
+      ],
+      "mcp": [
+        "list_search_notebooks"
+      ],
+      "surface_note": "At a terminal this is `notebooks create --query`. In the interface it is offered on a search that has already run and returned something, rather than as a form to fill in: a notebook built from a query nobody has watched work opens empty as easily as it opens right. The query is shown and is not editable there, which is what keeps it from becoming a second search box.",
+      "cli": [
+        "notriosctl notebooks create"
+      ],
+      "gui": [
+        "Keep this search \u2014 an action on a search that has run"
+      ]
+    },
+    {
+      "id": "search-notes",
+      "title": "Search your notes",
+      "summary": "Find notes by text, tag, notebook, date and the rest of the query language \u2014 one language, whether you type it into the search box or hand it to a command. You can search a whole library or inside a single note.",
+      "rest": [
+        "GET /api/v1/search",
+        "POST /api/v1/search",
+        "GET /api/v1/documents/{document_id}/search-in"
+      ],
+      "mcp": [
+        "search_documents",
+        "search_in_note"
+      ],
+      "gui": [
+        "Page through search results \u2014 executed (search-page)"
+      ],
+      "surface_note": "A search is what turns a question into something you can act on: every hit carries the note's identifier, which is what `notes show`, `notes move`, `tags add` and the batch operations take. `--count` answers how many without paging through them, and `--links` prints the `notrios://` form for pasting into another machine's library. A search spans every collection unless `collection:` narrows it, and leaves the Trash out unless the query says `is:trashed`.",
+      "cli": [
+        "notriosctl search"
+      ]
+    },
+    {
+      "id": "snapshots",
+      "title": "Back up and restore the whole library",
+      "summary": "Take a copy of everything \u2014 the database, the attachments and the history \u2014 check that it is sound, and put it back later, either over this library or as a new replica beside it.",
+      "cli": [
+        "notriosctl snapshot create",
+        "notriosctl snapshot verify",
+        "notriosctl snapshot restore"
+      ],
+      "surface_note": "Snapshots name a folder on the machine running the library, so they are desktop and command line only. Taking one is in the interface; restoring one is not, because a restore replaces the library the window is showing. Restoring asks which you mean \u2014 replace this library, or adopt the snapshot as a separate replica \u2014 rather than choosing for you.",
+      "gui": [
+        "Take a snapshot"
+      ]
+    },
+    {
+      "id": "sync-credentials",
+      "title": "Choose where sync keys are kept",
+      "summary": "An installed Notrios keeps the key protecting your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction.",
+      "cli": [
+        "notriosctl sync migrate-credentials"
+      ],
+      "surface_note": "Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret."
+    },
+    {
+      "id": "sync-exchange",
+      "title": "Synchronize with a replica",
+      "summary": "Exchange changes with a library you have paired: directly over an authenticated connection, or through a folder you can both reach \u2014 a second drive, or a cloud folder mapped into this machine.",
+      "cli": [
+        "notriosctl sync exchange",
+        "notriosctl sync once",
+        "notriosctl sync status",
+        "notriosctl sync start",
+        "notriosctl sync retention"
+      ],
+      "rest": [
+        "GET /api/v1/sync/status",
+        "GET /api/v1/sync/carrier/namespaces",
+        "GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
+        "GET /api/v1/sync/carrier/{segment1}/{segment2}",
+        "PUT /api/v1/sync/carrier/{segment1}/{segment2}",
+        "DELETE /api/v1/sync/carrier/{segment1}/{segment2}",
+        "POST /api/v1/jobs/sync/plan",
+        "POST /api/v1/jobs/sync/start",
+        "GET /api/v1/jobs/{job_id}/sync"
+      ],
+      "mcp": [
+        "start_sync",
+        "plan_sync",
+        "get_sync_status"
+      ],
+      "gui": [
+        "Sync now"
+      ]
+    },
+    {
+      "id": "sync-pairing",
+      "title": "Pair two of your own libraries",
+      "summary": "Teach two of your own libraries to trust each other: enrol one, issue a single-use code, and spend it from the other side.",
+      "cli": [
+        "notriosctl sync init",
+        "notriosctl sync invite",
+        "notriosctl sync join",
+        "notriosctl sync accept",
+        "notriosctl sync enroll",
+        "notriosctl sync discover",
+        "notriosctl sync handshake"
+      ],
+      "rest": [
+        "GET /api/v1/sync-ui",
+        "POST /api/v1/sync-ui/initialize",
+        "PUT /api/v1/sync-ui/configuration",
+        "POST /api/v1/sync-ui/discover",
+        "POST /api/v1/sync-ui/invitations",
+        "POST /api/v1/sync-ui/pair",
+        "GET /api/v1/sync/handshake",
+        "POST /api/v1/sync/pair"
+      ],
+      "gui": [
+        "Open the sync center \u2014 executed (open-sync-center)"
+      ],
+      "surface_note": "No MCP tools, deliberately: an assistant can watch a synchronization run and cannot decide who is trusted. Pairing also reads and writes files you name, which is why it has no general REST route either. Pairing from a phone would go through the shared library rather than through MCP, and that surface carries no synchronization yet."
+    },
+    {
+      "id": "sync-peers",
+      "title": "See and end trust between replicas",
+      "summary": "See which replicas a library trusts, take one's key away, and retire a peer once you have read exactly what retiring it means.",
+      "cli": [
+        "notriosctl sync peers",
+        "notriosctl sync revoke",
+        "notriosctl sync retire"
+      ],
+      "rest": [
+        "POST /api/v1/sync-ui/peers/{replica_id}/retire",
+        "POST /api/v1/sync-ui/peers/{replica_id}/retirement-preview",
+        "POST /api/v1/sync-ui/peers/{replica_id}/snapshot-permission",
+        "GET /api/v1/sync-ui/retention"
+      ],
+      "gui": [
+        "Peers",
+        "Retention"
+      ],
+      "surface_note": "No MCP tools, under the same rule as pairing: an assistant can watch a synchronization and cannot decide who is trusted. Retiring a peer is a permanent identity decision recorded with a signature, and revoking a key with `--advance-epoch` changes what every other replica will accept \u2014 both show you what they mean before they happen."
+    },
+    {
+      "id": "sync-recovery",
+      "title": "Recover a replica and resolve conflicts",
+      "summary": "When a replica is lost, or two of them disagree: fetch a backup a peer has verified, look inside one without installing it, work through the conflicts a synchronization could not settle, and decide what a shared attachment should do.",
+      "cli": [
+        "notriosctl sync fetch-backup"
+      ],
+      "rest": [
+        "GET /api/v1/sync-conflicts",
+        "GET /api/v1/sync-ui/conflicts/{conflict_id}",
+        "POST /api/v1/sync-ui/conflicts/{conflict_id}/resolve",
+        "POST /api/v1/sync-ui/recovery",
+        "POST /api/v1/sync-ui/resources/{resource_id}/intent",
+        "POST /api/v1/sync-ui/backups",
+        "POST /api/v1/sync-ui/backups/inspect",
+        "GET /api/v1/sync/backups/{backup_id}",
+        "POST /api/v1/sync/backups"
+      ],
+      "mcp": [
+        "list_sync_conflicts"
+      ],
+      "gui": [
+        "Conflicts",
+        "Backup & recovery"
+      ]
+    },
+    {
+      "id": "tag-a-note",
+      "title": "Tag and untag a note",
+      "summary": "Put a tag on a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`, and a search for `field` finds both.",
+      "cli": [
+        "notriosctl tags add",
+        "notriosctl tags remove",
+        "notriosctl tags list"
+      ],
+      "rest": [
+        "POST /api/v1/documents/{document_id}/tags/{tag}",
+        "DELETE /api/v1/documents/{document_id}/tags/{tag}"
+      ],
+      "mcp": [
+        "tag_note",
+        "untag_note"
+      ],
+      "gui": [
+        "tag-editor-trigger",
+        "tag-editor-input",
+        "tag-editor-add",
+        "tag-editor-list"
+      ]
+    },
+    {
+      "id": "templates-and-tasks",
+      "title": "Templates and tasks",
+      "summary": "Keep notes that are shapes for other notes, make new ones from them, and see the tasks scattered across a library in one list.",
+      "rest": [
+        "GET /api/v1/templates",
+        "GET /api/v1/templates/{document_id}",
+        "POST /api/v1/templates/{document_id}/create",
+        "GET /api/v1/tasks"
+      ],
+      "mcp": [
+        "list_templates",
+        "create_from_template",
+        "list_tasks"
+      ],
+      "surface_note": "Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task \u2014 writing `- [ ] chase the permit` in a note is how one comes to exist \u2014 and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.",
+      "cli": [
+        "notriosctl tasks list",
+        "notriosctl templates list",
+        "notriosctl templates create"
+      ]
+    },
+    {
+      "id": "upgrade-layout",
+      "title": "Move a pre-0.8 library into place",
+      "summary": "A library that lived in a `./data` folder next to the program moves into the directories an installed Notrios uses \u2014 after showing you the plan.",
+      "cli": [
+        "notriosctl migrate"
+      ],
+      "surface_note": "This one is genuinely command-line work: it relocates the directories the running program is using, which is not something a program can sensibly do to itself while serving them."
+    },
+    {
       "id": "write-notes",
       "title": "Write and edit notes",
-      "summary": "Write a note, change it, add to the top or bottom of it, and throw it away. Deleting puts a note in the Trash, which is somewhere you can look and take things back out of rather than a countdown — nothing is destroyed until you empty it.",
+      "summary": "Write a note, change it, add to the top or bottom of it, and throw it away. Deleting puts a note in the Trash, which is somewhere you can look and take things back out of rather than a countdown \u2014 nothing is destroyed until you empty it.",
       "cli": [
         "notriosctl notes create",
         "notriosctl notes edit",
@@ -34,637 +666,14 @@
         "delete_note"
       ],
       "gui": [
-        "Create a note in a notebook — executed (new-note-in-notebook)",
-        "Edit and save a note — executed (edit-save)",
-        "Restore a note from Trash — executed (trash-restore)",
+        "Create a note in a notebook \u2014 executed (new-note-in-notebook)",
+        "Edit and save a note \u2014 executed (edit-save)",
+        "Restore a note from Trash \u2014 executed (trash-restore)",
         "Move this note to the Trash",
         "Restore",
         "Permanently delete this note and its revisions"
       ],
-      "surface_note": "All four surfaces write notes. At a terminal, `notes create` takes a body from a file or a pipe, so a note can be the end of a pipeline, and `notes append` and `notes prepend` add to a note without rewriting it — which matters because no surface can patch a range of a body. Deleting and restoring are deliberately on the same surface: a delete whose undo lives somewhere else is a poor boundary."
-    },
-    {
-      "id": "read-notes",
-      "title": "Read a note and its structure",
-      "summary": "Open a note whole, or take just the part you need: the body, an outline of its headings, one of its blocks, a range of lines, or an earlier revision. The structured views exist so a program can work on part of a note without parsing the rest.",
-      "rest": [
-        "GET /api/v1/documents/{document_id}",
-        "GET /api/v1/documents/{document_id}/body",
-        "GET /api/v1/documents/{document_id}/blocks",
-        "GET /api/v1/documents/{document_id}/lines",
-        "GET /api/v1/documents/{document_id}/outline",
-        "GET /api/v1/documents/{document_id}/revisions",
-        "GET /api/v1/documents/{document_id}/revisions/{revision_id}"
-      ],
-      "mcp": [
-        "get_document",
-        "get_documents",
-        "get_document_blocks",
-        "get_document_outline",
-        "get_note_line_range"
-      ],
-      "gui": [
-        "All notes",
-        "Search query"
-      ],
-      "surface_note": "The command line prints a note as Markdown with front matter, so another application can read it as a file, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions are on REST and MCP only — they are for programs working inside a note, and a terminal has `notes show` and a text editor.",
-      "cli": [
-        "notriosctl notes show",
-        "notriosctl notes outline",
-        "notriosctl notes resources",
-        "notriosctl notes links"
-      ]
-    },
-    {
-      "id": "search-notes",
-      "title": "Search your notes",
-      "summary": "Find notes by text, tag, notebook, date and the rest of the query language — one language, whether you type it into the search box or hand it to a command. You can search a whole library or inside a single note.",
-      "rest": [
-        "GET /api/v1/search",
-        "POST /api/v1/search",
-        "GET /api/v1/documents/{document_id}/search-in"
-      ],
-      "mcp": [
-        "search_documents",
-        "search_in_note"
-      ],
-      "gui": [
-        "Page through search results — executed (search-page)"
-      ],
-      "surface_note": "A search is what turns a question into something you can act on: every hit carries the note's identifier, which is what `notes show`, `notes move`, `tags add` and the batch operations take. `--count` answers how many without paging through them, and `--links` prints the `notrios://` form for pasting into another machine's library. A search spans every collection unless `collection:` narrows it, and leaves the Trash out unless the query says `is:trashed`.",
-      "cli": [
-        "notriosctl search"
-      ]
-    },
-    {
-      "id": "saved-searches",
-      "title": "Notebooks that are really saved searches",
-      "summary": "Save a query as a notebook, so a view you would otherwise retype becomes something you open.",
-      "rest": [
-        "GET /api/v1/search-notebooks",
-        "POST /api/v1/search-notebooks",
-        "DELETE /api/v1/search-notebooks/{search_notebook_id}"
-      ],
-      "mcp": [
-        "list_search_notebooks"
-      ],
-      "surface_note": "At a terminal this is `notebooks create --query`. In the interface it is offered on a search that has already run and returned something, rather than as a form to fill in: a notebook built from a query nobody has watched work opens empty as easily as it opens right. The query is shown and is not editable there, which is what keeps it from becoming a second search box.",
-      "cli": [
-        "notriosctl notebooks create"
-      ],
-      "gui": [
-        "Keep this search — an action on a search that has run"
-      ]
-    },
-    {
-      "id": "organise-notebooks",
-      "title": "Organise notes into notebooks",
-      "summary": "Make notebooks, nest them inside each other, move notes between them, and see what deleting a notebook would take with it before you agree to it.",
-      "cli": [
-        "notriosctl notebooks create",
-        "notriosctl notebooks list",
-        "notriosctl notes move"
-      ],
-      "rest": [
-        "GET /api/v1/notebooks",
-        "POST /api/v1/notebooks",
-        "GET /api/v1/notebooks/tree",
-        "GET /api/v1/notebooks/{notebook_id}",
-        "PATCH /api/v1/notebooks/{notebook_id}",
-        "DELETE /api/v1/notebooks/{notebook_id}",
-        "GET /api/v1/notebooks/{notebook_id}/deletion-preview",
-        "GET /api/v1/notebooks/{notebook_id}/notes",
-        "POST /api/v1/documents/{document_id}/notebook"
-      ],
-      "mcp": [
-        "list_notebooks",
-        "get_notebook_tree",
-        "get_notebook_notes",
-        "move_note_to_notebook"
-      ],
-      "gui": [
-        "Choose a notebook for a new note — executed (new-note-in-notebook)",
-        "Review a notebook deletion — executed (delete-notebook-review)"
-      ],
-      "surface_note": "`notebooks list` prints a table of names and identifiers, with `--json` for the structured form — the identifier is what a query and the note commands take, so finding it should not mean reading a JSON object at a terminal. Deleting a notebook shows what it holds first, on every surface that offers it."
-    },
-    {
-      "id": "tag-a-note",
-      "title": "Tag and untag a note",
-      "summary": "Put a tag on a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`, and a search for `field` finds both.",
-      "cli": [
-        "notriosctl tags add",
-        "notriosctl tags remove",
-        "notriosctl tags list"
-      ],
-      "rest": [
-        "POST /api/v1/documents/{document_id}/tags/{tag}",
-        "DELETE /api/v1/documents/{document_id}/tags/{tag}"
-      ],
-      "mcp": [
-        "tag_note",
-        "untag_note"
-      ],
-      "gui": [
-        "tag-editor-trigger",
-        "tag-editor-input",
-        "tag-editor-add",
-        "tag-editor-list"
-      ]
-    },
-    {
-      "id": "browse-and-rename-tags",
-      "title": "See and rename tags",
-      "summary": "See the tags a library uses, ask whether one exists, and rename a tag — or a whole branch of them — everywhere at once.",
-      "cli": [
-        "notriosctl tags list",
-        "notriosctl tags show",
-        "notriosctl tags rename"
-      ],
-      "rest": [
-        "GET /api/v1/tags",
-        "POST /api/v1/tags/rename",
-        "GET /api/v1/documents/{document_id}/tags"
-      ],
-      "mcp": [
-        "list_tags"
-      ],
-      "surface_note": "`tags show` exits non-zero when a tag does not exist, so a script can test for one without parsing anything, and `--prefix` asks for one branch of the hierarchy rather than the whole vocabulary. A rename shows what it would change before it changes it, and a change described as a merge means the destination already exists and the two tags become one. Listing the notes that carry a tag is a search — `tag:todo` — rather than a second thing this reports.",
-      "gui": [
-        "Tags in the sidebar with note counts",
-        "Rename the tag — beside each tag",
-        "Show me what changes — the dry run",
-        "Rename — applies what the report described"
-      ]
-    },
-    {
-      "id": "collections",
-      "title": "See where notes came from",
-      "summary": "Notes you import stay marked with where they came from, so material brought in from somewhere else is distinguishable from what you wrote yourself — and you can search within one source or across all of them.",
-      "rest": [
-        "GET /api/v1/collections",
-        "POST /api/v1/collections",
-        "GET /api/v1/collections/{collection_id}",
-        "PATCH /api/v1/collections/{collection_id}"
-      ],
-      "mcp": [
-        "list_collections"
-      ],
-      "surface_note": "A collection is provenance rather than a place notes live: an import files notes into a notebook, which is what you browse, and marks them with a collection identifier alongside. A search spans every collection and `collection:` narrows it to one; `notriosctl collections list` says which exist and how many notes name each. Collections are made by an import naming one rather than by a command of their own, and the note inspector shows the row only when a note came from somewhere, because printing `default` on everything you wrote here would say nothing. A collection's name and description can be edited over REST, since renaming a label changes no provenance.",
-      "gui": [
-        "Collection — shown in the note inspector when a note came from somewhere",
-        "collection: in the search box"
-      ],
-      "cli": [
-        "notriosctl collections list",
-        "notriosctl collections show"
-      ]
-    },
-    {
-      "id": "attachments",
-      "title": "Attach and manage files",
-      "summary": "Attach files to notes, read them back out, see what references what, and find attachments nothing points at any more.",
-      "cli": [
-        "notriosctl resources report",
-        "notriosctl resources add",
-        "notriosctl resources get",
-        "notriosctl notes resources"
-      ],
-      "rest": [
-        "POST /api/v1/resources",
-        "GET /api/v1/resources/{resource_id}",
-        "DELETE /api/v1/resources/{resource_id}",
-        "GET /api/v1/resources/{resource_id}/content",
-        "GET /api/v1/resources/reports/reference",
-        "GET /api/v1/documents/{document_id}/resources",
-        "POST /api/v1/documents/{document_id}/resources/{resource_id}",
-        "DELETE /api/v1/documents/{document_id}/resources/{resource_id}"
-      ],
-      "mcp": [
-        "list_document_resources",
-        "read_resource"
-      ],
-      "surface_note": "Where the link goes in your prose is yours, and the two surfaces differ because only one of them knows where you are typing. In the interface, attaching a file inserts the Markdown at the cursor and leaves the note unsaved. At a terminal, `resources add` puts the file in the library and prints its `resource://` URI without touching the body; `notes append` or `notes prepend` place it once you have decided where it belongs. The bytes are stored once and addressed by their content, so the same file attached twice is stored once.",
-      "gui": [
-        "Upload image/PDF/resource — the file field in the note inspector",
-        "Attachments — a sync centre tab"
-      ]
-    },
-    {
-      "id": "remote-media",
-      "title": "Bring remote images into the library",
-      "summary": "A note that points at an image on somebody else's server stops working when that server does. Find those images, see what the policy decided about each one, and copy the allowed ones in so the note stops depending on anyone.",
-      "cli": [
-        "notriosctl localize"
-      ],
-      "rest": [
-        "POST /api/v1/documents/{document_id}/remote-media/scan",
-        "POST /api/v1/documents/{document_id}/remote-media/localize",
-        "GET /api/v1/media-policy",
-        "POST /api/v1/media-policy/check-url"
-      ],
-      "mcp": [
-        "scan_remote_media",
-        "localize_remote_media",
-        "request_resource_fetch"
-      ],
-      "surface_note": "Localizing is offered where you are editing, because it rewrites the note. It is deliberately not a general downloader: every fetch goes through the domain policy, quarantine, hashing and size limits, so a note cannot be made to pull an arbitrary address into your library. The scan that lists them downloads nothing — each decision is made from the address alone.",
-      "gui": [
-        "Remote media list — shown on a note that points at images on the web",
-        "Localize allowed media"
-      ]
-    },
-    {
-      "id": "links-between-notes",
-      "title": "Link notes to each other",
-      "summary": "Get a stable link to a note or to one of its sections, follow one, check that a draft's links still resolve before you save it, and register Notrios as the program that opens `notrios://` links.",
-      "cli": [
-        "notriosctl link",
-        "notriosctl open",
-        "notriosctl register-url-handler",
-        "notriosctl notes links"
-      ],
-      "rest": [
-        "GET /api/v1/links/suggest",
-        "POST /api/v1/links/check",
-        "POST /api/v1/links/resolve",
-        "GET /api/v1/documents/{document_id}/links"
-      ],
-      "mcp": [
-        "list_document_links"
-      ],
-      "gui": [
-        "Insert a link and check it — executed (insert-and-check-link)"
-      ]
-    },
-    {
-      "id": "graph",
-      "title": "See the shape of the link graph",
-      "summary": "See what surrounds a note, find the path between two of them, and get a report on the notes nothing links to, the ones that link to nothing, and the few that everything runs through.",
-      "cli": [
-        "notriosctl graph report",
-        "notriosctl graph export"
-      ],
-      "rest": [
-        "POST /api/v1/graph",
-        "POST /api/v1/graph/path",
-        "GET /api/v1/graph/report",
-        "POST /api/v1/graph/report/note"
-      ],
-      "mcp": [
-        "get_graph",
-        "get_graph_report",
-        "find_graph_path"
-      ],
-      "gui": [
-        "Reports"
-      ]
-    },
-    {
-      "id": "templates-and-tasks",
-      "title": "Templates and tasks",
-      "summary": "Keep notes that are shapes for other notes, make new ones from them, and see the tasks scattered across a library in one list.",
-      "rest": [
-        "GET /api/v1/templates",
-        "GET /api/v1/templates/{document_id}",
-        "POST /api/v1/templates/{document_id}/create",
-        "GET /api/v1/tasks"
-      ],
-      "mcp": [
-        "list_templates",
-        "create_from_template",
-        "list_tasks"
-      ],
-      "surface_note": "Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.",
-      "cli": [
-        "notriosctl tasks list",
-        "notriosctl templates list",
-        "notriosctl templates create"
-      ]
-    },
-    {
-      "id": "query-blocks",
-      "title": "Live query blocks inside a note",
-      "summary": "Put a query inside a note and have its results render where it sits, so a note can show what currently matches instead of a list somebody has to keep up to date.",
-      "rest": [
-        "POST /api/v1/note-queries/run"
-      ],
-      "mcp": [
-        "run_note_query"
-      ],
-      "surface_note": "A query block is a rendering rather than a command: the note carries a fenced query and the interface shows what it matches in place, which is a line rather than a gap. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.",
-      "gui": [
-        "Query blocks render in the preview, in place"
-      ]
-    },
-    {
-      "id": "batch-operations",
-      "title": "Reorganise many notes at once",
-      "summary": "Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action.",
-      "cli": [
-        "notriosctl notes duplicate"
-      ],
-      "rest": [
-        "POST /api/v1/batch"
-      ],
-      "mcp": [
-        "run_batch"
-      ],
-      "gui": [
-        "result-check",
-        "selection-panel",
-        "selection-move",
-        "selection-add-tag",
-        "selection-trash"
-      ],
-      "surface_note": "At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped — a tag it already had, a notebook it was already in — is not a note that failed."
-    },
-    {
-      "id": "import-notes",
-      "title": "Import from another application",
-      "summary": "Bring in what you already have elsewhere: a Joplin export, an Obsidian vault, a Twitter or X archive, a ChatGPT or Claude export, or another Notrios archive. Every importer shows you what it would do before it does it.",
-      "cli": [
-        "notriosctl import joplin-raw",
-        "notriosctl import obsidian",
-        "notriosctl import twitter",
-        "notriosctl import chatgpt",
-        "notriosctl import claude",
-        "notriosctl import archive"
-      ],
-      "surface_note": "Importing names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route at all; in a browser the control is shown and disabled with that reason rather than hidden. The desktop application handles Joplin, Obsidian and Notrios archives, and merges only — replace, fork and adopt stay at the command line because they change which library this is. Twitter, ChatGPT and Claude imports are command line only.",
-      "gui": [
-        "Import from Joplin",
-        "Import from Obsidian",
-        "Import from Notrios"
-      ]
-    },
-    {
-      "id": "export-and-archive",
-      "title": "Export your library",
-      "summary": "Write a portable archive of the whole library or a chosen part of it, check one against this version before trusting it, verify one, and restore one when you mean to.",
-      "cli": [
-        "notriosctl export archive",
-        "notriosctl export archive-v2",
-        "notriosctl verify archive-v2",
-        "notriosctl restore archive-v2",
-        "notriosctl compatibility archive-v2"
-      ],
-      "surface_note": "Exporting names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route; in a browser the control is shown and disabled with that reason. The interface writes a complete archive; choosing a subset by notebook, tag or query stays at the command line, because choosing a subset means seeing what it selects first.",
-      "gui": [
-        "Export this library",
-        "Verify the archive"
-      ]
-    },
-    {
-      "id": "snapshots",
-      "title": "Back up and restore the whole library",
-      "summary": "Take a copy of everything — the database, the attachments and the history — check that it is sound, and put it back later, either over this library or as a new replica beside it.",
-      "cli": [
-        "notriosctl snapshot create",
-        "notriosctl snapshot verify",
-        "notriosctl snapshot restore"
-      ],
-      "surface_note": "Snapshots name a folder on the machine running the library, so they are desktop and command line only. Taking one is in the interface; restoring one is not, because a restore replaces the library the window is showing. Restoring asks which you mean — replace this library, or adopt the snapshot as a separate replica — rather than choosing for you.",
-      "gui": [
-        "Take a snapshot"
-      ]
-    },
-    {
-      "id": "sync-pairing",
-      "title": "Pair two of your own libraries",
-      "summary": "Teach two of your own libraries to trust each other: enrol one, issue a single-use code, and spend it from the other side.",
-      "cli": [
-        "notriosctl sync init",
-        "notriosctl sync invite",
-        "notriosctl sync join",
-        "notriosctl sync accept",
-        "notriosctl sync enroll",
-        "notriosctl sync discover",
-        "notriosctl sync handshake"
-      ],
-      "rest": [
-        "GET /api/v1/sync-ui",
-        "POST /api/v1/sync-ui/initialize",
-        "PUT /api/v1/sync-ui/configuration",
-        "POST /api/v1/sync-ui/discover",
-        "POST /api/v1/sync-ui/invitations",
-        "POST /api/v1/sync-ui/pair",
-        "GET /api/v1/sync/handshake",
-        "POST /api/v1/sync/pair"
-      ],
-      "gui": [
-        "Open the sync center — executed (open-sync-center)"
-      ],
-      "surface_note": "No MCP tools, deliberately: an assistant can watch a synchronization run and cannot decide who is trusted. Pairing also reads and writes files you name, which is why it has no general REST route either. Pairing from a phone would go through the shared library rather than through MCP, and that surface carries no synchronization yet."
-    },
-    {
-      "id": "sync-exchange",
-      "title": "Synchronize with a replica",
-      "summary": "Exchange changes with a library you have paired: directly over an authenticated connection, or through a folder you can both reach — a second drive, or a cloud folder mapped into this machine.",
-      "cli": [
-        "notriosctl sync exchange",
-        "notriosctl sync once",
-        "notriosctl sync status",
-        "notriosctl sync start",
-        "notriosctl sync retention"
-      ],
-      "rest": [
-        "GET /api/v1/sync/status",
-        "GET /api/v1/sync/carrier/namespaces",
-        "GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
-        "GET /api/v1/sync/carrier/{segment1}/{segment2}",
-        "PUT /api/v1/sync/carrier/{segment1}/{segment2}",
-        "DELETE /api/v1/sync/carrier/{segment1}/{segment2}",
-        "POST /api/v1/jobs/sync/plan",
-        "POST /api/v1/jobs/sync/start",
-        "GET /api/v1/jobs/{job_id}/sync"
-      ],
-      "mcp": [
-        "start_sync",
-        "plan_sync",
-        "get_sync_status"
-      ],
-      "gui": [
-        "Sync now"
-      ]
-    },
-    {
-      "id": "sync-peers",
-      "title": "See and end trust between replicas",
-      "summary": "See which replicas a library trusts, take one's key away, and retire a peer once you have read exactly what retiring it means.",
-      "cli": [
-        "notriosctl sync peers",
-        "notriosctl sync revoke",
-        "notriosctl sync retire"
-      ],
-      "rest": [
-        "POST /api/v1/sync-ui/peers/{replica_id}/retire",
-        "POST /api/v1/sync-ui/peers/{replica_id}/retirement-preview",
-        "POST /api/v1/sync-ui/peers/{replica_id}/snapshot-permission",
-        "GET /api/v1/sync-ui/retention"
-      ],
-      "gui": [
-        "Peers",
-        "Retention"
-      ],
-      "surface_note": "No MCP tools, under the same rule as pairing: an assistant can watch a synchronization and cannot decide who is trusted. Retiring a peer is a permanent identity decision recorded with a signature, and revoking a key with `--advance-epoch` changes what every other replica will accept — both show you what they mean before they happen."
-    },
-    {
-      "id": "sync-recovery",
-      "title": "Recover a replica and resolve conflicts",
-      "summary": "When a replica is lost, or two of them disagree: fetch a backup a peer has verified, look inside one without installing it, work through the conflicts a synchronization could not settle, and decide what a shared attachment should do.",
-      "cli": [
-        "notriosctl sync fetch-backup"
-      ],
-      "rest": [
-        "GET /api/v1/sync-conflicts",
-        "GET /api/v1/sync-ui/conflicts/{conflict_id}",
-        "POST /api/v1/sync-ui/conflicts/{conflict_id}/resolve",
-        "POST /api/v1/sync-ui/recovery",
-        "POST /api/v1/sync-ui/resources/{resource_id}/intent",
-        "POST /api/v1/sync-ui/backups",
-        "POST /api/v1/sync-ui/backups/inspect",
-        "GET /api/v1/sync/backups/{backup_id}",
-        "POST /api/v1/sync/backups"
-      ],
-      "mcp": [
-        "list_sync_conflicts"
-      ],
-      "gui": [
-        "Conflicts",
-        "Backup & recovery"
-      ]
-    },
-    {
-      "id": "sync-credentials",
-      "title": "Choose where sync keys are kept",
-      "summary": "An installed Notrios keeps the key protecting your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction.",
-      "cli": [
-        "notriosctl sync migrate-credentials"
-      ],
-      "surface_note": "Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret."
-    },
-    {
-      "id": "jobs",
-      "title": "Watch and steer long-running work",
-      "summary": "Imports, exports and synchronizations run as jobs rather than as a window you have to keep open. List them, look at one, cancel it, retry it, or reset one that is stuck.",
-      "cli": [
-        "notriosctl jobs list",
-        "notriosctl jobs show",
-        "notriosctl jobs status",
-        "notriosctl jobs cancel",
-        "notriosctl jobs retry"
-      ],
-      "rest": [
-        "GET /api/v1/jobs",
-        "GET /api/v1/jobs/{job_id}",
-        "POST /api/v1/jobs/{job_id}/cancel",
-        "POST /api/v1/jobs/{job_id}/retry",
-        "POST /api/v1/jobs/{job_id}/reset"
-      ],
-      "mcp": [
-        "list_jobs",
-        "get_job",
-        "cancel_sync_job",
-        "retry_sync_job"
-      ],
-      "surface_note": "The interface has the sync centre's list of recent synchronization jobs, with Cancel on one still running and Retry on one that failed or was cancelled — a retry resumes from the last verified checkpoint rather than from the beginning. Import, export and snapshot jobs do not appear there, and there is no general job list, no inspect and no reset in the interface yet; the command line, REST and MCP have all of it.",
-      "gui": [
-        "Recent synchronization jobs — kind, state and progress",
-        "Cancel — while a sync job is running or queued",
-        "Retry — on a sync job that failed or was cancelled"
-      ]
-    },
-    {
-      "id": "profiles",
-      "title": "Keep separate libraries",
-      "summary": "Run more than one library on a machine — personal notes, work notes, a blog — each with its own database, its own settings and its own address.",
-      "cli": [
-        "notriosctl profile create",
-        "notriosctl profile list",
-        "notriosctl profile show",
-        "notriosctl profile register",
-        "notriosctl profile forget",
-        "notriosctl profile start",
-        "notriosctl profile validate"
-      ],
-      "surface_note": "Switching between profiles is in the interface; making, registering and forgetting them is command-line work, and a browser cannot manage them at all. The absence from REST and MCP is deliberate rather than unfinished: `profile create` names a directory to keep a library in and `profile start` launches a process, so a route that accepted those would let a caller point the service at any directory and start something.",
-      "gui": [
-        "Active profile — the selector in the sync centre's Setup tab"
-      ]
-    },
-    {
-      "id": "publishing",
-      "title": "Publish a subset of your notes",
-      "summary": "Publish a chosen part of your library and nothing else. Review exactly what would be included and what would be held back, save that choice as a profile, and publish only after agreeing to the plan you were shown.",
-      "cli": [
-        "notriosctl publish plan",
-        "notriosctl publish run",
-        "notriosctl publish profile save",
-        "notriosctl publish profile list",
-        "notriosctl publish profile delete"
-      ],
-      "rest": [
-        "POST /api/v1/selection/plan"
-      ],
-      "mcp": [
-        "plan_selection"
-      ],
-      "surface_note": "The review is the feature rather than a step before it, so it is in the interface, and the counts lead with what is withheld and which links get rewritten rather than with what is sent. `publish run` re-plans and refuses unless what it computes still matches what you reviewed. Profiles are read here and never written: a profile carries a target, a selection and a privacy policy, and a form that quietly defaulted one is how something private gets published, so authoring stays `notriosctl publish profile save`.",
-      "gui": [
-        "Publish a subset of your notes — choosing a saved profile",
-        "Review what this would publish",
-        "Publish this review — in the desktop application only"
-      ]
-    },
-    {
-      "id": "maintenance",
-      "title": "Keep a library healthy",
-      "summary": "Find what has rotted — broken links, attachments nothing points at, notes referring to things that are gone — fix what can be fixed mechanically, reclaim the space, and check that this installation is set up the way you think it is.",
-      "cli": [
-        "notriosctl lint",
-        "notriosctl fix",
-        "notriosctl gc",
-        "notriosctl doctor",
-        "notriosctl paths",
-        "notriosctl config show",
-        "notriosctl version",
-        "notriosctl seed-help"
-      ],
-      "rest": [
-        "GET /api/v1/admin/lint/report",
-        "GET /api/v1/admin/gc/report",
-        "GET /api/v1/status",
-        "GET /healthz"
-      ],
-      "mcp": [
-        "get_lint_report"
-      ],
-      "surface_note": "Reporting and repairing are in the interface and at the command line. Over REST the lint surface is read-only on purpose: that is the surface a program reaches, and repairs to somebody's notes should not be one call away from one. Every repair writes a revision against the revision it was planned on, so a note edited in between is refused rather than repaired against text nobody read. Reclaiming space stays `notriosctl gc --apply`, because it deletes blobs and there is no revision to go back to. `doctor`, `paths` and `config show` are command line only.",
-      "gui": [
-        "Health — the lint report and the collection plan",
-        "Show me what would be repaired",
-        "Repair them — in the desktop application only"
-      ]
-    },
-    {
-      "id": "upgrade-layout",
-      "title": "Move a pre-0.8 library into place",
-      "summary": "A library that lived in a `./data` folder next to the program moves into the directories an installed Notrios uses — after showing you the plan.",
-      "cli": [
-        "notriosctl migrate"
-      ],
-      "surface_note": "This one is genuinely command-line work: it relocates the directories the running program is using, which is not something a program can sensibly do to itself while serving them."
-    },
-    {
-      "id": "mcp-endpoint",
-      "title": "Let an AI assistant use your library",
-      "summary": "Notrios speaks MCP, so an assistant can read your library and, within a scope you grant, change it. What it may touch is yours to decide, and establishing trust between replicas and managing credentials are outside every scope.",
-      "rest": [
-        "GET /mcp",
-        "POST /mcp"
-      ],
-      "surface_note": "This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached."
+      "surface_note": "All four surfaces write notes. At a terminal, `notes create` takes a body from a file or a pipe, so a note can be the end of a pipeline, and `notes append` and `notes prepend` add to a note without rewriting it \u2014 which matters because no surface can patch a range of a body. Deleting and restoring are deliberately on the same surface: a delete whose undo lives somewhere else is a poor boundary."
     }
   ]
 }

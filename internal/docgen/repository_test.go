@@ -72,7 +72,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// operations already had a single-note command to hang `--query` on and
 		// copying a note had none, so the command line reached five sixths of a
 		// capability REST and MCP reached whole.
-		{cliHelpAnchor, 91},
+		// 91 -> 92 in v1.0 J3: `purge`. A packaged installation could not reach
+		// any of make purge's safeguards -- the verified backup, the refusal when
+		// nothing can answer, the symlink protection, the sync-key exclusion --
+		// because they live in scripts/lifecycle.py and the .deb ships no Python.
+		{cliHelpAnchor, 92},
 		{restAnchor, 109},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},

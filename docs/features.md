@@ -59,49 +59,19 @@ up as the first.
 Registry is the feature catalogue: what a person can do with Notrios, and
 which surfaces offer each capability.
 
-### Write and edit notes
+### Attach and manage files
 
-Write a note, change it, add to the top or bottom of it, and throw it away. Deleting puts a note in the Trash, which is somewhere you can look and take things back out of rather than a countdown — nothing is destroyed until you empty it.
+Attach files to notes, read them back out, see what references what, and find attachments nothing points at any more.
 
-All four surfaces write notes. At a terminal, `notes create` takes a body from a file or a pipe, so a note can be the end of a pipeline, and `notes append` and `notes prepend` add to a note without rewriting it — which matters because no surface can patch a range of a body. Deleting and restoring are deliberately on the same surface: a delete whose undo lives somewhere else is a poor boundary.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Read a note and its structure
-
-Open a note whole, or take just the part you need: the body, an outline of its headings, one of its blocks, a range of lines, or an earlier revision. The structured views exist so a program can work on part of a note without parsing the rest.
-
-The command line prints a note as Markdown with front matter, so another application can read it as a file, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions are on REST and MCP only — they are for programs working inside a note, and a terminal has `notes show` and a text editor.
+Where the link goes in your prose is yours, and the two surfaces differ because only one of them knows where you are typing. In the interface, attaching a file inserts the Markdown at the cursor and leaves the note unsaved. At a terminal, `resources add` puts the file in the library and prints its `resource://` URI without touching the body; `notes append` or `notes prepend` place it once you have decided where it belongs. The bytes are stored once and addressed by their content, so the same file attached twice is stored once.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
-### Search your notes
+### Reorganise many notes at once
 
-Find notes by text, tag, notebook, date and the rest of the query language — one language, whether you type it into the search box or hand it to a command. You can search a whole library or inside a single note.
+Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action.
 
-A search is what turns a question into something you can act on: every hit carries the note's identifier, which is what `notes show`, `notes move`, `tags add` and the batch operations take. `--count` answers how many without paging through them, and `--links` prints the `notrios://` form for pasting into another machine's library. A search spans every collection unless `collection:` narrows it, and leaves the Trash out unless the query says `is:trashed`.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Notebooks that are really saved searches
-
-Save a query as a notebook, so a view you would otherwise retype becomes something you open.
-
-At a terminal this is `notebooks create --query`. In the interface it is offered on a search that has already run and returned something, rather than as a form to fill in: a notebook built from a query nobody has watched work opens empty as easily as it opens right. The query is shown and is not editable there, which is what keeps it from becoming a second search box.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Organise notes into notebooks
-
-Make notebooks, nest them inside each other, move notes between them, and see what deleting a notebook would take with it before you agree to it.
-
-`notebooks list` prints a table of names and identifiers, with `--json` for the structured form — the identifier is what a query and the note commands take, so finding it should not mean reading a JSON object at a terminal. Deleting a notebook shows what it holds first, on every surface that offers it.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Tag and untag a note
-
-Put a tag on a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`, and a search for `field` finds both.
+At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped — a tag it already had, a notebook it was already in — is not a note that failed.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -121,55 +91,17 @@ A collection is provenance rather than a place notes live: an import files notes
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
-### Attach and manage files
+### Export your library
 
-Attach files to notes, read them back out, see what references what, and find attachments nothing points at any more.
+Write a portable archive of the whole library or a chosen part of it, check one against this version before trusting it, verify one, and restore one when you mean to.
 
-Where the link goes in your prose is yours, and the two surfaces differ because only one of them knows where you are typing. In the interface, attaching a file inserts the Markdown at the cursor and leaves the note unsaved. At a terminal, `resources add` puts the file in the library and prints its `resource://` URI without touching the body; `notes append` or `notes prepend` place it once you have decided where it belongs. The bytes are stored once and addressed by their content, so the same file attached twice is stored once.
+Exporting names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route; in a browser the control is shown and disabled with that reason. The interface writes a complete archive; choosing a subset by notebook, tag or query stays at the command line, because choosing a subset means seeing what it selects first.
 
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Bring remote images into the library
-
-A note that points at an image on somebody else's server stops working when that server does. Find those images, see what the policy decided about each one, and copy the allowed ones in so the note stops depending on anyone.
-
-Localizing is offered where you are editing, because it rewrites the note. It is deliberately not a general downloader: every fetch goes through the domain policy, quarantine, hashing and size limits, so a note cannot be made to pull an arbitrary address into your library. The scan that lists them downloads nothing — each decision is made from the address alone.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Link notes to each other
-
-Get a stable link to a note or to one of its sections, follow one, check that a draft's links still resolve before you save it, and register Notrios as the program that opens `notrios://` links.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
+*Available on the desktop app and the command line.*
 
 ### See the shape of the link graph
 
 See what surrounds a note, find the path between two of them, and get a report on the notes nothing links to, the ones that link to nothing, and the few that everything runs through.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Templates and tasks
-
-Keep notes that are shapes for other notes, make new ones from them, and see the tasks scattered across a library in one list.
-
-Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.
-
-*Available on the command line, the REST API and MCP.*
-
-### Live query blocks inside a note
-
-Put a query inside a note and have its results render where it sits, so a note can show what currently matches instead of a list somebody has to keep up to date.
-
-A query block is a rendering rather than a command: the note carries a fenced query and the interface shows what it matches in place, which is a line rather than a gap. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
-
-*Available on the desktop app, the REST API and MCP.*
-
-### Reorganise many notes at once
-
-Reorganise a lot of notes in one go: move, tag, untag, duplicate, trash or restore everything a search finds, as one reviewable action.
-
-At a terminal the set is named by a search rather than by a list of identifiers: `--query` on `notes move`, `notes delete`, `notes restore`, `notes duplicate`, `tags add` and `tags remove`. Nothing happens until you add `--apply` — without it the command shows the notes it would act on and stops — and a selection larger than the 500-note ceiling is refused rather than trimmed, because acting on the first five hundred of a thousand matches looks exactly like success. In the interface you tick the notes in the results list and the editor is replaced by the operations that apply to a set, because with several notes chosen there is no one note to read. Both send the same request, and both report every note rather than a total: a note that was skipped — a tag it already had, a notebook it was already in — is not a note that failed.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -181,63 +113,41 @@ Importing names a folder on the machine running the library, so it belongs to th
 
 *Available on the desktop app and the command line.*
 
-### Export your library
-
-Write a portable archive of the whole library or a chosen part of it, check one against this version before trusting it, verify one, and restore one when you mean to.
-
-Exporting names a folder on the machine running the library, so it belongs to the desktop application and the command line and has no REST route; in a browser the control is shown and disabled with that reason. The interface writes a complete archive; choosing a subset by notebook, tag or query stays at the command line, because choosing a subset means seeing what it selects first.
-
-*Available on the desktop app and the command line.*
-
-### Back up and restore the whole library
-
-Take a copy of everything — the database, the attachments and the history — check that it is sound, and put it back later, either over this library or as a new replica beside it.
-
-Snapshots name a folder on the machine running the library, so they are desktop and command line only. Taking one is in the interface; restoring one is not, because a restore replaces the library the window is showing. Restoring asks which you mean — replace this library, or adopt the snapshot as a separate replica — rather than choosing for you.
-
-*Available on the desktop app and the command line.*
-
-### Pair two of your own libraries
-
-Teach two of your own libraries to trust each other: enrol one, issue a single-use code, and spend it from the other side.
-
-No MCP tools, deliberately: an assistant can watch a synchronization run and cannot decide who is trusted. Pairing also reads and writes files you name, which is why it has no general REST route either. Pairing from a phone would go through the shared library rather than through MCP, and that surface carries no synchronization yet.
-
-*Available on the desktop app, the command line and the REST API.*
-
-### Synchronize with a replica
-
-Exchange changes with a library you have paired: directly over an authenticated connection, or through a folder you can both reach — a second drive, or a cloud folder mapped into this machine.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### See and end trust between replicas
-
-See which replicas a library trusts, take one's key away, and retire a peer once you have read exactly what retiring it means.
-
-No MCP tools, under the same rule as pairing: an assistant can watch a synchronization and cannot decide who is trusted. Retiring a peer is a permanent identity decision recorded with a signature, and revoking a key with `--advance-epoch` changes what every other replica will accept — both show you what they mean before they happen.
-
-*Available on the desktop app, the command line and the REST API.*
-
-### Recover a replica and resolve conflicts
-
-When a replica is lost, or two of them disagree: fetch a backup a peer has verified, look inside one without installing it, work through the conflicts a synchronization could not settle, and decide what a shared attachment should do.
-
-*Available on the desktop app, the command line, the REST API and MCP.*
-
-### Choose where sync keys are kept
-
-An installed Notrios keeps the key protecting your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction.
-
-Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret.
-
-*Available on the command line.*
-
 ### Watch and steer long-running work
 
 Imports, exports and synchronizations run as jobs rather than as a window you have to keep open. List them, look at one, cancel it, retry it, or reset one that is stuck.
 
 The interface has the sync centre's list of recent synchronization jobs, with Cancel on one still running and Retry on one that failed or was cancelled — a retry resumes from the last verified checkpoint rather than from the beginning. Import, export and snapshot jobs do not appear there, and there is no general job list, no inspect and no reset in the interface yet; the command line, REST and MCP have all of it.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Link notes to each other
+
+Get a stable link to a note or to one of its sections, follow one, check that a draft's links still resolve before you save it, and register Notrios as the program that opens `notrios://` links.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Keep a library healthy
+
+Find what has rotted — broken links, attachments nothing points at, notes referring to things that are gone — fix what can be fixed mechanically, reclaim the space, and check that this installation is set up the way you think it is.
+
+Reporting and repairing are in the interface and at the command line. Over REST the lint surface is read-only on purpose: that is the surface a program reaches, and repairs to somebody's notes should not be one call away from one. Every repair writes a revision against the revision it was planned on, so a note edited in between is refused rather than repaired against text nobody read. Reclaiming space stays `notriosctl gc --apply`, because it deletes blobs and there is no revision to go back to. `doctor`, `paths` and `config show` are command line only.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Let an AI assistant use your library
+
+Notrios speaks MCP, so an assistant can read your library and, within a scope you grant, change it. What it may touch is yours to decide, and establishing trust between replicas and managing credentials are outside every scope.
+
+This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached.
+
+*Available on the REST API.*
+
+### Organise notes into notebooks
+
+Make notebooks, nest them inside each other, move notes between them, and see what deleting a notebook would take with it before you agree to it.
+
+`notebooks list` prints a table of names and identifiers, with `--json` for the structured form — the identifier is what a query and the note commands take, so finding it should not mean reading a JSON object at a terminal. Deleting a notebook shows what it holds first, on every surface that offers it.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
@@ -257,13 +167,111 @@ The review is the feature rather than a step before it, so it is in the interfac
 
 *Available on the desktop app, the command line, the REST API and MCP.*
 
-### Keep a library healthy
+### Live query blocks inside a note
 
-Find what has rotted — broken links, attachments nothing points at, notes referring to things that are gone — fix what can be fixed mechanically, reclaim the space, and check that this installation is set up the way you think it is.
+Put a query inside a note and have its results render where it sits, so a note can show what currently matches instead of a list somebody has to keep up to date.
 
-Reporting and repairing are in the interface and at the command line. Over REST the lint surface is read-only on purpose: that is the surface a program reaches, and repairs to somebody's notes should not be one call away from one. Every repair writes a revision against the revision it was planned on, so a note edited in between is refused rather than repaired against text nobody read. Reclaiming space stays `notriosctl gc --apply`, because it deletes blobs and there is no revision to go back to. `doctor`, `paths` and `config show` are command line only.
+A query block is a rendering rather than a command: the note carries a fenced query and the interface shows what it matches in place, which is a line rather than a gap. At a terminal the same question is `notriosctl search`, and formatting the answer is a template tool's job. A command that ran a block's query would be a second way to run a query.
+
+*Available on the desktop app, the REST API and MCP.*
+
+### Read a note and its structure
+
+Open a note whole, or take just the part you need: the body, an outline of its headings, one of its blocks, a range of lines, or an earlier revision. The structured views exist so a program can work on part of a note without parsing the rest.
+
+The command line prints a note as Markdown with front matter, so another application can read it as a file, and `--json` gives the fields instead; `notes outline`, `notes resources` and `notes links` answer what a note is made of. Blocks, line ranges and revisions are on REST and MCP only — they are for programs working inside a note, and a terminal has `notes show` and a text editor.
 
 *Available on the desktop app, the command line, the REST API and MCP.*
+
+### Bring remote images into the library
+
+A note that points at an image on somebody else's server stops working when that server does. Find those images, see what the policy decided about each one, and copy the allowed ones in so the note stops depending on anyone.
+
+Localizing is offered where you are editing, because it rewrites the note. It is deliberately not a general downloader: every fetch goes through the domain policy, quarantine, hashing and size limits, so a note cannot be made to pull an arbitrary address into your library. The scan that lists them downloads nothing — each decision is made from the address alone.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Remove your data, on purpose
+
+Delete this library's notes, configuration, state and cache, after a backup that is written and verified before anything is removed. It shows you what it would delete before it deletes it, tells you where the backup is, and refuses rather than guessing when nothing can answer the question. Removing the program is a separate act -- `apt remove` or `make uninstall` -- and both leave your notes exactly where they are.
+
+Command line only, deliberately. There is no REST or MCP surface for deleting a library: those exist to be called by something else, and the one operation that cannot be undone should be reached by a person who typed it.
+
+*Available on the command line.*
+
+### Notebooks that are really saved searches
+
+Save a query as a notebook, so a view you would otherwise retype becomes something you open.
+
+At a terminal this is `notebooks create --query`. In the interface it is offered on a search that has already run and returned something, rather than as a form to fill in: a notebook built from a query nobody has watched work opens empty as easily as it opens right. The query is shown and is not editable there, which is what keeps it from becoming a second search box.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Search your notes
+
+Find notes by text, tag, notebook, date and the rest of the query language — one language, whether you type it into the search box or hand it to a command. You can search a whole library or inside a single note.
+
+A search is what turns a question into something you can act on: every hit carries the note's identifier, which is what `notes show`, `notes move`, `tags add` and the batch operations take. `--count` answers how many without paging through them, and `--links` prints the `notrios://` form for pasting into another machine's library. A search spans every collection unless `collection:` narrows it, and leaves the Trash out unless the query says `is:trashed`.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Back up and restore the whole library
+
+Take a copy of everything — the database, the attachments and the history — check that it is sound, and put it back later, either over this library or as a new replica beside it.
+
+Snapshots name a folder on the machine running the library, so they are desktop and command line only. Taking one is in the interface; restoring one is not, because a restore replaces the library the window is showing. Restoring asks which you mean — replace this library, or adopt the snapshot as a separate replica — rather than choosing for you.
+
+*Available on the desktop app and the command line.*
+
+### Choose where sync keys are kept
+
+An installed Notrios keeps the key protecting your sync material in the operating system's credential store. Move existing keys between that and the owner-only development file, in either direction.
+
+Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret.
+
+*Available on the command line.*
+
+### Synchronize with a replica
+
+Exchange changes with a library you have paired: directly over an authenticated connection, or through a folder you can both reach — a second drive, or a cloud folder mapped into this machine.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Pair two of your own libraries
+
+Teach two of your own libraries to trust each other: enrol one, issue a single-use code, and spend it from the other side.
+
+No MCP tools, deliberately: an assistant can watch a synchronization run and cannot decide who is trusted. Pairing also reads and writes files you name, which is why it has no general REST route either. Pairing from a phone would go through the shared library rather than through MCP, and that surface carries no synchronization yet.
+
+*Available on the desktop app, the command line and the REST API.*
+
+### See and end trust between replicas
+
+See which replicas a library trusts, take one's key away, and retire a peer once you have read exactly what retiring it means.
+
+No MCP tools, under the same rule as pairing: an assistant can watch a synchronization and cannot decide who is trusted. Retiring a peer is a permanent identity decision recorded with a signature, and revoking a key with `--advance-epoch` changes what every other replica will accept — both show you what they mean before they happen.
+
+*Available on the desktop app, the command line and the REST API.*
+
+### Recover a replica and resolve conflicts
+
+When a replica is lost, or two of them disagree: fetch a backup a peer has verified, look inside one without installing it, work through the conflicts a synchronization could not settle, and decide what a shared attachment should do.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Tag and untag a note
+
+Put a tag on a note, take one off, and see what a note carries. Tags are hierarchical: `field/dusk` sits under `field`, and a search for `field` finds both.
+
+*Available on the desktop app, the command line, the REST API and MCP.*
+
+### Templates and tasks
+
+Keep notes that are shapes for other notes, make new ones from them, and see the tasks scattered across a library in one list.
+
+Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.
+
+*Available on the command line, the REST API and MCP.*
 
 ### Move a pre-0.8 library into place
 
@@ -273,13 +281,13 @@ This one is genuinely command-line work: it relocates the directories the runnin
 
 *Available on the command line.*
 
-### Let an AI assistant use your library
+### Write and edit notes
 
-Notrios speaks MCP, so an assistant can read your library and, within a scope you grant, change it. What it may touch is yours to decide, and establishing trust between replicas and managing credentials are outside every scope.
+Write a note, change it, add to the top or bottom of it, and throw it away. Deleting puts a note in the Trash, which is somewhere you can look and take things back out of rather than a countdown — nothing is destroyed until you empty it.
 
-This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached.
+All four surfaces write notes. At a terminal, `notes create` takes a body from a file or a pipe, so a note can be the end of a pipeline, and `notes append` and `notes prepend` add to a note without rewriting it — which matters because no surface can patch a range of a body. Deleting and restoring are deliberately on the same surface: a delete whose undo lives somewhere else is a poor boundary.
 
-*Available on the REST API.*
+*Available on the desktop app, the command line, the REST API and MCP.*
 
 <!-- notrios:generated:user:what-you-can-do:end -->
 
@@ -298,35 +306,36 @@ capability's own section.
 
 | Capability | Desktop app | Command line | REST | MCP | Shared library |
 |---|---|---|---|---|---|
-| Write and edit notes | 6 | 6 | 10 | 6 | — |
-| Read a note and its structure | 2 | 4 | 7 | 5 | — |
-| Search your notes | 1 | 1 | 3 | 2 | — |
-| Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
-| Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
-| Tag and untag a note | 4 | 3 | 2 | 2 | — |
+| Attach and manage files | 2 | 4 | 8 | 2 | — |
+| Reorganise many notes at once | 5 | 1 | 1 | 1 | — |
 | See and rename tags | 4 | 3 | 3 | 1 | — |
 | See where notes came from | 2 | 2 | 4 | 1 | — |
-| Attach and manage files | 2 | 4 | 8 | 2 | — |
-| Bring remote images into the library | 2 | 1 | 4 | 3 | — |
-| Link notes to each other | 1 | 4 | 4 | 1 | — |
-| See the shape of the link graph | 1 | 2 | 4 | 3 | — |
-| Templates and tasks | — | 3 | 4 | 3 | — |
-| Live query blocks inside a note | 1 | — | 1 | 1 | — |
-| Reorganise many notes at once | 5 | 1 | 1 | 1 | — |
-| Import from another application | 3 | 6 | — | — | — |
 | Export your library | 2 | 5 | — | — | — |
-| Back up and restore the whole library | 1 | 3 | — | — | — |
-| Pair two of your own libraries | 1 | 7 | 8 | — | — |
-| Synchronize with a replica | 1 | 5 | 9 | 3 | — |
-| See and end trust between replicas | 2 | 3 | 4 | — | — |
-| Recover a replica and resolve conflicts | 2 | 1 | 9 | 1 | — |
-| Choose where sync keys are kept | — | 1 | — | — | — |
+| See the shape of the link graph | 1 | 2 | 4 | 3 | — |
+| Import from another application | 3 | 6 | — | — | — |
 | Watch and steer long-running work | 3 | 5 | 5 | 4 | — |
+| Link notes to each other | 1 | 4 | 4 | 1 | — |
+| Keep a library healthy | 3 | 8 | 4 | 1 | — |
+| Let an AI assistant use your library | — | — | 2 | — | — |
+| Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Keep separate libraries | 1 | 7 | — | — | — |
 | Publish a subset of your notes | 3 | 5 | 1 | 1 | — |
-| Keep a library healthy | 3 | 8 | 4 | 1 | — |
+| Live query blocks inside a note | 1 | — | 1 | 1 | — |
+| Read a note and its structure | 2 | 4 | 7 | 5 | — |
+| Bring remote images into the library | 2 | 1 | 4 | 3 | — |
+| Remove your data, on purpose | — | 1 | — | — | — |
+| Notebooks that are really saved searches | 1 | 1 | 3 | 1 | — |
+| Search your notes | 1 | 1 | 3 | 2 | — |
+| Back up and restore the whole library | 1 | 3 | — | — | — |
+| Choose where sync keys are kept | — | 1 | — | — | — |
+| Synchronize with a replica | 1 | 5 | 9 | 3 | — |
+| Pair two of your own libraries | 1 | 7 | 8 | — | — |
+| See and end trust between replicas | 2 | 3 | 4 | — | — |
+| Recover a replica and resolve conflicts | 2 | 1 | 9 | 1 | — |
+| Tag and untag a note | 4 | 3 | 2 | 2 | — |
+| Templates and tasks | — | 3 | 4 | 3 | — |
 | Move a pre-0.8 library into place | — | 1 | — | — | — |
-| Let an AI assistant use your library | — | — | 2 | — | — |
+| Write and edit notes | 6 | 6 | 10 | 6 | — |
 <!-- notrios:generated:user:where-each-capability-lives:end -->
 
 The table is generated from the same registry as the sections above, so it
@@ -341,6 +350,7 @@ capability's own section says why.
 Each capability below is offered on some surfaces and not others.
 
 - Let an AI assistant use your library — neither the command line nor the GUI; reachable only over REST or MCP. This is a surface Notrios serves rather than something you run: software with an MCP client connects to it, so there is nothing to demonstrate at a terminal or in a window — a journey would document the client rather than this program. The two REST operations listed here are how the endpoint is reached.
+- Remove your data, on purpose — command line only. Command line only, deliberately. There is no REST or MCP surface for deleting a library: those exist to be called by something else, and the one operation that cannot be undone should be reached by a person who typed it.
 - Choose where sync keys are kept — command line only. Credentials are managed from the command line and nowhere else, firmly: a remote route that can move a key is a remote route that can take one. An installed Notrios never silently falls back to a plaintext file, and nothing here prints, logs or exports a secret.
 - Templates and tasks — command line only. Both are ordinary Markdown rather than tables in a database: a template is a note carrying a note-template block, and a task is a checkbox line in a note tagged `task` or `todo`. So nothing creates a task — writing `- [ ] chase the permit` in a note is how one comes to exist — and what the command line adds is the other half: asking what remains, and filling in a template. A placeholder you leave out is refused rather than quietly left blank, so a template that gains a field fails the scripts that do not know about it. The tag is required because a checkbox is ordinary Markdown and turns up in quoted examples; `--untagged` asks for those too. Not in the interface yet.
 - Move a pre-0.8 library into place — command line only. This one is genuinely command-line work: it relocates the directories the running program is using, which is not something a program can sensibly do to itself while serving them.

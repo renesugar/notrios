@@ -401,6 +401,16 @@ Each task below lists the steps that do it, in order.
   - A query that matches nothing is refused rather than reported as a batch of zero, because at a terminal that is almost always a typo.
 
     `notriosctl tags add --query tag:kitcheen --tag audit --apply`
+**Delete a library, after seeing what that means** — Remove this library's notes and settings, with a verified backup taken first. The dry run is the point. Nothing about which roots a purge touches is guessable, and the one operation that cannot be undone should be one the user has already seen the shape of before they agree to it.
+  - Write a note, so there is something to lose.
+
+    `notriosctl notes create --title "the note this purge will delete" --body "written before the purge"`
+  - See exactly what would be deleted, and where the backup would go. Nothing is removed.
+
+    `notriosctl purge --dry-run`
+  - Do it. --confirm is required because nothing here can answer a question; it skips the question, never the backup.
+
+    `notriosctl purge --confirm`
 <!-- notrios:generated:user:the-journeys:end -->
 
 

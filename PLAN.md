@@ -375,6 +375,58 @@ command keeps that shape rather than inventing a gentler one.
 packaged installation, with every drill that passes for the Make target passing
 for the command, and the backup location printed where the user will read it.
 
+**Built 2026-09-11.** `notriosctl purge` carries what `make purge` carries: a
+verified backup before anything is deleted, a refusal when nothing can answer,
+no deletion through a symlink out of a profile, and sync key material kept out
+of the backup. It deletes *data*, not program files — removing the program stays
+`apt remove` or `make uninstall`, and both leave the notes alone by design.
+
+**The safety-critical half is a port, and the two are held together.** H3's
+oracle decides "may Notrios delete this path", and it was written before any
+code could act on it precisely so the rules could be argued about first. Two
+implementations of a deletion rule is the worst possible duplication, so
+`internal/purge/oracle_test.go` drives H3's own thirty fixtures by name and
+reads the expected verdict and rule out of `PURGE_ORACLE_FIXTURES.json` rather
+than restating them — and fails if a fixture case exists that the port does not
+exercise, so the coverage cannot rot either. Following a symlink instead of
+refusing it, reclassifying `cache` as irreplaceable, and dropping `/usr` from
+the forbidden roots were each introduced on purpose and each caught.
+
+**Three things were found by running it rather than by writing it.**
+
+*The port's own test tested the wrong rule.* Go's `filepath.Join` cleans its
+result, so the dot-dot traversal case presented an already-normalised path and
+reached the `home` rule instead of `normal-form`. Python's `os.path.join` does
+not clean; the fixture comparison caught the difference.
+
+*The prompt called `/dev/null` a terminal.* The obvious check —
+`os.Stdin.Stat()` and `ModeCharDevice` — is true of `/dev/null`, because
+`/dev/null` **is** a character device. A purge with stdin redirected therefore
+printed a question nobody could see and reported an answer nobody gave. It
+failed closed, which is the direction to be wrong in, but it told the user they
+had declined rather than that nothing could ask them. Reading and treating an
+immediate EOF as "nobody is there" is correct and needs no new dependency.
+
+*A test proved a different rule than the one it named.* The exclusion check is
+deliberately made against the archive rather than trusting the filter ran — so
+the test plants key material in an archive. The first version replaced the
+archive wholesale, and the "recorded but not in the archive" rule caught it
+first. It now rebuilds every recorded member and re-records the hash, so the
+only rule left to catch it is the one under test.
+
+**The freeze fired, which is the machinery working.** Adding a command changed
+the CLI surface I8 froze, and validation refused until the freeze was
+re-recorded. The change is an addition — 91 commands to 92, nothing renamed or
+removed — so it is compatible.
+
+**Still owed, and recorded rather than glossed:** `scripts/lifecycle.py` still
+has its own purge, so the dangerous logic now exists twice. The oracle halves
+are gated against each other; the backup and deletion halves are not. Making
+`make purge` delegate to `notriosctl purge` is the remaining work, and its
+ordering is the interesting part — the data must be purged while the binary that
+does it still exists, so delegation means purging before uninstalling rather
+than after.
+
 ## J4. Stabilise the REST and MCP surfaces for 1.0
 
 **Goal.** The REST API and the MCP tool and resource schemas are what 1.0

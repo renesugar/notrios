@@ -367,6 +367,18 @@
     {
       "path": [
         "notes",
+        "duplicate"
+      ],
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
+      "purpose": "copy a note, or every note a search names",
+      "notes": [
+        "the copy is a new note with its own id; the report names it",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ]
+    },
+    {
+      "path": [
+        "notes",
         "edit"
       ],
       "usage": "--document <id> [--title <title>] [--body-file path | --body text] [--message <why>]",
@@ -451,18 +463,6 @@
       "accepts_ignored": {
         "body": "selected whether to include the body when this command printed only JSON metadata; both forms carry the body now, and refusing the flag would break a script for no gain"
       }
-    },
-    {
-      "path": [
-        "notes",
-        "duplicate"
-      ],
-      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
-      "purpose": "copy a note, or every note a search names",
-      "notes": [
-        "the copy is a new note with its own id; the report names it",
-        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
-      ]
     },
     {
       "path": [
@@ -590,6 +590,17 @@
       "notes": [],
       "purpose": "scoped sanitized archive-v2 handoff; refuses a stale review",
       "usage": "--profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]"
+    },
+    {
+      "path": [
+        "purge"
+      ],
+      "notes": [
+        "deletes this library's data; removing the program is `apt remove` or `make uninstall`",
+        "takes a verified backup first unless --no-backup is passed, and refuses rather than hanging when nothing can answer the question"
+      ],
+      "purpose": "delete this library's notes, configuration, state and cache, after a verified backup",
+      "usage": "[--dry-run] [--confirm] [--no-backup] [--backup-dir path] [--json] [--no-redact]"
     },
     {
       "path": [

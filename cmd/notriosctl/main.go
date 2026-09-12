@@ -49,6 +49,8 @@ func main() {
 		runDoctor(os.Args[2:])
 	case "paths":
 		runPaths(os.Args[2:])
+	case "purge":
+		runPurge(os.Args[2:])
 	case "config":
 		runConfig(os.Args[2:])
 	case "migrate":

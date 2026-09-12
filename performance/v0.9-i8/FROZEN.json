@@ -1,5 +1,5 @@
 {
-  "content_commit": "2b7ccd2baf9361b9ffe190988f7823016526e5c3",
+  "content_commit": "accde9dfab17937e376aced36a0ba878a769ac93",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -61,7 +61,7 @@
       "sha256": "9f9a41d0d6d9cc50ca7676f11487acf25e1148e4681eb28f27e158e3b22051b5"
     },
     "cli": {
-      "count": 91,
+      "count": 92,
       "members": [
         "collections list",
         "collections show",
@@ -117,6 +117,7 @@
         "publish profile list",
         "publish profile save",
         "publish run",
+        "purge",
         "register-url-handler",
         "resources add",
         "resources get",
@@ -155,7 +156,7 @@
         "verify archive-v2",
         "version"
       ],
-      "sha256": "8b58c88240106dbddfd981662293ffa394f257c72bbfc7c6beb85850e3e863c6"
+      "sha256": "65c0b05e79b7a13426dc13fa6cefe9fe2338b378fc099eadb2fd3dcb1d767d7d"
     },
     "configuration": {
       "count": 60,

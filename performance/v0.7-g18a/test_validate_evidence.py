@@ -58,7 +58,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # the packaged install, adding six sections a reader without a
         # repository needs -- verifying a download, upgrading, going back,
         # backing up and restoring, and what is actually supported.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 275)
+        # 275 -> 276 in v1.0 J3: docs/features.md gained the section for
+        # `notriosctl purge`, which is a capability a packaged install
+        # previously had no way to reach.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 276)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

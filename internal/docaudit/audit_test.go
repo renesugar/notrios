@@ -108,7 +108,11 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// needs: verifying a download, upgrading, going back to an earlier version,
 	// backing up and getting the notes back, and a table of what is actually
 	// supported. Six new sections plus a renamed one, and seven new examples.
-	if report.ManualSections != 275 || report.Fragments != 21 || report.Claims != 4 ||
+	// 275 -> 276 sections and 163 executables unchanged in v1.0 J3: docs/features.md
+	// gained the section for `notriosctl purge`. Generated 46 -> 47 and unverified
+	// 339 -> 345 with the denominator 462 -> 469, which is the new feature section,
+	// the new CLI usage form, and the journey that demonstrates it.
+	if report.ManualSections != 276 || report.Fragments != 21 || report.Claims != 4 ||
 		report.Executables != 163 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -142,7 +146,7 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// still counted.
 		// 16 -> 46 generated in v0.8 H18: the twenty-nine capability sections
 		// the features page now renders, plus the surface table's fragment.
-		report.Counts[GradeGenerated] != 46 ||
+		report.Counts[GradeGenerated] != 47 ||
 		// 310 -> 311 unverified and 401 -> 402 denominator in v0.8 H15: the new
 		// prose section on docs/gui.md. One unit arrives and none leaves.
 		// 311 -> 312 unverified and 402 -> 433 denominator in v0.8 H18: one new
@@ -170,7 +174,7 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
 		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 345 ||
-		report.Denominator != 468 {
+		report.Denominator != 469 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

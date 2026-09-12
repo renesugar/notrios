@@ -63,6 +63,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl publish profile list [--db ...]
 - notriosctl publish profile save --name <profile> [--notebooks id,id] [--tags a,b] [--link-action plain_text] [--description text] [--query "tag:todo"] [--documents id,id] [--match any|all] [--target full_archive|subset_transfer] [--exclude-tags a,b] [--private-tags a,b] [--include-provenance] [--include-source-bundles] [--max-resource-bytes N]
 - notriosctl publish run --profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]
+- notriosctl purge [--dry-run] [--confirm] [--no-backup] [--backup-dir path] [--json] [--no-redact]
 - notriosctl register-url-handler [--apply] [--binary path] [--dir path]
 - notriosctl resources add --file <path> [--filename <name>] [--document <id>] [--db ...]
 - notriosctl resources get --resource <id> [--output <file>] [--db ...]
