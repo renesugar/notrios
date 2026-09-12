@@ -26,6 +26,7 @@ MANIFEST = HERE / "MANIFEST.json"
 TAKEN_AT_CLOSE = {
     "J1": "notrios-v1.0-j1-ab4186c.zip",
     "J2": "notrios-v1.0-j2-442a968.zip",
+    "J3": "notrios-v1.0-j3-45d097a.zip",
 }
 
 NOTE = ("Each archive here was built from the commit that closed its item, by the same worktree "

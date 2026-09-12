@@ -54,22 +54,25 @@
     {
       "id": "J3",
       "title": "Give a packaged installation a supported way to delete its data",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J3-A",
           "statement": "notriosctl purge carries the verified backup, the explicit-flag refusal and the symlink protection",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/purge/purge.go"
         },
         {
           "id": "J3-B",
           "statement": "Sync key material is excluded from the backup it writes",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/REPORT.json"
         },
         {
           "id": "J3-C",
           "statement": "The v0.9 I4 drills pass against a packaged installation, and the frozen CLI surface is re-recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/command_drills.sh"
         }
       ]
     },
