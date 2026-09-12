@@ -1,0 +1,69 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/configuration.md",
+  "note": "The published command lines on this page are generated from here by `go run ./cmd/docexamples --write`. An example names the keys that must be set together; the generator renders both the configuration file and the command that checks it, and updates the execution registry's hash. Editing the fence in the document is refused by cmd/docexamples' own test.",
+  "examples": [
+    {
+      "section": "where-your-notes-are-stored",
+      "ordinal": 1,
+      "use_case": "move a library to another disk",
+      "file": "other-disk.yaml",
+      "settings": [
+        {"key": "data.directory", "value": "/mnt/library/notrios"},
+        {"key": "data.database_path", "value": "/mnt/library/notrios/notes.sqlite"},
+        {"key": "data.asset_store", "value": "/mnt/library/notrios/assets"}
+      ],
+      "verify": "notriosctl config show --config other-disk.yaml --json",
+      "postcondition": "config-show-origin-file"
+    },
+    {
+      "section": "serving-the-api-and-the-interface",
+      "ordinal": 1,
+      "use_case": "put the service behind a reverse proxy",
+      "file": "behind-a-proxy.yaml",
+      "settings": [
+        {"key": "server.listen_addr", "value": "127.0.0.1:8080"},
+        {"key": "server.public_base_url", "value": "https://notes.example.com"}
+      ],
+      "verify": "notriosctl config show --config behind-a-proxy.yaml --json",
+      "postcondition": "config-show-origin-file"
+    },
+    {
+      "section": "search",
+      "ordinal": 1,
+      "use_case": "return larger pages",
+      "settings": [
+        {"key": "search.default_limit", "value": "100"},
+        {"key": "search.max_limit", "value": "1000"}
+      ],
+      "verify": "",
+      "unverifiable": "`config show` reports 20 of the 53 keys and these two are not among them, while `notriosctl search` takes --db and not --config. The effect is visible through /api/v1/status. A command here would appear to check something it cannot."
+    },
+    {
+      "section": "search",
+      "ordinal": 2,
+      "use_case": "turn the search sidecar on",
+      "file": "sidecar-on.yaml",
+      "settings": [
+        {"key": "search_sidecar.enabled", "value": "true"},
+        {"key": "search_sidecar.binary", "value": "/usr/bin/recollindex"},
+        {"key": "search_sidecar.index_dir", "value": "/home/you/.cache/notrios/recoll"}
+      ],
+      "verify": "notriosctl config show --config sidecar-on.yaml --json",
+      "postcondition": "config-show-origin-file"
+    },
+    {
+      "section": "remote-media",
+      "ordinal": 1,
+      "use_case": "allow remote media from one domain",
+      "file": "one-domain.yaml",
+      "settings": [
+        {"key": "remote_media.default_action", "value": "block"},
+        {"key": "remote_media.allowed_domains", "list": ["images.example.com"]},
+        {"key": "remote_media.allow_private_networks", "value": "false"}
+      ],
+      "verify": "notriosctl config show --config one-domain.yaml --json",
+      "postcondition": "config-show-origin-file"
+    }
+  ]
+}

@@ -58,6 +58,7 @@ the root the others default under, but `database_path` and `asset_store` are
 resolved independently — so setting only `directory` moves where new roots are
 created and leaves an existing database and asset store where they were:
 
+<!-- notrios:generated:example:configuration-where-your-notes-are-stored-example-1:begin -->
 ```bash
 cat > other-disk.yaml <<'YAML'
 data:
@@ -67,6 +68,7 @@ data:
 YAML
 notriosctl config show --config other-disk.yaml --json
 ```
+<!-- notrios:generated:example:configuration-where-your-notes-are-stored-example-1:end -->
 
 `config show` is how you check a file before the service reads it: it prints the
 configuration that *would* take effect and, for each key, where the value came
@@ -104,6 +106,7 @@ point. `listen_addr` stays on loopback, because the proxy is what reaches the
 network; `public_base_url` is the address a browser uses, and without it the
 links Notrios generates point at `127.0.0.1`:
 
+<!-- notrios:generated:example:configuration-serving-the-api-and-the-interface-example-1:begin -->
 ```bash
 cat > behind-a-proxy.yaml <<'YAML'
 server:
@@ -112,6 +115,7 @@ server:
 YAML
 notriosctl config show --config behind-a-proxy.yaml --json
 ```
+<!-- notrios:generated:example:configuration-serving-the-api-and-the-interface-example-1:end -->
 
 `server.web_dir` is the built interface — the directory with `index.html`.
 Leaving it empty searches the working directory, then the executable's own
@@ -133,11 +137,13 @@ for and `default_limit` is what a request that asks for nothing gets; raising
 only the default leaves the ceiling where it was, and a request asking for more
 is clamped rather than refused:
 
+<!-- notrios:generated:example:configuration-search-example-1:begin -->
 ```yaml
 search:
   default_limit: 100
   max_limit: 1000
 ```
+<!-- notrios:generated:example:configuration-search-example-1:end -->
 
 There is no command-line example for this one, and the reason is worth knowing
 before you go looking for it: **`config show` reports 20 of the 53 keys**, and
@@ -158,6 +164,7 @@ useful: the sidecar needs a binary to run and a directory to index into, and
 `index_dir` must be somewhere a purge treats as rebuildable — under
 `data.cache_dir`, not beside your notes:
 
+<!-- notrios:generated:example:configuration-search-example-2:begin -->
 ```bash
 cat > sidecar-on.yaml <<'YAML'
 search_sidecar:
@@ -167,6 +174,7 @@ search_sidecar:
 YAML
 notriosctl config show --config sidecar-on.yaml --json
 ```
+<!-- notrios:generated:example:configuration-search-example-2:end -->
 
 ## Sync
 
@@ -195,6 +203,7 @@ allow-list has nothing to be an exception to. `allow_private_networks` stays
 false: an allowed domain that resolves to your own network is the case the
 protection exists for:
 
+<!-- notrios:generated:example:configuration-remote-media-example-1:begin -->
 ```bash
 cat > one-domain.yaml <<'YAML'
 remote_media:
@@ -205,6 +214,7 @@ remote_media:
 YAML
 notriosctl config show --config one-domain.yaml --json
 ```
+<!-- notrios:generated:example:configuration-remote-media-example-1:end -->
 
 If you are deciding what to allow, read
 [the remote-media section of the service guide](service.md) before setting

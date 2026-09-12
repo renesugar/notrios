@@ -73,14 +73,13 @@ this section is archived when the plan completes and the rules are not.
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
-| J13. Generate the published command-line examples from executed runs | in-progress | 2/4 | 2 |
+| J13. Generate the published command-line examples from executed runs | in-progress | 3/4 | 1 |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 
 ### Started and not finished
 
 **J13. Generate the published command-line examples from executed runs**
 
-- `J13-B` A per-document tracked example set generates its published command lines, gated against the recorded run — *not-started*
 - `J13-D` Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run — *not-started*
 
 ### Not started
@@ -1147,6 +1146,42 @@ PATH); the postcondition should be read from the example body, because
 restating it in Go is a second copy that can drift; and a verification command
 has to be run against real output before publication — two of five candidates
 were unverifiable and one was silently so.
+
+### J13-B, the tracked set and the generator
+
+`docs/docexamples/configuration.json` is the source of the page's five command
+blocks, and `cmd/docexamples` publishes them. What it tracks is the **intent** —
+the use case, the keys that must be set together, the command that checks them —
+and the generator renders the heredoc *and* the command from that. So the
+example sets exactly the keys the source names by construction, J13-C's
+postcondition reads the rendered YAML back and requires each key from
+`config show` with origin `file`, and there are two independent derivations from
+one declaration with a real check of the product between them. Storing a body
+would have made the tracked set a second copy of the fence.
+
+**It moves the registry hash, because I kept doing that by hand.** Twice in
+J13-C a fence changed and `registry.json` had to be re-hashed manually — right
+both times, one keystroke from wrong both times, and a stale hash fails
+`internal/docaudit` as a mystery rather than an instruction. The edit is
+textual, which was a correction: the first version decoded and re-encoded the
+registry, and since that sorts every object's keys, five hashes would have
+rewritten all 169 entries into a diff nobody could review.
+
+**Confirmed by breaking it in both directions** — a fence edited in the page, and
+the tracked set changed with nothing regenerated (page *and* registry both
+reported stale). The renderer refuses six shapes it cannot render honestly, and
+a test asserts the markers wrap exactly one fence, because a marker inside the
+fence would be published as part of the command.
+
+**Two things checked rather than assumed.** The renderer reproduced the committed
+fences byte-for-byte on its first complete run and its hashes matched the
+registry with no changes — it was not adjusted to match, it matched. And the
+markers are HTML comments that do not reach the published page: zero
+occurrences in `_site/configuration.html`, with `g18g-validate` passing.
+
+Only `docs/configuration.md` is generated. Migrating the rest is J13-D, and
+doing it now would mean designing the migration against fifteen pages before the
+format had survived one.
 
 **One self-inflicted find worth keeping:** the remote-media example's closing
 fence ended up with prose glued to it, so Hugo swallowed the last three sections

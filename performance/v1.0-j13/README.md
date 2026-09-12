@@ -191,3 +191,82 @@ and three requirements came out of it that an imagined design would have missed:
   nesting than that has outgrown what a reader can take in.
 - `allowed_domains` membership is not checked: `config show` does not report the
   list, so the example's third key is written and not asserted.
+
+---
+
+# J13-B — the tracked example set and its generator
+
+`docs/docexamples/configuration.json` is now the source of the five command
+blocks on `docs/configuration.md`, and `cmd/docexamples` publishes them.
+
+## What the source tracks is the intent, not the text
+
+An entry names the use case, the keys that must be set **together**, and the
+command that checks them:
+
+```json
+{
+  "use_case": "move a library to another disk",
+  "file": "other-disk.yaml",
+  "settings": [
+    {"key": "data.directory", "value": "/mnt/library/notrios"},
+    {"key": "data.database_path", "value": "/mnt/library/notrios/notes.sqlite"},
+    {"key": "data.asset_store", "value": "/mnt/library/notrios/assets"}
+  ],
+  "verify": "notriosctl config show --config other-disk.yaml --json",
+  "postcondition": "config-show-origin-file"
+}
+```
+
+The generator renders the heredoc **and** the command from that, so the example
+sets exactly the keys the source names *by construction* rather than by
+inspection. J13-C's postcondition then reads the rendered YAML back and requires
+each key from `config show` with origin `file`, so there are two independent
+derivations from one declaration and a real check of the product between them.
+
+Storing a body instead would have made the tracked set a second copy of the
+fence. This way "these three keys go together" is the thing recorded, which is
+the claim the prose makes and the claim a reader relies on.
+
+## It moves the registry hash, because I kept doing that by hand
+
+Twice in J13-C the fence changed and `docs/docaudit/registry.json` had to be
+re-hashed by hand. Both times it was right and both times it was one keystroke
+from wrong, and a stale hash fails `internal/docaudit` as a mystery rather than
+as an instruction. The tool that changes the fence now moves the hash.
+
+**The edit is textual, and that was a correction.** The first version decoded the
+registry to a map and re-encoded it, which sorts every object's keys — five
+hashes would have rewritten all 169 entries into a diff nobody could review,
+hiding the change it was made for. It now replaces the `sha256` line belonging
+to each id: `2 lines changed`, not 169 entries.
+
+## Confirmed by breaking it, in both directions
+
+- **A fence edited in the page** — `docs/configuration.md does not match
+  docs/docexamples/configuration.json`.
+- **The tracked set changed and nothing regenerated** — the page *and* the
+  registry hashes are both reported stale, and `--write` fixes both.
+- **The renderer refuses six shapes it cannot render honestly**: no settings, an
+  unsectioned key, nesting deeper than one level, a key with both a value and a
+  list, a key with no value, and a verified example with no file to write.
+- **The markers must wrap exactly one fence**, asserted by pattern, because a
+  marker inside the fence would be published as part of the command.
+
+## Two things that had to be checked rather than assumed
+
+**The renderer reproduced the committed fences byte-for-byte on its first
+complete run**, and the computed hashes matched the registry with zero changes.
+That is the strongest evidence available that the generator and the hand-written
+originals agree — it was not adjusted to match; it matched.
+
+**The markers are HTML comments and do not reach the published page.** Confirmed
+after `make docs`: `grep -c notrios:generated:example _site/configuration.html`
+is 0, and `make g18g-validate` passes.
+
+## Not done here, deliberately
+
+Only `docs/configuration.md` is generated. Migrating the other documents is
+J13-D, and doing it now would mean designing the migration against 15 pages
+before the format has survived one — which is the reverse of why J13-C was done
+before J13-B.

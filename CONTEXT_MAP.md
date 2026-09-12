@@ -88,6 +88,17 @@ Feature contracts, which describe one capability rather than the project:
   forgotten. `--byproducts` is a report behind `make bytecode`: leftover
   `__pycache__` is untidy rather than wrong, and a gate refusing a commit over a
   git-ignored byproduct would be switched off inside a week.
+- `cmd/docexamples/` and `docs/docexamples/<document>.json` — the tracked
+  use-case examples for a page, and the generator that publishes them. An entry
+  names the *intent* — the keys that must be set together, the command that
+  checks them — and the generator renders both the configuration file and the
+  command, so the fence sets exactly the keys the source names by construction.
+  It also moves the fence's hash in `docs/docaudit/registry.json`, which was
+  done by hand twice in J13-C and was one keystroke from wrong both times; the
+  edit is textual so five hashes do not rewrite 169 entries. Its tests refuse a
+  hand-edited fence, an unregistered example, and an example with neither a
+  check nor a reason. One file per document: a single file every page depends on
+  is a merge conflict with a schedule.
 - `cmd/docconfig/` — generates the key table at the end of
   `docs/configuration.md` by reflecting over `internal/config.Config` and
   `config.Default()`, so the documented default for a key is the default the

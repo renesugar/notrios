@@ -3,7 +3,7 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "17b6992100028df2a63a48e696a0160546436f82",
+  "content_commit": "cdf16cdd568252d03b218073e78db815762785a8",
   "counts": {
     "examples": 169,
     "executed": 69,

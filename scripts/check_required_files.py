@@ -31,6 +31,7 @@ required = [
     'scripts/verify_evidence_pre_push.sh',
     'scripts/check_agent_usage.py',
     'scripts/claude_statusline_usage.py',
+    'docs/docexamples/configuration.json',
     'performance/v1.0-j13/classify_examples.py',
     'performance/v1.0-j13/validate_evidence.py',
     'scripts/check_docs_site_fresh.py',

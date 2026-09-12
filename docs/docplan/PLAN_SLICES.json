@@ -305,7 +305,8 @@
         {
           "id": "J13-B",
           "statement": "A per-document tracked example set generates its published command lines, gated against the recorded run",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestPublishedExamplesMatchTheirTrackedSet"
         },
         {
           "id": "J13-C",
