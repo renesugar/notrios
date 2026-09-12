@@ -174,6 +174,9 @@ python3 performance/v0.9-i8/validate_evidence.py
 # J3: the packaged-purge record. The drills install and delete; this reads
 # what they recorded.
 python3 performance/v1.0-j3/validate_evidence.py
+# J13-A: the example classification. Derived on every run from the documents
+# themselves, so it fails when a document changes and the report does not.
+python3 performance/v1.0-j13/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

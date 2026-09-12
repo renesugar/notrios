@@ -294,12 +294,13 @@
     {
       "id": "J13",
       "title": "Generate the published command-line examples from executed runs",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J13-A",
           "statement": "Every fenced block in docs/ is classified as synopsis, recipe or transcript, and the gaps are reported per document",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j13/REPORT.json"
         },
         {
           "id": "J13-B",

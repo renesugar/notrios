@@ -1,0 +1,1756 @@
+{
+  "schema": "notrios.v10.j13a-example-classification.v1",
+  "item": "J13-A",
+  "milestone": "v1.0",
+  "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
+  "content_commit": "c4486000b18127f99527a23134df8cbdae58b5fd",
+  "counts": {
+    "examples": 164,
+    "executed": 65,
+    "by_class": {
+      "fragment": 2,
+      "recipe": 116,
+      "synopsis": 45,
+      "transcript": 1
+    },
+    "by_class_and_state": {
+      "fragment/executed": 2,
+      "recipe/executed": 62,
+      "recipe/unverified": 54,
+      "synopsis/unverified": 45,
+      "transcript/executed": 1
+    }
+  },
+  "recipes_never_run": [
+    "api-mcp-connecting-an-mcp-client-example-1",
+    "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+    "archive-v2-reading-an-archive-back-example-1",
+    "cli-exchanging-through-a-folder-example-1",
+    "cli-exchanging-with-a-peer-directly-example-1",
+    "cli-exchanging-with-a-peer-directly-example-2",
+    "cli-exchanging-with-a-peer-directly-example-3",
+    "cli-making-the-second-replica-example-1",
+    "cli-migrate-example-2",
+    "cli-pairing-example-1",
+    "cli-pairing-example-2",
+    "cli-pairing-example-3",
+    "cli-reading-json-output-example-1",
+    "cli-reading-json-output-example-2",
+    "cli-reading-json-output-example-3",
+    "cli-seeing-and-ending-trust-example-2",
+    "cli-seeing-who-is-there-example-1",
+    "cli-where-the-key-material-is-kept-example-1",
+    "gui-building-example-1",
+    "gui-modes-example-1",
+    "import-export-exporting-a-native-archive-v2-snapshot-example-1",
+    "import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1",
+    "index-getting-started-example-1",
+    "installation-backing-up-and-getting-your-notes-back-example-1",
+    "installation-backing-up-and-getting-your-notes-back-example-2",
+    "installation-clone-example-1",
+    "installation-going-back-to-an-earlier-version-example-1",
+    "installation-installing-from-a-package-example-1",
+    "installation-installing-from-a-package-example-2",
+    "installation-installing-from-the-package-example-1",
+    "installation-installing-from-the-package-example-2",
+    "installation-installing-to-an-end-user-location-example-1",
+    "installation-installing-to-an-end-user-location-example-2",
+    "installation-prerequisites-for-building-from-source-example-1",
+    "installation-removing-notrios-when-you-installed-the-package-example-1",
+    "installation-removing-notrios-when-you-installed-the-package-example-2",
+    "installation-removing-notrios-when-you-installed-the-package-example-3",
+    "installation-removing-your-data-as-well-example-1",
+    "installation-removing-your-data-as-well-example-2",
+    "installation-removing-your-data-as-well-example-3",
+    "installation-run-example-1",
+    "installation-uninstalling-example-1",
+    "installation-upgrading-example-1",
+    "installation-upgrading-from-before-08-example-1",
+    "installation-verifying-what-you-downloaded-example-1",
+    "installation-where-the-interface-files-have-to-be-example-1",
+    "operations-commands-that-must-never-touch-protocol-state-example-1",
+    "operations-garbage-collection-example-1",
+    "operations-watching-it-example-1",
+    "service-backup-and-restore-example-1",
+    "service-network-exposure-example-1",
+    "stable-links-registering-the-desktop-handler-ubuntu-example-1",
+    "stable-links-telling-this-machine-where-your-databases-are-example-1",
+    "troubleshooting-if-you-installed-the-package-example-1"
+  ],
+  "commands_with_no_executed_published_example": {
+    "of": 92,
+    "count": 61,
+    "means": "No fenced block that this repository executes contains this command. It says nothing about whether the command is tested -- most are, in cmd/notriosctl's tests and in the I4, I7 and J3 drills. It says a reader of docs/ is shown the form and never shown it run.",
+    "commands": [
+      "collections show",
+      "compatibility archive-v2",
+      "config show",
+      "gc",
+      "jobs cancel",
+      "jobs list",
+      "jobs retry",
+      "jobs status",
+      "localize",
+      "migrate",
+      "notebooks create",
+      "notes append",
+      "notes create",
+      "notes delete",
+      "notes duplicate",
+      "notes edit",
+      "notes links",
+      "notes outline",
+      "notes prepend",
+      "notes resources",
+      "notes restore",
+      "notes show",
+      "paths",
+      "profile create",
+      "profile forget",
+      "profile list",
+      "profile register",
+      "profile show",
+      "profile start",
+      "profile validate",
+      "publish run",
+      "purge",
+      "register-url-handler",
+      "resources add",
+      "resources get",
+      "restore archive-v2",
+      "search",
+      "seed-help",
+      "sync accept",
+      "sync discover",
+      "sync enroll",
+      "sync exchange",
+      "sync fetch-backup",
+      "sync handshake",
+      "sync init",
+      "sync invite",
+      "sync join",
+      "sync migrate-credentials",
+      "sync once",
+      "sync peers",
+      "sync retention",
+      "sync retire",
+      "sync revoke",
+      "sync start",
+      "sync status",
+      "tags add",
+      "tags remove",
+      "tasks list",
+      "templates create",
+      "templates list",
+      "verify archive-v2"
+    ]
+  },
+  "reason_contradicts_class": [
+    {
+      "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+      "class": "recipe",
+      "reason": "illustrative-placeholder",
+      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
+    },
+    {
+      "id": "cli-jobs-example-1",
+      "class": "synopsis",
+      "reason": "interactive-or-long-running",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "cli-profile-example-1",
+      "class": "synopsis",
+      "reason": "interactive-or-long-running",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-1",
+      "class": "synopsis",
+      "reason": "shared-user-state",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-1",
+      "class": "recipe",
+      "reason": "illustrative-placeholder",
+      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
+    },
+    {
+      "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
+      "class": "synopsis",
+      "reason": "external-network",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "operations-garbage-collection-example-1",
+      "class": "recipe",
+      "reason": "illustrative-placeholder",
+      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
+    },
+    {
+      "id": "operations-if-a-device-is-lost-example-1",
+      "class": "synopsis",
+      "reason": "shared-user-state",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-3",
+      "class": "synopsis",
+      "reason": "interactive-or-long-running",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    },
+    {
+      "id": "operations-watching-a-long-import-or-export-example-1",
+      "class": "synopsis",
+      "reason": "interactive-or-long-running",
+      "why": "a synopsis cannot be run, so this is not why it was not run"
+    }
+  ],
+  "configuration_page": {
+    "settable_keys": 53,
+    "examples": 0,
+    "note": "J12 gave the page its prose and its generated key table and no examples at all, which is the gap J13-C closes."
+  },
+  "documents": {
+    "docs/api/mcp.md": {
+      "fragment/executed": 1,
+      "recipe/executed": 1,
+      "recipe/unverified": 1
+    },
+    "docs/api/rest.md": {
+      "recipe/executed": 25,
+      "recipe/unverified": 1
+    },
+    "docs/archive-v2.md": {
+      "recipe/executed": 1,
+      "recipe/unverified": 1
+    },
+    "docs/cli.md": {
+      "recipe/executed": 2,
+      "recipe/unverified": 15,
+      "synopsis/unverified": 38,
+      "transcript/executed": 1
+    },
+    "docs/gui.md": {
+      "recipe/executed": 4,
+      "recipe/unverified": 2
+    },
+    "docs/import-export.md": {
+      "recipe/executed": 10,
+      "recipe/unverified": 2
+    },
+    "docs/index.md": {
+      "recipe/unverified": 1
+    },
+    "docs/installation.md": {
+      "recipe/executed": 1,
+      "recipe/unverified": 23
+    },
+    "docs/operations.md": {
+      "fragment/executed": 1,
+      "recipe/executed": 10,
+      "recipe/unverified": 3,
+      "synopsis/unverified": 6
+    },
+    "docs/publishing.md": {
+      "recipe/executed": 2,
+      "synopsis/unverified": 1
+    },
+    "docs/query-language.md": {
+      "recipe/executed": 1
+    },
+    "docs/selection-planning.md": {
+      "recipe/executed": 1
+    },
+    "docs/service.md": {
+      "recipe/executed": 1,
+      "recipe/unverified": 2
+    },
+    "docs/stable-links.md": {
+      "recipe/executed": 3,
+      "recipe/unverified": 2
+    },
+    "docs/troubleshooting.md": {
+      "recipe/unverified": 1
+    }
+  },
+  "examples": [
+    {
+      "id": "api-mcp-connecting-an-mcp-client-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "connecting-an-mcp-client",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "api-mcp-tool-scopes-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "tool-scopes",
+      "state": "executed",
+      "class": "fragment",
+      "rule": "yaml body: configuration, not a command line",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-mcp-trying-it-with-curl-example-1",
+      "path": "docs/api/mcp.md",
+      "section": "trying-it-with-curl",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "6 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-batch-organizer-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "batch-organizer-operations",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "8 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-checking-the-links-in-an-unsaved-note-example-1",
+      "path": "docs/api/rest.md",
+      "section": "checking-the-links-in-an-unsaved-note",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-getting-started-example-1",
+      "path": "docs/api/rest.md",
+      "section": "getting-started",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-link-autocomplete-while-typing-example-1",
+      "path": "docs/api/rest.md",
+      "section": "link-autocomplete-while-typing",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-links-graph-revisions-example-1",
+      "path": "docs/api/rest.md",
+      "section": "links-graph-revisions",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-listing-a-note-s-blocks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "listing-a-note-s-blocks",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-long-running-jobs-example-1",
+      "path": "docs/api/rest.md",
+      "section": "long-running-jobs",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
+      "path": "docs/api/rest.md",
+      "section": "notebooks-tags-search-notebooks-trash",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "16 literal command line(s), nothing to substitute",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "api-rest-notes-create-read-edit-example-1",
+      "path": "docs/api/rest.md",
+      "section": "notes-create-read-edit",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-notes-create-read-edit-example-2",
+      "path": "docs/api/rest.md",
+      "section": "notes-create-read-edit",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-optimistic-concurrency-example-1",
+      "path": "docs/api/rest.md",
+      "section": "optimistic-concurrency",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "7 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-orphan-isolate-and-hub-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "orphan-isolate-and-hub-report",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-previewing-a-notebook-deletion-example-1",
+      "path": "docs/api/rest.md",
+      "section": "previewing-a-notebook-deletion",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-renaming-a-tag-hierarchy-example-1",
+      "path": "docs/api/rest.md",
+      "section": "renaming-a-tag-hierarchy",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-resolving-a-stable-link-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resolving-a-stable-link",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-resources-attachments-example-1",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "10 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-resources-attachments-example-2",
+      "path": "docs/api/rest.md",
+      "section": "resources-attachments",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-running-a-note-s-query-block-example-1",
+      "path": "docs/api/rest.md",
+      "section": "running-a-note-s-query-block",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-search-and-pagination-example-1",
+      "path": "docs/api/rest.md",
+      "section": "search-and-pagination",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-selection-and-privacy-dry-runs-example-1",
+      "path": "docs/api/rest.md",
+      "section": "selection-and-privacy-dry-runs",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-shortest-path-between-two-notes-example-1",
+      "path": "docs/api/rest.md",
+      "section": "shortest-path-between-two-notes",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-surgical-edits-and-note-operations-example-1",
+      "path": "docs/api/rest.md",
+      "section": "surgical-edits-and-note-operations",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "tasks",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-templates-and-tasks-example-1",
+      "path": "docs/api/rest.md",
+      "section": "templates-and-tasks",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-workspace-lint-report-example-1",
+      "path": "docs/api/rest.md",
+      "section": "workspace-lint-report",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "api-rest-writing-the-report-into-the-library-example-1",
+      "path": "docs/api/rest.md",
+      "section": "writing-the-report-into-the-library",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "archive-v2-reading-an-archive-back-example-1",
+      "path": "docs/archive-v2.md",
+      "section": "reading-an-archive-back",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "archive-v2-writing-an-archive-example-1",
+      "path": "docs/archive-v2.md",
+      "section": "writing-an-archive",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "cli-collections-list-and-collections-show-example-1",
+      "path": "docs/cli.md",
+      "section": "collections-list-and-collections-show",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-config-show-example-1",
+      "path": "docs/cli.md",
+      "section": "config-show",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-doctor-example-1",
+      "path": "docs/cli.md",
+      "section": "doctor",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-exchanging-through-a-folder-example-1",
+      "path": "docs/cli.md",
+      "section": "exchanging-through-a-folder",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-1",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-2",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "cli-exchanging-with-a-peer-directly-example-3",
+      "path": "docs/cli.md",
+      "section": "exchanging-with-a-peer-directly",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "cli-export-archive-example-1",
+      "path": "docs/cli.md",
+      "section": "export-archive",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-export-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "export-archive-v2",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 4 of 4 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-fix-example-1",
+      "path": "docs/cli.md",
+      "section": "fix",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-gc-example-1",
+      "path": "docs/cli.md",
+      "section": "gc",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-graph-export-example-1",
+      "path": "docs/cli.md",
+      "section": "graph-export",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-graph-report-example-1",
+      "path": "docs/cli.md",
+      "section": "graph-report",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-import-archive-example-1",
+      "path": "docs/cli.md",
+      "section": "import-archive",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-import-chatgpt-import-claude-example-1",
+      "path": "docs/cli.md",
+      "section": "import-chatgpt-import-claude",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-import-joplin-raw-example-1",
+      "path": "docs/cli.md",
+      "section": "import-joplin-raw",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-import-obsidian-example-1",
+      "path": "docs/cli.md",
+      "section": "import-obsidian",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-import-twitter-example-1",
+      "path": "docs/cli.md",
+      "section": "import-twitter",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-jobs-example-1",
+      "path": "docs/cli.md",
+      "section": "jobs",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 4 of 4 line(s)",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "cli-jobs-example-2",
+      "path": "docs/cli.md",
+      "section": "jobs",
+      "state": "executed",
+      "class": "transcript",
+      "rule": "a `$ ` prompt, so the block shows a session rather than a command",
+      "unrun_reason": ""
+    },
+    {
+      "id": "cli-link-example-1",
+      "path": "docs/cli.md",
+      "section": "link",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-lint-example-1",
+      "path": "docs/cli.md",
+      "section": "lint",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-localize-example-1",
+      "path": "docs/cli.md",
+      "section": "localize",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-making-the-second-replica-example-1",
+      "path": "docs/cli.md",
+      "section": "making-the-second-replica",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "cli-migrate-example-1",
+      "path": "docs/cli.md",
+      "section": "migrate",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-migrate-example-2",
+      "path": "docs/cli.md",
+      "section": "migrate",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-notes-move-example-1",
+      "path": "docs/cli.md",
+      "section": "notes-move",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-notes-show-notes-outline-notes-resources-and-notes-links-example-1",
+      "path": "docs/cli.md",
+      "section": "notes-show-notes-outline-notes-resources-and-notes-links",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 4 of 4 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-open-example-1",
+      "path": "docs/cli.md",
+      "section": "open",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-pairing-example-1",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "cli-pairing-example-2",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-pairing-example-3",
+      "path": "docs/cli.md",
+      "section": "pairing",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "cli-paths-example-1",
+      "path": "docs/cli.md",
+      "section": "paths",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-profile-example-1",
+      "path": "docs/cli.md",
+      "section": "profile",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 10 of 10 line(s)",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "cli-publish-example-1",
+      "path": "docs/cli.md",
+      "section": "publish",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 8 of 8 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-reading-json-output-example-1",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "cli-reading-json-output-example-2",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "cli-reading-json-output-example-3",
+      "path": "docs/cli.md",
+      "section": "reading-json-output",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "cli-register-url-handler-example-1",
+      "path": "docs/cli.md",
+      "section": "register-url-handler",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-resources-add-notes-append-and-notes-prepend-example-1",
+      "path": "docs/cli.md",
+      "section": "resources-add-notes-append-and-notes-prepend",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 3 of 3 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-resources-report-example-1",
+      "path": "docs/cli.md",
+      "section": "resources-report",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-restore-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "restore-archive-v2",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-search-example-1",
+      "path": "docs/cli.md",
+      "section": "search",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-seed-help-example-1",
+      "path": "docs/cli.md",
+      "section": "seed-help",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-1",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-2",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-seeing-and-ending-trust-example-3",
+      "path": "docs/cli.md",
+      "section": "seeing-and-ending-trust",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-seeing-who-is-there-example-1",
+      "path": "docs/cli.md",
+      "section": "seeing-who-is-there",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "cli-snapshot-create-snapshot-verify-snapshot-restore-example-1",
+      "path": "docs/cli.md",
+      "section": "snapshot-create-snapshot-verify-snapshot-restore",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 4 of 4 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-sync-example-1",
+      "path": "docs/cli.md",
+      "section": "sync",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 14 of 14 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-tags-rename-example-1",
+      "path": "docs/cli.md",
+      "section": "tags-rename",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 3 of 3 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-tags-show-example-1",
+      "path": "docs/cli.md",
+      "section": "tags-show",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-tags-show-example-2",
+      "path": "docs/cli.md",
+      "section": "tags-show",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "cli-verify-archive-v2-example-1",
+      "path": "docs/cli.md",
+      "section": "verify-archive-v2",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "cli-version-example-1",
+      "path": "docs/cli.md",
+      "section": "version",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "cli-where-the-key-material-is-kept-example-1",
+      "path": "docs/cli.md",
+      "section": "where-the-key-material-is-kept",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "gui-building-example-1",
+      "path": "docs/gui.md",
+      "section": "building",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "privileged-host-change"
+    },
+    {
+      "id": "gui-choosing-which-notebook-a-note-goes-in-example-1",
+      "path": "docs/gui.md",
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "gui-modes-example-1",
+      "path": "docs/gui.md",
+      "section": "modes",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "gui-the-graph-report-example-1",
+      "path": "docs/gui.md",
+      "section": "the-graph-report",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "gui-the-graph-report-example-2",
+      "path": "docs/gui.md",
+      "section": "the-graph-report",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "gui-verifying-the-embedded-service-example-1",
+      "path": "docs/gui.md",
+      "section": "verifying-the-embedded-service",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-2-dry-run-example-1",
+      "path": "docs/import-export.md",
+      "section": "2-dry-run",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-3-import-example-1",
+      "path": "docs/import-export.md",
+      "section": "3-import",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "6 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-chatgpt-data-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "chatgpt-data-export",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-claude-data-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "claude-data-export",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-exporting-a-native-archive-v2-snapshot-example-1",
+      "path": "docs/import-export.md",
+      "section": "exporting-a-native-archive-v2-snapshot",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "import-export-exporting-a-notrios-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "exporting-a-notrios-archive",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-fast-same-schema-whole-library-snapshots-example-1",
+      "path": "docs/import-export.md",
+      "section": "fast-same-schema-whole-library-snapshots",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "6 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-import-and-export-example-1",
+      "path": "docs/import-export.md",
+      "section": "import-and-export",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-importing-a-notrios-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "importing-a-notrios-archive",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-obsidian-vault-directory-example-1",
+      "path": "docs/import-export.md",
+      "section": "obsidian-vault-directory",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-twitter-x-extracted-archive-example-1",
+      "path": "docs/import-export.md",
+      "section": "twitter-x-extracted-archive",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1",
+      "path": "docs/import-export.md",
+      "section": "verifying-and-restoring-an-archive-v2-snapshot",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "index-getting-started-example-1",
+      "path": "docs/index.md",
+      "section": "getting-started",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "installation-backing-up-and-getting-your-notes-back-example-1",
+      "path": "docs/installation.md",
+      "section": "backing-up-and-getting-your-notes-back",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-backing-up-and-getting-your-notes-back-example-2",
+      "path": "docs/installation.md",
+      "section": "backing-up-and-getting-your-notes-back",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-clone-example-1",
+      "path": "docs/installation.md",
+      "section": "clone",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "installation-going-back-to-an-earlier-version-example-1",
+      "path": "docs/installation.md",
+      "section": "going-back-to-an-earlier-version",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-installing-from-a-package-example-1",
+      "path": "docs/installation.md",
+      "section": "installing-from-a-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-installing-from-a-package-example-2",
+      "path": "docs/installation.md",
+      "section": "installing-from-a-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-installing-from-the-package-example-1",
+      "path": "docs/installation.md",
+      "section": "installing-from-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-installing-from-the-package-example-2",
+      "path": "docs/installation.md",
+      "section": "installing-from-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-installing-to-an-end-user-location-example-1",
+      "path": "docs/installation.md",
+      "section": "installing-to-an-end-user-location",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-installing-to-an-end-user-location-example-2",
+      "path": "docs/installation.md",
+      "section": "installing-to-an-end-user-location",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-prerequisites-for-building-from-source-example-1",
+      "path": "docs/installation.md",
+      "section": "prerequisites-for-building-from-source",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": "privileged-host-change"
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-1",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-2",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-removing-notrios-when-you-installed-the-package-example-3",
+      "path": "docs/installation.md",
+      "section": "removing-notrios-when-you-installed-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-1",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-2",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-3",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-run-example-1",
+      "path": "docs/installation.md",
+      "section": "run",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "installation-run-example-2",
+      "path": "docs/installation.md",
+      "section": "run",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "installation-uninstalling-example-1",
+      "path": "docs/installation.md",
+      "section": "uninstalling",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-upgrading-example-1",
+      "path": "docs/installation.md",
+      "section": "upgrading",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-upgrading-from-before-08-example-1",
+      "path": "docs/installation.md",
+      "section": "upgrading-from-before-08",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-1",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "installation-where-the-interface-files-have-to-be-example-1",
+      "path": "docs/installation.md",
+      "section": "where-the-interface-files-have-to-be",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
+      "path": "docs/operations.md",
+      "section": "commands-that-are-safe-against-a-carrier",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 3 of 5 line(s)",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "operations-commands-that-must-never-touch-protocol-state-example-1",
+      "path": "docs/operations.md",
+      "section": "commands-that-must-never-touch-protocol-state",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "operations-deleting-a-notebook-without-surprises-example-1",
+      "path": "docs/operations.md",
+      "section": "deleting-a-notebook-without-surprises",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-exposing-the-sync-surface-to-a-peer-example-1",
+      "path": "docs/operations.md",
+      "section": "exposing-the-sync-surface-to-a-peer",
+      "state": "executed",
+      "class": "fragment",
+      "rule": "yaml body: configuration, not a command line",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
+      "path": "docs/operations.md",
+      "section": "finding-what-has-rotted-workspace-lint",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-fixing-what-can-be-fixed-mechanically-example-1",
+      "path": "docs/operations.md",
+      "section": "fixing-what-can-be-fixed-mechanically",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "5 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-garbage-collection-example-1",
+      "path": "docs/operations.md",
+      "section": "garbage-collection",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "operations-garbage-collection-example-2",
+      "path": "docs/operations.md",
+      "section": "garbage-collection",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "operations-if-a-device-is-lost-example-1",
+      "path": "docs/operations.md",
+      "section": "if-a-device-is-lost",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "operations-inspecting-resource-references-example-1",
+      "path": "docs/operations.md",
+      "section": "inspecting-resource-references",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-localizing-remote-media-example-1",
+      "path": "docs/operations.md",
+      "section": "localizing-remote-media",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 3 of 3 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "operations-monitoring-the-recoll-sidecar-example-1",
+      "path": "docs/operations.md",
+      "section": "monitoring-the-recoll-sidecar",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-1",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-2",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-planning-and-resuming-imports-example-3",
+      "path": "docs/operations.md",
+      "section": "planning-and-resuming-imports",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "operations-renaming-a-tag-hierarchy-example-1",
+      "path": "docs/operations.md",
+      "section": "renaming-a-tag-hierarchy",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-seeing-the-shape-of-the-link-graph-example-1",
+      "path": "docs/operations.md",
+      "section": "seeing-the-shape-of-the-link-graph",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-seeing-the-shape-of-the-link-graph-example-2",
+      "path": "docs/operations.md",
+      "section": "seeing-the-shape-of-the-link-graph",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-watching-a-long-import-or-export-example-1",
+      "path": "docs/operations.md",
+      "section": "watching-a-long-import-or-export",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 3 line(s)",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "operations-watching-it-example-1",
+      "path": "docs/operations.md",
+      "section": "watching-it",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "interactive-or-long-running"
+    },
+    {
+      "id": "publishing-publishing-example-1",
+      "path": "docs/publishing.md",
+      "section": "publishing",
+      "state": "unverified",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 1 of 3 line(s)",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "publishing-reviewing-before-publishing-example-1",
+      "path": "docs/publishing.md",
+      "section": "reviewing-before-publishing",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "publishing-saving-a-profile-example-1",
+      "path": "docs/publishing.md",
+      "section": "saving-a-profile",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "6 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "query-language-search-query-language-example-1",
+      "path": "docs/query-language.md",
+      "section": "search-query-language",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "selection-planning-selection-and-privacy-planning-example-1",
+      "path": "docs/selection-planning.md",
+      "section": "selection-and-privacy-planning",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "13 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "service-backup-and-restore-example-1",
+      "path": "docs/service.md",
+      "section": "backup-and-restore",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "service-network-exposure-example-1",
+      "path": "docs/service.md",
+      "section": "network-exposure",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "external-network"
+    },
+    {
+      "id": "service-the-notrios-service-example-1",
+      "path": "docs/service.md",
+      "section": "the-notrios-service",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "stable-links-linking-to-a-section-or-a-block-example-1",
+      "path": "docs/stable-links.md",
+      "section": "linking-to-a-section-or-a-block",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "stable-links-opening-a-link-example-1",
+      "path": "docs/stable-links.md",
+      "section": "opening-a-link",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "stable-links-registering-the-desktop-handler-ubuntu-example-1",
+      "path": "docs/stable-links.md",
+      "section": "registering-the-desktop-handler-ubuntu",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "stable-links-stable-links-between-notes-and-machines-example-1",
+      "path": "docs/stable-links.md",
+      "section": "stable-links-between-notes-and-machines",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "stable-links-telling-this-machine-where-your-databases-are-example-1",
+      "path": "docs/stable-links.md",
+      "section": "telling-this-machine-where-your-databases-are",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "troubleshooting-if-you-installed-the-package-example-1",
+      "path": "docs/troubleshooting.md",
+      "section": "if-you-installed-the-package",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    }
+  ]
+}

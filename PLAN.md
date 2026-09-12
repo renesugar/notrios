@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**14 items: 5 complete, 0 in progress, 9 not started, 0 deferred.**
+**14 items: 5 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -73,10 +73,20 @@ this section is archived when the plan completes and the rules are not.
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
-| J13. Generate the published command-line examples from executed runs | not-started | 0/4 | 4 |
+| J13. Generate the published command-line examples from executed runs | in-progress | 1/4 | 3 |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J13. Generate the published command-line examples from executed runs**
+
+- `J13-B` A per-document tracked example set generates its published command lines, gated against the recorded run — *not-started*
+- `J13-C` Each configuration section shows what to run and which other keys must be set with it, and each example runs — *not-started*
+- `J13-D` Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run — *not-started*
+
+### Not started
+
+Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -966,7 +976,7 @@ targets to 35 — and a docrules gate caught the rewritten opening dropping its
 pointer to AGENTS.md's "Keeping the reference documents current", which is
 precisely the section a rewriter needs.
 
-## J13. Generate the published command-line examples from executed runs
+## J13. Generate the published command-line examples from executed runs — in progress
 
 **Goal.** Every command line a reader is shown either ran, or says plainly that
 it did not and why — and the ones that ran are inserted from the run rather than
@@ -1063,6 +1073,51 @@ during it.
 gated against the recorded run, a configuration page whose sections each show
 what to run and what else to set, and a published example count where "executed"
 is the default and every exception names its reason.
+
+### J13-A: the examination, and how it corrected the plan above
+
+The plan's own estimate was wrong, and the classification is why that is now
+known. It said the population deserving replacement was "the six that look
+runnable", inferred from the `illustrative-placeholder` reason code. Classifying
+the blocks themselves gives **116 recipes and 45 synopses**, and crossing that
+with the registry gives **54 unverified recipes**, not six. The reason code was
+the wrong instrument: a literal recipe can be unverified for `shared-user-state`
+or `host-installation` just as easily.
+
+The part of the estimate that held is the part that mattered: **no synopsis is
+executed, and none should be.** 45 synopses, zero executed. That is the
+classification's own consistency check rather than a happy result — a block
+with a metavariable cannot have run — and the validator asserts it.
+
+**The 54 are still not one problem.** By recorded reason: 19
+`shared-user-state`, 17 `host-installation`, 9 `external-network`, 4
+`interactive-or-long-running`, 3 `illustrative-placeholder`, 2
+`privileged-host-change`. A recipe that installs a package as root or deletes a
+library cannot run in a test and runs in the container matrix or the drills
+instead. J13-D's target is narrower than "the 54".
+
+**Ten recorded reasons contradict their own block,** which only a cross-
+reference finds. Seven synopses are excused as `interactive-or-long-running`,
+`shared-user-state` or `external-network` — a synopsis cannot be run at all, so
+none of those is why it was not run. Three literal recipes are excused as
+`illustrative-placeholder`: a runnable block filed as decoration, one each in
+`docs/api/rest.md`, `docs/installation.md` and `docs/operations.md`.
+
+**Two gaps, in the words the evidence supports.** `docs/configuration.md` has
+53 settable keys and 0 examples, which is J13-C. And **61 of 92 commands have no
+executed *published* example** — the wording narrowed after the first draft
+called them "never shown working", which was false: most are exercised by
+`cmd/notriosctl`'s tests and by the I4, I7 and J3 drills. The claim is about
+documentation only.
+
+**The extraction is trusted because it is cross-checked, not because it looks
+right.** Blocks come from `docs/docaudit/registry.json` and their bodies are
+matched to it by sha256; one mismatch refuses the whole report. That fired twice
+— once because the slug function was not `docaudit`'s (it removes `.` rather
+than replacing it, so `upgrading-from-before-08`, and the obvious regex lost an
+id), and once deliberately as a probe. The metavariable rule took three drafts,
+each false positive a real pattern here: a Markdown link inside a JSON payload,
+a jq filter, and a JSON array whose `[` sits outside the quoted key.
 
 ## J14. Stop leaving bytecode behind, and derive the evidence index — complete
 
