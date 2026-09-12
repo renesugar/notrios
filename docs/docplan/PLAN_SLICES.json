@@ -317,6 +317,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J14",
+      "title": "Stop leaving bytecode behind, and derive the evidence index",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J14-A",
+          "statement": "Every Python invocation in the repository runs with PYTHONDONTWRITEBYTECODE=1 and PYTHONUNBUFFERED=1",
+          "state": "not-started"
+        },
+        {
+          "id": "J14-B",
+          "statement": "A check reports when a validate run has left bytecode behind",
+          "state": "not-started"
+        },
+        {
+          "id": "J14-C",
+          "statement": "The README's Validation section is split, and its evidence index is generated from performance/ and gated",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

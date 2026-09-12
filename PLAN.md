@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**13 items: 4 complete, 0 in progress, 9 not started, 0 deferred.**
+**14 items: 4 complete, 0 in progress, 10 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -74,6 +74,7 @@ this section is archived when the plan completes and the rules are not.
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | not-started | 0/4 | 4 |
+| J14. Stop leaving bytecode behind, and derive the evidence index | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -1062,3 +1063,73 @@ during it.
 gated against the recorded run, a configuration page whose sections each show
 what to run and what else to set, and a published example count where "executed"
 is the default and every exception names its reason.
+
+## J14. Stop leaving bytecode behind, and derive the evidence index
+
+**Goal.** Running the repository's own Python leaves nothing behind, and the
+README's Validation section stops being a third hand-maintained list.
+
+### The bytecode caches, measured before deciding
+
+19 `__pycache__` directories and 48 `.pyc` files were in the tree. Deleting all
+of them broke nothing — `make validate` passed from cold and regenerated 13
+directories and 35 files in the process — so nothing depends on them and they
+are pure byproduct of every validate run.
+
+**Two claims about them are worth separating, because only one holds.** They are
+noise, and `make clean` already removes them, so they accumulate between cleans
+and turn up in `ls`. That is real. The sharper worry — *out-of-date bytecode
+causing build issues* — does not apply to `__pycache__` in Python 3, and I
+measured it rather than agreeing with it: an orphaned `__pycache__/mod.pyc`
+whose source has been deleted is **not importable** (`No module named 'mod'`,
+per PEP 3147), and a cache whose source has changed is invalidated and
+recompiled. The hazard that shape describes is a legacy sibling `.pyc` next to
+its source, which this repository does not have and `.gitignore` would not
+track anyway.
+
+So the fix is worth doing for the reason that survives inspection: nothing here
+benefits from a bytecode cache, and not writing one is simpler than cleaning one
+up. `PYTHONDONTWRITEBYTECODE=1` stops it, and `PYTHONUNBUFFERED=1` belongs
+beside it for a different reason — every one of these scripts prints progress a
+person reads while waiting, and buffered output through a pipe arrives in a
+block at the end, which is why a long validate can look hung.
+
+### The Validation section, the same failure as the project status
+
+It runs three unrelated things into one paragraph: which arguments the profile
+scripts accept, where committed reference evidence lives, and which documents to
+read before tagging. The middle one has drifted exactly as the status paragraph
+had: **77 `performance/` directories exist and 13 are named**, and the list
+covers v0.3, v0.4 and v0.5 while v0.7, v0.8, v0.8e, v0.9 and v1.0 — the large
+majority of the evidence — go unmentioned. It is a list of directories on disk,
+which makes it derivable, which makes it J12's lesson arriving a third time.
+
+**Scope.**
+
+- **J14-A.** Every place the repository invokes Python exports
+  `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUNBUFFERED=1` — one `export` in the
+  Makefile reaches every recipe, and the entry shell scripts
+  (`validate-scaffold.sh`, `package_release.sh`, the drill runners) need their
+  own.
+- **J14-B.** A check that a validate run leaves no bytecode behind, so J14-A
+  stays true. Reporting, not gating, for the same reason `docs-stale` reports:
+  a byproduct in an ignored path is not a reason to refuse a commit.
+- **J14-C.** The Validation section is split into how to validate, what the
+  profile arguments accept, where the evidence is, and what to read before a
+  release — with the evidence index generated from `performance/*/` and gated,
+  like the project status block.
+
+**Also owed, found while reading:** the `make clean` line J12 added to the
+README understates what it removes. It lists `bin/ dist/ _site/ web/dist/
+.playwright-mcp/` and omits that the same target already deletes every
+`__pycache__` and `.pyc` in the tree — which is the fact a reader asking "how do
+I get rid of these" most needs.
+
+**Boundaries.** Nothing is added to `make validate`. The generated evidence
+index lists directories and does not describe them; a directory's contents are
+its README's business.
+
+**Dependencies.** J12, whose generated-block machinery this reuses.
+
+**Working state.** A validate run that leaves no bytecode, a Validation section
+whose evidence index cannot drift, and a `make clean` description that is true.
