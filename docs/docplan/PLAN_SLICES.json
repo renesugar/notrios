@@ -1,5 +1,6 @@
 {
   "schema": "notrios.docplan.slices.v1",
+  "milestone": "v1.0",
   "items": [
     {
       "id": "J1",
@@ -262,17 +263,19 @@
     {
       "id": "J12",
       "title": "Make the README true, and generate what can be generated",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J12-A",
           "statement": "The README's project status is generated from the ledger and gated, like the plan's and the roadmap's",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestProgressLogIsCurrent"
         },
         {
           "id": "J12-B",
           "statement": "The opening is readable and Quick start covers install, uninstall, purge, clean and clobber",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:README.md"
         },
         {
           "id": "J12-C",
@@ -282,7 +285,8 @@
         {
           "id": "J12-D",
           "statement": "The documentation site can be built and served locally, said in the README, and _site staleness is detectable",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:scripts/check_docs_site_fresh.py"
         }
       ]
     }

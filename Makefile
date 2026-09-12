@@ -13,7 +13,8 @@
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
         g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
-        install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck
+        install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck \
+        docs-stale
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -53,6 +54,9 @@ abi:
 
 docs: docs-site/node_modules ## Build the pinned offline Hugo/Ledger site into _site/
 	bash scripts/build_docs_site.sh
+
+docs-stale: ## Report whether _site/ is older than the documents under docs/
+	python3 scripts/check_docs_site_fresh.py
 
 test: ## Run all Go tests
 	go test ./...

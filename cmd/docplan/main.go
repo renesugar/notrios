@@ -17,18 +17,47 @@ import (
 	"regexp"
 	"strings"
 
+	"sort"
+
 	"github.com/renesugar/notrios/internal/docplan"
+	"github.com/renesugar/notrios/internal/version"
 )
 
 const (
-	ledgerPath  = "docs/docplan/PLAN_SLICES.json"
-	planPath    = "PLAN.md"
-	roadmapPath = "ROADMAP.md"
-	begin       = "<!-- notrios:generated:plan:progress:begin -->"
-	finish      = "<!-- notrios:generated:plan:progress:end -->"
-	roadBegin   = "<!-- notrios:generated:roadmap:status:begin -->"
-	roadFinish  = "<!-- notrios:generated:roadmap:status:end -->"
+	ledgerPath   = "docs/docplan/PLAN_SLICES.json"
+	planPath     = "PLAN.md"
+	roadmapPath  = "ROADMAP.md"
+	readmePath   = "README.md"
+	begin        = "<!-- notrios:generated:plan:progress:begin -->"
+	finish       = "<!-- notrios:generated:plan:progress:end -->"
+	roadBegin    = "<!-- notrios:generated:roadmap:status:begin -->"
+	roadFinish   = "<!-- notrios:generated:roadmap:status:end -->"
+	readmeBegin  = "<!-- notrios:generated:readme:status:begin -->"
+	readmeFinish = "<!-- notrios:generated:readme:status:end -->"
 )
+
+// archivedMilestones lists the milestone directories under plans/.
+//
+// Derived rather than listed, because a list is the thing that goes stale: this
+// is the same file that spent a milestone and a half announcing v0.8 as current.
+// Only version-shaped names are reported; `plans/scaffold` and `plans/mvp` are
+// records of how the repository started rather than milestones with a number,
+// and the README says so in prose beside the generated block.
+func archivedMilestones(root string) ([]string, error) {
+	entries, err := os.ReadDir(filepath.Join(root, "plans"))
+	if err != nil {
+		return nil, err
+	}
+	shaped := regexp.MustCompile(`^v[0-9]+\.[0-9]+[a-z]?$`)
+	names := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() && shaped.MatchString(entry.Name()) {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+	return names, nil
+}
 
 func main() {
 	root := flag.String("root", ".", "repository root")
@@ -46,6 +75,10 @@ func main() {
 	problems := docplan.Check(*root, ledger, headings)
 	problems = append(problems, docplan.CheckPlanPointer(filepath.Join(*root, planPath))...)
 	problems = append(problems, docplan.CheckRoadmapPointer(filepath.Join(*root, roadmapPath))...)
+	archived, err := archivedMilestones(*root)
+	if err != nil {
+		fail(err)
+	}
 	if len(problems) > 0 {
 		for _, problem := range problems {
 			fmt.Fprintln(os.Stderr, "plan ledger:", problem)
@@ -62,6 +95,7 @@ func main() {
 	}{
 		{planPath, begin, finish, ledger.ProgressLines()},
 		{roadmapPath, roadBegin, roadFinish, ledger.RoadmapStatusLines()},
+		{readmePath, readmeBegin, readmeFinish, ledger.ReadmeStatusLines(version.Version, archived)},
 	}
 	for _, target := range targets {
 		full := filepath.Join(*root, target.path)
@@ -85,7 +119,8 @@ func main() {
 		}
 	}
 	if *write {
-		fmt.Printf("progress log and roadmap status written: %d items\n", len(ledger.Items))
+		fmt.Printf("plan, roadmap and README blocks written: %s, %d items, %d archived milestones\n",
+			ledger.Milestone, len(ledger.Items), len(archived))
 		return
 	}
 	fmt.Printf("plan ledger valid: %d items\n", len(ledger.Items))

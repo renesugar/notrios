@@ -87,7 +87,12 @@ type Item struct {
 
 type Ledger struct {
 	Schema string `json:"schema"`
-	Items  []Item `json:"items"`
+	// Milestone is which milestone this plan is for, declared rather than
+	// inferred from the item prefixes. The README's status block names it, and
+	// that block exists because the hand-written one said "v0.8 (current,
+	// 0.8.0)" through the whole of v0.9 and most of v1.0.
+	Milestone string `json:"milestone"`
+	Items     []Item `json:"items"`
 }
 
 func Load(path string) (Ledger, error) {
@@ -134,6 +139,22 @@ func PlanHeadings(planPath string) (map[string]string, error) {
 func Check(root string, ledger Ledger, headings map[string]string) []string {
 	problems := []string{}
 	seen := map[string]bool{}
+
+	// The milestone is declared, so it is checked against something real
+	// rather than taken on trust: every milestone this repository has run has
+	// an evidence directory, and a plan for a milestone with no such directory
+	// is a typo in the one field the README quotes verbatim.
+	switch {
+	case strings.TrimSpace(ledger.Milestone) == "":
+		problems = append(problems, "the ledger declares no milestone, and the README's status block quotes it")
+	default:
+		evidence := filepath.Join(root, "performance", ledger.Milestone)
+		if info, err := os.Stat(evidence); err != nil || !info.IsDir() {
+			problems = append(problems, fmt.Sprintf(
+				"milestone %q has no performance/%s directory, so the name is unverifiable",
+				ledger.Milestone, ledger.Milestone))
+		}
+	}
 
 	for _, item := range ledger.Items {
 		if seen[item.ID] {

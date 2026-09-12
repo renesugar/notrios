@@ -1,5 +1,5 @@
 {
-  "content_commit": "accde9dfab17937e376aced36a0ba878a769ac93",
+  "content_commit": "2f576c50b661c72fcbf87dc19b1a7a4da468afcd",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -225,7 +225,7 @@
       "sha256": "d799622e4bb3bf5cda64c25e9803e7b564d1f210ff63ffef2b89cd4ac8533e31"
     },
     "make_lifecycle": {
-      "count": 34,
+      "count": 35,
       "members": [
         "build",
         "build-cli",
@@ -238,6 +238,7 @@
         "doccheck",
         "docgen",
         "docs",
+        "docs-stale",
         "doctor",
         "evidence-pre-push",
         "g18e-validate",
@@ -262,7 +263,7 @@
         "validate",
         "web"
       ],
-      "sha256": "35417a32e15bd03bdd1e99addf842374ce719dc68dba2ca19d4f9465676e6605"
+      "sha256": "98ea4d3c18b06b875d9f0305b2178563dbd65c7a40d7b9678ba7ac027e5ec85d"
     },
     "mcp": {
       "count": 45,
