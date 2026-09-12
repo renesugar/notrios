@@ -199,6 +199,48 @@ owner: it is their identity.
 `verify_release_set.py` accepting a set that records itself as signed because it
 carries signatures.
 
+**Done 2026-09-11, and verified the way a downloader would verify it.** The
+workflow signs the package and `SHA256SUMS`, timestamps the package's signature
+against the authority this project already pins, and verifies the whole set
+before it leaves the runner. The set was then downloaded and checked here:
+
+```
+gpg --verify   GOODSIG Rene Sugar, VALIDSIG primary 1234C691AC0776A18524D55687027B1DD464695E
+sha256sum -c   all OK
+openssl ts     Verification: OK, policy 2.16.840.1.114412.7.1, Sep 12 02:35:40 2026 GMT
+```
+
+**The verifier never verified, and that was the real work.** It noticed that
+signatures *existed* and never checked one — a set could have carried a `.asc`
+of anything and passed, which is a check that reads as protection and is not. It
+now verifies each signature in a keyring of its own, holds the signing
+fingerprint against the published key, and requires signatures over the artifact
+and `SHA256SUMS` by name rather than inferring them from what happens to be
+present. Proven with a throwaway key *before* the real one signed anything, and
+refused in five ways: checked against the real key, a signature that is not one,
+one artifact's signature swapped for another's, the checksum file unsigned, and
+signed artifacts recorded as unsigned.
+
+**Signing is inline rather than through an action**, because a third-party
+action would be the component handling the most sensitive material in the
+pipeline and importing a key is one command. The step also checks the imported
+key *is* the published key, so a wrong secret fails the build instead of
+producing a set signed by something nobody can verify against.
+
+**Two ordering facts the rehearsal forced into the open.** `SHA256SUMS` cannot
+cover its own signature — the signature is made over the finished file — which
+is the reserve's closure boundary again, and the coverage rule says so rather
+than failing on it. And signatures have to be derived from the directory rather
+than from `SHA256SUMS`, because `SHA256SUMS.asc` is deliberately absent from the
+file it signs; deriving from that list missed exactly the signature that matters
+most.
+
+**A finding for J10's deferred decision.** `VALIDSIG` shows the signature was
+made by subkey `348B6B87…EA2C`, not by the primary — gpg prefers a
+signing-capable subkey and the release key has one. So exporting only that
+subkey into CI would produce byte-identical signatures, and the narrowing
+deferred to J10 costs nothing in output. It is a smaller change than it sounded.
+
 **The key exists already, created by the owner on 2026-09-11.** RSA-4096,
 fingerprint `1234C691AC0776A18524D55687027B1DD464695E`,
 `Rene Sugar <rene.sugar@gmail.com>`. Its public half is at

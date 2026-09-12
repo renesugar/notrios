@@ -27,6 +27,11 @@
       "on": "2026-09-11",
       "what": "Recorded the attestation prerequisite as met: the package is built in a workflow.",
       "why": "v1.0 J1 moved the build into GitHub Actions. The prerequisite was recorded as 'not met' and derived from the workflows, so writing the workflow made the record false and validation refused it until it was brought up to date -- which is what that derivation was for."
+    },
+    {
+      "on": "2026-09-11",
+      "what": "Recorded that the Ubuntu package is signed and timestamped in practice.",
+      "why": "v1.0 J2 implemented the policy's produce and verify steps, and the set was checked after download by the plain gpg and sha256sum path a user takes rather than only by this project's own verifier."
     }
   ],
   "content_commit": "d99b8101d26bbd23f0a30f80a90270dd42c7deae",
@@ -86,6 +91,12 @@
         "openssl ts -query -data notrios_<version>-<revision>_amd64.deb.asc -sha256 -cert -out ts.tsq",
         "curl -sSH 'Content-Type: application/timestamp-query' --data-binary @ts.tsq http://timestamp.digicert.com -o ts.tsr"
       ],
+      "signed_in_practice": {
+        "by": ".github/workflows/release.yml, signing inline with the production environment secret",
+        "on": "2026-09-11",
+        "signature_made_by": "subkey 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C, because gpg prefers a signing-capable subkey. Exporting only that subkey into CI would produce byte-identical signatures, which makes the narrowing deferred to v1.0 J10 cheaper than it sounded.",
+        "verified": "gpg --verify reports GOODSIG with VALIDSIG primary 1234C691AC0776A18524D55687027B1DD464695E; sha256sum -c passes; openssl ts reports Verification: OK under policy 2.16.840.1.114412.7.1."
+      },
       "status": "available",
       "verify": [
         "gpg --import notrios-release-key.asc",
