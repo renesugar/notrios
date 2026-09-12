@@ -40,17 +40,53 @@ means different things depending on the method** — `{namespace}/{class}` for
 meaning depends on the verb, and a client generated from this contract has
 methods taking `segment1` and `segment2`.
 
-- **Leave it.** The implicit namespace is a security property worth having, the
-  collision is confined to the description, and the routes are in use by
-  `notriosctl sync exchange` between peers that already speak this.
-- **Change it before the freeze becomes a promise**, for example to a
-  three-segment write path with an explicit marker for "my own namespace", so
-  every carrier path has one meaning and honest parameter names. This is a
-  breaking change to the sync wire, which is exactly what this milestone still
-  permits and the next one does not.
+### What a namespace is, which the first draft of this entry did not say
+
+`syncwire.CarrierName` is
+`HMAC(routing-key derived from the group key, "replica" ‖ replica_id)`, 16 bytes
+of hex. **Nobody chooses it.** Two things follow, and both are the point:
+
+- You cannot name a namespace without the group key, so only an enrolled member
+  of the sync group can address one at all.
+- The carrier host cannot tell which replica a namespace belongs to. The
+  interface says so in its own words: *"Names are opaque; a scanner learns who a
+  namespace belongs to by opening its advertisement, not by reading its name."*
+
+So the asymmetry is not read-namespaced/write-flat. It is **read any namespace
+in your group, write only as yourself** — `handleCarrierList` takes the
+namespace from the path and passes it through with no ownership check, on
+purpose, because sync means every replica reads every other replica's segments;
+`handleCarrierPublish` derives it from the authenticated principal, on purpose,
+because a replica must not publish as another one.
+
+### The options, corrected
+
+- **Leave it.** The implicit namespace is the security property, the collision
+  is confined to the description, and peers already speak this.
+- **Change the shape so the description can be honest** — for example a write
+  path whose extra segment is a **literal** (`/api/v1/sync/carrier/mine/{class}/{name}`),
+  not a parameter. Every carrier path then has one meaning and real parameter
+  names. It breaks the sync wire, which this milestone still permits and the
+  next does not.
+- **Not an option: a caller-supplied `{namespace}` on `PUT`/`DELETE`.** The
+  first draft of this entry left that open by talking about "symmetry". It would
+  let an enrolled replica write into another replica's namespace, forging
+  segments attributed to that peer — impersonation inside the group, not a
+  feature. Accepting the parameter and rejecting anything but the caller's own
+  would be harmless and pointless.
 
 **Nothing was changed.** A breaking change to a wire protocol between peers is
 not a call this review makes on its own.
+
+### Evidence that the description is worth fixing
+
+The owner read `{segment1}`/`{segment2}` and asked whether the asymmetry was
+about read-only external data sources, and whether making it symmetric would
+enable a sync gateway to Joplin or Obsidian. It is not and it would not — the
+carrier carries sealed NEV1 envelopes between replicas of one library, and
+importers are a different subsystem entirely. But that is a careful reader
+reaching a wrong model **from the contract as written**, which is a better
+argument for the second option than anything this review derived on its own.
 
 ## D2 — three MCP tools nothing tested: **fixed**
 
