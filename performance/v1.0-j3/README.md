@@ -32,13 +32,36 @@ somewhere inside the library they are about to delete. Every run now asserts
 that the destination is *refused* by the oracle — H3 proved that property for
 the default location, and this checks it rather than trusting the layout.
 
+## `make purge` runs this command rather than repeating it
+
+The backup and deletion halves existed twice — Python for a checkout, Go for the
+package — while only the oracle halves were gated against each other. A
+divergence there is a purge that deletes without the backup somebody was
+promised. So 181 lines of `scripts/lifecycle.py` went: it keeps the half this
+command cannot see, which is what `make install` recorded writing, reads the
+plan from `purge --dry-run --json`, shows both halves, asks one question about
+both, and runs `purge --confirm --no-plan`.
+
+That inverts the order — the binary that deletes the data is one of the files
+uninstall removes — and the inversion broke something I had not predicted. The
+install manifest lives *inside the data root*, so the data purge takes it, and
+the uninstall that followed found no manifest and refused: notes gone, installed
+files left behind. `scripts/test_lifecycle.py` caught it immediately. The
+manifest is read once before the deletion now, and handed to the uninstall after
+it.
+
+The 27 tests that already passed could not tell whether the delegation happened
+at all — they assert the data is gone, not who removed it, and they stayed green
+with an `rmtree` put back in the Python. Two new ones replace the installed
+command with one that plans truthfully and then does nothing: the data must
+survive, and when the command fails the installed files must survive too. That
+suite also stopped using a shell stub for `notriosctl`, which was fine while
+purge only *asked* it where the roots were; it builds and installs the real one.
+
 ## Still owed
 
-`scripts/lifecycle.py` keeps its own purge, so the **backup and deletion halves
-exist twice** while only the oracle halves are gated. A divergence there is a
-purge that deletes without the backup somebody was promised.
-
-The fix is to have `make purge` delegate its data half to `notriosctl purge`,
-and the ordering is the interesting part: lifecycle.py backs up, uninstalls,
-then deletes — and delegation means deleting the data while the binary that does
-it still exists, so the uninstall has to move after rather than before.
+Four of I4's nine drills are not carried over, because they exercise the
+installed-file half this command deliberately does not touch: they belong to
+`make purge`, and `scripts/test_lifecycle.py` runs them. `DRILLS.jsonl` names
+each one rather than running fewer quietly, and the validator fails if one stops
+being named.
