@@ -16,9 +16,12 @@ agreement.
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 INVENTORY = ROOT / "performance/v0.7-g20/DEPENDENCY_LICENSES.json"
@@ -42,6 +45,53 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
+def signing_key_fingerprint(public_key: pathlib.Path) -> str:
+    """The primary fingerprint of the key a verifier is told to trust."""
+    with tempfile.TemporaryDirectory(prefix="notrios-relkey-") as directory:
+        home = pathlib.Path(directory)
+        home.chmod(0o700)
+        environment = dict(os.environ, GNUPGHOME=str(home))
+        subprocess.run(["gpg", "--batch", "--no-autostart", "--quiet", "--import",
+                        str(public_key)], env=environment, check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        listing = subprocess.run(["gpg", "--batch", "--no-autostart", "--with-colons",
+                                  "--fingerprint", "--list-keys"], env=environment,
+                                 capture_output=True, text=True, check=True).stdout
+    for line in listing.splitlines():
+        if line.startswith("fpr:"):
+            return line.split(":")[9]
+    raise ReleaseSetError(f"{public_key} holds no key")
+
+
+def verify_signature(signature: pathlib.Path, datum: pathlib.Path,
+                     public_key: pathlib.Path) -> str:
+    """Check a detached signature against one key, in a keyring of its own.
+
+    A clean keyring rather than the caller's: verifying against whatever keys a
+    machine happens to trust answers a different question than "was this signed
+    by the key this repository publishes". The evidence verifier does the same
+    thing for the same reason, and the fingerprint is returned rather than
+    merely checked so the caller can hold it against the committed key.
+    """
+    with tempfile.TemporaryDirectory(prefix="notrios-relsig-") as directory:
+        home = pathlib.Path(directory)
+        home.chmod(0o700)
+        environment = dict(os.environ, GNUPGHOME=str(home))
+        subprocess.run(["gpg", "--batch", "--no-autostart", "--quiet", "--import",
+                        str(public_key)], env=environment, check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(
+            ["gpg", "--batch", "--no-autostart", "--status-fd", "1", "--trust-model", "always",
+             "--verify", str(signature), str(datum)],
+            env=environment, capture_output=True, text=True)
+    fields = next((line.split() for line in result.stdout.splitlines()
+                   if line.startswith("[GNUPG:] VALIDSIG ")), None)
+    if fields is None or len(fields) < 12:
+        raise ReleaseSetError(
+            f"{signature.name} is not a good signature over {datum.name} by the published key")
+    return fields[-1]
+
+
 def licence_ids(expression: str) -> list[str]:
     """The SPDX identifiers inside a licence expression.
 
@@ -57,6 +107,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--set", dest="release_set", type=pathlib.Path,
                         default=ROOT / "dist" / "release-set")
+    parser.add_argument("--public-key", type=pathlib.Path,
+                        default=ROOT / "keys" / "release-public.asc",
+                        help="the key a signed set must verify against")
     arguments = parser.parse_args()
     root = arguments.release_set
     require(root.is_dir(), f"no release set at {root}")
@@ -70,7 +123,13 @@ def main() -> int:
         digest, _, name = line.partition("  ")
         listed[name] = digest
 
-    present = {path.name for path in root.iterdir() if path.name != "SHA256SUMS"}
+    # SHA256SUMS cannot list itself, and cannot list its own signature either:
+    # the signature is made over the finished file, so hashing it would require
+    # the file to contain a hash of something derived from it. Same closure
+    # boundary as the reserve's -- a volume cannot contain its own final hash.
+    # Everything else in the set must be covered.
+    uncovered = {"SHA256SUMS", "SHA256SUMS.asc"}
+    present = {path.name for path in root.iterdir() if path.name not in uncovered}
     require(present == set(listed),
             f"SHA256SUMS does not cover the set exactly: {sorted(present ^ set(listed))}")
     for name, digest in sorted(listed.items()):
@@ -130,14 +189,37 @@ def main() -> int:
 
     signing = provenance["notrios:signing"]
     require(signing["state"] in ("unsigned", "signed"), "unknown signing state")
+    # From the directory, not from SHA256SUMS: SHA256SUMS.asc is deliberately
+    # absent from the file it signs, so a list derived from that file would miss
+    # exactly the signature that matters most.
+    signatures = sorted(path.name for path in root.iterdir()
+                        if path.name.endswith(".asc") and not path.name.endswith("-public.asc"))
     if signing["state"] == "unsigned":
-        require(not any(name.endswith((".asc", ".sig")) for name in listed),
-                "the set carries signatures but records itself as unsigned")
+        require(not signatures, "the set carries signatures but records itself as unsigned")
     else:
-        require(any(name.endswith((".asc", ".sig")) for name in listed),
-                "the set records itself as signed and carries no signature")
+        # Noticing a signature exists is not verifying it. A set could carry a
+        # .asc of anything -- another project's, an old one, empty -- and the
+        # earlier check would have passed it, which is a check that reads as
+        # protection and is not.
+        require(signatures, "the set records itself as signed and carries no signature")
+        public_key = arguments.public_key
+        require(public_key.is_file(), f"no published key at {public_key}")
+        expected = signing_key_fingerprint(public_key)
+        for name in signatures:
+            subject = name[:-len(".asc")]
+            require((root / subject).is_file(),
+                    f"{name} signs {subject}, which is not in the set")
+            fingerprint = verify_signature(root / name, root / subject, public_key)
+            require(fingerprint == expected,
+                    f"{name} was signed by {fingerprint}, not the published key {expected}")
+        # The two that must be signed, named rather than inferred: the artifact
+        # itself, and the file everything else is checked against.
+        for required in (provenance["subject"][0]["name"], "SHA256SUMS"):
+            require(f"{required}.asc" in signatures,
+                    f"a signed set must carry a signature over {required}")
 
-    print(f"release set verified: {len(listed)} artifacts, "
+    verified = len(signatures) if signing["state"] == "signed" else 0
+    print(f"release set verified: {len(listed)} artifacts, {verified} signatures checked, "
           f"{len(sbom['components'])} SBOM components matching the licence inventory "
           f"({undeclared} without a declared licence), provenance bound to the bytes, "
           f"state {signing['state']}")

@@ -102,8 +102,66 @@ jobs:
         with:
           subject-path: dist/deb/notrios_*_amd64.deb
 
+      - name: Assemble the release set
+        run: python3 performance/v0.9-i6/build_release_set.py --signed
+
+      # Imported inline rather than through an action.
+      #
+      # A third-party action would be the component handling the most sensitive
+      # material in this pipeline, and importing a key is one command. H6a's
+      # rule was the smallest maintainable toolchain, and this is where that rule
+      # is worth the most. The key carries no passphrase -- deliberately, because
+      # a passphrase stored beside the key it unlocks adds no layer and `gpg
+      # --batch` cannot answer a prompt -- so no second secret is needed.
+      - name: Import the release signing key
+        env:
+          RELEASE_KEY: ${{ secrets.GPG_RELEASE_PRIVATE_KEY }}
+        run: |
+          printf '%s' "$RELEASE_KEY" | gpg --batch --quiet --import
+          # The key that signs must be the key the repository publishes.
+          published=$(gpg --batch --with-colons --fingerprint --import-options show-only \
+                        --import keys/release-public.asc | awk -F: '/^fpr/{print $10; exit}')
+          imported=$(gpg --batch --with-colons --fingerprint --list-secret-keys \
+                        | awk -F: '/^fpr/{print $10; exit}')
+          if [ "$published" != "$imported" ]; then
+            echo "::error::the imported key $imported is not the published key $published" >&2
+            exit 1
+          fi
+          echo "signing key: $imported"
+
+      - name: Sign the release set
+        run: |
+          cd dist/release-set
+          deb=$(ls notrios_*_amd64.deb)
+          gpg --batch --yes --armor --detach-sign --output "$deb.asc" "$deb"
+
+          # RFC 3161 over the signature, from the authority and policy this
+          # project already pins for its evidence reserve -- one verification
+          # story rather than two. A signature says who; a timestamp keeps
+          # saying when after the key expires or is revoked.
+          openssl ts -query -data "$deb.asc" -sha256 -cert -out "$deb.asc.tsq"
+          curl -sSf -H 'Content-Type: application/timestamp-query' \
+               --data-binary "@$deb.asc.tsq" http://timestamp.digicert.com \
+               -o "$deb.asc.tsr"
+          openssl ts -verify -data "$deb.asc" -in "$deb.asc.tsr" \
+               -CAfile "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-root.pem" \
+               -untrusted "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-untrusted.pem"
+
+          # The checksum file is written last over everything above, then signed:
+          # it cannot cover its own signature.
+          sha256sum notrios_*_amd64.deb notrios_*.asc notrios_*.tsq notrios_*.tsr \
+                    SBOM.cdx.json PROVENANCE.json > SHA256SUMS
+          gpg --batch --yes --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
+
+      # The same verification a stranger runs, against the same committed key,
+      # before the artifact leaves the runner.
+      - name: Verify the release set the way a downloader would
+        run: |
+          python3 performance/v0.9-i6/verify_release_set.py \
+            --set dist/release-set --public-key keys/release-public.asc
+
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
-          name: notrios-deb
-          path: dist/deb/notrios_*_amd64.deb
+          name: notrios-release-set
+          path: dist/release-set/*
           if-no-files-found: error
