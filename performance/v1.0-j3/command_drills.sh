@@ -137,9 +137,68 @@ drill_backup_destination_guard() {
 }
 
 status=0
+# J3-D: a profile whose library lives outside the roots is listed and survives.
+#
+# I4's external-data-root drill, which J3 first recorded as not carried over.
+# The safeguard being drilled is not the deletion -- it is the *listing*: the
+# oracle always refused to delete such a path, but nothing told the oracle one
+# existed, so the user approved a plan their external library was missing from.
+drill_external_profile() {
+  local home; home=$(install_home external) || return 1
+  local library; library=$(library_of "$home")
+  local outside="$home/elsewhere"
+  mkdir -p "$outside"
+
+  # A real library, created by the command. Writing bytes into a file named
+  # .sqlite is not enough -- `profile register` opens the database to read the
+  # database id out of it, which is how this drill first failed -- and it is
+  # also the more honest fixture: what must survive is a library with a note in
+  # it, not an empty file.
+  in_home "$home" "$home/.local/bin/notriosctl" notes create \
+    --db "$outside/recipes.sqlite" --title "the recipe this drill must not lose" \
+    --body body >/dev/null 2>&1 || fail "the external library could not be created" || return 1
+
+  # Registered through the command rather than by writing the registry by hand,
+  # so the drill exercises the format the product actually writes.
+  in_home "$home" "$home/.local/bin/notriosctl" profile register \
+    --name recipes --db "$outside/recipes.sqlite" >/dev/null 2>&1 || \
+    fail "the external profile could not be registered" || return 1
+
+  local plan
+  plan=$(in_home "$home" "$home/.local/bin/notriosctl" purge --dry-run --no-redact 2>&1)
+  grep -q "NOT DELETED" <<<"$plan" || fail "the plan does not list the external path" || return 1
+  grep -q "$outside/recipes.sqlite" <<<"$plan" || fail "the plan does not name the external library" || return 1
+  grep -q "recipes" <<<"$plan" || fail "the plan does not say which profile names it" || return 1
+
+  in_home "$home" "$home/.local/bin/notriosctl" purge --confirm >/dev/null 2>&1 || \
+    fail "the purge itself failed" || return 1
+
+  [ -f "$outside/recipes.sqlite" ] || fail "the external library was deleted" || return 1
+  [ ! -d "$library" ] || fail "the data root survived a confirmed purge" || return 1
+
+  # Still readable, not merely still present: a file that survived as bytes but
+  # cannot be opened is not a library anybody kept. Counted by hits rather than
+  # grepped for the query, which is I7's lesson and nearly cost I4 a drill.
+  local hits
+  hits=$(in_home "$home" "$home/.local/bin/notriosctl" search --db "$outside/recipes.sqlite" \
+           --count recipe 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("count",0))' 2>/dev/null)
+  [ "${hits:-0}" -ge 1 ] || fail "the external library survived but holds no notes (hits=${hits:-0})" || return 1
+
+  # Not copied either, which is a decision rather than an oversight: purge does
+  # not delete this path, so a copy adds no recovery and a large external
+  # library would make the backup -- and therefore the whole purge -- fail.
+  local copied=false
+  if tar -tf "$home/.local/state/notrios-purge-backups"/*/backup.tar 2>/dev/null \
+       | grep -q recipes.sqlite; then copied=true; fi
+  [ "$copied" = false ] || fail "the external library was copied into the backup" || return 1
+
+  record purge-lists-an-external-profile-and-keeps-it pass \
+    "{\"listed\":true,\"attributed\":true,\"survived\":true,\"notes_readable\":$hits,\"data_root_deleted\":true,\"copied_into_backup\":false}"
+}
+
 for drill in drill_unattended_refusal drill_backup_unwritable drill_backup_too_large \
              drill_backup_contents_and_restore drill_symlinked_data_root \
-             drill_backup_destination_guard; do
+             drill_backup_destination_guard drill_external_profile; do
   echo "== $drill" >&2
   "$drill" || { record "${drill#drill_}" fail '{}'; status=1; }
 done

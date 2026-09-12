@@ -58,23 +58,47 @@ survive, and when the command fails the installed files must survive too. That
 suite also stopped using a shell stub for `notriosctl`, which was fine while
 purge only *asked* it where the roots were; it builds and installs the real one.
 
+## The rule that existed and could not fire
+
+`ExternalProfilePaths` is an oracle rule with two H3 fixtures behind it, and
+**both callers passed an empty list** — the Python did too, before it delegated,
+so the Go port lost nothing. The rule was unreachable. A profile whose library
+lives outside the six resolved roots was never deleted, which is right, and
+never enumerated or mentioned, which is not: purge prints what it will remove
+and asks one question about it, and an external library was silently missing
+from that list. Nobody can act on a warning nobody gives.
+
+`notriosctl purge` now reads the profile registry, resolves each profile's
+database, asset store and config path, and passes the ones outside the owned
+roots. They appear in the plan as `NOT DELETED`, with the profile that names
+them and the field that named it, because "which of my profiles is this?" is the
+first question that line provokes. The oracle gets the same list, so a root that
+*contains* an external profile is now refused rather than deleted with the
+profile inside it.
+
+Registry failures produce a notice, not an error, and not silence. A registry
+that cannot be located or parsed must not stop a user deleting their own data —
+but "no external profiles" and "I could not tell" are different sentences and
+only one is safe to act on, so the plan says which.
+
+The seventh drill proves the listing rather than the deletion, and it was
+confirmed by breaking it: with the enumeration removed the plan no longer names
+the external library and the drill fails. It also asserts the library is still
+*readable* afterwards — counted by hits, which is I7's lesson — because a file
+that survived as bytes but cannot be opened is not a library anybody kept.
+
 ## Still owed
 
-Nothing populates the oracle's `ExternalProfilePaths`. The rule is there, two of
-H3's fixtures exercise it, and **both callers pass an empty list** — the Python
-did too, before it delegated, so this is not something the port lost. A profile
-whose data lives outside the six resolved roots is therefore never deleted,
-which is right, and never enumerated, backed up or mentioned either, which is
-not. The rule's own wording is "enumerated and backed up, never deleted
-automatically", and only the second half of that is true today.
-
-It matters because of what the user is shown. Purge prints what it will remove
-and asks one question about it; an external library is silently absent from that
-list, so somebody with several profiles cannot act on a warning nobody gives.
-The fix is to read the profile registry in the command, resolve each profile's
-database and asset store, pass the ones outside the owned roots, and then report
-them as enumerated-not-deleted. I4's external-data-root drill is the one to run
-against it.
+The **copy** half. `BackupPolicy("external")` is `backup_never_delete` and H3's
+fixture reason says such a path is "enumerated and backed up". Only the
+enumeration is implemented, and not copying is deliberate: purge does not delete
+these paths, so a copy adds no recovery, and since a backup that cannot be
+written refuses the whole purge, one large external library would make purge
+impossible for exactly the user who has one. The disagreement is now between the
+policy's *name* and the code, which is why it is written down here rather than
+left for a reader to discover. Fixing it means either renaming the policy —
+which touches H3's recorded vocabulary, so it is a decision — or adding an
+opt-in flag for somebody who wants one archive of everything.
 
 Four of I4's nine drills are also not carried over, because they exercise the
 installed-file half this command deliberately does not touch: they belong to

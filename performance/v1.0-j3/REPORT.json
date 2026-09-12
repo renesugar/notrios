@@ -1,16 +1,45 @@
 {
-  "content_commit": "c57f8d6bb717d33cc15bb70a4bf6b17e2749041d",
+  "content_commit": "c016b1982eaa340083da0e75aa80c030081b1926",
   "counts": {
-    "drills": 6,
-    "passed": 6
+    "drills": 7,
+    "passed": 7
   },
   "drills": [
     {
-      "id": "unattended-purge-refuses-without-confirm",
+      "id": "purge-backup-restores-and-excludes-sync-keys",
+      "observations": {
+        "archive_holds_keys": false,
+        "archive_holds_library": true,
+        "restored_hits": 1
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-does-not-delete-through-a-symlink",
+      "observations": {
+        "exit": 0,
+        "neighbour_survived": true,
+        "target_survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-lists-an-external-profile-and-keeps-it",
+      "observations": {
+        "attributed": true,
+        "copied_into_backup": false,
+        "data_root_deleted": true,
+        "listed": true,
+        "notes_readable": 1,
+        "survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-a-backup-destination-it-would-delete",
       "observations": {
         "exit": 1,
-        "library_intact": true,
-        "names_the_flag": true
+        "library_intact": true
       },
       "status": "pass"
     },
@@ -31,28 +60,11 @@
       "status": "pass"
     },
     {
-      "id": "purge-backup-restores-and-excludes-sync-keys",
-      "observations": {
-        "archive_holds_keys": false,
-        "archive_holds_library": true,
-        "restored_hits": 1
-      },
-      "status": "pass"
-    },
-    {
-      "id": "purge-does-not-delete-through-a-symlink",
-      "observations": {
-        "exit": 0,
-        "neighbour_survived": true,
-        "target_survived": true
-      },
-      "status": "pass"
-    },
-    {
-      "id": "purge-refuses-a-backup-destination-it-would-delete",
+      "id": "unattended-purge-refuses-without-confirm",
       "observations": {
         "exit": 1,
-        "library_intact": true
+        "library_intact": true,
+        "names_the_flag": true
       },
       "status": "pass"
     }
@@ -64,7 +76,8 @@
     "No packaged (.deb) installation was used. The drills install with `make install` into an isolated HOME, because that is what can be done without root; v0.9 I3's container matrix is where the packaged form is exercised.",
     "Interruption. Nothing kills a purge between the verified backup and the deletion.",
     "There is no longer a Python backup format to compare against: `make purge` runs this command rather than writing its own archive, so the two formats cannot diverge because there is one. What is untested is reading an archive written by the *previous* Python implementation; no migration path is claimed for a backup taken before this change.",
-    "Profiles outside the resolved roots. The drills use one profile in the default location, so nothing here exercises a second profile, and nothing exercises a profile on another volume -- see still_owed, which is about exactly that path being invisible rather than merely untested."
+    "Profiles on another filesystem. The external-profile drill registers a second profile outside the roots and inside the same HOME, so the enumeration and the refusal are exercised but a real mount boundary is not. The oracle's mount-boundary rule is covered by H3's fixtures rather than here.",
+    "Multiple external profiles, and an external asset store or config path. The drill registers one profile naming one database; the deduplication and the asset-store and config fields are covered by internal/purge's Go tests rather than by a drill."
   ],
   "oracle_equivalence": {
     "held_by": "internal/purge/oracle_test.go against performance/v0.8-h3/PURGE_ORACLE_FIXTURES.json",
@@ -77,9 +90,9 @@
   },
   "schema": "notrios.v10.j3-packaged-purge.v1",
   "still_owed": {
-    "what": "Nothing populates the oracle's ExternalProfilePaths. The rule exists, two H3 fixtures exercise it, and both callers pass an empty list -- the Python did too, before it delegated, so this is not a regression of the port. A profile whose data lives outside the six resolved roots is therefore never deleted, which is right, and never enumerated, backed up or mentioned either, which is not: the rule's own wording is \"enumerated and backed up, never deleted automatically\", and only the second half of that is true.",
-    "why_it_matters": "A user with several profiles is told what purge will remove, and an external library is silently absent from that list. They cannot act on a warning nobody gives, and the one thing they might have wanted to keep is the one thing the backup does not contain.",
-    "the_fix": "Read the profile registry in `notriosctl purge`, resolve each profile's database and asset store, and pass the ones outside the owned roots as ExternalProfilePaths -- then report them as enumerated-not-deleted in the plan and carry them in the backup. I4's external-data-root drill is the one to run against it."
+    "what": "The copy half of the external policy. BackupPolicy(\"external\") is \"backup_never_delete\" and H3's fixture reason says such a path is \"enumerated and backed up\". The enumeration is implemented and drilled; the copy is deliberately not.",
+    "why_it_matters": "Not copying is defensible and is the current behaviour on purpose: purge does not delete these paths, so a copy adds no recovery, and because a backup that cannot be written refuses the whole purge, one large external library would make purge impossible for the user who has one. But the policy name still promises a copy, so the code and the policy disagree and a reader has to find this note to learn which one is true.",
+    "the_fix": "Either rename the policy to say what happens -- enumerate_never_delete -- or add an opt-in flag that copies external paths for somebody who wants one archive of everything, and say in the plan which it did. Renaming touches H3's recorded vocabulary, so it is a decision rather than an edit."
   },
   "what_this_is": "The drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`. The point is not that the command works: it is that every safeguard a developer gets, a packaged user now gets too. A drill that passes for the Make target and fails for the command is the gap this item exists to close."
 }

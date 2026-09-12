@@ -63,7 +63,7 @@ this section is archived when the plan completes and the rules are not.
 |---|---|---|---|
 | J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
-| J3. Give a packaged installation a supported way to delete its data | complete | 3/3 | — |
+| J3. Give a packaged installation a supported way to delete its data | complete | 4/4 | — |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | not-started | 0/3 | 3 |
 | J5. Prove the library at scale | not-started | 0/3 | 3 |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
@@ -479,6 +479,47 @@ warn about a different set of files than the command excludes.
 **Four of I4's nine drills are still not carried over,** because they exercise
 the installed-file half this command deliberately does not touch. The record
 names each one rather than running fewer quietly.
+
+### J3-D, added after the item closed: the rule that could not fire
+
+Asked whether an install-time manifest was driving the deletion — it is not; the
+data half resolves roots live and walks the filesystem — the answer surfaced
+something else. `ExternalProfilePaths` is an oracle rule with two of H3's
+fixtures behind it, and **both callers passed an empty list.** The Python did
+too, before it delegated, so the Go port lost nothing: the rule had never been
+reachable. A profile whose library lives outside the six resolved roots was
+never deleted, which is right, and never enumerated or mentioned, which is not
+— purge prints what it will remove and asks one question about it, and an
+external library was silently missing from that list.
+
+The command now reads the profile registry, resolves each profile's database,
+asset store and config path, and passes the ones outside the owned roots. They
+appear as `NOT DELETED`, attributed to the profile and the field that named
+them. The oracle gets the same list, so a root that *contains* an external
+profile is refused rather than deleted with the profile inside it — and a test
+asserts the list is what causes that refusal, which is the assertion whose
+absence let the gap survive. A registry that cannot be read produces a notice
+rather than silence, because "no external profiles" and "I could not tell" are
+different sentences and only one is safe to act on.
+
+A seventh drill registers a real second library outside the roots, checks the
+plan names it, purges, and checks the library is still *readable* afterwards by
+counting hits rather than grepping — I7's lesson. Confirmed by breaking it: with
+the enumeration removed, the plan stops naming the library and the drill fails.
+
+**What is deliberately not done, and why it is worth saying:**
+`BackupPolicy("external")` is `backup_never_delete`, and H3's fixture reason says
+such a path is "enumerated and backed up". The copy is not implemented. Purge
+does not delete these paths, so a copy adds no recovery — and because a backup
+that cannot be written refuses the whole purge, one large external library would
+make purge impossible for exactly the user who has one. So the disagreement is
+now between the policy's *name* and the code, and closing it means either
+renaming the policy (which touches H3's recorded vocabulary, so it is a decision
+rather than an edit) or adding an opt-in flag.
+
+**J3's archive predates this slice.** `notrios-v1.0-j3-45d097a.zip` was built
+when the item closed; J3-D is later work on the same files, and the commit that
+carries it is named in the git history rather than sealed in that archive.
 
 **Also fixed while in there:** `scripts/test_lifecycle.py`'s `unittest.main()`
 sat above its last class, so `python3 scripts/test_lifecycle.py` ran three fewer

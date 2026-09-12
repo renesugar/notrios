@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/paths"
+	"github.com/renesugar/notrios/internal/profiles"
 	"github.com/renesugar/notrios/internal/purge"
 )
 
@@ -76,7 +77,29 @@ func runPurge(args []string) {
 		}
 	}
 	userHome, _ := os.UserHomeDir()
-	steps := purge.Plan(roots, purge.Environment{Home: userHome})
+
+	// What the profile registry names outside these roots.
+	//
+	// The oracle has always refused to delete such a path and two of H3's
+	// fixtures prove it, but both callers passed an empty list -- so the rule
+	// was unreachable and an external library was absent from the plan a user is
+	// asked to approve. Enumerating it is the half that protects somebody with
+	// several profiles: they cannot act on a warning nobody gives.
+	external, registryNotice := externalProfilePaths(roots)
+	owned := make([]string, 0, len(roots))
+	for _, path := range roots {
+		owned = append(owned, path)
+	}
+	externalPaths := make([]string, 0, len(external))
+	for _, ref := range external {
+		externalPaths = append(externalPaths, ref.Path)
+	}
+
+	steps := purge.Plan(roots, purge.Environment{
+		Home:                 userHome,
+		ExternalProfilePaths: externalPaths,
+	})
+	steps = append(steps, purge.ExternalSteps(external)...)
 
 	destination := ""
 	if !*noBackup {
@@ -92,11 +115,11 @@ func runPurge(args []string) {
 		// than it does for the Make target, because --backup-dir lets the user
 		// name a destination, and the obvious wrong answer is somewhere inside
 		// the library they are about to remove.
-		owned := make([]string, 0, len(roots))
-		for _, path := range roots {
-			owned = append(owned, path)
-		}
-		verdict := purge.Decide(destination, purge.Environment{OwnedRoots: owned, Home: userHome})
+		verdict := purge.Decide(destination, purge.Environment{
+			OwnedRoots:           owned,
+			Home:                 userHome,
+			ExternalProfilePaths: externalPaths,
+		})
 		if verdict.Verdict != purge.Refuse {
 			fmt.Fprintf(os.Stderr,
 				"the backup destination %s is not refused by the purge oracle (%s),\n"+
@@ -110,12 +133,16 @@ func runPurge(args []string) {
 		printJSON(map[string]any{
 			"dry_run": *dryRun, "backup": destination, "no_backup": *noBackup,
 			"steps": steps, "redacted": home != "",
+			"external_profiles": external, "registry_notice": registryNotice,
 		})
 		if *dryRun {
 			return
 		}
 	} else if !*noPlan {
 		describePurge(steps, destination, *noBackup, show)
+		if registryNotice != "" {
+			fmt.Printf("\nProfiles: %s\n", registryNotice)
+		}
 	}
 
 	if *dryRun {
@@ -165,6 +192,59 @@ func runPurge(args []string) {
 	if !*noBackup {
 		fmt.Printf("\nYour data is in %s until you remove it. Nothing deletes it for you.\n", destination)
 	}
+}
+
+// externalProfilePaths reads the profile registry and returns what it names
+// outside the roots this purge would delete.
+//
+// It returns a notice rather than an error for every failure mode. A registry
+// that cannot be located or parsed must not stop a user deleting their own data
+// -- but it must not be silently treated as empty either, because "no external
+// profiles" and "I could not tell" are different sentences and only one of them
+// is safe to act on. The notice is printed above the confirmation.
+func externalProfilePaths(roots map[string]string) ([]purge.ExternalRef, string) {
+	registryPath, err := profiles.DefaultPath()
+	if err != nil {
+		return nil, "the profile registry location could not be resolved (" + err.Error() +
+			"), so nothing here can say whether a profile keeps its library outside these roots."
+	}
+	registry, err := profiles.Load(registryPath)
+	if err != nil {
+		return nil, "the profile registry at " + registryPath + " could not be read (" +
+			err.Error() + "), so nothing here can say whether a profile keeps its library " +
+			"outside these roots."
+	}
+
+	refs := []purge.ExternalRef{}
+	for _, profile := range registry.Profiles {
+		for _, named := range []struct{ field, path string }{
+			{"database", profile.DatabasePath},
+			{"asset store", profile.AssetStore},
+			{"config", profile.ConfigPath},
+		} {
+			if strings.TrimSpace(named.path) == "" {
+				continue
+			}
+			refs = append(refs, purge.ExternalRef{
+				Path: named.path, Profile: profile.Name, Field: named.field,
+			})
+		}
+	}
+
+	owned := make([]string, 0, len(roots))
+	for _, path := range roots {
+		owned = append(owned, path)
+	}
+	external := purge.ExternalPaths(refs, owned)
+	if len(registry.Profiles) == 0 {
+		return external, "no profiles are registered on this machine."
+	}
+	if len(external) == 0 {
+		return external, fmt.Sprintf("%d registered, all inside the roots above.",
+			len(registry.Profiles))
+	}
+	return external, fmt.Sprintf("%d registered; %d path(s) outside these roots, listed above "+
+		"and not deleted.", len(registry.Profiles), len(external))
 }
 
 func anythingToDelete(steps []purge.Step) bool {
@@ -221,6 +301,7 @@ func describePurge(steps []purge.Step, destination string, noBackup bool, show f
 			"dispose":            "DELETE WITHOUT BACKUP",
 			"keep":               "KEEP   ",
 			"refuse":             "REFUSED",
+			"enumerate":          "NOT DELETED",
 		}[step.Action]
 		detail := step.Reason
 		if step.Action == "backup_then_delete" && detail == "" {

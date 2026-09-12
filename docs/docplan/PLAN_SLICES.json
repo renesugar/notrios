@@ -73,6 +73,12 @@
           "statement": "The v0.9 I4 drills pass against a packaged installation, and the frozen CLI surface is re-recorded",
           "state": "done",
           "evidence": "file:performance/v1.0-j3/command_drills.sh"
+        },
+        {
+          "id": "J3-D",
+          "statement": "A profile whose library lives outside the roots is enumerated in the plan and never deleted",
+          "state": "done",
+          "evidence": "file:internal/purge/external.go"
         }
       ]
     },

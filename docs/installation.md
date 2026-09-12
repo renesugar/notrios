@@ -449,6 +449,14 @@ the purge that wrote it, and nothing deletes it for you afterwards.
 The cache and runtime roots are deleted without a backup: they are rebuilt from
 the library and hold nothing you wrote.
 
+**A profile whose library lives somewhere else is listed and kept.** If you
+registered a profile with a database outside the roots above — on another
+volume, say — purge names it as `NOT DELETED`, says which profile names it, and
+leaves it alone. It is not copied into the backup either, because it is not
+being deleted: if you want it somewhere else as well, copy it yourself. Purge
+never deletes a path outside the roots it owns, and if it cannot read your
+profile registry it says so rather than assuming you have no such profile.
+
 `FORCE=1` skips the confirmation, never the backup. If you genuinely want
 neither:
 
