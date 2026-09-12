@@ -92,21 +92,23 @@
     {
       "id": "J4",
       "title": "Stabilise the REST and MCP surfaces for 1.0",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J4-A",
-          "statement": "Every frozen REST route and MCP tool is reviewed against what 1.0 should promise",
-          "state": "not-started"
+          "statement": "Every frozen REST route and MCP tool has derived evidence and a recorded review decision",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j4/DECISIONS.md"
         },
         {
           "id": "J4-B",
-          "statement": "Anything 1.0 should not carry is withdrawn or deprecated before the freeze becomes a commitment",
-          "state": "not-started"
+          "statement": "Every advertised MCP tool is named by a test, gated so a fourth untested one fails",
+          "state": "done",
+          "evidence": "test:TestJ4EverySyncToolIsReachableAndGated"
         },
         {
           "id": "J4-C",
-          "statement": "The review records which parts of behaviour it did not settle",
+          "statement": "The one change that would break a wire protocol is recorded for the owner rather than made",
           "state": "not-started"
         }
       ]

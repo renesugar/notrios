@@ -177,6 +177,9 @@ python3 performance/v1.0-j3/validate_evidence.py
 # J13-A: the example classification. Derived on every run from the documents
 # themselves, so it fails when a document changes and the report does not.
 python3 performance/v1.0-j13/validate_evidence.py
+# J4: the surface review. Derived from the freeze and the repository on every
+# run, so a route added to the freeze and not reviewed fails here.
+python3 performance/v1.0-j4/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

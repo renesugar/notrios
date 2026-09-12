@@ -1,0 +1,1931 @@
+{
+  "schema": "notrios.v10.j4-surface-review.v1",
+  "item": "J4",
+  "milestone": "v1.0",
+  "what_this_is": "What is known about every frozen REST route and MCP tool, derived rather than recalled, so the review of what 1.0 should promise happens against evidence and in a defensible order.",
+  "these_are_not_verdicts": "described/documented/exercised/tested are facts about the repository, not judgements about the surface. A route with all four may still be a promise 1.0 should not make; a route with none may be load-bearing and correct. The decisions are recorded separately, by a person, and say so.",
+  "content_commit": "bfc805e86df0d7b290f706efdca98b0cf4147de3",
+  "counts": {
+    "rest": {
+      "members": 113,
+      "described": 112,
+      "documented": 113,
+      "exercised": 39,
+      "tested": 63
+    },
+    "mcp": {
+      "members": 45,
+      "described": 45,
+      "documented": 45,
+      "exercised": 1,
+      "tested": 45
+    }
+  },
+  "referred_to_by_nothing": [],
+  "members": [
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/documents/{document_id}",
+      "method": "DELETE",
+      "path": "/api/v1/documents/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/documents/{document_id}/resources/{resource_id}",
+      "method": "DELETE",
+      "path": "/api/v1/documents/{document_id}/resources/{resource_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/documents/{document_id}/tags/{tag}",
+      "method": "DELETE",
+      "path": "/api/v1/documents/{document_id}/tags/{tag}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/notebooks/{notebook_id}",
+      "method": "DELETE",
+      "path": "/api/v1/notebooks/{notebook_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/resources/{resource_id}",
+      "method": "DELETE",
+      "path": "/api/v1/resources/{resource_id}",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/search-notebooks/{search_notebook_id}",
+      "method": "DELETE",
+      "path": "/api/v1/search-notebooks/{search_notebook_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/sync/carrier/{class}/{name}",
+      "method": "DELETE",
+      "path": "/api/v1/sync/carrier/{class}/{name}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "DELETE /api/v1/trash/{document_id}",
+      "method": "DELETE",
+      "path": "/api/v1/trash/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /",
+      "method": "GET",
+      "path": "/",
+      "described": false,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/archive-v2.md",
+        "docs/cli.md",
+        "docs/configuration.md",
+        "docs/features.md",
+        "docs/gui.md",
+        "docs/import-export.md",
+        "docs/index.md",
+        "docs/installation.md",
+        "docs/journeys-cli.md",
+        "docs/journeys-gui.md",
+        "docs/operations.md",
+        "docs/publishing.md",
+        "docs/query-language.md",
+        "docs/selection-planning.md",
+        "docs/service.md",
+        "docs/stable-links.md",
+        "docs/troubleshooting.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/admin/gc/report",
+      "method": "GET",
+      "path": "/api/v1/admin/gc/report",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/admin/lint/report",
+      "method": "GET",
+      "path": "/api/v1/admin/lint/report",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/collections",
+      "method": "GET",
+      "path": "/api/v1/collections",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/collections/{collection_id}",
+      "method": "GET",
+      "path": "/api/v1/collections/{collection_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/blocks",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/blocks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/body",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/body",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/lines",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/lines",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/links",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/links",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/outline",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/outline",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/resources",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/resources",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/revisions",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/revisions",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/revisions/{revision_id}",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/revisions/{revision_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/search-in",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/search-in",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/documents/{document_id}/tags",
+      "method": "GET",
+      "path": "/api/v1/documents/{document_id}/tags",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/graph/report",
+      "method": "GET",
+      "path": "/api/v1/graph/report",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/jobs",
+      "method": "GET",
+      "path": "/api/v1/jobs",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/jobs/{job_id}",
+      "method": "GET",
+      "path": "/api/v1/jobs/{job_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/jobs/{job_id}/sync",
+      "method": "GET",
+      "path": "/api/v1/jobs/{job_id}/sync",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/links/suggest",
+      "method": "GET",
+      "path": "/api/v1/links/suggest",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/media-policy",
+      "method": "GET",
+      "path": "/api/v1/media-policy",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/notebooks",
+      "method": "GET",
+      "path": "/api/v1/notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/notebooks/tree",
+      "method": "GET",
+      "path": "/api/v1/notebooks/tree",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/notebooks/{notebook_id}",
+      "method": "GET",
+      "path": "/api/v1/notebooks/{notebook_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/notebooks/{notebook_id}/deletion-preview",
+      "method": "GET",
+      "path": "/api/v1/notebooks/{notebook_id}/deletion-preview",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/notebooks/{notebook_id}/notes",
+      "method": "GET",
+      "path": "/api/v1/notebooks/{notebook_id}/notes",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/resources/reports/reference",
+      "method": "GET",
+      "path": "/api/v1/resources/reports/reference",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/resources/{resource_id}",
+      "method": "GET",
+      "path": "/api/v1/resources/{resource_id}",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/resources/{resource_id}/content",
+      "method": "GET",
+      "path": "/api/v1/resources/{resource_id}/content",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/search",
+      "method": "GET",
+      "path": "/api/v1/search",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/import-export.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/search-notebooks",
+      "method": "GET",
+      "path": "/api/v1/search-notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/status",
+      "method": "GET",
+      "path": "/api/v1/status",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/configuration.md",
+        "docs/gui.md",
+        "docs/operations.md",
+        "docs/service.md",
+        "docs/stable-links.md",
+        "docs/troubleshooting.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync-conflicts",
+      "method": "GET",
+      "path": "/api/v1/sync-conflicts",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync-ui",
+      "method": "GET",
+      "path": "/api/v1/sync-ui",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync-ui/conflicts/{conflict_id}",
+      "method": "GET",
+      "path": "/api/v1/sync-ui/conflicts/{conflict_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync-ui/retention",
+      "method": "GET",
+      "path": "/api/v1/sync-ui/retention",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/backups/{backup_id}",
+      "method": "GET",
+      "path": "/api/v1/sync/backups/{backup_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/carrier/namespaces",
+      "method": "GET",
+      "path": "/api/v1/sync/carrier/namespaces",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/carrier/{namespace}/{class}",
+      "method": "GET",
+      "path": "/api/v1/sync/carrier/{namespace}/{class}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
+      "method": "GET",
+      "path": "/api/v1/sync/carrier/{namespace}/{class}/{name}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/handshake",
+      "method": "GET",
+      "path": "/api/v1/sync/handshake",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/sync/status",
+      "method": "GET",
+      "path": "/api/v1/sync/status",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/tags",
+      "method": "GET",
+      "path": "/api/v1/tags",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/tasks",
+      "method": "GET",
+      "path": "/api/v1/tasks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/templates",
+      "method": "GET",
+      "path": "/api/v1/templates",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/templates/{document_id}",
+      "method": "GET",
+      "path": "/api/v1/templates/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/trash",
+      "method": "GET",
+      "path": "/api/v1/trash",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /healthz",
+      "method": "GET",
+      "path": "/healthz",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/gui.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /mcp",
+      "method": "GET",
+      "path": "/mcp",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/configuration.md",
+        "docs/features.md",
+        "docs/index.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "HEAD /api/v1/resources/{resource_id}",
+      "method": "HEAD",
+      "path": "/api/v1/resources/{resource_id}",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "HEAD /api/v1/sync/backups/{backup_id}",
+      "method": "HEAD",
+      "path": "/api/v1/sync/backups/{backup_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "HEAD /api/v1/sync/carrier/{namespace}/{class}/{name}",
+      "method": "HEAD",
+      "path": "/api/v1/sync/carrier/{namespace}/{class}/{name}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "PATCH /api/v1/collections/{collection_id}",
+      "method": "PATCH",
+      "path": "/api/v1/collections/{collection_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "PATCH /api/v1/documents/{document_id}",
+      "method": "PATCH",
+      "path": "/api/v1/documents/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "PATCH /api/v1/notebooks/{notebook_id}",
+      "method": "PATCH",
+      "path": "/api/v1/notebooks/{notebook_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/batch",
+      "method": "POST",
+      "path": "/api/v1/batch",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/collections",
+      "method": "POST",
+      "path": "/api/v1/collections",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents",
+      "method": "POST",
+      "path": "/api/v1/documents",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/append",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/append",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/notebook",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/notebook",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/prepend",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/prepend",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/remote-media/localize",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/remote-media/localize",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/remote-media/scan",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/remote-media/scan",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/resources/{resource_id}",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/resources/{resource_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/revisions/{revision_id}/restore",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/revisions/{revision_id}/restore",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/documents/{document_id}/tags/{tag}",
+      "method": "POST",
+      "path": "/api/v1/documents/{document_id}/tags/{tag}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/graph",
+      "method": "POST",
+      "path": "/api/v1/graph",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/graph/path",
+      "method": "POST",
+      "path": "/api/v1/graph/path",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/graph/report/note",
+      "method": "POST",
+      "path": "/api/v1/graph/report/note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/jobs/sync/plan",
+      "method": "POST",
+      "path": "/api/v1/jobs/sync/plan",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/jobs/sync/start",
+      "method": "POST",
+      "path": "/api/v1/jobs/sync/start",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/jobs/{job_id}/cancel",
+      "method": "POST",
+      "path": "/api/v1/jobs/{job_id}/cancel",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/jobs/{job_id}/reset",
+      "method": "POST",
+      "path": "/api/v1/jobs/{job_id}/reset",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/jobs/{job_id}/retry",
+      "method": "POST",
+      "path": "/api/v1/jobs/{job_id}/retry",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/links/check",
+      "method": "POST",
+      "path": "/api/v1/links/check",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/links/resolve",
+      "method": "POST",
+      "path": "/api/v1/links/resolve",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/media-policy/check-url",
+      "method": "POST",
+      "path": "/api/v1/media-policy/check-url",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/note-queries/run",
+      "method": "POST",
+      "path": "/api/v1/note-queries/run",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/notebooks",
+      "method": "POST",
+      "path": "/api/v1/notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/resources",
+      "method": "POST",
+      "path": "/api/v1/resources",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/operations.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/search",
+      "method": "POST",
+      "path": "/api/v1/search",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/import-export.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/search-notebooks",
+      "method": "POST",
+      "path": "/api/v1/search-notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/selection/plan",
+      "method": "POST",
+      "path": "/api/v1/selection/plan",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/publishing.md",
+        "docs/selection-planning.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/backups",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/backups",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/backups/inspect",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/backups/inspect",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/conflicts/{conflict_id}/resolve",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/conflicts/{conflict_id}/resolve",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/discover",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/discover",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/initialize",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/initialize",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/invitations",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/invitations",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/pair",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/pair",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/peers/{replica_id}/retire",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/peers/{replica_id}/retire",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/peers/{replica_id}/retirement-preview",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/peers/{replica_id}/retirement-preview",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/peers/{replica_id}/snapshot-permission",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/peers/{replica_id}/snapshot-permission",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/recovery",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/recovery",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync-ui/resources/{resource_id}/intent",
+      "method": "POST",
+      "path": "/api/v1/sync-ui/resources/{resource_id}/intent",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync/backups",
+      "method": "POST",
+      "path": "/api/v1/sync/backups",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/sync/pair",
+      "method": "POST",
+      "path": "/api/v1/sync/pair",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/tags/rename",
+      "method": "POST",
+      "path": "/api/v1/tags/rename",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/operations.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/templates/{document_id}/create",
+      "method": "POST",
+      "path": "/api/v1/templates/{document_id}/create",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/trash/{document_id}/restore",
+      "method": "POST",
+      "path": "/api/v1/trash/{document_id}/restore",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "rest",
+      "member": "POST /mcp",
+      "method": "POST",
+      "path": "/mcp",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md",
+        "docs/configuration.md",
+        "docs/features.md",
+        "docs/index.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "PUT /api/v1/documents/{document_id}",
+      "method": "PUT",
+      "path": "/api/v1/documents/{document_id}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md",
+        "docs/cli.md",
+        "docs/service.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "PUT /api/v1/sync-ui/configuration",
+      "method": "PUT",
+      "path": "/api/v1/sync-ui/configuration",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "PUT /api/v1/sync/carrier/{class}/{name}",
+      "method": "PUT",
+      "path": "/api/v1/sync/carrier/{class}/{name}",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": false
+    },
+    {
+      "surface": "mcp",
+      "member": "append_to_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "cancel_sync_job",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "create_from_template",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "create_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "delete_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "edit_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "find_graph_path",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_document",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_document_blocks",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_document_outline",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_documents",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_graph",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_graph_report",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_job",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_lint_report",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_note_line_range",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_notebook_notes",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_notebook_tree",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "get_sync_status",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "initialize",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_collections",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_document_links",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_document_resources",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_jobs",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_search_notebooks",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_sync_conflicts",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_tags",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_tasks",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "list_templates",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "localize_remote_media",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "move_note_to_notebook",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "plan_selection",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "plan_sync",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "read_resource",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "request_resource_fetch",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "retry_sync_job",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "run_batch",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "run_note_query",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "scan_remote_media",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "search_documents",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md",
+        "docs/cli.md"
+      ],
+      "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "search_in_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "start_sync",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "tag_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    },
+    {
+      "surface": "mcp",
+      "member": "update_note",
+      "described": true,
+      "documented": [
+        "docs/api/mcp.md"
+      ],
+      "exercised": false,
+      "tested": true
+    }
+  ]
+}

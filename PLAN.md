@@ -57,14 +57,14 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**15 items: 6 complete, 0 in progress, 9 not started, 0 deferred.**
+**15 items: 6 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
 | J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
-| J4. Stabilise the REST and MCP surfaces for 1.0 | not-started | 0/3 | 3 |
+| J4. Stabilise the REST and MCP surfaces for 1.0 | in-progress | 2/3 | 1 |
 | J5. Prove the library at scale | not-started | 0/3 | 3 |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | not-started | 0/2 | 2 |
@@ -77,7 +77,15 @@ this section is archived when the plan completes and the rules are not.
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J4. Stabilise the REST and MCP surfaces for 1.0**
+
+- `J4-C` The one change that would break a wire protocol is recorded for the owner rather than made — *not-started*
+
+### Not started
+
+Written and not begun: J5, J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -559,7 +567,7 @@ CLI was a shell stub, which was fine while purge only asked the binary where the
 roots were; now that purge asks it to do the deleting, the suite builds and
 installs the real one.
 
-## J4. Stabilise the REST and MCP surfaces for 1.0
+## J4. Stabilise the REST and MCP surfaces for 1.0 — in progress
 
 **Goal.** The REST API and the MCP tool and resource schemas are what 1.0
 promises, and a change to either is a deliberate, visible act.
@@ -582,6 +590,60 @@ what is promised, and says which parts of behaviour it did not settle.
 **Working state.** A recorded review of every route and tool, the frozen
 surfaces re-recorded if anything moved, and the deprecation of anything 1.0
 should not carry.
+
+### What the review found
+
+Derived first, judged second: described, documented, exercised and tested, per
+member, because 113 routes read in a list all look equally reasonable and a
+judgement is only worth having if it was made against evidence. **None of those
+four is a verdict**, and the report says so in its own text.
+
+| | REST | MCP |
+|---|---|---|
+| members | 113 | 45 |
+| described in the machine-readable contract | 112 | 45 |
+| mentioned in a published document | 113 | 45 |
+| used by an example this repository executes | 39 | 1 |
+| named by a serving test | 63 | 45 |
+
+**One decision is the owner's and was not made here.** Carrier reads are
+namespaced and carrier writes are not, so both two-segment forms collapse onto
+one OpenAPI path where the same parameter means different things depending on
+the method — which is why they are called `{segment1}` and `{segment2}`, no
+honest name existing for a parameter whose meaning depends on the verb. The
+implicit namespace is a real security property: you cannot publish into someone
+else's namespace because the URL gives you no way to name one. The cost lands on
+anyone generating a client. Changing it breaks the sync wire between peers,
+which this milestone still permits and the next does not, so it is recorded with
+both options and **nothing was changed**.
+
+**Three advertised MCP tools that nothing tested, now fixed.** `plan_sync`,
+`request_resource_fetch` and `retry_sync_job` were advertised by the server,
+documented and scope-mapped, with no test anywhere naming them. An advertised
+tool promises that calling it does something and that the scope gates say who
+may; neither was checked. All three are covered now, gated so a fourth fails,
+and MCP is 45 of 45.
+
+**Two that looked wrong and are not,** recorded so the next reviewer finds the
+answer rather than rediscovering it: `GET /` is absent from the API contract
+because it serves the web interface, and the sync tools sit in the read-only
+tier because they pass a second, orthogonal `mcp.sync_scope` gate.
+
+### Two false findings, and what they cost
+
+**The first draft reported two carrier routes as missing from OpenAPI.** They
+are not — the contract describes them under different parameter names, and
+comparing route *text* rather than route *shape* had made documentation style
+look like a missing route. Chasing it is what uncovered the real finding above.
+
+**The `tested` check was satisfiable by a comment.** A probe that removed
+`retry_sync_job` from the new test still reported it tested, having matched the
+bare name in that test's own doc comment. It requires the name in quotes now,
+because a tool is called by name and only mentioned in prose — and the gate for
+the MCP finding depends on this check, so one a comment satisfies was worse than
+none.
+
+Both were found by probing checks I had just written and believed.
 
 ## J5. Prove the library at scale
 

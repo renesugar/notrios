@@ -195,3 +195,51 @@ func syncToolError(t *testing.T, s *Server, name, arguments string) string {
 	}
 	return ""
 }
+
+// TestJ4EverySyncToolIsReachableAndGated covers the three tools v1.0 J4 found
+// advertised, documented and scoped with no test anywhere naming them:
+// plan_sync, request_resource_fetch and retry_sync_job.
+//
+// A surface review asks what 1.0 promises. An advertised MCP tool promises two
+// things -- that calling it does something, and that the scope gates say who
+// may -- and neither was checked for these three. They are control-tier in
+// mcpSyncToolScopes, so the promise is: refused when sync scope is off, refused
+// as control when only status is allowed, and dispatched when control is
+// granted.
+//
+// It deliberately does not assert what they return. Whether retry_sync_job
+// finds a job is behaviour, and J4's boundary says a name freeze does not
+// freeze behaviour; what it must not do is fail the scope gate when the scope
+// allows it.
+func TestJ4EverySyncToolIsReachableAndGated(t *testing.T) {
+	tools := []struct {
+		name      string
+		arguments string
+	}{
+		{"plan_sync", `{}`},
+		{"request_resource_fetch", `{"resource_id":"res_absent"}`},
+		{"retry_sync_job", `{"job_id":"job_absent"}`},
+	}
+
+	disabled, _, _, _ := g15Server(t, MCPSyncDisabled)
+	statusOnly, _, _, _ := g15Server(t, MCPSyncStatus)
+	control, _, _, _ := g15Server(t, MCPSyncControl)
+
+	for _, tool := range tools {
+		t.Run(tool.name, func(t *testing.T) {
+			if got := syncToolError(t, disabled, tool.name, tool.arguments); !strings.Contains(got, "mcp.sync_scope") {
+				t.Errorf("with sync disabled the error is %q, and it should name mcp.sync_scope", got)
+			}
+			if got := syncToolError(t, statusOnly, tool.name, tool.arguments); !strings.Contains(got, "control") {
+				t.Errorf("with status-only scope the error is %q, and it should say control is needed", got)
+			}
+			// With control granted the tool may still fail on its arguments --
+			// there is no such job and no such resource -- but it must not fail
+			// the gate, which is the promise being tested.
+			got := syncToolError(t, control, tool.name, tool.arguments)
+			if strings.Contains(got, "mcp.sync_scope") || strings.Contains(got, "control") {
+				t.Errorf("with control granted the tool was still refused by scope: %q", got)
+			}
+		})
+	}
+}
