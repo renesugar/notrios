@@ -178,29 +178,29 @@ exists.
 
 **Open decisions**
 
-- **Restricting which refs can deploy to `production` — Blocking, the owner's.
-  Not required reviewers: this is a solo project.** Required reviewers are the
-  wrong instrument here and the owner said so. Even where a single account can
-  approve its own deployment, a reviewer who is also the person triggering the
-  run is a click, not a second pair of eyes — it buys a prompt and calls it a
-  control.
+- **Restricting which refs can deploy to `production` — Answered 2026-09-11 by
+  the owner, and this one is closed.** Required reviewers were the wrong
+  instrument: on a solo project they either wait for somebody who does not
+  exist or reduce to self-approval, which is a click rather than a review.
 
-  **The actual exposure is narrower and fixable alone.** `production` has
-  `deployment_branch_policy: null`, so *any* branch or tag can deploy to it. A
-  passphrase-less key in that environment is therefore as protected as the
-  ability to push a branch carrying a workflow that names the environment — and
-  a workflow file is something a branch can change. Restricting the environment
-  to a tag policy of `v*` closes that without anyone else: a branch push then
-  cannot reach the environment at all, whatever its workflow file says. It is
-  preventive rather than a prompt, which is the better shape for one person.
+  The environment now carries a custom deployment policy admitting exactly two
+  refs — `branch: main` and `tag: v*` — where it previously admitted everything
+  (`deployment_branch_policy: null`). That closes the exposure the reviewer
+  requirement was reaching for: an arbitrary branch carrying a workflow that
+  names the environment can no longer reach the key at all, whatever that
+  workflow says.
 
-  Recommended: a custom deployment policy on `production` admitting tags
-  matching `v*` and no branches, paired with J1's `on: push: tags: ['v*']`
-  trigger, so the two agree. `github-pages` already carries a `branch_policy`,
-  so the mechanism is one this repository uses.
+  **And `main` is protected**, which is the half that makes admitting it safe:
+  `protected=true`, required pull-request reviews, force pushes disabled. So the
+  two admitted paths are a tag, and a branch that cannot be changed without a
+  pull request and cannot be rewritten. That is better than the tags-only
+  restriction recommended here, because it leaves room for a
+  `workflow_dispatch` rehearsal from `main` without reopening anything.
 
-  **Without reviewers, the blast-radius decision below matters more, not less.**
-  A key that any tag-triggered run can use should be a key that can only sign.
+  Verified rather than taken on trust:
+  `gh api repos/renesugar/notrios/environments/production` and its
+  `deployment-branch-policies`, plus `branches/main/protection`.
+
 - **The passphrase-less design — Taken as the default, and the reasoning holds
   with one caveat.** A passphrase stored beside the key it unlocks adds no
   layer, GitHub's secret store is the vault, and `gpg --batch` cannot answer a
@@ -521,6 +521,6 @@ This is an index only; each decision is owned and explained inside its item.
 | Whether Windows or macOS ship | J6, J9 | Non-blocking default: postponed and absent from release claims unless their gates pass |
 | What the REST and MCP surfaces promise at 1.0 | J4 | Non-blocking default: what I8 froze, minus anything the review withdraws |
 | Publishing the release | J10 | **Blocking.** The owner authorizes the tag and the publication |
-| Which refs may deploy to `production` | J2 | **Blocking.** It admits any branch or tag today; a tag policy of `v*` is the solo-appropriate control, not required reviewers |
+| Which refs may deploy to `production` | J2 | **Answered 2026-09-11.** Restricted to `main` (protected, PR-required, no force push) and tags `v*`; required reviewers correctly rejected as a team instrument |
 | Whether the CI secret holds the primary key or only a signing subkey | J2 | Recommended: narrow to a signing subkey before the first signed release — it bounds the blast radius, which matters more without reviewers |
 | How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |
