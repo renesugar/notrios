@@ -702,12 +702,22 @@ refused, the subkeys-only export accepted. The workflow now asserts `#`, and
 asserts the signing subkey's own secret is present so that a narrowing which
 went too far fails at the gate rather than at the signing step.
 
-**Still to do here:** the gate is on `develop` and the `production` environment
-only admits `main` and `v*`, so no run has exercised it yet. The last two
-dispatches (2026-09-12 01:55Z and 02:32Z) predate the secret being replaced at
-13:14Z and therefore say nothing about the new value. J10 closes this by
-carrying the gate to `main` and dispatching once, which is also the point at
-which the narrowing is proven rather than reported.
+**The narrowed secret signs a release.** Dispatch
+[34697727452](https://github.com/renesugar/notrios/actions/runs/34697727452)
+on `main`, created 2026-09-12 13:54:27Z against a secret replaced at 13:14:14Z,
+so it is the new value and not the old one — the two earlier dispatches that day
+(01:55Z, 02:32Z) predate the replacement and say nothing about it. Every step
+green: `signing key: 1234C691AC0776A18524D55687027B1DD464695E`, the `.deb` and
+`SHA256SUMS` detached-signed, the RFC 3161 timestamp verified against the pinned
+TSA roots, and `release set verified: 6 artifacts, 2 signatures checked,
+provenance bound to the bytes, state signed` from the verifier a downloader
+runs. A subkey-only export is sufficient to sign, which was the open question.
+
+**What that run does not establish, and what is left.** It proves the secret
+*signs*; it cannot prove the secret is *narrow*, because `main` does not yet
+carry the field-15 check — the run would have passed identically with the old
+full-primary value. Carrying the gate to `main` is what turns the narrowing from
+reported into proven, and it is the one thing still owed here.
 
 **Dependencies.** Every other item.
 
