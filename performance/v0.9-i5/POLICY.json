@@ -17,6 +17,11 @@
       "verified_by": "gh api repos/renesugar/notrios/environments/production, its deployment-branch-policies, and branches/main/protection",
       "what": "Recorded the configured deployment policy: production restricted to main and tags v*.",
       "why": "The environment previously had no deployment policy and admitted any ref. This is the control the amendment above called for, and it is now in place rather than proposed."
+    },
+    {
+      "on": "2026-09-11",
+      "what": "Committed the public key, and recorded the primary-in-CI position with its deadline.",
+      "why": "The public key had to travel with the source. The primary-key question was answered 'not yet' rather than 'no': the mitigation offered reduces likelihood, and the reason it is safe is that the blast radius is currently near zero because nothing has been signed."
     }
   ],
   "content_commit": "d99b8101d26bbd23f0a30f80a90270dd42c7deae",
@@ -27,6 +32,20 @@
   "item": "I5",
   "key_custody": {
     "never": "Not in the repository, not in a pull-request job, not echoed to a log, not written into a release artifact, and not included in a purge backup. The first four are enforced by check_secret_exposure.py; the last is already enforced by the purge backup, which excludes key material and is drilled in I4.",
+    "primary_in_ci": {
+      "deadline": "v1.0 J10, before the first release anyone relies on",
+      "does_not_reduce_consequence": "The secret is decrypted into the runner at job time and anything executing there can read it: a compromised build dependency, or a mistake in the workflow. Neither involves signing in. If it happens, a primary key means the identity is compromised, not one subkey.",
+      "reduces_likelihood": "Hardware security keys are required to sign in to the account, actions are pinned by digest, the environment admits only main and v* tags, and main is protected against direct pushes. Account takeover -- the likeliest route on a solo project -- is hard.",
+      "state": "accepted for now, revisit before the first published release",
+      "what": "GPG_RELEASE_PRIVATE_KEY holds the primary key, which can certify as well as sign.",
+      "why_it_is_acceptable_today": "The key has signed nothing. No release exists, nobody has fetched this public key, no artifact depends on it -- so reissuing the identity costs one keygen. That cost starts growing when a signed release exists that somebody has verified."
+    },
+    "public_key": {
+      "committed": "2026-09-11",
+      "fingerprint": "1234C691AC0776A18524D55687027B1DD464695E",
+      "path": "keys/release-public.asc",
+      "why_in_the_repository": "It travels with the source rather than only with the release. A verifier who fetches the key from the same page as the artifact has verified that the page is self-consistent and very little else; a key that arrived with the source, through a different path and at a different time, is a weaker but genuinely independent anchor."
+    },
     "release_key_is_not_the_evidence_key": {
       "decision": "separate keys",
       "why": "The evidence reserve signs with a pinned subkey whose primary is offline, and its whole value is that the archive's integrity is independent of everything else. A release key is used by automation, on a schedule set by shipping, and is exposed to a build pipeline. Sharing one key would make the archive only as trustworthy as the release pipeline's worst day, and would mean a release-key rotation invalidated the chain of custody over evidence that has nothing to do with releases."

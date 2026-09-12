@@ -209,17 +209,37 @@ exists.
   last obstacle *after* exfiltration, so everything now rests on who can cause
   that environment to run — which is the decision above, and why the two belong
   together.
-- **What goes in the secret: the whole key, or a signing subkey — Recommended
-  before the first signed release, and more strongly now that reviewers are
-  ruled out.** The key's primary
-  can certify as well as sign, and the secret holds the primary. A compromise
-  therefore yields the identity itself — the ability to certify other keys and
-  issue new subkeys — not merely the ability to sign a release. The evidence key
-  deliberately keeps its primary offline and ships only a signing subkey for
-  exactly this reason, and the same split would apply here:
-  `gpg --export-secret-subkeys` puts only the subkey in CI. Recommended before
-  the first signed release, because rotating a compromised primary means
-  reissuing the identity.
+- **What goes in the secret: the whole key, or a signing subkey — Deferred to
+  J10 on 2026-09-11, deliberately, and the reason is not the one offered.** The
+  owner notes that hardware security keys are required to sign in to the GitHub
+  account. That is a real and substantial reduction — it makes account takeover
+  by credential theft very hard, and account takeover is the likeliest route to
+  abusing this environment on a solo project. Together with actions pinned by
+  digest (v0.9 I6), the environment restricted to `main` and `v*`, and `main`
+  protected against direct pushes, the plausible paths are now narrow.
+
+  **But hardware keys reduce likelihood, and this decision is about blast
+  radius.** The secret is decrypted into the runner at job time, and anything
+  executing in that job can read it — a compromised build dependency, or a
+  mistake in the workflow itself. Neither involves signing in, so neither is
+  affected by how the account is protected. If exfiltration happens anyway, a
+  primary key means the attacker holds the identity: they can certify other keys
+  and issue new subkeys, and recovery is reissuing the identity rather than
+  rotating a subkey.
+
+  **What actually makes deferring safe is that the key has signed nothing.** No
+  release exists, nobody has fetched this public key, and no published artifact
+  depends on it. Reissuing the identity today costs one `gpg --generate-key`.
+  That cost starts growing the moment a signed release exists that somebody has
+  verified — because then the key is a thing other people hold, and replacing it
+  means telling them.
+
+  So the deadline is **J10, not J2**: narrow the secret to a signing subkey with
+  `gpg --export-secret-subkeys` before the first release anyone relies on, or
+  record at that point that it was decided otherwise. Until then the exposure is
+  real and its consequence is near zero, which is a defensible place to stand
+  and a bad place to forget about.
+
 - **Who holds the release key — Answered 2026-09-11: the owner, under their own
   identity.** It is an identity claim about a person, and the key's user ID says
   so.
@@ -461,6 +481,13 @@ uploaded before that. The evidence is sealed into the reserve before the release
 is published, for the reason v0.8e exists: a timestamp taken afterwards cannot
 establish that the evidence predates disclosure.
 
+**One decision arrives here from J2.** The CI secret holds the release key's
+primary, which can certify as well as sign. That was deferred because the key
+had signed nothing and reissuing the identity cost a keygen — a calculation that
+stops being true at exactly this point, because a published release is a key
+other people hold. Narrow the secret to a signing subkey before publishing, or
+record here that it was decided otherwise and why.
+
 **Dependencies.** Every other item.
 
 **Working state.** A published, verified release, and a reserve volume sealed
@@ -522,5 +549,5 @@ This is an index only; each decision is owned and explained inside its item.
 | What the REST and MCP surfaces promise at 1.0 | J4 | Non-blocking default: what I8 froze, minus anything the review withdraws |
 | Publishing the release | J10 | **Blocking.** The owner authorizes the tag and the publication |
 | Which refs may deploy to `production` | J2 | **Answered 2026-09-11.** Restricted to `main` (protected, PR-required, no force push) and tags `v*`; required reviewers correctly rejected as a team instrument |
-| Whether the CI secret holds the primary key or only a signing subkey | J2 | Recommended: narrow to a signing subkey before the first signed release — it bounds the blast radius, which matters more without reviewers |
+| Whether the CI secret holds the primary key or only a signing subkey | J2 → J10 | **Deferred 2026-09-11.** Safe for now because the key has signed nothing, so reissuing costs a keygen; revisit before the first release anyone relies on |
 | How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |
