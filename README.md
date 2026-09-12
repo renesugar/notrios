@@ -148,13 +148,21 @@ Ubuntu Linux, the only tested platform.
 
 ## Configuration
 
-`notriosd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
+**[docs/configuration.md](docs/configuration.md) is the reference** — what each
+section is for, which roots a purge treats differently, and a generated table of
+all 53 settable keys with their types and defaults.
 
-On startup, the service creates the configured data directory, SQLite database
-parent directory, asset store, projection directory, and search-sidecar index
-directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active
-storage roots, database/schema state, capability/search limits, and optional
-Recoll availability, backlog, sync/index, and reconciliation state.
+Notrios runs with no configuration file at all; everything has a default.
+`notriosd` takes `-config <path>`, and without one it loads
+`config/config.example.yaml` from a source checkout if that file exists and
+compiled defaults otherwise. `-addr` and `-db` override the file.
+
+`notriosctl config show` prints what is actually in effect, which is the command
+to run before editing anything; `notriosctl paths` shows the resolved storage
+roots and how they were resolved, and `notriosctl doctor` checks they exist and
+that the database opens. `/api/v1/status` reports the same roots plus
+database/schema state, capability and search limits, and optional Recoll
+availability, backlog, sync/index and reconciliation state.
 
 ## Project status
 

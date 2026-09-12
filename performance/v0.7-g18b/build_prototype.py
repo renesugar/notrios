@@ -43,8 +43,12 @@ def stage_source(destination: Path) -> list[tuple[Path, Path]]:
         target.write_bytes(source.read_bytes())
         copied.append((source, target))
     # 15 -> 16 in v0.8 H14 slice B: docs/features.md.
-    if len(copied) != 18:
-        raise RuntimeError(f"expected 18 documentation pages, got {len(copied)}")
+    # 18 -> 19 in v1.0 J12: docs/configuration.md. Pinned here as well as in
+    # scripts/build_docs_site.sh because this prototype's whole claim is that
+    # staging preserves every canonical page byte for byte, and a count it does
+    # not know about is a page it cannot make that claim for.
+    if len(copied) != 19:
+        raise RuntimeError(f"expected 19 documentation pages, got {len(copied)}")
     return copied
 
 

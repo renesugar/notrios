@@ -932,3 +932,42 @@ supported matrix and this is about the front door.
 quick start covers every target that touches a user's files, and which points at
 a configuration document that exists; a documentation site a reader can serve
 locally, with instructions that were followed to write them.
+
+### What it took, and what the gates caught
+
+**The generated block is gated three ways,** each confirmed by breaking it: a
+stale block fails, a milestone row that marks itself *current* fails — that is
+the shape of the mistake, not one instance of it — and removing the markers
+fails. The milestone and the product version print as two facts because they
+disagree: the plan is v1.0 and the binaries report 0.8.0, since the version is
+bumped when the release is cut. One number would have hidden that.
+
+**The opening was worse than long.** It was a fifty-line changelog that stopped
+at "v0.8 H1 is next and unapproved" and still said GitHub push was
+unauthorized — two milestones and one authorization out of date. Project status
+gained the v0.8e, v0.9 and v1.0 rows it never had.
+
+**`docs/configuration.md` is task-shaped with a generated table,** and the
+generator reflects over `config.Config` and `config.Default()`, so a documented
+default is the default the service applies. It reports **53 settable keys** and
+reconciles that against the recorded surface's 63 from the same walk: the
+difference is the 10 section names. A key with no doc comment gets an empty
+cell rather than an invented description — visible, and therefore fixable.
+
+**`make docs-stale`** reports rather than fails. A stale git-ignored build
+directory is not a reason to refuse a commit, and a gate on it would be switched
+off inside a week; `--fail-stale` exists for a caller that disagrees. Its first
+output was "0.0 day(s)", which is true, useless, and the kind of number a reader
+stops believing — it picks the largest unit that does not round to zero now.
+
+**Eight pinned counts refused the new page, which is the system working.** The
+docs-site build (18→19), the Help-seeding test and its two seed reports, the
+G18a page count and grade baseline, the G18b staging prototype and its test, the
+docaudit sections and denominator, the G18g section inventory and Pagefind index,
+and the G18g public route list. The last one matters most: those are addresses
+other people may have linked to, and nothing has ever been removed from it.
+
+**The `make docs-stale` target also tripped I8's frozen surface** — 34 lifecycle
+targets to 35 — and a docrules gate caught the rewritten opening dropping its
+pointer to AGENTS.md's "Keeping the reference documents current", which is
+precisely the section a rewriter needs.

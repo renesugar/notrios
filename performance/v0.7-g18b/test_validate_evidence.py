@@ -23,7 +23,8 @@ class G18bEvidenceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             pairs = build_prototype.stage_source(Path(temporary) / "site")
             # 15 -> 16 in v0.8 H14 slice B: docs/features.md.
-            self.assertEqual(len(pairs), 18)
+            # 18 -> 19 in v1.0 J12: docs/configuration.md.
+            self.assertEqual(len(pairs), 19)
             for source, target in pairs:
                 self.assertEqual(source.read_bytes(), target.read_bytes())
 

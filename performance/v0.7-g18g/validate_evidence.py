@@ -14,7 +14,11 @@ ROOT = HERE.parents[1]
 # time, "somebody" turned out to be nobody for a month. v0.8 H13 moved the
 # gates that need no browser into `make validate`; this one still needs
 # Pagefind and Hugo, so it stays here.
-ROUTES = ["index.html", "installation.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html", "features.html", "journeys-cli.html", "journeys-gui.html"]
+# Public routes, pinned so that a page appearing on the site -- or a published
+# URL quietly disappearing -- is a decision somebody made. "configuration.html"
+# was added in v1.0 J12 with docs/configuration.md; nothing here has ever been
+# removed, because these are addresses other people may have linked to.
+ROUTES = ["index.html", "installation.html", "configuration.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html", "features.html", "journeys-cli.html", "journeys-gui.html"]
 ALIASES = {"service.html#configuration": "service.html#configuration-reference", "stable-links.html#linking-to-a-block-not-just-a-note": "stable-links.html#linking-to-a-section-or-a-block"}
 
 class EvidenceError(ValueError): pass
@@ -204,7 +208,10 @@ def validate_site(site):
                 continue
             errors.append(f"remote asset {route} -> {asset}")
     html=list(site.rglob("*.html")); indexed=sum(page(x).body for x in html)
-    if indexed != 18: errors.append(f"Pagefind body pages {indexed} != 18")
+    # 18 -> 19 in v1.0 J12: docs/configuration.md. A page on the site that
+    # Pagefind does not index is a page the offline search cannot find, which is
+    # the failure this count exists to catch.
+    if indexed != 19: errors.append(f"Pagefind body pages {indexed} != 19")
     for excluded in ("api/index.html","search/index.html"):
         p=site/excluded
         if p.is_file() and page(p).body: errors.append(f"generated page indexed {excluded}")

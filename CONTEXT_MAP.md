@@ -80,9 +80,16 @@ Feature contracts, which describe one capability rather than the project:
   in-memory committed-Markdown freshness gate.
 - `cmd/docjourney/` and `internal/docjourney/` — the GUI journey manifest and
   its source and test anchors, for the documented steps a browser can reach.
+- `cmd/docconfig/` — generates the key table at the end of
+  `docs/configuration.md` by reflecting over `internal/config.Config` and
+  `config.Default()`, so the documented default for a key is the default the
+  service applies. It owns one marked block; the task-shaped prose above it is
+  written by a person. Its test is the gate: a new key not in the table, or a
+  table edited by hand, fails.
 - `cmd/docplan/`, `internal/docplan/`, and `docs/docplan/PLAN_SLICES.json` —
-  the plan's slice ledger, the generated progress log in `PLAN.md`, and the
-  generated status sentence in `ROADMAP.md`.
+  the plan's slice ledger, the generated progress log in `PLAN.md`, the
+  generated status sentence in `ROADMAP.md`, and the generated project-status
+  block in `README.md`.
 - `cmd/docrules/`, `internal/docrules/`, and `docs/docrules/DOCUMENTS.json` —
   the root-document inventory: what each document is the home for, the pointer
   each carries to `AGENTS.md`, and the check that a new root document declares

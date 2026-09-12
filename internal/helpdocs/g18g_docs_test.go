@@ -63,8 +63,12 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 		t.Fatalf("collect repository docs: %v", err)
 	}
 	sort.Strings(paths)
-	if len(paths) != 18 {
-		t.Fatalf("expected exactly 18 repository Markdown files, got %d (%v)", len(paths), paths)
+	// 18 -> 19 in v1.0 J12: docs/configuration.md. The README referred a reader
+	// to a detailed configuration document that did not exist, for a surface of
+	// 53 settable keys documented by one example file. The count is pinned so
+	// that a page reaching the Help notebook is a decision somebody made.
+	if len(paths) != 19 {
+		t.Fatalf("expected exactly 19 repository Markdown files, got %d (%v)", len(paths), paths)
 	}
 
 	ctx := context.Background()
@@ -81,7 +85,7 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first Seed: %v", err)
 	}
-	if first.FilesSeen != 18 || first.NotesCreated != 18 || first.NotesUpdated != 0 || first.NotesRemoved != 0 {
+	if first.FilesSeen != 19 || first.NotesCreated != 19 || first.NotesUpdated != 0 || first.NotesRemoved != 0 {
 		t.Fatalf("unexpected first seed report: %+v", first)
 	}
 
@@ -89,7 +93,7 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListNotebookDocuments: %v", err)
 	}
-	if len(page.Documents) != 18 {
+	if len(page.Documents) != 19 {
 		t.Fatalf("expected 18 Help notes, got %d", len(page.Documents))
 	}
 	for _, rel := range paths {
@@ -113,7 +117,7 @@ func TestG18gRepositoryDocsAreSeededByteForByte(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second Seed: %v", err)
 	}
-	if second.FilesSeen != 18 || second.NotesKept != 18 || second.NotesCreated != 0 || second.NotesUpdated != 0 || second.NotesRemoved != 0 {
+	if second.FilesSeen != 19 || second.NotesKept != 19 || second.NotesCreated != 0 || second.NotesUpdated != 0 || second.NotesRemoved != 0 {
 		t.Fatalf("non-idempotent second seed report: %+v", second)
 	}
 }

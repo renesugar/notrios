@@ -118,7 +118,14 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// deleting by itself and the packaged reader has no Makefile. Unverified
 	// 345 -> 346 and the denominator 469 -> 470 with it; the body deletes a
 	// library, so it is drilled in performance/v1.0-j3 rather than executed here.
-	if report.ManualSections != 276 || report.Fragments != 21 || report.Claims != 4 ||
+	//
+	// 276 -> 286 sections in v1.0 J12: docs/configuration.md, ten sections and
+	// no executable example. The README's Configuration section referred a
+	// reader to a detailed document that did not exist, for a surface of 53
+	// settable keys documented by one example file. Unverified 346 -> 356 and
+	// the denominator 470 -> 480 with them; executables are unchanged, because
+	// the page's only generated content is a key table rather than a command.
+	if report.ManualSections != 286 || report.Fragments != 21 || report.Claims != 4 ||
 		report.Executables != 164 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -179,8 +186,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 346 ||
-		report.Denominator != 470 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 356 ||
+		report.Denominator != 480 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

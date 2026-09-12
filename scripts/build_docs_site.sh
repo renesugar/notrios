@@ -37,9 +37,13 @@ fi
 # only fails at packaging time, which is how it stayed at 15 for a month. v0.8
 # H13 moved the anchor gates into `make validate` for that reason; this one
 # stays out because it needs Pagefind from docs-site/node_modules.
+#
+# 18 -> 19 in v1.0 J12: docs/configuration.md. The README's Configuration
+# section referred a reader to a detailed document that did not exist, for a
+# surface of 53 settable keys documented by one example file.
 mapfile -d '' documents < <(find "$ROOT/docs" -type f -name '*.md' -print0 | sort -z)
-if [[ "${#documents[@]}" -ne 18 ]]; then
-  echo "build_docs_site: expected exactly 18 docs/**/*.md files; got ${#documents[@]}" >&2
+if [[ "${#documents[@]}" -ne 19 ]]; then
+  echo "build_docs_site: expected exactly 19 docs/**/*.md files; got ${#documents[@]}" >&2
   exit 1
 fi
 

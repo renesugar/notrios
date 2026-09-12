@@ -61,7 +61,13 @@ class G18aEvidenceTests(unittest.TestCase):
         # 275 -> 276 in v1.0 J3: docs/features.md gained the section for
         # `notriosctl purge`, which is a capability a packaged install
         # previously had no way to reach.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 276)
+        # 276 -> 286 in v1.0 J12: docs/configuration.md, a whole page. The
+        # README referred a reader to a detailed configuration document that did
+        # not exist, for 53 settable keys documented by one example file. Ten
+        # sections: where configuration comes from, the storage roots and what a
+        # purge does with each, serving, search, sync, remote media, retention,
+        # profiles, and the generated key table.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 286)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

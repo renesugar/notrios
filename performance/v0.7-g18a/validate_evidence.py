@@ -158,8 +158,11 @@ def validate_inventory() -> dict:
     # than as a floor, because a page arriving or leaving without anyone saying
     # so is exactly what this count exists to catch -- helpdocs seeds every
     # Markdown file under docs/, so a stray file becomes a Help note.
-    if len(actual["documents"]) != 18:
-        raise EvidenceError("published/Help page count is not 18")
+    # 18 -> 19 in v1.0 J12: docs/configuration.md. Pinned rather than counted so
+    # that a page reaching the published site and the Help notebook is a
+    # decision somebody made and recorded here.
+    if len(actual["documents"]) != 19:
+        raise EvidenceError("published/Help page count is not 19")
     grades = actual["grade_baseline"]
     if not grades["reconciles"] or sum(grades["totals"].values()) != grades["denominator"]:
         raise EvidenceError("grade totals do not reconcile")

@@ -1046,6 +1046,114 @@
       ]
     },
     {
+      "path": "docs/configuration.md",
+      "sha256": "60565e46f43dccb5f9141d850989d3ab9c06371c6c53c06ec0c780e8aac08276",
+      "help_note": "doc_help_configuration",
+      "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+      "sections": [
+        {
+          "id": "configuration",
+          "level": 1,
+          "title": "Configuration",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-configuration-comes-from",
+          "level": 2,
+          "title": "Where configuration comes from",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-your-notes-are-stored",
+          "level": 2,
+          "title": "Where your notes are stored",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "serving-the-api-and-the-interface",
+          "level": 2,
+          "title": "Serving the API and the interface",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "search",
+          "level": 2,
+          "title": "Search",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "sync",
+          "level": 2,
+          "title": "Sync",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "remote-media",
+          "level": 2,
+          "title": "Remote media",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "retention",
+          "level": 2,
+          "title": "Retention",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "profiles",
+          "level": 2,
+          "title": "Profiles",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "every-key",
+          "level": 2,
+          "title": "Every key",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
       "path": "docs/features.md",
       "sha256": "559a0e2034d1accf6a0b3da338b718fff7de98bf1c6d0093c6f7fb0e0a072062",
       "help_note": "doc_help_features",
@@ -2911,16 +3019,16 @@
   "surfaces": [
     {
       "id": "published_markdown",
-      "count": 18,
+      "count": 19,
       "unit": "pages",
-      "sections": 276,
+      "sections": 286,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
-      "count": 18,
+      "count": 19,
       "unit": "mirrored notes",
-      "sections": 276,
+      "sections": 286,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -3017,9 +3125,9 @@
       "executed": 0,
       "generated": 30,
       "claimed": 0,
-      "unverified": 246
+      "unverified": 256
     },
-    "denominator": 276,
+    "denominator": 286,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },
