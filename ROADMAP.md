@@ -826,6 +826,24 @@ published, and no bundle leaves the machine or the reserve.
   v0.8, v0.8e, v0.9 and v1.0 go unmentioned. It is a list of directories on
   disk, so it is derivable, which makes this the third arrival of the same
   lesson.
+- **The carrier write given its own path shape, before a release makes it
+  permanent.** v1.0 J4 found that `GET /api/v1/sync/carrier/{namespace}/{class}`
+  and `PUT`/`DELETE /api/v1/sync/carrier/{class}/{name}` are both two segments
+  after `carrier`, so they collapse onto one OpenAPI path whose parameters have
+  to be called `{segment1}` and `{segment2}` — no honest name exists for a
+  parameter whose meaning depends on the verb, and a generated client inherits
+  those names.
+
+  The authorization is not the problem and does not change. A namespace is
+  `HMAC(routing key from the group key, "replica" ‖ replica id)`; nobody chooses
+  it, only an enrolled member can name one, and writes derive it from the
+  authenticated caller because a replica must not publish as another one. What
+  changes is the URL: an unambiguous write path whose extra segment is a
+  literal.
+
+  **It belongs in this milestone because it is free in this milestone.** No
+  release has been published, so no peers exist outside the repository; after
+  1.0 the same change costs a migration.
 - **The remaining documents migrated to the tracked example set, where that
   earns its keep.** J13 built the mechanism and used it on one page; measured on
   2026-09-12, **5 of 169 published examples are generated and 164 are
@@ -985,6 +1003,42 @@ published, and no bundle leaves the machine or the reserve.
   requires its own approved Go-Wasm/JavaScript-interoperability investigation.
 - Wails mobile remains an alternative if it reaches production quality; the
   two clients share the core contracts rather than making either UI canonical.
+
+## Post-v1.0 — Bidirectional sync with another data source
+
+Today the traffic with anything that is not Notrios runs one way in each
+direction and never round-trips: importers bring a Joplin export, an Obsidian
+vault, an RSS feed or a chat transcript **in**, and the publishing subsystem
+sends a reviewed subset **out**. A note that came from an Obsidian vault and was
+then edited in Notrios has no path back.
+
+**It is not an extension of the sync carrier, and the distinction matters.** The
+carrier moves sealed NEV1 envelopes between replicas of *one* library that share
+a group key; its namespaces are blinded replica identities that nobody chooses.
+Another data source is not a replica, holds no group key, and has no journal to
+merge — so this is a new subsystem beside the carrier, not a parameter added to
+it. v1.0 J4 recorded the same conclusion when the question was asked of the
+carrier's own routes.
+
+What it would need, and why none of it is small:
+
+- **Stable identity mapping.** A durable correspondence between a Notrios
+  document and a file in a vault, surviving a rename on either side. Without it
+  every round trip is a fresh import and a duplicate.
+- **Conflict handling against a system with no revision history.** Notrios has
+  revisions and a journal; a Markdown file on disk has an mtime. Deciding what
+  happened when both changed is the whole problem, and "last writer wins" will
+  quietly destroy somebody's work.
+- **A scope smaller than a library.** Round-tripping one folder is the use case;
+  round-tripping everything is not. That is selection, which the publishing
+  planner already reasons about and the sync journal does not.
+- **A story for deletion,** which is where one-way importers get to stay silent
+  and a bidirectional one cannot.
+
+**A gateway shape is the plausible one:** a process that is an enrolled Notrios
+replica on one side and speaks the foreign format on the other, so the carrier
+keeps its current guarantees untouched and the mapping problem lives entirely in
+the gateway. Recorded as a shape, not a decision.
 
 ## Post-v1.0 — Headless and remote-server credential storage
 
@@ -1161,7 +1215,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 15 items, 6 complete, 1 in progress, 8 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 16 items, 6 complete, 1 in progress, 9 not started, 0 deferred.
 
 Started and unfinished: J4. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

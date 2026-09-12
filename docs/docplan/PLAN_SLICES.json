@@ -370,6 +370,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J16",
+      "title": "Give the carrier write its own path shape",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J16-A",
+          "statement": "The carrier write has a literal path segment, so no two carrier routes share a shape",
+          "state": "not-started"
+        },
+        {
+          "id": "J16-B",
+          "statement": "api/openapi.yaml describes each carrier path once, with parameter names that mean something",
+          "state": "not-started"
+        },
+        {
+          "id": "J16-C",
+          "statement": "The frozen REST surface and J4's review are re-recorded, and sync exchange still round-trips",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

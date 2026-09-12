@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**15 items: 6 complete, 1 in progress, 8 not started, 0 deferred.**
+**16 items: 6 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -76,6 +76,7 @@ this section is archived when the plan completes and the rules are not.
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
+| J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -85,7 +86,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J5, J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Written and not begun: J5, J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1481,3 +1482,50 @@ from.
 **Working state.** Every document either generated from its tracked set or
 carrying a recorded reason it is not, and no hand-moved registry hash left on a
 generated page.
+
+## J16. Give the carrier write its own path shape
+
+**Goal.** Every carrier path means one thing, and the API description can name
+its parameters honestly.
+
+**Why.** J4's D1. `GET /api/v1/sync/carrier/{namespace}/{class}` and
+`PUT`/`DELETE /api/v1/sync/carrier/{class}/{name}` are both two segments after
+`carrier`, so they collapse onto a single OpenAPI path whose parameters are
+called `{segment1}` and `{segment2}` — because no honest name exists for a
+parameter whose meaning depends on the verb. A client generated from that
+contract has methods taking `segment1` and `segment2`.
+
+**What is not changing, and why the shape is the only thing to fix.** A carrier
+namespace is `HMAC(routing key derived from the group key, "replica" ‖
+replica_id)`. Nobody chooses it: only an enrolled group member can name one at
+all, and the carrier host cannot tell whose it is. Writes derive it from the
+authenticated principal because **a replica must not publish as another one** —
+a caller-supplied namespace on a write would forge segments attributed to a
+peer. That property stays exactly as it is. This item changes the URL, not the
+authorization.
+
+**Scope.** Give the write an unambiguous path whose extra segment is a
+**literal** rather than a parameter — `PUT`/`DELETE
+/api/v1/sync/carrier/mine/{class}/{name}` — so the list and the write no longer
+share a shape. Then `api/openapi.yaml` describes two paths with real parameter
+names instead of one with `segment1`/`segment2`. Update the handler, the client
+in `notriosctl sync exchange`, `docs/api/rest.md`, I8's frozen REST surface, and
+J4's review.
+
+**Why now.** It is a breaking change to the sync wire, and **there is nothing to
+break**: J10 has not published a release, so no peers exist outside this
+repository. After 1.0 the same change costs a migration; today it costs a
+rename. That asymmetry is the entire argument for doing it in this milestone,
+and it expires when J10 runs.
+
+**Boundaries.** The old two-segment write path is removed rather than kept
+alongside. Keeping both would mean shipping the ambiguity permanently in order
+to be compatible with peers that do not exist. No authorization behaviour
+changes: the namespace is still derived from the caller and never read from the
+URL.
+
+**Dependencies.** J4, which found it. Must land before J10.
+
+**Working state.** Two carrier paths with one meaning each, an OpenAPI
+description with honest parameter names, a re-recorded frozen surface, and a
+round trip through `notriosctl sync exchange` proving peers still talk.
