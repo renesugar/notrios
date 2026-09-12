@@ -52,8 +52,8 @@
   "what_this_is": "The artifacts and evidence a release would carry, generated and then verified by code that recomputes rather than reads back, plus the workflow hardening that keeps CI's supply chain and permissions from decaying quietly.",
   "why_cross_checking": "A generator and a verifier written from the same assumption fail together and look like agreement. The SBOM is produced from the lockfiles and checked against an inventory G20 derives for its own reasons, so a disagreement between them is visible.",
   "workflow_hardening": {
-    "actions_pinned_by_digest": 17,
+    "actions_pinned_by_digest": 22,
     "permissions": "ci.yml declared none and so inherited the repository default, which can be read/write on every scope, for a workflow that only builds and tests. It declares contents: read now.",
-    "why": "actions/checkout@v4 is a tag, and a tag is a pointer somebody else can move: whoever controls it chooses what runs in this repository's CI with this repository's token. Pinning to a digest makes an upgrade a reviewable commit here. The tag is kept as a trailing comment so a reader can still tell which version a digest is."
+    "why": "actions/checkout@v4 is a tag, and a tag is a pointer somebody else can move: whoever controls it chooses what runs in this repository's CI with this repository's token. Pinning to a digest makes an upgrade a reviewable commit here. The tag is kept as a trailing comment so a reader can still tell which version a digest is. Count 17 -> 22 on 2026-09-11: v1.0 J1 added .github/workflows/release.yml, which builds the package and attests it. The validator derives this number from the workflows, so adding them made the record false and the gate refused it until it was corrected -- which is the point of deriving rather than restating."
   }
 }

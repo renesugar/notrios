@@ -22,6 +22,11 @@
       "on": "2026-09-11",
       "what": "Committed the public key, and recorded the primary-in-CI position with its deadline.",
       "why": "The public key had to travel with the source. The primary-key question was answered 'not yet' rather than 'no': the mitigation offered reduces likelihood, and the reason it is safe is that the blast radius is currently near zero because nothing has been signed."
+    },
+    {
+      "on": "2026-09-11",
+      "what": "Recorded the attestation prerequisite as met: the package is built in a workflow.",
+      "why": "v1.0 J1 moved the build into GitHub Actions. The prerequisite was recorded as 'not met' and derived from the workflows, so writing the workflow made the record false and validation refused it until it was brought up to date -- which is what that derivation was for."
     }
   ],
   "content_commit": "d99b8101d26bbd23f0a30f80a90270dd42c7deae",
@@ -114,9 +119,10 @@
   "provenance": {
     "mechanism": "GitHub artifact attestations, via actions/attest-build-provenance",
     "prerequisite": {
-      "detail": "Nothing in CI builds the package. scripts/build_deb.sh runs on a workstation, and an attestation can only attest what a workflow built, so the .deb build has to move into GitHub Actions -- with dpkg-dev and the frontend build -- and that output has to become the artifact people download. Until then there is nothing to attest and this section describes an intention rather than a practice.",
+      "detail": "Met on 2026-09-11 by v1.0 J1: .github/workflows/release.yml builds the package with `make deb` and attests it with actions/attest-build-provenance. The validator derives this state from the workflows rather than reading it here, which is how the change was noticed -- writing the workflow made this record false and the gate said so.",
       "permissions": "id-token: write and attestations: write, declared on the job that needs them rather than inherited. performance/v0.9-i6/check_workflow_hardening.py refuses a workflow that declares no permissions at all, and least privilege means these two appear only where they are used.",
-      "state": "not met",
+      "proven": "Statically. The workflow lints clean, passes the hardening and secret-exposure gates, and its two assertions were exercised locally against the real package. The attestation itself is unproven until a run produces one: it needs the runner's OIDC identity and cannot be exercised on a workstation.",
+      "state": "met",
       "tracked_in": "ROADMAP.md, under v1.0"
     },
     "verify": [

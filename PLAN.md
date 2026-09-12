@@ -105,18 +105,46 @@ with `gh attestation verify --repo renesugar/notrios`, and
 `performance/v0.9-i5/POLICY.json` recording the prerequisite as met — which its
 validator derives from the workflows rather than believing.
 
-**The environment is already provisioned.** A `production` environment exists on
-the repository and holds `GPG_RELEASE_PRIVATE_KEY`, so the release workflow this
-item writes has somewhere to run and J2 has somewhere to sign from. It has **no
-protection rules**, which J2 records as a blocking decision; the attestation half
-does not depend on that, because attestations need no secret of ours at all —
-`id-token: write` is a per-run OIDC token, not a stored credential. That is part
-of their appeal.
+**Written 2026-09-11, and not yet run.** `.github/workflows/release.yml` builds
+the package with `make deb` — the same entry point a developer uses, because a
+workflow and a person running two different things is how they drift — and
+attests it with `actions/attest-build-provenance`. It triggers on a `v*` tag or
+by hand, uses `environment: production` so only the refs that environment admits
+can reach it, and publishes nothing: the package stays a run artifact until J10.
 
-**The release trigger is a tag, not a push.** `on: push: tags: ['v*']` with
-`environment: production`, so the workflow cannot run from an ordinary branch
-push and `check_secret_exposure.py` keeps holding: no `pull_request` trigger on
-a workflow that names a secret.
+**Two assertions in it are the interesting part, and both were provoked by
+reading the build rather than by writing the workflow.**
+
+*The package would have shipped without a GUI, silently.* `build_deb.sh` builds
+the desktop binary conditionally: if the GTK or webkit headers are missing it
+prints `no desktop GUI` and **carries on**, producing a package one binary
+short. That is right for a developer without those headers and wrong for a
+release. The workflow installs the headers and then checks the package actually
+contains `notrios`, `notriosd` and `notriosctl`, so a missing dependency fails
+the build instead of quietly changing what ships.
+
+*A tag says which version is being released; `version.go` says which is being
+built.* Nothing connected them, so a `v1.0.0` tag would have produced
+`notrios_0.8.0-1_amd64.deb` and published it under the wrong name. The workflow
+refuses when they disagree.
+
+Both were exercised locally against the real package: the contents check passes
+on the package as built and refuses the same listing with the GUI removed, and
+the version check accepts `v0.8.0` against `0.8.0` and refuses `v1.0.0`.
+
+**What is proven and what is not.** The workflow lints clean under `actionlint`
+and passes both repository gates — every action pinned by digest, permissions
+declared narrowly, no secret reachable from a `pull_request`. The attestation
+itself is **unproven**: it needs the runner's OIDC identity and cannot be
+exercised on a workstation. Until a run produces one and
+`gh attestation verify` accepts it, this item is written rather than done.
+
+**Two derived gates caught the change before I did**, which is worth recording
+because it is the machinery working. `performance/v0.9-i5` records the
+attestation prerequisite as `not met` and *derives* that from the workflows, so
+adding one made the record false and validation refused it. `performance/v0.9-i6`
+derives its pinned-action count the same way and refused `17` once there were
+`22`. Neither would have been noticed by reading.
 
 ## J2. Create the release signing key, and sign what ships
 
