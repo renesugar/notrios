@@ -2,258 +2,239 @@
   "schema": "notrios.docplan.slices.v1",
   "items": [
     {
-      "id": "I1",
-      "title": "Put v0.8 on GitHub, and reconcile the branches",
-      "state": "complete",
+      "id": "J1",
+      "title": "Build the package in a workflow, and attest what it built",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I1-A",
-          "statement": "The remote is re-audited, the evidence pre-push gate runs, and develop is pushed",
-          "state": "done",
-          "evidence": "file:scripts/verify_evidence_pre_push.sh"
+          "id": "J1-A",
+          "statement": "The .deb is built by a GitHub Actions workflow rather than a workstation",
+          "state": "not-started"
         },
         {
-          "id": "I1-B",
-          "statement": "A develop-to-main pull request is merged with a merge commit after explicit authorization",
-          "state": "done",
-          "evidence": "file:PLAN.md"
+          "id": "J1-B",
+          "statement": "actions/attest-build-provenance attests the artifact and gh attestation verify accepts it",
+          "state": "not-started"
         },
         {
-          "id": "I1-C",
-          "statement": "The merge result is brought back into develop so main is an ancestor with no content difference",
-          "state": "done",
-          "evidence": "file:PLAN.md"
+          "id": "J1-C",
+          "statement": "The signing policy records the attestation prerequisite as met, derived from the workflows",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I2",
-      "title": "Migrate the desktop shell to Wails v3, or record the postponement",
-      "state": "deferred",
+      "id": "J2",
+      "title": "Create the release signing key, and sign what ships",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I2-A",
-          "statement": "The frontend's eleven window.go uses move onto @wailsio/runtime or generated bindings",
-          "state": "blocked",
-          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+          "id": "J2-A",
+          "statement": "A release key exists under the custody I5 decided, separate from the evidence key",
+          "state": "not-started"
         },
         {
-          "id": "I2-B",
-          "statement": "The v3 question dialog's callback answer makes the unsaved-work veto wait and fail closed",
-          "state": "blocked",
-          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+          "id": "J2-B",
+          "statement": "Release artifacts and SHA256SUMS are signed and RFC 3161 timestamped",
+          "state": "not-started"
         },
         {
-          "id": "I2-C",
-          "statement": "The GUI builds and passes its journeys on GTK4/webkitgtk-6.0, or the postponement is recorded",
-          "state": "blocked",
-          "blocked_on": "Wails v3 has no release; go list -m github.com/wailsapp/wails/v3@latest answers v3.0.0-beta.19 as of 2026-09-09. Deferred to post-v1.0; see ROADMAP.md"
+          "id": "J2-C",
+          "statement": "verify_release_set.py accepts a set that records itself as signed because it carries signatures",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I3",
-      "title": "Promote the Ubuntu installer through clean native environments",
-      "state": "complete",
+      "id": "J3",
+      "title": "Give a packaged installation a supported way to delete its data",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I3-A",
-          "statement": "Fresh install, source-layout migration and upgrade across prereleases are rehearsed in a clean environment",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i3/REPORT.json"
+          "id": "J3-A",
+          "statement": "notriosctl purge carries the verified backup, the explicit-flag refusal and the symlink protection",
+          "state": "not-started"
         },
         {
-          "id": "I3-B",
-          "statement": "Downgrade refusal and rollback, remove and reinstall, and profile discovery are rehearsed",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i3/REPORT.json"
+          "id": "J3-B",
+          "statement": "Sync key material is excluded from the backup it writes",
+          "state": "not-started"
         },
         {
-          "id": "I3-C",
-          "statement": "Operation with neither source nor a development toolchain present is rehearsed",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i3/REPORT.json"
+          "id": "J3-C",
+          "statement": "The v0.9 I4 drills pass against a packaged installation, and the frozen CLI surface is re-recorded",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I4",
-      "title": "Harden the destructive lifecycle, and decide the profile race",
-      "state": "complete",
+      "id": "J4",
+      "title": "Stabilise the REST and MCP surfaces for 1.0",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I4-A",
-          "statement": "Backup capacity and corruption faults and restore drills are executed against disposable profiles",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i4/REPORT.json"
+          "id": "J4-A",
+          "statement": "Every frozen REST route and MCP tool is reviewed against what 1.0 should promise",
+          "state": "not-started"
         },
         {
-          "id": "I4-B",
-          "statement": "Process, mount and symlink races, external profile roots and modified installed artifacts are exercised",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i4/DRILLS.jsonl"
+          "id": "J4-B",
+          "statement": "Anything 1.0 should not carry is withdrawn or deprecated before the freeze becomes a commitment",
+          "state": "not-started"
         },
         {
-          "id": "I4-C",
-          "statement": "The profile-registry validation race is fixed or refused with a reason",
-          "state": "done",
-          "evidence": "file:internal/profiles/runtime_race_test.go"
-        },
-        {
-          "id": "I4-D",
-          "statement": "Uninstall is proved never to delete user data",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i4/REPORT.json"
+          "id": "J4-C",
+          "statement": "The review records which parts of behaviour it did not settle",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I5",
-      "title": "Resolve signing, notarization and timestamping policy",
-      "state": "complete",
+      "id": "J5",
+      "title": "Prove the library at scale",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I5-A",
-          "statement": "Each supported platform has a signing, notarization and timestamping policy somebody else can follow",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i5/POLICY.json"
+          "id": "J5-A",
+          "statement": "Import, search and sync are measured on hundreds of thousands of documents and resources",
+          "state": "not-started"
         },
         {
-          "id": "I5-B",
-          "statement": "Secret handling keeps material out of pull-request jobs, logs, artifacts, backups and the repository",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i5/check_secret_exposure.py"
+          "id": "J5-B",
+          "statement": "Backup and restore are measured at that size",
+          "state": "not-started"
         },
         {
-          "id": "I5-C",
-          "statement": "What remains blocked without an owner account or native trust service is recorded as blocked",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i5/POLICY.json"
+          "id": "J5-C",
+          "statement": "What degraded is recorded, and nothing incomplete is extrapolated",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I6",
-      "title": "Generate and verify the release evidence set",
-      "state": "complete",
+      "id": "J6",
+      "title": "Ship the versioned no-GUI library and header artifacts",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I6-A",
-          "statement": "Checksums, SBOM, dependency/license/security reports and provenance are generated and verified offline",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i6/verify_release_set.py"
+          "id": "J6-A",
+          "statement": "Versioned library and header artifacts are published for the supported matrix",
+          "state": "not-started"
         },
         {
-          "id": "I6-B",
-          "statement": "GitHub workflows are pinned by digest and least-privilege",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i6/check_workflow_hardening.py"
+          "id": "J6-B",
+          "statement": "Lifecycle, ownership, threading, error, stream and compatibility examples compile against them",
+          "state": "not-started"
         },
         {
-          "id": "I6-C",
-          "statement": "A non-public release-candidate or draft flow is exercised without publishing",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i6/draft_release.sh"
-        },
-        {
-          "id": "I6-D",
-          "state": "done",
-          "statement": "The SBOM is cross-checked against independent generators, and a dated vulnerability scan is recorded rather than gated",
-          "evidence": "file:performance/v0.9-i6/SBOM_CROSSCHECK.json"
+          "id": "J6-C",
+          "statement": "The ABI baseline is unchanged or re-recorded with a reason",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I7",
-      "title": "Soak, recover, and freeze the support matrix",
-      "state": "complete",
+      "id": "J7",
+      "title": "Validate backup, export, restore, sync compatibility and disaster recovery",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I7-A",
-          "statement": "Long-lived installed directory, REST and emulator soak tests run to completion with durations recorded",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i7/SOAK.json"
+          "id": "J7-A",
+          "statement": "Data round-trips across the exact versions 1.0 will interoperate with",
+          "state": "not-started"
         },
         {
-          "id": "I7-B",
-          "statement": "Support-bundle redaction, crash-reporting policy and disaster-recovery drills are executed",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i7/DRILLS.jsonl"
-        },
-        {
-          "id": "I7-C",
-          "statement": "The desktop support matrix is frozen and names only what was executed",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i7/MATRIX.json"
+          "id": "J7-B",
+          "statement": "A disaster-recovery drill destroys and restores a library at the scale J5 measured",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I8",
-      "title": "Freeze the 1.0 compatibility surfaces",
-      "state": "complete",
+      "id": "J8",
+      "title": "Security review for remote media and MCP",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I8-A",
-          "statement": "REST, MCP, archive, sync, configuration, installer and Make lifecycle candidates are frozen with green suites",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i8/FROZEN.json"
+          "id": "J8-A",
+          "statement": "Remote-media localization is reviewed: domain policy, quarantine, hashing, MIME sniffing, size limits and SSRF",
+          "state": "not-started"
         },
         {
-          "id": "I8-B",
-          "statement": "The shared C ABI is frozen and its ownership, leak, double-free and wrong-handle failures are exercised",
-          "state": "done",
-          "evidence": "file:performance/v0.9-i8/EDGES.json"
+          "id": "J8-B",
+          "statement": "The MCP surface and its tool scopes are reviewed for what a client can reach",
+          "state": "not-started"
         },
         {
-          "id": "I8-C",
-          "statement": "Concurrent-shutdown, cancellation and stream-limit behaviour is tested at the edges",
-          "state": "done",
-          "evidence": "file:internal/abi/concurrency_test.go"
+          "id": "J8-C",
+          "statement": "Every finding is fixed or explicitly accepted with a reason",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I9",
-      "title": "Write the release-grade operational documentation",
-      "state": "complete",
+      "id": "J9",
+      "title": "Publish the release documentation for the supported matrix",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I9-A",
-          "statement": "Install, upgrade, rollback and backup/restore documentation is written for a reader with no repository",
-          "state": "done",
-          "evidence": "file:docs/installation.md"
+          "id": "J9-A",
+          "statement": "Installation and support documentation carries exact OS, architecture and runtime rows",
+          "state": "not-started"
         },
         {
-          "id": "I9-B",
-          "statement": "Uninstall, purge, troubleshooting and artifact-verification documentation is written for that reader",
-          "state": "done",
-          "evidence": "file:docs/troubleshooting.md"
+          "id": "J9-B",
+          "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published",
+          "state": "not-started"
         },
         {
-          "id": "I9-C",
-          "statement": "Every command shown is generated from or checked against the real command line",
-          "state": "done",
-          "evidence": "file:docs/docaudit/registry.json"
+          "id": "J9-C",
+          "statement": "No sentence remains that J1, J2 or J3 made untrue",
+          "state": "not-started"
         }
       ]
     },
     {
-      "id": "I10",
-      "title": "Serve the documentation site from notrios.com",
-      "state": "complete",
+      "id": "J10",
+      "title": "Publish the user-authorized release",
+      "state": "not-started",
       "slices": [
         {
-          "id": "I10-A",
-          "state": "done",
-          "statement": "Hugo's baseURL is the real site address and the built output carries a CNAME",
-          "evidence": "file:docs-site/static/CNAME"
+          "id": "J10-A",
+          "statement": "develop and main are synchronized, CI and the pre-push evidence gates pass, and the evidence is sealed",
+          "state": "not-started"
         },
         {
-          "id": "I10-B",
-          "state": "done",
-          "statement": "The site contract records the configured base URL and the check compares the two rather than a literal",
-          "evidence": "file:performance/v0.7-g18b/SITE_CONTRACT.json"
+          "id": "J10-B",
+          "statement": "The release is created from reviewed main on the owner's explicit authorization",
+          "state": "not-started"
+        },
+        {
+          "id": "J10-C",
+          "statement": "The published tag, notes, installers, checksums, signatures, SBOM, provenance and downloaded bytes are verified after publication",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J11",
+      "title": "Report the installation's structure and manifest, and verify a purge against it",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J11-A",
+          "state": "not-started",
+          "statement": "A report lists every directory holding Notrios files or data, and every file by absolute path"
+        },
+        {
+          "id": "J11-B",
+          "state": "not-started",
+          "statement": "A clean install's structure and manifest are captured as a record"
+        },
+        {
+          "id": "J11-C",
+          "state": "not-started",
+          "statement": "A shell check reads a pre-purge manifest and confirms every path is gone, and fails when one is left"
         }
       ]
     }

@@ -765,6 +765,38 @@ published, and no bundle leaves the machine or the reserve.
   can download, verify, install, launch, upgrade, uninstall/reinstall, and
   restore Notrios without source code, Go, Node/npm, Wails, a compiler, or
   development headers.
+- **Attest the Ubuntu package with GitHub artifact attestations, and build it in
+  a workflow so there is something to attest.** v0.9 I6 produced an in-toto
+  provenance statement and recorded its own limit: it is a statement this
+  repository wrote about its own build, on a workstation, with no builder
+  identity anybody else can check — SLSA build level 1 at most.
+  `actions/attest-build-provenance` closes that half. It signs the provenance
+  with Sigstore keyless signing, binding a short-lived certificate to the
+  workflow's OIDC identity and logging it, so a consumer can run
+  `gh attestation verify notrios_<version>_amd64.deb --repo renesugar/notrios`
+  and learn which workflow, from which commit, produced those exact bytes. No
+  key to hold, rotate or lose.
+
+  **The prerequisite is the work.** Nothing in CI builds the package today —
+  `make deb` runs on a workstation — and an attestation can only attest what a
+  workflow built. So this means moving the `.deb` build into Actions, with
+  `dpkg-dev` and the frontend build, and making that output the artifact people
+  download. It also needs `id-token: write` and `attestations: write`, which the
+  workflow-hardening gate in `performance/v0.9-i6` will require to be declared
+  narrowly rather than inherited.
+
+  **It does not replace a maintainer key, and the two claims should not be
+  blurred.** An attestation says *this artifact came out of that build*; a
+  detached OpenPGP signature says *the holder of this key approved it*. The
+  first is rooted in GitHub's and Sigstore's infrastructure and verified with
+  `gh` or `cosign`; the second survives independently of GitHub and is verified
+  with `gpg --verify` and nothing else — which matters for a project whose
+  evidence reserve is deliberately built on exact OpenPGP and RFC 3161
+  identities rather than ambient trust. Ship both: attestations for how it was
+  built, a key for who stands behind it. Neither is checked by
+  `apt install ./notrios.deb`, which verifies nothing either way, so
+  verification stays a deliberate act the user takes first.
+
 - **Give a packaged installation a supported way to delete its data.** The
   bullet above promises an end user can install, upgrade, uninstall and restore
   "without source code" — and deleting their notes is the one lifecycle act that
@@ -972,6 +1004,46 @@ requirements below are the ones H7 already carried.
   build time, for one address. Hugo's `relativeURLs` would make one build serve
   both, and would also make a built `_site` directory browsable from disk.
 
+  **Previewing the built site locally, measured 2026-09-11.** Which local shape
+  works depends on the `baseURL` the build used, and **you cannot tell which by
+  looking at the directory** — which is the problem this entry is about, in
+  miniature.
+
+  A build whose `baseURL` carries a path (`…github.io/notrios/`, or the
+  `example.github.io/notrios/` placeholder that stood there until I10) emits
+  `/notrios/css/…`, and needs the repository-name directory the real project
+  site has:
+
+  ```bash
+  mkdir -p _preview/notrios && cp -a _site/. _preview/notrios/
+  python3 -m http.server 8000 --directory _preview   # then http://localhost:8000/notrios/
+  ```
+
+  A build for the apex domain (`https://notrios.com/`, which is what
+  `docs-site/hugo.toml` says now) emits root-absolute `/css/…` and is served
+  from the root:
+
+  ```bash
+  bash scripts/build_docs_site.sh _site
+  python3 -m http.server 8000 --directory _site      # then http://localhost:8000/
+  ```
+
+  **Using the wrong one looks like it works.** The page returns 200 and every
+  stylesheet 404s: with an apex build copied into `_preview/notrios/`, the file
+  really is at `/notrios/docs.css` and the HTML asks for `/docs.css`. Both
+  directions were checked over a local HTTP server from the same tree.
+
+  **The trap is a stale `_site`.** `_site/` is git-ignored, so whatever is on
+  disk is whatever was last built — and a tree built before I10 previews
+  correctly in the `notrios/` shape while the live site is served from the root.
+  Rebuild before previewing, or you are testing the site you used to have.
+  Neither shape works from `file://`, where a root-absolute path means a
+  filesystem root; a local HTTP server is the minimum.
+
+  So no single directory layout serves both addresses from one build today, and
+  the shape to use is a property of the build rather than of the site. That is
+  what `relativeURLs` would buy, and why this entry exists.
+
   **It is blocked on a validator defect, and turning it on without fixing that
   would be worse than leaving it.** `local_target` in
   `performance/v0.7-g18g/validate_evidence.py` resolves a relative directory
@@ -999,7 +1071,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 10 items, 9 complete, 0 in progress, 0 not started, 1 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 11 items, 0 complete, 0 in progress, 11 not started, 0 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 
