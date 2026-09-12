@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**12 items: 4 complete, 0 in progress, 8 not started, 0 deferred.**
+**13 items: 4 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -73,6 +73,7 @@ this section is archived when the plan completes and the rules are not.
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
+| J13. Generate the published command-line examples from executed runs | not-started | 0/4 | 4 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -963,3 +964,101 @@ other people may have linked to, and nothing has ever been removed from it.
 targets to 35 — and a docrules gate caught the rewritten opening dropping its
 pointer to AGENTS.md's "Keeping the reference documents current", which is
 precisely the section a rewriter needs.
+
+## J13. Generate the published command-line examples from executed runs
+
+**Goal.** Every command line a reader is shown either ran, or says plainly that
+it did not and why — and the ones that ran are inserted from the run rather than
+typed beside it.
+
+**The question the documentation does not answer.** For a configuration option:
+*what do I use this for, and what else must be set for it to work on a command
+line?* `docs/configuration.md` gained the key table and the prose in J12 and has
+**zero** command-line examples, so a reader learns that
+`search_sidecar.index_dir` exists and not what to run to use it, nor that it is
+useless without the rest of the `search_sidecar` section and a `recollindex` on
+the machine. That coupling — which options must be set *together* — is the part
+a key table structurally cannot express.
+
+**What exists already, and why this is an extension rather than a new idea.**
+`internal/docexec` executes hash-pinned fenced blocks out of the documentation
+against real fixtures, through adapters (`cli-shell`, `loopback-shell`,
+`config-fragment`, `cli-edge`), and `docs/docaudit/registry.json` records each
+one as executed or unverified with a reviewed reason. `cmd/docgen` already
+*generates* source-anchored fragments into the pages. So the machinery for
+running examples and the machinery for generating prose both exist; what does
+not exist is a tracked source of *use-case* examples whose text is generated
+from the run.
+
+**Measured, not estimated** — from the registry, 2026-09-12:
+
+| | count |
+|---|---|
+| examples published | 164 |
+| executed against fixtures | 65 |
+| unverified with a reviewed reason | 99 |
+| of those, `illustrative-placeholder` | 41 |
+
+By document, worst first: `docs/cli.md` 3 executed / 53 unverified,
+`docs/installation.md` 1 / 23, `docs/operations.md` 11 / 9,
+`docs/configuration.md` 0 / 0 — it has no examples to be either.
+
+**The 41 placeholders are not one problem.** 35 are in `docs/cli.md` and are
+command *synopses* — `notriosctl search [--limit N] … "<query>"` — where the
+brackets are optional-argument notation. A synopsis is not a broken example; it
+is a different thing, correctly unexecutable, and replacing it with a worked
+example would make the reference list worse. The ones that deserve the owner's
+description — hand-written and never verified — are the recipes that *look*
+runnable: the composite operator recipes in `docs/operations.md` that mix a safe
+default with an illustrative `/safe/snapshot` path, the `SHA256SUMS` check in
+`docs/installation.md` that names a file from a release set this repository does
+not contain, and the publishing recipe. This item separates those two
+populations before changing either, because a plan that treats them alike would
+delete good synopses to improve a number.
+
+**Scope, in order.**
+
+- **J13-A, the examination.** Classify every fenced block in `docs/` as
+  synopsis, use-case recipe, or transcript, and report per document: which
+  commands have a synopsis and no worked example anywhere, which recipes are
+  unverified, and which sections offer an option with no example of using it.
+  A report, gated for freshness, not a score.
+- **J13-B, the tracked source and the generator.** A per-document example set
+  (`docs/docexamples/<document>.json`, matching how `docexec` already addresses
+  examples per document and section), each entry naming the use case, the
+  commands, the fixture it needs, and what must be set for it to work. A
+  generator inserts the command — and where it is short and stable, the real
+  output — into a marked block in the page, and the gate refuses a block that
+  disagrees with the recorded run. Per document rather than one global file
+  because a single file that every page depends on is a merge conflict with a
+  schedule.
+- **J13-C, `docs/configuration.md`.** A use-case example for each section that
+  has one: moving a library to another disk, putting the service behind a proxy,
+  turning the search sidecar on, allowing a remote-media domain. Each says which
+  other keys must be set with it, and each runs.
+- **J13-D, replace what was never verified.** The operations, installation and
+  publishing recipes become generated executed examples, or keep a reason that
+  names where they *are* executed. Synopses stay synopses and are exempt by
+  classification rather than by being quietly excused.
+
+**Boundaries.** No example is published that has not run, unless the registry
+carries a reviewed reason — the rule G18d already enforces, extended to the
+generated ones. Generation must not rewrite prose: the generator owns marked
+blocks and nothing else, as `cmd/docconfig` and `cmd/docplan` do. Nothing
+probabilistic decides whether an example is correct.
+
+**An open decision, stated rather than assumed.** Whether this extends
+`cmd/docgen` or becomes `cmd/docexamples`. `docgen` already generates into these
+pages and would keep one generator; an example set needs fixtures and a
+sandboxed run, which is `docexec`'s machinery and not `docgen`'s. The plan
+assumes a separate command that reuses `docexec`'s adapters, because the thing
+that runs examples and the thing that renders doc comments have nothing in
+common but a destination — but this is worth deciding before J13-B rather than
+during it.
+
+**Dependencies.** J12, for the configuration page the examples go in.
+
+**Working state.** A per-document example set, a generator whose output is
+gated against the recorded run, a configuration page whose sections each show
+what to run and what else to set, and a published example count where "executed"
+is the default and every exception names its reason.

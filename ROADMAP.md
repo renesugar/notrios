@@ -777,6 +777,33 @@ published, and no bundle leaves the machine or the reserve.
   count at exactly 18, deliberately, and it fails at packaging time rather than
   in `make validate` — so a new page under `docs/` breaks the docs build until
   the pin is bumped.
+- **Command-line examples generated from executed runs, and an examination of
+  where they are missing.** A key table says an option exists; it cannot say
+  what the option is *for*, or which other options must be set alongside it to
+  use it on a command line. That coupling is the part a reader needs and the
+  part no generated table can express, and `docs/configuration.md` shipped with
+  no examples at all.
+
+  The machinery is already here and half-applied. `internal/docexec` executes
+  hash-pinned fenced blocks out of the pages against real fixtures, and
+  `docs/docaudit/registry.json` records each as executed or unverified with a
+  reviewed reason; `cmd/docgen` already generates prose into the same pages.
+  What is missing is a tracked source of *use-case* examples whose published
+  text comes from the run rather than from somebody typing it beside the run.
+
+  Measured on 2026-09-12: **164 published examples, 65 executed, 99 unverified**,
+  of which 41 are `illustrative-placeholder`. Worst by document:
+  `docs/cli.md` 3 executed of 56, `docs/installation.md` 1 of 24.
+
+  **The 41 are two populations and must not be treated as one.** 35 are command
+  synopses in `docs/cli.md`, where brackets are optional-argument notation — a
+  synopsis is correctly unexecutable and replacing it with a worked example
+  would make a reference list worse. The ones that are genuinely hand-written
+  and unverified are the recipes that look runnable: the composite operator
+  recipes mixing a safe default with an illustrative `/safe/snapshot`, the
+  `SHA256SUMS` check naming a file from a release set this repository does not
+  contain, and the publishing recipe. Separating the two comes before changing
+  either, or good synopses get deleted to improve a number.
 - **A way to notice `_site` has gone stale.** `make docs` builds it and
   `make g18g-validate` rebuilds and checks it, but neither is reached by
   `make validate`; only `scripts/package_release.sh` runs the latter. A checkout
@@ -1092,7 +1119,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 12 items, 4 complete, 0 in progress, 8 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 13 items, 4 complete, 0 in progress, 9 not started, 0 deferred.
 <!-- notrios:generated:roadmap:status:end -->
 
 

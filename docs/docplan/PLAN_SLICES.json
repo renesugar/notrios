@@ -290,6 +290,33 @@
           "evidence": "file:scripts/check_docs_site_fresh.py"
         }
       ]
+    },
+    {
+      "id": "J13",
+      "title": "Generate the published command-line examples from executed runs",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J13-A",
+          "statement": "Every fenced block in docs/ is classified as synopsis, recipe or transcript, and the gaps are reported per document",
+          "state": "not-started"
+        },
+        {
+          "id": "J13-B",
+          "statement": "A per-document tracked example set generates its published command lines, gated against the recorded run",
+          "state": "not-started"
+        },
+        {
+          "id": "J13-C",
+          "statement": "Each configuration section shows what to run and which other keys must be set with it, and each example runs",
+          "state": "not-started"
+        },
+        {
+          "id": "J13-D",
+          "statement": "Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
