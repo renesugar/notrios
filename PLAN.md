@@ -57,12 +57,12 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**11 items: 1 complete, 0 in progress, 10 not started, 0 deferred.**
+**11 items: 2 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
-| J2. Create the release signing key, and sign what ships | not-started | 0/3 | 3 |
+| J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
 | J3. Give a packaged installation a supported way to delete its data | not-started | 0/3 | 3 |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | not-started | 0/3 | 3 |
 | J5. Prove the library at scale | not-started | 0/3 | 3 |
@@ -169,7 +169,7 @@ adding one made the record false and validation refused it. `performance/v0.9-i6
 derives its pinned-action count the same way and refused `17` once there were
 `22`. Neither would have been noticed by reading.
 
-## J2. Create the release signing key, and sign what ships
+## J2. Create the release signing key, and sign what ships — complete
 
 **Goal.** Somebody who downloads the package can establish who stands behind it,
 not only which workflow produced it.

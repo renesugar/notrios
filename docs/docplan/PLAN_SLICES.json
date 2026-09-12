@@ -29,22 +29,25 @@
     {
       "id": "J2",
       "title": "Create the release signing key, and sign what ships",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J2-A",
           "statement": "A release key exists under the custody I5 decided, separate from the evidence key",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:keys/release-public.asc"
         },
         {
           "id": "J2-B",
           "statement": "Release artifacts and SHA256SUMS are signed and RFC 3161 timestamped",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:.github/workflows/release.yml"
         },
         {
           "id": "J2-C",
           "statement": "verify_release_set.py accepts a set that records itself as signed because it carries signatures",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/verify_release_set.py"
         }
       ]
     },
