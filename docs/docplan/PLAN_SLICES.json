@@ -294,7 +294,7 @@
     {
       "id": "J13",
       "title": "Generate the published command-line examples from executed runs",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J13-A",
@@ -317,7 +317,8 @@
         {
           "id": "J13-D",
           "statement": "Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j13/validate_evidence.py"
         }
       ]
     },

@@ -28,6 +28,7 @@ TAKEN_AT_CLOSE = {
     "J2": "notrios-v1.0-j2-442a968.zip",
     "J3": "notrios-v1.0-j3-45d097a.zip",
     "J12": "notrios-v1.0-j12-ba7e431.zip",
+    "J13": "notrios-v1.0-j13-088b488.zip",
     "J14": "notrios-v1.0-j14-2cfaeed.zip",
 }
 
