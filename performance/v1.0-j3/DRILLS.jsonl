@@ -5,3 +5,4 @@
 {"drill": "purge-does-not-delete-through-a-symlink", "observations": {"exit": 0, "neighbour_survived": true, "target_survived": true}, "status": "pass"}
 {"drill": "purge-refuses-a-backup-destination-it-would-delete", "observations": {"exit": 1, "library_intact": true}, "status": "pass"}
 {"drill": "purge-lists-an-external-profile-and-keeps-it", "observations": {"attributed": true, "copied_into_backup": false, "data_root_deleted": true, "listed": true, "notes_readable": 1, "survived": true}, "status": "pass"}
+{"drill": "purge-is-not-blocked-by-a-profile-naming-a-parent", "observations": {"library_deleted": true, "named_parent_kept": true, "refused_any_root": false, "says_roots_still_deleted": true}, "status": "pass"}

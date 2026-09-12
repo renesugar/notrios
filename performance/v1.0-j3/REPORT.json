@@ -1,8 +1,8 @@
 {
-  "content_commit": "c016b1982eaa340083da0e75aa80c030081b1926",
+  "content_commit": "59889bd7edb7e69d92809ddf59b9ff1d0ed8a744",
   "counts": {
-    "drills": 7,
-    "passed": 7
+    "drills": 8,
+    "passed": 8
   },
   "drills": [
     {
@@ -20,6 +20,16 @@
         "exit": 0,
         "neighbour_survived": true,
         "target_survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-is-not-blocked-by-a-profile-naming-a-parent",
+      "observations": {
+        "library_deleted": true,
+        "named_parent_kept": true,
+        "refused_any_root": false,
+        "says_roots_still_deleted": true
       },
       "status": "pass"
     },
@@ -77,7 +87,8 @@
     "Interruption. Nothing kills a purge between the verified backup and the deletion.",
     "There is no longer a Python backup format to compare against: `make purge` runs this command rather than writing its own archive, so the two formats cannot diverge because there is one. What is untested is reading an archive written by the *previous* Python implementation; no migration path is claimed for a backup taken before this change.",
     "Profiles on another filesystem. The external-profile drill registers a second profile outside the roots and inside the same HOME, so the enumeration and the refusal are exercised but a real mount boundary is not. The oracle's mount-boundary rule is covered by H3's fixtures rather than here.",
-    "Multiple external profiles, and an external asset store or config path. The drill registers one profile naming one database; the deduplication and the asset-store and config fields are covered by internal/purge's Go tests rather than by a drill."
+    "Multiple external profiles, and an external asset store or config path. The drill registers one profile naming one database; the deduplication and the asset-store and config fields are covered by internal/purge's Go tests rather than by a drill.",
+    "The report for an external path is measured with the same walk as a root, so a very large external library makes the plan slower to print. Nothing here measures that cost, and nothing caps it."
   ],
   "oracle_equivalence": {
     "held_by": "internal/purge/oracle_test.go against performance/v0.8-h3/PURGE_ORACLE_FIXTURES.json",
@@ -90,9 +101,9 @@
   },
   "schema": "notrios.v10.j3-packaged-purge.v1",
   "still_owed": {
-    "what": "The copy half of the external policy. BackupPolicy(\"external\") is \"backup_never_delete\" and H3's fixture reason says such a path is \"enumerated and backed up\". The enumeration is implemented and drilled; the copy is deliberately not.",
-    "why_it_matters": "Not copying is defensible and is the current behaviour on purpose: purge does not delete these paths, so a copy adds no recovery, and because a backup that cannot be written refuses the whole purge, one large external library would make purge impossible for the user who has one. But the policy name still promises a copy, so the code and the policy disagree and a reader has to find this note to learn which one is true.",
-    "the_fix": "Either rename the policy to say what happens -- enumerate_never_delete -- or add an opt-in flag that copies external paths for somebody who wants one archive of everything, and say in the plan which it did. Renaming touches H3's recorded vocabulary, so it is a decision rather than an edit."
+    "what": "Nothing about the external policy. The owner decided on 2026-09-12 that external libraries are reported and neither deleted nor copied, and that they must never block a purge -- so the copy half of BackupPolicy(\"external\") is declined rather than owed, and the oracle's external-profile rule is deliberately not wired to the enumerated paths.",
+    "why_it_matters": "The rule could only ever fire on the reverse of the case it was written for. Every enumerated path is outside every owned root, so it can never protect a root; the one case it fires on is a profile naming an ancestor of the roots, where it refused the data root and let the library survive a confirmed purge. A purge that silently keeps the library is worse than anything that rule was guarding.",
+    "the_fix": "Done, and drilled both ways: an external library is listed and kept, and a profile naming a parent of the roots does not stop those roots being deleted. The policy name in performance/v0.8-h3 is left alone on purpose -- it is sealed evidence of what H3 intended, and editing archived evidence to match later code is the failure this project's record exists to prevent."
   },
   "what_this_is": "The drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`. The point is not that the command works: it is that every safeguard a developer gets, a packaged user now gets too. A drill that passes for the Make target and fails for the command is the gap this item exists to close."
 }

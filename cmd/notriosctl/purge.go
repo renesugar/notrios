@@ -90,16 +90,25 @@ func runPurge(args []string) {
 	for _, path := range roots {
 		owned = append(owned, path)
 	}
-	externalPaths := make([]string, 0, len(external))
-	for _, ref := range external {
-		externalPaths = append(externalPaths, ref.Path)
-	}
 
-	steps := purge.Plan(roots, purge.Environment{
-		Home:                 userHome,
-		ExternalProfilePaths: externalPaths,
-	})
-	steps = append(steps, purge.ExternalSteps(external)...)
+	// Reported, and deliberately not handed to the oracle.
+	//
+	// The oracle's external-profile rule refuses a path that is or contains an
+	// external profile path, and passing this list to it was wrong in a way
+	// only a run showed. Every path here is already outside every owned root --
+	// that is what made it external -- so the rule can never fire to *protect*
+	// a root. The one case it can fire on is the opposite one: a profile that
+	// names an ancestor of the roots, which `profile register --asset-store
+	// ~/.local/share` produces by accident. The whole data root was then
+	// REFUSED, the user's notes survived a confirmed purge, and the message
+	// said the library had been "enumerated and backed up" when nothing had
+	// been copied anywhere.
+	//
+	// So external paths inform the user and nothing else. They cannot block a
+	// purge, because a purge that silently keeps the library is worse than
+	// anything this rule was protecting against.
+	steps := purge.Plan(roots, purge.Environment{Home: userHome})
+	steps = append(steps, purge.ExternalSteps(external, owned)...)
 
 	destination := ""
 	if !*noBackup {
@@ -116,9 +125,8 @@ func runPurge(args []string) {
 		// name a destination, and the obvious wrong answer is somewhere inside
 		// the library they are about to remove.
 		verdict := purge.Decide(destination, purge.Environment{
-			OwnedRoots:           owned,
-			Home:                 userHome,
-			ExternalProfilePaths: externalPaths,
+			OwnedRoots: owned,
+			Home:       userHome,
 		})
 		if verdict.Verdict != purge.Refuse {
 			fmt.Fprintf(os.Stderr,

@@ -78,7 +78,7 @@ func TestExternalStepsAreInertAndMeasured(t *testing.T) {
 
 	steps := purge.ExternalSteps([]purge.ExternalRef{
 		{Path: library, Profile: "recipes", Field: "database"},
-	})
+	}, nil)
 	if len(steps) != 1 {
 		t.Fatalf("want one step, got %d", len(steps))
 	}
@@ -119,32 +119,74 @@ func TestExternalStepsAreInertAndMeasured(t *testing.T) {
 	}
 }
 
-// The rule H3 wrote, now reachable: a root that contains an external profile
-// path is refused rather than deleted with the profile inside it.
-func TestARootContainingAnExternalProfileIsRefused(t *testing.T) {
+// The oracle's rule works, and `notriosctl purge` deliberately does not use it.
+//
+// Handing the enumerated paths to the oracle looked right and was wrong. Every
+// enumerated path is outside every owned root -- that is what made it external
+// -- so the rule can never fire to protect a root. The only case it fires on is
+// the reverse: a profile naming an *ancestor* of the roots, which
+// `profile register --asset-store ~/.local/share` produces by accident. The
+// whole data root was then refused and the user's notes survived a confirmed
+// purge, described as "enumerated and backed up" when nothing was copied.
+//
+// Both halves are asserted here so that re-wiring it fails a test rather than
+// shipping again.
+func TestTheExternalRuleFiresOnlyOnTheAncestorCaseThatWouldBlockAPurge(t *testing.T) {
 	root := t.TempDir()
 	data := filepath.Join(root, "share", "notrios")
-	nested := filepath.Join(data, "elsewhere", "library")
-	if err := os.MkdirAll(nested, 0o700); err != nil {
+	if err := os.MkdirAll(data, 0o700); err != nil {
 		t.Fatal(err)
 	}
+
+	// The ancestor case: what a misconfigured asset store produces, and the
+	// refusal that made purge keep the library.
+	ancestor := filepath.Join(root, "share")
 	steps := purge.Plan(map[string]string{"data": data}, purge.Environment{
 		Home:                 root,
-		ExternalProfilePaths: []string{nested},
+		ExternalProfilePaths: []string{ancestor},
 	})
+	if steps[0].Action != "refuse" {
+		t.Fatalf("the ancestor case should still refuse when the oracle is told: %+v", steps[0])
+	}
+
+	// And the command's own call, without that list: the root is deleted, which
+	// is what the user asked for.
+	steps = purge.Plan(map[string]string{"data": data}, purge.Environment{Home: root})
+	if steps[0].Action != "backup_then_delete" {
+		t.Fatalf("purge must not be blocked by a profile naming a parent directory: %+v", steps[0])
+	}
+}
+
+// The ancestor case is reported rather than acted on, and the report says what
+// happens to the roots inside it -- "not deleted" is true of the directory and
+// badly misleading about its contents.
+func TestAnExternalAncestorSaysTheRootsInsideItAreStillDeleted(t *testing.T) {
+	root := t.TempDir()
+	data := filepath.Join(root, "share", "notrios")
+	if err := os.MkdirAll(data, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	ancestor := filepath.Join(root, "share")
+
+	steps := purge.ExternalSteps([]purge.ExternalRef{
+		{Path: ancestor, Profile: "wide", Field: "asset store"},
+	}, []string{data})
 	if len(steps) != 1 {
 		t.Fatalf("want one step, got %+v", steps)
 	}
-	if steps[0].Action != "refuse" || !strings.Contains(steps[0].Reason, "external-profile-path") {
-		t.Fatalf("a root containing an external profile was not refused: %+v", steps[0])
+	if !strings.Contains(steps[0].Reason, "still") || !strings.Contains(steps[0].Reason, "root(s)") {
+		t.Fatalf("the report does not say the roots inside it are still deleted: %q", steps[0].Reason)
 	}
 
-	// And the list is what causes the refusal, not the shape of the tree. This
-	// is the assertion that would have caught the gap: for as long as both
-	// callers passed an empty list, the rule above was unreachable and this
-	// same directory was deleted.
-	steps = purge.Plan(map[string]string{"data": data}, purge.Environment{Home: root})
-	if steps[0].Action != "backup_then_delete" {
-		t.Fatalf("without the external list the root should be an ordinary delete, got %+v", steps[0])
+	// A path with no root inside it does not carry that sentence.
+	elsewhere := filepath.Join(root, "elsewhere")
+	if err := os.MkdirAll(elsewhere, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	plain := purge.ExternalSteps([]purge.ExternalRef{
+		{Path: elsewhere, Profile: "recipes", Field: "database"},
+	}, []string{data})
+	if strings.Contains(plain[0].Reason, "still") {
+		t.Errorf("an ordinary external path should not claim to contain roots: %q", plain[0].Reason)
 	}
 }

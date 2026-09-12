@@ -453,9 +453,14 @@ the library and hold nothing you wrote.
 registered a profile with a database outside the roots above — on another
 volume, say — purge names it as `NOT DELETED`, says which profile names it, and
 leaves it alone. It is not copied into the backup either, because it is not
-being deleted: if you want it somewhere else as well, copy it yourself. Purge
-never deletes a path outside the roots it owns, and if it cannot read your
-profile registry it says so rather than assuming you have no such profile.
+being deleted: if you want a copy elsewhere, make one yourself. If purge cannot
+read your profile registry it says so, rather than assuming you have no such
+profile.
+
+Listing it is all that happens. A registered path never stops a purge: if you
+pointed a profile's asset store at a directory that *contains* these roots —
+`~/.local/share`, say — purge still deletes the roots and says so on the same
+line, and leaves only that outer directory alone.
 
 `FORCE=1` skips the confirmation, never the backup. If you genuinely want
 neither:

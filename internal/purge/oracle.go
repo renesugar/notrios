@@ -113,6 +113,13 @@ func Decide(path string, env Environment) Decision {
 		}
 	}
 
+	// Callers: `notriosctl purge` deliberately leaves this list empty and
+	// reports enumerated paths instead. Every path it enumerates is already
+	// outside every owned root, so this rule can never fire to protect one; the
+	// only case it fires on is a profile naming an *ancestor* of the roots,
+	// where it refused the data root and let the library survive a confirmed
+	// purge. See internal/purge's
+	// TestTheExternalRuleFiresOnlyOnTheAncestorCaseThatWouldBlockAPurge.
 	for _, external := range env.ExternalProfilePaths {
 		externalN := filepath.Clean(external)
 		// Both directions: a rule that only looked downward would delete an
@@ -206,6 +213,17 @@ func BackupPolicy(category string) string {
 	case "program_assets":
 		return "uninstall_manifest_only"
 	case "external":
+		// The name is H3's and stays H3's. The owner decided in v1.0 J3 that an
+		// external library is reported and neither deleted nor copied: purge
+		// does not delete it, so a copy adds no recovery, and a backup that
+		// cannot be written refuses the whole purge -- one large external
+		// library would make purge impossible for the person who has one.
+		//
+		// Renaming this to match would mean editing performance/v0.8-h3, which
+		// is sealed evidence of what H3 intended and is gated against by
+		// fixtures. Evidence is not rewritten to agree with later code. The
+		// plan output says "neither deletes nor copies it" so that the user
+		// reads the behaviour rather than the policy name.
 		return "backup_never_delete"
 	default:
 		// An unclassified category is treated as irreplaceable. A new root

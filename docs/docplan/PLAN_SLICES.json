@@ -79,6 +79,12 @@
           "statement": "A profile whose library lives outside the roots is enumerated in the plan and never deleted",
           "state": "done",
           "evidence": "file:internal/purge/external.go"
+        },
+        {
+          "id": "J3-E",
+          "statement": "A registered profile path reports and never blocks a purge, including one naming a parent of the roots",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/command_drills.sh"
         }
       ]
     },

@@ -63,7 +63,7 @@ this section is archived when the plan completes and the rules are not.
 |---|---|---|---|
 | J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
-| J3. Give a packaged installation a supported way to delete its data | complete | 4/4 | — |
+| J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | not-started | 0/3 | 3 |
 | J5. Prove the library at scale | not-started | 0/3 | 3 |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
@@ -517,9 +517,36 @@ now between the policy's *name* and the code, and closing it means either
 renaming the policy (which touches H3's recorded vocabulary, so it is a decision
 rather than an edit) or adding an opt-in flag.
 
-**J3's archive predates this slice.** `notrios-v1.0-j3-45d097a.zip` was built
-when the item closed; J3-D is later work on the same files, and the commit that
-carries it is named in the git history rather than sealed in that archive.
+### J3-E, the correction J3-D needed within the hour
+
+Handing the enumerated paths to the oracle looked obviously right. It was
+wrong, and only a run showed it. Every enumerated path is outside every owned
+root — that is what made it external — so the rule can never fire to *protect* a
+root. The one case it fires on is the reverse: a profile naming an **ancestor**
+of the roots, which `profile register --asset-store ~/.local/share` produces by
+accident. The data root was then `REFUSED`, the library survived a confirmed
+purge, and the line claimed it had been "enumerated and backed up" when nothing
+had been copied anywhere. A purge that silently keeps the library is the worst
+outcome this item has.
+
+**The owner's decision, taken the same day:** an external library is *reported*,
+neither deleted nor copied, and it must never block a purge. So the enumerated
+paths inform the user and nothing else, and an eighth drill holds it there: a
+profile naming a parent of the roots refuses nothing, the library is deleted,
+the named parent survives, and the plan says on that same line that the roots
+inside it are still deleted — because "not deleted" is true of the directory and
+badly misleading about its contents.
+
+That also closes the copy half rather than leaving it owed.
+`BackupPolicy("external")` keeps the name `backup_never_delete`: it is H3's word
+for H3's intent, it lives in sealed evidence that fixtures gate against, and
+evidence is not rewritten to agree with later code. The plan output says
+"neither deletes nor copies it" so a reader gets the behaviour rather than the
+policy name, and both call sites carry a comment saying why nothing re-wires it.
+
+**J3's archive predates J3-D and J3-E.** `notrios-v1.0-j3-45d097a.zip` was built
+when the item closed; both are later work on the same files, and the commits
+that carry them are named in the git history rather than sealed in that archive.
 
 **Also fixed while in there:** `scripts/test_lifecycle.py`'s `unittest.main()`
 sat above its last class, so `python3 scripts/test_lifecycle.py` ran three fewer

@@ -87,18 +87,31 @@ the external library and the drill fails. It also asserts the library is still
 *readable* afterwards — counted by hits, which is I7's lesson — because a file
 that survived as bytes but cannot be opened is not a library anybody kept.
 
-## Still owed
+## The enumeration must not be able to block a purge
 
-The **copy** half. `BackupPolicy("external")` is `backup_never_delete` and H3's
-fixture reason says such a path is "enumerated and backed up". Only the
-enumeration is implemented, and not copying is deliberate: purge does not delete
-these paths, so a copy adds no recovery, and since a backup that cannot be
-written refuses the whole purge, one large external library would make purge
-impossible for exactly the user who has one. The disagreement is now between the
-policy's *name* and the code, which is why it is written down here rather than
-left for a reader to discover. Fixing it means either renaming the policy —
-which touches H3's recorded vocabulary, so it is a decision — or adding an
-opt-in flag for somebody who wants one archive of everything.
+Handing the enumerated paths to the oracle looked obviously right and was
+wrong, and only a run showed it. Every enumerated path is outside every owned
+root — that is what made it external — so the rule can never fire to *protect* a
+root. The single case it fires on is the reverse: a profile naming an **ancestor**
+of the roots, which `profile register --asset-store ~/.local/share` produces by
+accident. The data root was then `REFUSED`, the user's notes survived a
+confirmed purge, and the line said the library had been "enumerated and backed
+up" when nothing had been copied anywhere. A purge that silently keeps the
+library is the worst outcome this item has.
+
+External paths now inform the user and nothing else, and an eighth drill holds
+it that way: a profile naming a parent of the roots refuses nothing, the library
+is deleted, the named parent survives, and the plan says on that same line that
+the roots inside it are still deleted — because "not deleted" is true of the
+directory and badly misleading about its contents.
+
+The owner decided the same day that an external library is reported and neither
+deleted nor copied. `BackupPolicy("external")` is still named
+`backup_never_delete`, and it stays named that: it is H3's word for H3's intent,
+it lives in sealed evidence that fixtures gate against, and evidence is not
+rewritten to agree with later code. The plan output says "neither deletes nor
+copies it" so the reader gets the behaviour rather than the policy name, and
+both call sites carry a comment saying why.
 
 Four of I4's nine drills are also not carried over, because they exercise the
 installed-file half this command deliberately does not touch: they belong to

@@ -36,7 +36,7 @@ type ExternalRef struct {
 //
 // They are measured, because a line saying a library exists somewhere is much
 // less useful than one saying how big it is.
-func ExternalSteps(refs []ExternalRef) []Step {
+func ExternalSteps(refs []ExternalRef, owned []string) []Step {
 	sorted := make([]ExternalRef, len(refs))
 	copy(sorted, refs)
 	sort.Slice(sorted, func(i, j int) bool {
@@ -49,20 +49,47 @@ func ExternalSteps(refs []ExternalRef) []Step {
 	steps := make([]Step, 0, len(sorted))
 	for _, ref := range sorted {
 		files, total, keys := measureTree(ref.Path)
+		reason := fmt.Sprintf("profile %q names it as its %s; outside every root this "+
+			"installation owns, so purge lists it and neither deletes nor copies it",
+			ref.Profile, ref.Field)
+
+		// The ancestor case, said plainly instead of left to be inferred. A
+		// profile can name a directory that *contains* the roots -- an asset
+		// store set to ~/.local/share does it -- and then "not deleted" is true
+		// of the directory and badly misleading about what is inside it.
+		if contained := rootsInside(ref.Path, owned); len(contained) > 0 {
+			reason += fmt.Sprintf("; it contains %d root(s) listed above, and those are still "+
+				"deleted -- only this directory itself is left alone", len(contained))
+		}
+
 		steps = append(steps, Step{
-			Category: "external",
-			Path:     ref.Path,
-			Policy:   BackupPolicy("external"),
-			Action:   "enumerate",
-			Reason: fmt.Sprintf("profile %q names it as its %s; outside every root this "+
-				"installation owns, so purge lists it and never deletes it",
-				ref.Profile, ref.Field),
+			Category:        "external",
+			Path:            ref.Path,
+			Policy:          BackupPolicy("external"),
+			Action:          "enumerate",
+			Reason:          reason,
 			Bytes:           total,
 			Files:           files,
 			SyncKeyMaterial: keys,
 		})
 	}
 	return steps
+}
+
+// rootsInside reports which owned roots lie under path.
+func rootsInside(path string, owned []string) []string {
+	resolved := realpath(filepath.Clean(path))
+	inside := []string{}
+	for _, root := range owned {
+		if root == "" {
+			continue
+		}
+		if isWithin(realpath(filepath.Clean(root)), resolved) {
+			inside = append(inside, root)
+		}
+	}
+	sort.Strings(inside)
+	return inside
 }
 
 // ExternalPaths picks the paths in refs that lie outside every owned root.

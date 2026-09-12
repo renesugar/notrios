@@ -196,9 +196,41 @@ drill_external_profile() {
     "{\"listed\":true,\"attributed\":true,\"survived\":true,\"notes_readable\":$hits,\"data_root_deleted\":true,\"copied_into_backup\":false}"
 }
 
+# J3-E: a profile that names a parent of the roots must not block the purge.
+#
+# The bug this drill exists for shipped for an hour. Handing the enumerated
+# paths to the oracle meant `profile register --asset-store ~/.local/share` --
+# a parent of the data root, and an easy thing to type -- made purge REFUSE the
+# data root. The notes survived a confirmed purge and the message said they had
+# been "enumerated and backed up" when nothing had been copied anywhere. A
+# purge that silently keeps the library is the worst outcome this item has.
+drill_external_ancestor_does_not_block() {
+  local home; home=$(install_home ancestor) || return 1
+  local library; library=$(library_of "$home")
+
+  in_home "$home" "$home/.local/bin/notriosctl" profile register --name wide \
+    --db "$library/notes.sqlite" --asset-store "$(dirname "$library")" >/dev/null 2>&1 || \
+    fail "the ancestor profile could not be registered" || return 1
+
+  local plan
+  plan=$(in_home "$home" "$home/.local/bin/notriosctl" purge --dry-run --no-redact 2>&1)
+  grep -q "REFUSED" <<<"$plan" && fail "a profile naming a parent directory refused a root" && return 1
+  grep -q "still deleted" <<<"$plan" || \
+    fail "the report does not say the roots inside the named parent are still deleted" || return 1
+
+  in_home "$home" "$home/.local/bin/notriosctl" purge --confirm >/dev/null 2>&1 || \
+    fail "the purge itself failed" || return 1
+  library_intact "$library" && fail "the library survived a confirmed purge" && return 1
+  [ -d "$(dirname "$library")" ] || fail "the named parent directory was deleted" || return 1
+
+  record purge-is-not-blocked-by-a-profile-naming-a-parent pass \
+    "{\"refused_any_root\":false,\"library_deleted\":true,\"named_parent_kept\":true,\"says_roots_still_deleted\":true}"
+}
+
 for drill in drill_unattended_refusal drill_backup_unwritable drill_backup_too_large \
              drill_backup_contents_and_restore drill_symlinked_data_root \
-             drill_backup_destination_guard drill_external_profile; do
+             drill_backup_destination_guard drill_external_profile \
+             drill_external_ancestor_does_not_block; do
   echo "== $drill" >&2
   "$drill" || { record "${drill#drill_}" fail '{}'; status=1; }
 done
