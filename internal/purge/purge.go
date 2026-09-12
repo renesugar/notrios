@@ -28,6 +28,12 @@ type Step struct {
 	Reason string `json:"reason,omitempty"`
 	Bytes  int64  `json:"bytes"`
 	Files  int    `json:"files"`
+	// SyncKeyMaterial is every sync key file inside this root: the files that
+	// will be deleted and deliberately not backed up. It is part of the plan
+	// rather than of the backup manifest because a user who wants to keep their
+	// sync identity has exactly one chance to copy it, and it is before the
+	// question, not after the deletion.
+	SyncKeyMaterial []string `json:"sync_key_material,omitempty"`
 }
 
 // Plan decides, for every resolved root, what purge would do.
@@ -68,29 +74,30 @@ func Plan(roots map[string]string, env Environment) []Step {
 			if len(overlapping) > 0 {
 				reason += "; shares a directory with the " + strings.Join(overlapping, ", ") + " root"
 			}
-			steps = append(steps, Step{category, path, policy, "keep", reason, 0, 0})
+			steps = append(steps, Step{category, path, policy, "keep", reason, 0, 0, nil})
 			continue
 		}
 
 		decision := Decide(path, env)
 		if decision.Verdict == Refuse {
 			steps = append(steps, Step{category, path, policy, "refuse",
-				fmt.Sprintf("%s [%s]", decision.Reason, decision.Rule), 0, 0})
+				fmt.Sprintf("%s [%s]", decision.Reason, decision.Rule), 0, 0, nil})
 			continue
 		}
 
 		var files int
 		var total int64
+		var keys []string
 		reason := "already absent"
 		if decision.Verdict == Allow {
-			files, total = measureTree(path)
+			files, total, keys = measureTree(path)
 			reason = ""
 		}
 		action := "backup_then_delete"
 		if policy == "dispose" {
 			action = "dispose"
 		}
-		steps = append(steps, Step{category, path, policy, action, reason, total, files})
+		steps = append(steps, Step{category, path, policy, action, reason, total, files, keys})
 	}
 	return steps
 }
@@ -332,12 +339,21 @@ func VerifyBackup(destination string) (bool, string) {
 	return true, detail
 }
 
-func measureTree(path string) (int, int64) {
+// measureTree counts a root, and names the sync key material in it.
+//
+// One walk rather than two: the size and the key inventory are both wanted
+// before the question is asked, and walking a library twice to answer one
+// prompt is the kind of thing that makes a purge feel like it has hung.
+func measureTree(path string) (int, int64, []string) {
 	var files int
 	var total int64
-	_ = filepath.WalkDir(path, func(_ string, entry fs.DirEntry, err error) error {
+	keys := []string{}
+	_ = filepath.WalkDir(path, func(full string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return nil //nolint:nilerr // an unreadable subtree is measured as empty, never as a reason to delete
+		}
+		if entry.Type().IsRegular() && IsSyncKeyMaterial(full) {
+			keys = append(keys, full)
 		}
 		if info, err := entry.Info(); err == nil {
 			files++
@@ -345,7 +361,8 @@ func measureTree(path string) (int, int64) {
 		}
 		return nil
 	})
-	return files, total
+	sort.Strings(keys)
+	return files, total, keys
 }
 
 // Remove deletes the paths a plan allows, and reports what it removed.

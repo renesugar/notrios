@@ -112,8 +112,14 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// gained the section for `notriosctl purge`. Generated 46 -> 47 and unverified
 	// 339 -> 345 with the denominator 462 -> 469, which is the new feature section,
 	// the new CLI usage form, and the journey that demonstrates it.
+	// 163 -> 164 executables later in v1.0 J3, sections unchanged: the removal
+	// section of docs/installation.md shows `notriosctl purge` as well as
+	// `make purge`, because `make purge` now runs the command rather than
+	// deleting by itself and the packaged reader has no Makefile. Unverified
+	// 345 -> 346 and the denominator 469 -> 470 with it; the body deletes a
+	// library, so it is drilled in performance/v1.0-j3 rather than executed here.
 	if report.ManualSections != 276 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 163 || report.Journeys != 9 {
+		report.Executables != 164 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
@@ -173,8 +179,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 345 ||
-		report.Denominator != 469 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 346 ||
+		report.Denominator != 470 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

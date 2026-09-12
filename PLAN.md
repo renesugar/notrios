@@ -439,17 +439,53 @@ so a report claiming the restore recovered nothing, or that sync keys reached
 the backup, passed. Found by probing it, which is the only reason it was found.
 It compares observations now.
 
-**Still owed, and recorded rather than glossed:** `scripts/lifecycle.py` still
-has its own purge, so the backup and deletion halves exist twice while only the
-oracle halves are gated against each other. A divergence there is a purge that
-deletes without the backup somebody was promised. The fix is to have
-`make purge` delegate its data half to the command, and the ordering is the
-interesting part — lifecycle.py backs up, uninstalls, then deletes, and
-delegation means deleting the data while the binary that does it still exists,
-so the uninstall has to move after rather than before. Four of I4's nine drills
-are also not carried over, because they exercise the installed-file half this
-command deliberately does not touch; the record names each one rather than
-running fewer quietly.
+**`make purge` no longer deletes anything.** It runs the command. 181 lines of
+Python — the planning, the measuring, the backup, the verification and the
+`rmtree` — are gone, and what is left is the half the command cannot see: what
+`make install` recorded writing. It reads the command's plan from
+`purge --dry-run --json`, shows both halves together, asks one question about
+both, and then runs `purge --confirm --no-plan`, which skips the question the
+command would ask and nothing else. The backup destination is passed rather than
+recomputed, because it carries a timestamp and the path described has to be the
+path written to.
+
+**The ordering inverted, and the tests found what that broke.** lifecycle.py
+uninstalled and then deleted; it now deletes and then uninstalls, because the
+binary that deletes the data is one of the files uninstall removes. Two tests
+failed immediately, and on something I had not predicted: the install manifest
+lives *inside the data root*, so the data purge takes it, and the uninstall that
+followed found no manifest and refused — notes gone, installed files left
+behind. The manifest is now read once, before the deletion, and handed to the
+uninstall that runs after it.
+
+**The 27 passing tests could not tell the difference.** Every one of them would
+have passed just as happily with the delegation removed and the Python deleting
+again — they assert that the data is gone and a backup exists, not who did it.
+So two tests replace the installed command with one that plans truthfully and
+then does nothing: the data must survive (this script deletes nothing itself)
+and, when the command fails, the installed files must survive too (the two
+halves fail together, or a user is left with their notes and no program to
+delete them with). Both were confirmed by putting an `rmtree` back and watching
+them fail.
+
+**The command grew what the Make target already said.** The sync-key warning —
+which files are about to be deleted and deliberately not backed up, said before
+the question rather than after the deletion — and the full `--no-backup`
+warning existed only in the Python. The packaged user, who has no Make target,
+was the one person who never saw them. The key-file list is now part of the
+command's plan rather than recomputed by the caller, so `make purge` cannot
+warn about a different set of files than the command excludes.
+
+**Four of I4's nine drills are still not carried over,** because they exercise
+the installed-file half this command deliberately does not touch. The record
+names each one rather than running fewer quietly.
+
+**Also fixed while in there:** `scripts/test_lifecycle.py`'s `unittest.main()`
+sat above its last class, so `python3 scripts/test_lifecycle.py` ran three fewer
+tests than `unittest discover` did and said nothing about it. And its fixture
+CLI was a shell stub, which was fine while purge only asked the binary where the
+roots were; now that purge asks it to do the deleting, the suite builds and
+installs the real one.
 
 ## J4. Stabilise the REST and MCP surfaces for 1.0
 

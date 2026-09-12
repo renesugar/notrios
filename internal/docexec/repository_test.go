@@ -170,7 +170,15 @@ func TestRepositoryExamples(t *testing.T) {
 	// checkout the reader does not have either. Topics go 14 -> 15 with it:
 	// docs/troubleshooting.md had no example at all until now, which is its own
 	// small comment on who that page was written for. executedTopics stays 13.
-	if report.Executed != 65 || report.Entries != 163 || len(report.Topics) != 15 {
+	//
+	// 163 -> 164: v1.0 J3. The installation page's removal section now shows
+	// `notriosctl purge` first and `make purge` second, because the packaged
+	// reader -- the one the previous note added a section for -- has a command
+	// now rather than a paragraph explaining that they do not. It is unrun for
+	// the same reason the two beside it are: the literal body deletes this
+	// user's library. It runs in performance/v1.0-j3's drills against a
+	// disposable HOME, and the reason says so.
+	if report.Executed != 65 || report.Entries != 164 || len(report.Topics) != 15 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

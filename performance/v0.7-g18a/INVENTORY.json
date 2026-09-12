@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "29aa9fecce533f9cf0ac3a496623af137c499573ec7a06d00b9baf886a02f144",
+      "sha256": "5112ac24de25a6e7caa888a8e3e9d8535e150f62ed0eaa616fbc180c4d3f4927",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1909,7 +1909,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "ff69315d669fd32dfeb8aa7887a13a013093249581daf5bfc92a8d4adde945f1",
+      "sha256": "e0681814f99efa872350ac3e19fd65cb0006bb2b582c2d1432a13e0e5f5571de",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [

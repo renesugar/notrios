@@ -3,19 +3,31 @@
 
 This implements the contract H3 investigated and recorded in
 `performance/v0.8-h3/`: the artifact list and GNU directory variables in
-`LAYOUT.json`, the ownership manifest in the same file, and -- for purge -- the
-closed-by-default decision procedure in `purge_oracle.py`, which 30 fixtures
-exercise against a real temporary filesystem.
+`LAYOUT.json`, and the ownership manifest in the same file.
 
-# Why the oracle is imported rather than reimplemented
+# Why purge delegates instead of deleting
 
-`purge` decides whether to delete a directory holding a user's notes. That
-decision is already written down, argued for, and proven by fixtures that catch
-the mistakes a second implementation would make -- textual containment instead of
-`realpath`, a symlink that looks contained while pointing out, a target across a
-mount boundary. Writing it again here to avoid importing from an evidence
-directory would trade a slightly odd import for the chance of a divergent copy,
-on the one code path where being wrong destroys a library.
+`purge` has two halves. The program half -- removing what the install manifest
+recorded writing -- belongs here, because the manifest is this script's own
+record and a package manager owns its files instead. The data half belongs to
+`notriosctl purge`, and is run from here rather than repeated here.
+
+It was repeated here until v1.0 J3. A packaged installation ships no Makefile
+and no scripts/, so the command had to exist; once it did, "delete a library
+after taking a verified backup" existed twice, in two languages, and a
+divergence between the two would be a purge that deletes without the backup
+somebody was promised. The oracle halves were gated against each other by
+fixtures. The backup and deletion halves were not gated by anything.
+
+So the decision procedure, the measurement, the backup, the verification and the
+deletion are all the command's, and this script contributes the half the command
+cannot see: what `make install` wrote. It shows both, asks once about both, and
+then runs the command with `--confirm`, which skips the question the command
+would ask and nothing else.
+
+That inverts the order. This script used to uninstall and then delete the data;
+it now deletes the data and then uninstalls, because the binary that deletes the
+data is one of the files uninstall removes.
 
 # What separates these targets from `clean`
 
@@ -32,9 +44,10 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # The tree artifacts are copied *from*. It is the checkout this script lives in,
 # unless NOTRIOS_LIFECYCLE_SOURCE names another one -- which lets a packager
@@ -43,13 +56,6 @@ from dataclasses import dataclass, field
 # where things are written is still decided by the directory variables.
 CHECKOUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.environ.get("NOTRIOS_LIFECYCLE_SOURCE", "").strip() or CHECKOUT
-
-# The oracle is part of this tool, so it is always found relative to this file
-# rather than to ROOT. Resolving it through the override let a caller point the
-# tool that deletes directories at a different copy of the rules deciding what
-# may be deleted -- or, as the tests found first, at no copy at all.
-sys.path.insert(0, os.path.join(CHECKOUT, "performance", "v0.8-h3"))
-import purge_oracle  # noqa: E402
 
 MANIFEST_SCHEMA = "notrios.install-manifest/1"
 MANIFEST_NAME = "MANIFEST.json"
@@ -420,8 +426,20 @@ def prune_empty_directories(dirs: Directories) -> list[str]:
     return removed
 
 
-def run_uninstall(dirs: Directories, dry_run: bool) -> dict:
-    manifest = load_manifest(dirs)
+def run_uninstall(dirs: Directories, dry_run: bool, manifest: dict | None = None) -> dict:
+    """Remove what the manifest recorded installing.
+
+    `manifest` is passed in by purge and read from disk by everything else. The
+    install manifest lives inside the data root -- it is a record about this
+    user's installation, not about the machine -- so the data half of a purge
+    deletes it along with everything else there. While uninstall ran first that
+    was invisible. It stopped being invisible the moment purge started deleting
+    the data first, which it must, because the binary that deletes the data is
+    one of the files uninstall removes: the second call found no manifest and
+    refused, leaving the installed files behind after the notes were gone.
+    """
+    if manifest is None:
+        manifest = load_manifest(dirs)
     roots = install_roots(manifest, dirs)
     dispositions = [classify(entry, roots, dirs) for entry in manifest.get("entries", [])]
 
@@ -452,9 +470,6 @@ def run_uninstall(dirs: Directories, dry_run: bool) -> dict:
 # ---------------------------------------------------------------------- purge
 
 
-PURGE_BACKUP_DIRNAME = "notrios-purge-backups"
-
-
 def flag(name: str, environ: dict[str, str]) -> bool:
     """Read a lifecycle flag, accepting only unset or exactly "1".
 
@@ -480,265 +495,63 @@ def environ_home() -> str:
     return home if home and os.path.isdir(home) else ""
 
 
-def resolved_roots(dirs: Directories) -> dict[str, str]:
-    """Ask the installed Notrios where its roots are.
+def delegate_binary(dirs: Directories) -> str:
+    """The `notriosctl` that does the data half of this purge.
 
-    Not computed here. H3's first finding was two disagreeing resolvers, and
-    adding a third -- in Python, in the tool that deletes things -- is how the
-    purge target comes to remove a directory the application never used. The
-    installed binary is the authority on its own layout.
+    `make purge` used to plan, back up and delete by itself, which meant the
+    dangerous half existed twice: here in Python for a checkout, and in Go for
+    the packaged installation that ships no Makefile. Two implementations of
+    "delete a library after taking a verified backup" is one implementation and
+    one liability, because a divergence between them is a purge that deletes
+    without the backup somebody was promised.
+
+    So it asks the installed binary, which was already the authority on where
+    the roots are. H3's first finding was two disagreeing resolvers; this is the
+    same lesson applied to the deletion rather than to the lookup.
     """
     binary = os.path.join(dirs.bindir, "notriosctl")
     if not os.path.isfile(binary):
         raise LifecycleError(
-            f"{binary} is not there, so nothing can say which roots this installation uses.\n"
-            "Purge refuses rather than resolving them itself: a second opinion about where\n"
-            "your notes live is exactly what must not decide a deletion.\n"
+            f"{binary} is not there, so nothing can say which roots this installation\n"
+            "uses, and nothing can delete them. Purge refuses rather than doing it here:\n"
+            "a second opinion about where your notes live -- and a second implementation\n"
+            "of removing them -- is exactly what must not decide a deletion.\n"
             "Install first, or purge with the prefix you installed to."
         )
-    import subprocess  # local: nothing else here shells out
+    return binary
 
-    # Run it from outside the checkout. `make purge` runs with the repository as
-    # the working directory, and Notrios treats a checkout it is standing in as a
-    # source instance -- so asking the installed binary from here answered with
-    # the *checkout's* ./data roots rather than the user's. The oracle refused
-    # them for being relative, which is how this was found, but a purge that asks
-    # the wrong instance where the notes are has already failed by the time
-    # anything protects it.
+
+def delegate(binary: str, arguments: list[str], capture: bool) -> subprocess.CompletedProcess:
+    """Run `notriosctl purge` from outside the checkout.
+
+    `make purge` runs with the repository as the working directory, and Notrios
+    treats a checkout it is standing in as a source instance -- so asking the
+    installed binary from here answered with the *checkout's* ./data roots
+    rather than the user's. The oracle refused them for being relative, which is
+    how this was found, but a purge that asks the wrong instance where the notes
+    are has already failed by the time anything protects it.
+    """
     elsewhere = environ_home() or os.sep
-    completed = subprocess.run(
-        [binary, "paths", "--json", "--no-redact"],
-        capture_output=True, text=True, check=False, cwd=elsewhere,
-    )
+    return subprocess.run([binary, "purge", *arguments], cwd=elsewhere, check=False,
+                          capture_output=capture, text=capture)
+
+
+def delegated_plan(binary: str, no_backup: bool) -> dict:
+    """What the command says it would do, before anything is asked or deleted."""
+    arguments = ["--dry-run", "--json", "--no-redact"]
+    if no_backup:
+        arguments.append("--no-backup")
+    completed = delegate(binary, arguments, capture=True)
     if completed.returncode != 0:
         raise LifecycleError(
-            f"{binary} could not report its paths:\n{completed.stderr.strip()}"
+            f"{binary} could not plan the purge:\n{completed.stderr.strip()}"
         )
-    payload = json.loads(completed.stdout)
-    return {name: value for name, value in payload.get("roots", {}).items() if value}
-
-
-@dataclass
-class PurgeStep:
-    """One root and what purge decided to do with it."""
-
-    category: str
-    path: str
-    policy: str
-    action: str      # backup_then_delete | dispose | keep | refuse
-    reason: str = ""
-    bytes: int = 0
-    files: int = 0
-
-
-def measure_tree(path: str) -> tuple[int, int]:
-    files = 0
-    total = 0
-    for walk_root, _, names in os.walk(path):
-        for name in names:
-            full = os.path.join(walk_root, name)
-            try:
-                total += os.lstat(full).st_size
-                files += 1
-            except OSError:
-                continue
-    return files, total
-
-
-def plan_purge(dirs: Directories, environ: dict[str, str]) -> list[PurgeStep]:
-    """Decide, for every resolved root, what purge would do.
-
-    Every deletion candidate goes through H3's oracle. Nothing is deleted
-    because this file thinks it looks like a Notrios directory.
-    """
-    roots = resolved_roots(dirs)
-    owned = [os.path.realpath(path) for path in roots.values()]
-    env = purge_oracle.Environment(
-        owned_roots=owned,
-        home=environ.get("HOME", ""),
-        external_profile_paths=[],
-    )
-
-    steps: list[PurgeStep] = []
-    for category in sorted(roots):
-        path = roots[category]
-        policy = purge_oracle.backup_policy(category)
-
-        if category == "program_assets":
-            # With H3's recommended prefix the installed artifacts land in
-            # $(datadir)/notrios, which on Linux is the same directory as the
-            # XDG data root. That overlap is worth naming rather than leaving
-            # for a reader to notice two lines about one path: the manifest
-            # removes the installed files, and the data step removes what is
-            # left, so nothing is missed and nothing is deleted twice.
-            overlapping = [name for name, other in roots.items()
-                           if name != category and os.path.realpath(other) == os.path.realpath(path)]
-            reason = "not a data root; removed by whatever installed it"
-            if overlapping:
-                reason += f"; shares a directory with the {', '.join(sorted(overlapping))} root"
-            steps.append(PurgeStep(category, path, policy, "keep", reason))
-            continue
-
-        decision = purge_oracle.decide(path, env)
-        if decision.verdict == purge_oracle.REFUSE:
-            steps.append(PurgeStep(category, path, policy, "refuse",
-                                   f"{decision.reason} [{decision.rule}]"))
-            continue
-
-        files, total = (0, 0)
-        if decision.verdict == purge_oracle.ALLOW:
-            files, total = measure_tree(path)
-
-        action = "dispose" if policy == "dispose" else "backup_then_delete"
-        reason = "" if decision.verdict == purge_oracle.ALLOW else "already absent"
-        steps.append(PurgeStep(category, path, policy, action, reason, total, files))
-    return steps
-
-
-def backup_destination(roots: dict[str, str], now: float) -> str:
-    """Where the purge backup goes.
-
-    Beside the state root rather than inside any root purge removes. H3 proved
-    this container and asserted the destination is itself refused by the oracle,
-    so the backup cannot land somewhere the same run would delete.
-    """
-    state = roots.get("state", "")
-    if not state:
-        raise LifecycleError("no state root resolved, so there is nowhere safe to put a backup")
-    parent = os.path.dirname(os.path.realpath(state))
-    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
-    return os.path.join(parent, PURGE_BACKUP_DIRNAME, stamp)
-
-
-# Sync key material is the one thing a purge backup must not contain. The
-# backup is an ordinary tar in a place chosen for convenience, and this file is
-# the password to a library's synchronized traffic -- copying it there would put
-# the key beside the lock. The sealed form is excluded too: on its own it is
-# ciphertext, but the data key that opens it lives in the operating system's
-# store and survives a purge, so the pair would be recoverable.
-SYNC_KEY_FILENAMES = ("sync-keys.json",)
-SYNC_KEY_PREFIX = "sync-keys-"
-
-
-def is_sync_key_material(name: str) -> bool:
-    """Whether a file name is a library's sync key material.
-
-    Matched by name rather than by reading the file: an unreadable or
-    unrecognised file that is named like key material is still excluded, which
-    is the safe direction to be wrong in.
-    """
-    base = os.path.basename(name)
-    return base in SYNC_KEY_FILENAMES or (base.startswith(SYNC_KEY_PREFIX) and base.endswith(".json"))
-
-
-def create_purge_backup(steps: list[PurgeStep], destination: str) -> dict:
-    """One owner-only tar plus a manifest, written before anything is deleted.
-
-    The format is H3's, proven by its restore test: a per-file SHA-256 inventory
-    and a hash of the archive itself, both created 0600 from the start rather
-    than chmod-ed afterwards, because a file that is briefly world-readable
-    while it holds someone's notes was briefly wrong.
-    """
-    import tarfile  # local: only purge needs it
-
-    # makedirs applies its mode to the last component only, so the parent would
-    # be created with whatever the umask allows -- 0775 here. The archive inside
-    # is 0600 and so its contents were never exposed, but a readable parent still
-    # publishes that this user has backups and when they were taken. Both levels
-    # are created owner-only, and an existing parent is tightened.
-    container = os.path.dirname(destination)
-    os.makedirs(container, mode=0o700, exist_ok=True)
-    os.chmod(container, 0o700)
-    os.makedirs(destination, mode=0o700, exist_ok=True)
-    os.chmod(destination, 0o700)
-    archive = os.path.join(destination, "backup.tar")
-    inventory: list[dict] = []
-
-    excluded: list[str] = []
-
-    def without_key_material(info):
-        if is_sync_key_material(info.name):
-            excluded.append(info.name)
-            return None
-        return info
-
-    handle = os.open(archive, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(handle, "wb") as raw, tarfile.open(fileobj=raw, mode="w") as tar:
-        for step in steps:
-            if step.action != "backup_then_delete" or not os.path.isdir(step.path):
-                continue
-            tar.add(step.path, arcname=step.category, filter=without_key_material)
-            for walk_root, _, names in os.walk(step.path):
-                for name in sorted(names):
-                    full = os.path.join(walk_root, name)
-                    if not os.path.isfile(full) or os.path.islink(full):
-                        continue
-                    if is_sync_key_material(full):
-                        continue
-                    relative = os.path.relpath(full, step.path)
-                    inventory.append({
-                        "category": step.category,
-                        "member": os.path.join(step.category, relative),
-                        "sha256": sha256_file(full),
-                        "size": os.lstat(full).st_size,
-                    })
-
-    manifest = {
-        "schema": "notrios.purge-backup/1",
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "categories": sorted({item["category"] for item in inventory}),
-        "entries": inventory,
-        # Named rather than merely counted: a user who wanted to keep their sync
-        # identity needs to know exactly what was left out, and a file name is
-        # not secret material. What it held is.
-        "excluded_key_material": sorted(excluded),
-        "archive_sha256": sha256_file(archive),
-    }
-    manifest_path = os.path.join(destination, "MANIFEST.json")
-    handle = os.open(manifest_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(handle, "w", encoding="utf-8") as stream:
-        json.dump(manifest, stream, indent=2)
-        stream.write("\n")
-    return manifest
-
-
-def verify_purge_backup(destination: str) -> tuple[bool, str]:
-    """Confirm the backup before anything is deleted.
-
-    A failed verification is the only thing standing between the user and the
-    deletion, so it checks the archive's own hash, that every recorded file is
-    actually a member, and that the archive opens.
-    """
-    import tarfile
-
-    archive = os.path.join(destination, "backup.tar")
-    manifest_path = os.path.join(destination, "MANIFEST.json")
-    if not os.path.isfile(archive) or not os.path.isfile(manifest_path):
-        return False, "the backup is incomplete"
-    with open(manifest_path, encoding="utf-8") as stream:
-        manifest = json.load(stream)
-    if sha256_file(archive) != manifest.get("archive_sha256"):
-        return False, "the archive does not match the hash recorded when it was written"
     try:
-        with tarfile.open(archive) as tar:
-            members = {member.name for member in tar.getmembers()}
-    except tarfile.TarError as error:
-        return False, f"the archive cannot be read: {error}"
-    for entry in manifest["entries"]:
-        if entry["member"] not in members:
-            return False, f"{entry['member']} is recorded but not in the archive"
-    # Checked against the archive itself rather than trusting that the filter
-    # ran. An exclusion nothing verifies is an intention, and this one is a
-    # boundary: sync key material must never reach a purge backup.
-    leaked = sorted(name for name in members if is_sync_key_material(name))
-    if leaked:
-        return False, ("the archive contains sync key material, which must never be backed up: "
-                       + ", ".join(leaked))
-    detail = f"{len(manifest['entries'])} files verified"
-    excluded = manifest.get("excluded_key_material") or []
-    if excluded:
-        detail += f"; {len(excluded)} sync key file(s) deliberately excluded"
-    return True, detail
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise LifecycleError(
+            f"{binary} did not answer with a plan ({error}). Nothing was deleted."
+        )
 
 
 def confirm_purge(prompt: str, environ: dict[str, str], force: bool) -> bool:
@@ -768,8 +581,14 @@ def confirm_purge(prompt: str, environ: dict[str, str], force: bool) -> bool:
     return answer.strip() == "PURGE"
 
 
-def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destination: str,
+def describe_plan(steps: list[dict], uninstall_result: dict | None, destination: str,
                   no_backup: bool) -> None:
+    """The combined plan: the program half from here, the data half from the command.
+
+    `make purge` is the only place both halves are visible at once, so it is the
+    only place that can ask one question about both. The steps are the command's
+    own plan, read back from its JSON rather than worked out again here.
+    """
     print("Installed files:")
     if uninstall_result is None:
         print("  none removed here; the program is owned by your package manager")
@@ -783,15 +602,18 @@ def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destina
 
     print("\nMutable roots:")
     for step in steps:
-        if step.action == "backup_then_delete":
-            detail = f"{step.files} files, {step.bytes} bytes"
-            print(f"  BACK UP AND DELETE  {step.path}  ({step.category}; {detail})")
-        elif step.action == "dispose":
-            print(f"  DELETE WITHOUT BACKUP  {step.path}  ({step.category}; rebuildable)")
-        elif step.action == "keep":
-            print(f"  KEEP    {step.path}  ({step.category}; {step.reason})")
+        action = step.get("action", "")
+        path = step.get("path", "")
+        category = step.get("category", "")
+        if action == "backup_then_delete":
+            detail = f"{step.get('files', 0)} files, {step.get('bytes', 0)} bytes"
+            print(f"  BACK UP AND DELETE  {path}  ({category}; {detail})")
+        elif action == "dispose":
+            print(f"  DELETE WITHOUT BACKUP  {path}  ({category}; rebuildable)")
+        elif action == "keep":
+            print(f"  KEEP    {path}  ({category}; {step.get('reason', '')})")
         else:
-            print(f"  REFUSED {step.path}  ({step.category}; {step.reason})")
+            print(f"  REFUSED {path}  ({category}; {step.get('reason', '')})")
 
     print("\nBackup:")
     if no_backup:
@@ -802,7 +624,9 @@ def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destina
 
     # Said before the confirmation rather than after the deletion. A user who
     # wants to keep their sync identity has exactly one chance to copy it, and
-    # it is now.
+    # it is now. The list comes from the command's plan: the rule for what
+    # counts as key material is the command's, so that this file cannot drift
+    # into warning about a different set of files than the one it excludes.
     key_files = sorted(find_sync_key_material(steps))
     print("\nSync keys:")
     if not key_files:
@@ -817,23 +641,19 @@ def describe_plan(steps: list[PurgeStep], uninstall_result: dict | None, destina
         print("  by purge; remove it there if you want nothing left behind.")
 
 
-def find_sync_key_material(steps: list[PurgeStep]) -> list[str]:
-    """Every sync key file inside the roots this purge would remove."""
+def find_sync_key_material(steps: list[dict]) -> list[str]:
+    """Every sync key file the command found inside the roots it would remove."""
     found: list[str] = []
     for step in steps:
-        if step.action not in ("backup_then_delete", "dispose") or not os.path.isdir(step.path):
+        if step.get("action") not in ("backup_then_delete", "dispose"):
             continue
-        for walk_root, _, names in os.walk(step.path):
-            for name in names:
-                full = os.path.join(walk_root, name)
-                if os.path.isfile(full) and not os.path.islink(full) and is_sync_key_material(full):
-                    found.append(full)
+        found.extend(step.get("sync_key_material") or [])
     return found
 
 
-def irreversible_warning(steps: list[PurgeStep]) -> str:
-    categories = ", ".join(step.category for step in steps
-                           if step.action == "backup_then_delete") or "none"
+def irreversible_warning(steps: list[dict]) -> str:
+    categories = ", ".join(step.get("category", "") for step in steps
+                           if step.get("action") == "backup_then_delete") or "none"
     return (
         "\n"
         "!! NO_BACKUP=1: nothing will be copied anywhere before it is deleted.\n"
@@ -849,26 +669,26 @@ def irreversible_warning(steps: list[PurgeStep]) -> str:
 
 
 def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
+    """Delete this user's data, then remove what the install manifest recorded.
+
+    The order is the interesting part, and it is the opposite of what it was.
+    While both halves lived in this file, uninstalling first and deleting the
+    data second was fine. It is not fine now: the thing that deletes the data is
+    a program file, and removing the program first would take the binary this is
+    about to run. Data, then program.
+    """
     dry_run = flag("DRYRUN", environ)
     force = flag("FORCE", environ)
     no_backup = flag("NO_BACKUP", environ)
 
-    roots = resolved_roots(dirs)
-    steps = plan_purge(dirs, environ)
-    destination = backup_destination(roots, time.time())
+    binary = delegate_binary(dirs)
+    plan = delegated_plan(binary, no_backup)
+    steps = plan.get("steps") or []
+    destination = plan.get("backup") or ""
 
-    # The backup must not land anywhere this same run would delete. H3 proved
-    # the property; this asserts it every time rather than trusting the layout.
-    guard = purge_oracle.Environment(
-        owned_roots=[os.path.realpath(path) for path in roots.values()],
-        home=environ.get("HOME", ""),
-    )
-    verdict = purge_oracle.decide(destination, guard)
-    if verdict.verdict != purge_oracle.REFUSE:
-        raise LifecycleError(
-            f"the backup destination {destination} is not refused by the purge oracle\n"
-            f"({verdict}), which means this run could delete its own backup. Refusing."
-        )
+    # The backup destination is checked by the command, against the same oracle,
+    # on the run that writes it. It is not re-checked here: a second opinion
+    # about whether a deletion is safe is the thing this delegation removes.
 
     # A packaged install has no manifest, and that is correct rather than
     # broken: dpkg owns the file list for a package and records its own
@@ -894,6 +714,9 @@ def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
     if no_backup:
         print(irreversible_warning(steps))
 
+    # One question, asked here, covering both halves -- because this is the only
+    # place both are visible. The command is then run with --confirm, which
+    # skips the question it would ask about the data half and nothing else.
     prompt = ("\nType PURGE to delete the roots listed above"
               + (" WITHOUT A BACKUP" if no_backup else "")
               + ": ")
@@ -901,32 +724,28 @@ def run_purge(dirs: Directories, environ: dict[str, str]) -> int:
         print("Nothing was deleted.")
         return 1
 
-    if not no_backup:
-        print(f"\nwriting backup to {destination}")
-        create_purge_backup(steps, destination)
-        ok, detail = verify_purge_backup(destination)
-        if not ok:
-            raise LifecycleError(
-                f"the backup could not be verified: {detail}.\n"
-                "Nothing was deleted. The partial backup is left at\n"
-                f"  {destination}\n"
-                "so you can see what it did contain."
-            )
-        print(f"backup verified: {detail}")
+    arguments = ["--confirm", "--no-plan", "--no-redact"]
+    if no_backup:
+        arguments.append("--no-backup")
+    else:
+        # Passed rather than left to the command to choose again. The
+        # destination carries a timestamp, so a second call a second later picks
+        # a different directory -- and the path described above has to be the
+        # path written to, or the sentence telling the user where their data is
+        # names somewhere empty.
+        arguments += ["--backup-dir", destination]
+
+    completed = delegate(binary, arguments, capture=False)
+    if completed.returncode != 0:
+        print("\nThe data was not purged, so the installed files were left alone too.",
+              file=sys.stderr)
+        return completed.returncode
 
     if uninstall_result is not None:
-        run_uninstall(dirs, dry_run=False)
-
-    for step in steps:
-        if step.action not in ("backup_then_delete", "dispose"):
-            continue
-        if not os.path.isdir(step.path):
-            continue
-        shutil.rmtree(step.path)
-        print(f"deleted {step.path}")
-
-    if not no_backup:
-        print(f"\nYour data is in {destination} until you remove it. Nothing deletes it for you.")
+        # The manifest read before the deletion, not read again after it: it
+        # lived in the data root, which no longer exists.
+        run_uninstall(dirs, dry_run=False, manifest=uninstall_result["manifest"])
+        print("\nremoved the files the install manifest recorded installing.")
     return 0
 
 

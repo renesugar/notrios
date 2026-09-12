@@ -54,8 +54,14 @@ def validate_registry(registry: dict, report: dict) -> None:
     # install and carries the operational sections a reader without a
     # repository needs. Executed is unchanged; every new example names where
     # it is executed instead.
-    assert len(examples) == report["entries"] == 163
-    assert len({item["id"] for item in examples}) == 163
+    # 163 -> 164 in v1.0 J3: the removal section of docs/installation.md shows
+    # `notriosctl purge` alongside `make purge`, because the Make target now
+    # runs the command rather than deleting by itself and a packaged reader has
+    # no Makefile. Executed is unchanged; the body deletes a library, and the
+    # reason names performance/v1.0-j3's drills, which run it against a
+    # disposable HOME.
+    assert len(examples) == report["entries"] == 164
+    assert len({item["id"] for item in examples}) == 164
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -84,7 +90,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 84 -> 85 in v0.8 H26: the tags show synopsis, illustrative like the rest.
     # 85 -> 86 in v0.8 H19: the search synopsis, illustrative like the rest.
     # 86 -> 87 in v0.8 H27: the attachment synopsis, illustrative like the rest.
-    assert len(unverified) == report["unverified"] == 98
+    # 98 -> 99 in v1.0 J3: the `notriosctl purge` block, unrun for the same
+    # reason as the two beside it.
+    assert len(unverified) == report["unverified"] == 99
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

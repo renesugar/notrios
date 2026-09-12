@@ -2292,6 +2292,18 @@
       "path": "docs/installation.md",
       "section": "removing-your-data-as-well",
       "language": "sh",
+      "sha256": "89890ffa372f4b4caecdc612369f41ad9c9646a4fb4ed5b9ce5eca8b6f31a556",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body deletes this user's notes, configuration, profiles and sync keys. Covered by executed drills in performance/v1.0-j3/command_drills.sh, which run the command against a disposable HOME."
+      }
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-2",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "language": "sh",
       "sha256": "48046971d32a4e8cf9fe68e8e7bb193a6276cd58d73ac10b81f550258a6521fe",
       "state": "unverified",
       "unrun_reason": {
@@ -2300,11 +2312,11 @@
       }
     },
     {
-      "id": "installation-removing-your-data-as-well-example-2",
+      "id": "installation-removing-your-data-as-well-example-3",
       "path": "docs/installation.md",
       "section": "removing-your-data-as-well",
       "language": "sh",
-      "sha256": "01e6f4a0d7d56aa666a464931affc4fb10c6211e225c4c13bb91b6ebbfa024d1",
+      "sha256": "a24b596c8c7cf92bb2736c51510b7e89d2d42863ac5ee55096cc6e2142158e7c",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",

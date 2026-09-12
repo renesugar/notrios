@@ -408,20 +408,35 @@ Dependencies are computed from the binaries with `dpkg-shlibdeps` rather than
 written by hand, so `apt` installs what the program actually needs. Removing the
 package with `apt remove` deletes every file it installed and **leaves your
 notes, configuration, profiles, keys, state and cache alone** — deleting those
-is `make purge`, which asks first. `make purge` works on a packaged install too:
-it removes your data and leaves the program to your package manager.
+is `notriosctl purge`, which asks first and takes a verified backup before it
+deletes anything. It removes your data and leaves the program to your package
+manager.
 
 ### Removing your data as well
 
-`make purge` is uninstall **plus** deleting this user's Notrios data. It is the
-only target here that destroys anything you made, so it is deliberately hard to
-do by accident:
+There are two ways in, and they do the same deleting.
+
+`notriosctl purge` deletes this user's Notrios data. It ships with the program,
+so it is the one to use if you installed a package:
+
+```sh
+notriosctl purge --dry-run   # print the whole plan and stop; asks nothing
+notriosctl purge             # shows the plan, then asks
+notriosctl purge --confirm   # skip the question, for headless automation
+```
+
+`make purge` is that **plus** removing what `make install` recorded installing,
+and needs a checkout:
 
 ```sh
 make purge                   # shows the plan, then asks; type PURGE to confirm
 DRYRUN=1 make purge          # print the whole plan and stop; asks nothing
 FORCE=1 make purge           # skip the question, for headless automation
 ```
+
+`make purge` runs `notriosctl purge` to do the deleting rather than deleting by
+itself, so everything below is true of both. It deletes your data first and
+removes the program second, because the program is what deletes the data.
 
 Before deleting anything it copies your config, data and state roots into an
 owner-only archive beside your state root
@@ -439,6 +454,7 @@ neither:
 
 ```sh
 NO_BACKUP=1 make purge       # still asks, and warns in detail first
+notriosctl purge --no-backup # the same, for a packaged install
 ```
 
 `NO_BACKUP=1` prints exactly what is about to be destroyed with no copy — your

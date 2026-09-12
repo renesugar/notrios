@@ -600,7 +600,7 @@
         "takes a verified backup first unless --no-backup is passed, and refuses rather than hanging when nothing can answer the question"
       ],
       "purpose": "delete this library's notes, configuration, state and cache, after a verified backup",
-      "usage": "[--dry-run] [--confirm] [--no-backup] [--backup-dir path] [--json] [--no-redact]"
+      "usage": "[--dry-run] [--confirm] [--no-backup] [--backup-dir path] [--json] [--no-plan] [--no-redact]"
     },
     {
       "path": [

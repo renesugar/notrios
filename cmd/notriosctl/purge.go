@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -34,6 +34,16 @@ func runPurge(args []string) {
 	backupDir := fs.String("backup-dir", "", "where to write the backup (default: beside the state root)")
 	asJSON := fs.Bool("json", false, "print the plan as JSON instead of a report")
 	noRedact := fs.Bool("no-redact", false, "print the home directory instead of ~")
+	// For a caller that has already shown the plan. `make purge` shows a
+	// combined one -- the data half from this command's --dry-run --json, the
+	// installed-file half from its own manifest -- asks one question about
+	// both, and then calls this to do the data half. Without this flag the user
+	// would see the plan twice, the second time after they had already answered
+	// for it, which reads like the command re-decided something.
+	//
+	// It suppresses the description and nothing else: not the question, which
+	// is --confirm, and not the backup, which is --no-backup.
+	noPlan := fs.Bool("no-plan", false, "do not print the plan; the caller has already shown it")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -104,7 +114,7 @@ func runPurge(args []string) {
 		if *dryRun {
 			return
 		}
-	} else {
+	} else if !*noPlan {
 		describePurge(steps, destination, *noBackup, show)
 	}
 
@@ -226,11 +236,68 @@ func describePurge(steps []purge.Step, destination string, noBackup bool, show f
 		fmt.Println("  NONE. --no-backup was passed, so nothing will be copied anywhere")
 		fmt.Println("  before it is deleted. Run it again without --no-backup if that was not")
 		fmt.Println("  what you meant.")
+	} else {
+		fmt.Printf("  %s\n", show(destination))
+		fmt.Println("  written and verified before anything is deleted")
+	}
+
+	describeSyncKeys(steps, show)
+	if noBackup {
+		fmt.Print(irreversibleWarning(steps))
+	}
+}
+
+// describeSyncKeys names the key files before the question, not after the
+// deletion.
+//
+// The Make target printed this and the command did not, which meant the user
+// who most needed it -- the one who installed a package, and so has no Make
+// target -- was the one who never saw it. A user who wants to keep a library's
+// sync identity has exactly one chance to copy it, and it is now.
+func describeSyncKeys(steps []purge.Step, show func(string) string) {
+	found := []string{}
+	for _, step := range steps {
+		if step.Action == "backup_then_delete" || step.Action == "dispose" {
+			found = append(found, step.SyncKeyMaterial...)
+		}
+	}
+	sort.Strings(found)
+	fmt.Println("\nSync keys:")
+	if len(found) == 0 {
+		fmt.Println("  none found; this library has no sync key material")
 		return
 	}
-	fmt.Printf("  %s\n", show(destination))
-	fmt.Println("  written and verified before anything is deleted")
-	if parent := filepath.Dir(destination); parent != "" {
-		_ = parent
+	for _, path := range found {
+		fmt.Printf("  NOT BACKED UP, THEN DELETED  %s\n", show(path))
 	}
+	fmt.Println("  Sync key material is never copied into a backup: the backup is an ordinary")
+	fmt.Println("  archive, and this is the password to your synchronized traffic. Copy it")
+	fmt.Println("  somewhere you trust first if you want this library's sync identity back.")
+	fmt.Println("  A data key held by your operating system's credential store is not removed")
+	fmt.Println("  by purge; remove it there if you want nothing left behind.")
+}
+
+// irreversibleWarning is what --no-backup costs, said in full before the
+// question rather than summarised.
+func irreversibleWarning(steps []purge.Step) string {
+	categories := []string{}
+	for _, step := range steps {
+		if step.Action == "backup_then_delete" {
+			categories = append(categories, step.Category)
+		}
+	}
+	joined := strings.Join(categories, ", ")
+	if joined == "" {
+		joined = "none"
+	}
+	return "\n" +
+		"!! --no-backup: nothing will be copied anywhere before it is deleted.\n" +
+		"!!\n" +
+		"!! This permanently destroys the " + joined + " roots, which hold your notes\n" +
+		"!! database, your attachments, your configuration, your profile registry and\n" +
+		"!! generated profile configs, your sync key material, your sync spools and\n" +
+		"!! backups, the catch-up inbox, and the remote-media quarantine.\n" +
+		"!!\n" +
+		"!! There is no undo and no copy to restore from. If you want one, run this\n" +
+		"!! again without --no-backup.\n"
 }
