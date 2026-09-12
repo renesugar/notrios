@@ -132,12 +132,35 @@ Both were exercised locally against the real package: the contents check passes
 on the package as built and refuses the same listing with the GUI removed, and
 the version check accepts `v0.8.0` against `0.8.0` and refuses `v1.0.0`.
 
-**What is proven and what is not.** The workflow lints clean under `actionlint`
+**Proven end to end on 2026-09-11.** The workflow lints clean under `actionlint`
 and passes both repository gates — every action pinned by digest, permissions
-declared narrowly, no secret reachable from a `pull_request`. The attestation
-itself is **unproven**: it needs the runner's OIDC identity and cannot be
-exercised on a workstation. Until a run produces one and
-`gh attestation verify` accepts it, this item is written rather than done.
+declared narrowly, no secret reachable from a `pull_request` — and then it was
+run. Dispatched from `main` after the merge, which is what keeping `main` in the
+`production` deployment policy was for: the pipeline is rehearsed without cutting
+a tag that would read as a release of something not being released.
+
+The attestation `gh attestation verify` returns is the claim v0.9 I6 said was
+missing:
+
+| | |
+|---|---|
+| predicate | `https://slsa.dev/provenance/v1` |
+| subject | `notrios_0.8.0-1_amd64.deb`, sha256 `ef3aceff5da88b02…` |
+| built by | `.github/workflows/release.yml@refs/heads/main` |
+| from commit | `3180659fa70e` |
+| issuer | `token.actions.githubusercontent.com` |
+
+**A verification that accepts everything proves nothing, so the refusals were
+checked too.** One byte appended to the package: refused. Verified against a
+different repository: refused. And the *workstation-built* package of the same
+version: refused — which is the sharpest of the three, because it shows the
+attestation is about this build rather than about this project. Each fails as a
+lookup miss, which is the mechanism working rather than a policy check: a changed
+byte is a different digest, and no attestation exists for it.
+
+**Exit codes were not taken as evidence.** `gh attestation verify` exits 0 and
+prints nothing on success; the claims above come from `--format json`, because
+an exit code says a command succeeded and not what it established.
 
 **Two derived gates caught the change before I did**, which is worth recording
 because it is the machinery working. `performance/v0.9-i5` records the
