@@ -125,14 +125,17 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// settable keys documented by one example file. Unverified 346 -> 356 and
 	// the denominator 470 -> 480 with them; executables are unchanged, because
 	// the page's only generated content is a key table rather than a command.
+	// 164 -> 169 executables in v1.0 J13-C, sections unchanged: five use-case
+	// examples on docs/configuration.md, four of them executed. Unverified
+	// 356 -> 357, executed 73 -> 77, denominator 480 -> 485.
 	if report.ManualSections != 286 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 164 || report.Journeys != 9 {
+		report.Executables != 169 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
 	// docs/query-language.md, which are literal and run.
 	// 72 -> 73 executed in v0.8 H26: the shell existence check.
-	if report.Counts[GradeExecuted] != 73 ||
+	if report.Counts[GradeExecuted] != 77 ||
 		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
 		// sections and their two registered synopsis examples.
 		// 276 -> 285 unverified in v0.8 H4 slice E: five new sections and four
@@ -186,8 +189,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 356 ||
-		report.Denominator != 480 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 357 ||
+		report.Denominator != 485 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

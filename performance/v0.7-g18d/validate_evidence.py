@@ -60,14 +60,21 @@ def validate_registry(registry: dict, report: dict) -> None:
     # no Makefile. Executed is unchanged; the body deletes a library, and the
     # reason names performance/v1.0-j3's drills, which run it against a
     # disposable HOME.
-    assert len(examples) == report["entries"] == 164
-    assert len({item["id"] for item in examples}) == 164
+    # 164 -> 169 in v1.0 J13-C: five use-case examples on
+    # docs/configuration.md, which had 53 documented keys and no command lines
+    # at all. Four are executed, so this is the first of these bumps in a while
+    # where the executed count moves too.
+    assert len(examples) == report["entries"] == 169
+    assert len({item["id"] for item in examples}) == 169
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
     # the seeded CLI fixture, which is what the page exists to teach.
     # 64 -> 65 in v0.8 H26: testing for a tag in a shell is literal and runs.
-    assert len(executed) == report["executed"] == 65
+    # 65 -> 69 in v1.0 J13-C. Each configuration example is checked against its
+    # own YAML: every key it sets must be reported by `config show` with origin
+    # `file`, so it cannot claim a key it does not set.
+    assert len(executed) == report["executed"] == 69
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
     # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two
@@ -92,7 +99,11 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 86 -> 87 in v0.8 H27: the attachment synopsis, illustrative like the rest.
     # 98 -> 99 in v1.0 J3: the `notriosctl purge` block, unrun for the same
     # reason as the two beside it.
-    assert len(unverified) == report["unverified"] == 99
+    # 99 -> 100 in v1.0 J13-C: the search-limits fragment. `config show`
+    # summarises 20 of the 53 keys and those two are not among them, and
+    # `notriosctl search` takes --db and not --config, so the page says where
+    # the effect is visible instead of showing a command that cannot check it.
+    assert len(unverified) == report["unverified"] == 100
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }
@@ -107,7 +118,9 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 12 -> 13 in v0.8 H22: query-language gained an executed example. It had
     # none because it documented terms naming a notebook or a collection and no
     # way to find out which ones exist.
-    assert sum(1 for topic in report["topics"] if topic["counts"].get("executed", 0)) == 13
+    # 13 -> 14 in v1.0 J13-C: configuration is a new topic with executed
+    # examples from the start.
+    assert sum(1 for topic in report["topics"] if topic["counts"].get("executed", 0)) == 14
 
 
 def main() -> None:

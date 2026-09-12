@@ -310,7 +310,8 @@
         {
           "id": "J13-C",
           "statement": "Each configuration section shows what to run and which other keys must be set with it, and each example runs",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:docs/configuration.md"
         },
         {
           "id": "J13-D",

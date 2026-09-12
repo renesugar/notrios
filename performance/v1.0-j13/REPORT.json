@@ -3,19 +3,20 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "c4486000b18127f99527a23134df8cbdae58b5fd",
+  "content_commit": "17b6992100028df2a63a48e696a0160546436f82",
   "counts": {
-    "examples": 164,
-    "executed": 65,
+    "examples": 169,
+    "executed": 69,
     "by_class": {
-      "fragment": 2,
-      "recipe": 116,
+      "fragment": 3,
+      "recipe": 120,
       "synopsis": 45,
       "transcript": 1
     },
     "by_class_and_state": {
       "fragment/executed": 2,
-      "recipe/executed": 62,
+      "fragment/unverified": 1,
+      "recipe/executed": 66,
       "recipe/unverified": 54,
       "synopsis/unverified": 45,
       "transcript/executed": 1
@@ -79,12 +80,11 @@
   ],
   "commands_with_no_executed_published_example": {
     "of": 92,
-    "count": 61,
+    "count": 60,
     "means": "No fenced block that this repository executes contains this command. It says nothing about whether the command is tested -- most are, in cmd/notriosctl's tests and in the I4, I7 and J3 drills. It says a reader of docs/ is shown the form and never shown it run.",
     "commands": [
       "collections show",
       "compatibility archive-v2",
-      "config show",
       "gc",
       "jobs cancel",
       "jobs list",
@@ -209,7 +209,7 @@
   ],
   "configuration_page": {
     "settable_keys": 53,
-    "examples": 0,
+    "examples": 5,
     "note": "J12 gave the page its prose and its generated key table and no examples at all, which is the gap J13-C closes."
   },
   "documents": {
@@ -231,6 +231,10 @@
       "recipe/unverified": 15,
       "synopsis/unverified": 38,
       "transcript/executed": 1
+    },
+    "docs/configuration.md": {
+      "fragment/unverified": 1,
+      "recipe/executed": 4
     },
     "docs/gui.md": {
       "recipe/executed": 4,
@@ -1058,6 +1062,51 @@
       "class": "recipe",
       "rule": "2 literal command line(s), nothing to substitute",
       "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "configuration-remote-media-example-1",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "8 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "configuration-search-example-1",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "state": "unverified",
+      "class": "fragment",
+      "rule": "yaml body: configuration, not a command line",
+      "unrun_reason": "illustrative-placeholder"
+    },
+    {
+      "id": "configuration-search-example-2",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "7 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "configuration-serving-the-api-and-the-interface-example-1",
+      "path": "docs/configuration.md",
+      "section": "serving-the-api-and-the-interface",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "6 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "configuration-where-your-notes-are-stored-example-1",
+      "path": "docs/configuration.md",
+      "section": "where-your-notes-are-stored",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "7 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
     },
     {
       "id": "gui-building-example-1",

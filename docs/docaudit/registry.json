@@ -1625,6 +1625,106 @@
       }
     },
     {
+      "id": "configuration-remote-media-example-1",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "language": "bash",
+      "sha256": "aae2ccb722da450ea3466b400f72d76e72c6b3f9bb21ecc51902804f5a4b5032",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-search-example-1",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "language": "yaml",
+      "sha256": "a67ddbe4e9a59da5898627a2046e8582998730ccca868a785eceead879afffe2",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "A configuration fragment with no command beside it, because `config show` reports 20 of the 53 keys and search.default_limit and search.max_limit are not among them, while `notriosctl search` takes --db and not --config. The effect is visible through /api/v1/status; the page says so rather than showing a command that appears to check what it cannot."
+      }
+    },
+    {
+      "id": "configuration-search-example-2",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "language": "bash",
+      "sha256": "1e34c9379d709b0a7594af35cca86fb13285ef0da51b795016f6b240c43ccaec",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-serving-the-api-and-the-interface-example-1",
+      "path": "docs/configuration.md",
+      "section": "serving-the-api-and-the-interface",
+      "language": "bash",
+      "sha256": "d590399f2996d29485c871e3f900f5dcef5cc1226638361d6e8a7c0f03f1dc06",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-where-your-notes-are-stored-example-1",
+      "path": "docs/configuration.md",
+      "section": "where-your-notes-are-stored",
+      "language": "bash",
+      "sha256": "fd347ca0cd3099551df73951f5a19fc576193285ee0d0ad6d50cbf60adbb1737",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
       "id": "gui-building-example-1",
       "path": "docs/gui.md",
       "section": "building",

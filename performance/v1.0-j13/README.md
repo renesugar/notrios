@@ -114,3 +114,80 @@ then read as a bare-word option; the placeholder keeps a quote.
 - `commands_with_no_executed_published_example` matches on the command name
   appearing in an executed body, which is generous. It is a report about where
   to look, not a gate.
+
+---
+
+# J13-C — the configuration page's use-case examples
+
+Four executed examples and one that says why it cannot be, added to
+`docs/configuration.md`, which J12 left with 53 documented keys and no command
+lines at all.
+
+Each answers the question the key table structurally cannot: **what do I use
+this for, and what else has to be set with it.** So each writes a small file
+with the keys that go *together* and then runs the command that proves they
+took effect:
+
+| Section | Keys that must be set together | Why one alone is not enough |
+|---|---|---|
+| where your notes are stored | `data.directory`, `data.database_path`, `data.asset_store` | `directory` is only where the others *default*; set alone it moves new roots and leaves an existing library where it was |
+| serving | `server.listen_addr`, `server.public_base_url` | they have to disagree — loopback for the proxy to reach, the public address for the links |
+| search sidecar | `enabled`, `binary`, `index_dir` | `enabled` alone has nothing to run and nowhere to index |
+| remote media | `default_action`, `allowed_domains`, `allow_private_networks` | an allow-list needs a default to be an exception to |
+
+## The check is derived from the example, not restated beside it
+
+`config-show-origin-file` reads the fence's own heredoc, collects the leaf keys
+it sets, and requires each one back from `config show` with **origin `file`**
+and the value the example wrote. So an example cannot claim a key it does not
+set, and cannot quietly stop setting one.
+
+`origin` is the column that carries the weight. A value alone could be the
+compiled default agreeing by accident — `server.listen_addr: 127.0.0.1:8080` in
+the proxy example *is* the default — and `file` is what says the file did it.
+Proved by breaking it: dropping `--config` from one example fails with
+`data.directory is "~/data" and the example set "/mnt/library/notrios"`.
+
+**It also refuses an example that checks nothing.** `config show` summarises 20
+of the 53 keys, so a fence setting only unreported keys would pass with zero
+assertions — the shape of gate this repository keeps finding, one that stopped
+running rather than started failing. Proved by replacing an example's YAML with
+`search.default_limit`: `none of the 1 key(s) this example sets is reported by
+config show, so it asserts nothing`.
+
+## The fifth example, and the honest gap behind it
+
+Search page limits get a bare `yaml` fragment and no command, because there is
+no command that would check it: **`config show` reports 20 of the 53 keys** and
+`search.default_limit`/`max_limit` are not among them, while `notriosctl search`
+takes `--db` and not `--config`. The effect is visible through `/api/v1/status`.
+The page says so. Showing `notriosctl config show --config bigger-pages.yaml`
+there would have been an example that appears to verify something it does not,
+which is the exact defect J13 exists to remove — and it is what the first draft
+of this slice did before the output was actually read.
+
+## What J13-B now knows it needs
+
+Writing these by hand first was the point of doing J13-C before the generator,
+and three requirements came out of it that an imagined design would have missed:
+
+1. **The fixture must support the idiom, not the reverse.** These examples need
+   `cat` and a heredoc, because that is how a person writes a config file. One
+   coreutil joined the fixture's PATH rather than the published example being
+   contorted into `printf` calls.
+2. **The postcondition should be derived from the example body.** Restating each
+   example's expectations in Go would be a second copy to drift; reading the
+   fence's own YAML cannot.
+3. **A verification command has to be checked against real output before it is
+   published.** Two of the five candidate examples were unverifiable and one was
+   silently so.
+
+## Limits
+
+- The fixture's `jq` is a stub that passes input through except for one filter,
+  so these examples deliberately do not pipe through `jq`; a reader can.
+- The heredoc reader handles one level of nesting and list members, and refuses
+  anything deeper rather than guessing. A configuration example that needs more
+  nesting than that has outgrown what a reader can take in.
+- `allowed_domains` membership is not checked: `config show` does not report the
+  list, so the example's third key is written and not asserted.

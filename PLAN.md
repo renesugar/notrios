@@ -73,7 +73,7 @@ this section is archived when the plan completes and the rules are not.
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
-| J13. Generate the published command-line examples from executed runs | in-progress | 1/4 | 3 |
+| J13. Generate the published command-line examples from executed runs | in-progress | 2/4 | 2 |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 
 ### Started and not finished
@@ -81,7 +81,6 @@ this section is archived when the plan completes and the rules are not.
 **J13. Generate the published command-line examples from executed runs**
 
 - `J13-B` A per-document tracked example set generates its published command lines, gated against the recorded run — *not-started*
-- `J13-C` Each configuration section shows what to run and which other keys must be set with it, and each example runs — *not-started*
 - `J13-D` Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run — *not-started*
 
 ### Not started
@@ -1109,6 +1108,52 @@ executed *published* example** — the wording narrowed after the first draft
 called them "never shown working", which was false: most are exercised by
 `cmd/notriosctl`'s tests and by the I4, I7 and J3 drills. The claim is about
 documentation only.
+
+### J13-C, done before the generator so the format has a real customer
+
+Four executed examples and one that says why it cannot be. Each writes a small
+file with the keys that must be set *together* and runs the command that proves
+they took effect, which is the half a key table structurally cannot express:
+`data.directory` alone moves where new roots default and leaves an existing
+library where it was; `server.listen_addr` and `public_base_url` have to
+disagree for a proxy to work; `search_sidecar.enabled` alone has nothing to run
+and nowhere to index; an `allowed_domains` list needs a `default_action` to be
+an exception to.
+
+**The check is derived from the example rather than restated beside it.**
+`config-show-origin-file` reads the fence's own heredoc, collects the keys it
+sets, and requires each back from `config show` with **origin `file`** and the
+written value — so an example cannot claim a key it does not set. `origin` is
+the column that carries the weight, because a value alone could be the compiled
+default agreeing by accident, and in the proxy example it *is* the default.
+Proved by dropping `--config` from one example and watching it name the key.
+
+**It refuses an example that checks nothing,** which matters because `config
+show` summarises 20 of the 53 keys: a fence setting only unreported keys would
+otherwise pass with zero assertions. Proved by making one do exactly that.
+
+**The fifth example is the honest one.** Search page limits get a fragment and
+no command, because there is no command that would check it — `config show` does
+not report those two keys and `notriosctl search` takes `--db` and not
+`--config`. The first draft of this slice published
+`config show --config bigger-pages.yaml` there, which would have been an example
+that appears to verify something it does not: the exact defect J13 exists to
+remove, caught only by reading the output instead of assuming it.
+
+**Three requirements for J13-B that an imagined design would have missed:** the
+fixture must support the idiom rather than the example being contorted to suit
+the fixture (these need `cat` and a heredoc, so one coreutil joined the fixture
+PATH); the postcondition should be read from the example body, because
+restating it in Go is a second copy that can drift; and a verification command
+has to be run against real output before publication — two of five candidates
+were unverifiable and one was silently so.
+
+**One self-inflicted find worth keeping:** the remote-media example's closing
+fence ended up with prose glued to it, so Hugo swallowed the last three sections
+of the page into a code block and `retention`, `profiles` and `every-key` got no
+anchors. `make g18g-validate` refused with `broken fragment
+configuration.html -> #every-key`, which is the only gate that would have caught
+it — `make validate` does not build the site.
 
 **The extraction is trusted because it is cross-checked, not because it looks
 right.** Blocks come from `docs/docaudit/registry.json` and their bodies are

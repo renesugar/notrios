@@ -53,6 +53,32 @@ without a copy, deliberately, because a purge that backed up a search index
 would spend a user's disk on something rebuildable. Do not move something
 irreplaceable there.
 
+**Moving a library to another disk** needs three keys, not one. `directory` is
+the root the others default under, but `database_path` and `asset_store` are
+resolved independently — so setting only `directory` moves where new roots are
+created and leaves an existing database and asset store where they were:
+
+```bash
+cat > other-disk.yaml <<'YAML'
+data:
+  directory: /mnt/library/notrios
+  database_path: /mnt/library/notrios/notes.sqlite
+  asset_store: /mnt/library/notrios/assets
+YAML
+notriosctl config show --config other-disk.yaml --json
+```
+
+`config show` is how you check a file before the service reads it: it prints the
+configuration that *would* take effect and, for each key, where the value came
+from — `file` when your file set it, `compiled` or `resolved` when it did not.
+That `origin` column is the part worth reading, because it turns "I set this"
+into "this is set". Move the files yourself; nothing here copies them for you.
+
+It reports 20 of the 53 keys, chosen as the ones that decide where data lives
+and what is reachable. A key absent from its output is not ignored by the
+service — it is simply not summarised, and the table at the end of this page is
+the complete list.
+
 A library outside these roots is not deleted by a purge — it is listed and left
 alone. See
 [Removing your data as well](installation.md#removing-your-data-as-well).
@@ -73,6 +99,20 @@ which matters for links it generates rather than for what it binds. Set it when
 Notrios is behind a reverse proxy and the address a browser uses is not the
 address the service listens on.
 
+**Behind a reverse proxy** the two keys have to disagree, and that is the
+point. `listen_addr` stays on loopback, because the proxy is what reaches the
+network; `public_base_url` is the address a browser uses, and without it the
+links Notrios generates point at `127.0.0.1`:
+
+```bash
+cat > behind-a-proxy.yaml <<'YAML'
+server:
+  listen_addr: 127.0.0.1:8080
+  public_base_url: https://notes.example.com
+YAML
+notriosctl config show --config behind-a-proxy.yaml --json
+```
+
 `server.web_dir` is the built interface — the directory with `index.html`.
 Leaving it empty searches the working directory, then the executable's own
 directory and its parent, which covers both a checkout and an installed package.
@@ -88,11 +128,45 @@ that protocol.
 clamped, so raising it is how you allow larger pages rather than how you make
 them faster.
 
+**Larger pages** need both keys. `max_limit` is the ceiling a request may ask
+for and `default_limit` is what a request that asks for nothing gets; raising
+only the default leaves the ceiling where it was, and a request asking for more
+is clamped rather than refused:
+
+```yaml
+search:
+  default_limit: 100
+  max_limit: 1000
+```
+
+There is no command-line example for this one, and the reason is worth knowing
+before you go looking for it: **`config show` reports 20 of the 53 keys**, and
+these two are not among them, while `notriosctl search` takes `--db` but not
+`--config`. So the effect is visible through `/api/v1/status`, which reports the
+active search limits, and not from the command line. Every other example on this
+page ends in a command that proves it took effect; this one cannot, and saying so
+is better than showing a command that appears to check something it does not.
+
 `search_sidecar` configures the optional Recoll-derived sidecar, which adds
 field search over front matter and over the text inside attachments. It is
 optional in the strict sense — everything works without it, using SQLite FTS5 —
 and `search_sidecar.index_dir` is created at startup when the sidecar is
 configured. `notriosctl doctor` reports whether `recollindex` was found.
+
+**Turning it on** is three keys together. `enabled` on its own does nothing
+useful: the sidecar needs a binary to run and a directory to index into, and
+`index_dir` must be somewhere a purge treats as rebuildable — under
+`data.cache_dir`, not beside your notes:
+
+```bash
+cat > sidecar-on.yaml <<'YAML'
+search_sidecar:
+  enabled: true
+  binary: /usr/bin/recollindex
+  index_dir: /home/you/.cache/notrios/recoll
+YAML
+notriosctl config show --config sidecar-on.yaml --json
+```
 
 ## Sync
 
@@ -114,8 +188,25 @@ because localizing remote media means fetching bytes a note asked for.
 
 Fetching goes through a domain policy, a quarantine, exact and perceptual
 hashing, MIME sniffing, a size limit and protections against being pointed at
-your own network. The keys here tune that; they do not switch it off. If you
-are deciding what to allow, read
+your own network. The keys here tune that; they do not switch it off.
+
+**Allowing one domain** means setting the default action as well, or the
+allow-list has nothing to be an exception to. `allow_private_networks` stays
+false: an allowed domain that resolves to your own network is the case the
+protection exists for:
+
+```bash
+cat > one-domain.yaml <<'YAML'
+remote_media:
+  default_action: block
+  allowed_domains:
+    - images.example.com
+  allow_private_networks: false
+YAML
+notriosctl config show --config one-domain.yaml --json
+```
+
+If you are deciding what to allow, read
 [the remote-media section of the service guide](service.md) before setting
 anything permissive.
 
