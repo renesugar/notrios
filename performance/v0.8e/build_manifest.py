@@ -50,6 +50,43 @@ def describe(path: pathlib.Path) -> dict:
             "sha256": hashlib.sha256(data).hexdigest()}
 
 
+def simple_manifest(milestone: str, taken_at_close: dict, note: str) -> dict:
+    """A manifest for a milestone whose archives were all taken when items closed.
+
+    v0.9 and v1.0 have the same shape -- one archive per item, each built from
+    the commit that closed it -- and had two copies of this loop between them.
+    v0.9's own note said a fourth milestone should fold them into one
+    parameterised builder, and v1.0 is the fourth.
+
+    This milestone's own builder above stays separate, and not out of sentiment:
+    v0.8e's archives were built retroactively, six of them supersede earlier
+    ones, and it reads a pinned git revision for the ledger. Folding genuinely
+    different logic into a shared function would make it a function with a mode
+    flag, which is two functions wearing one name.
+    """
+    manifest = collections.OrderedDict()
+    manifest["schema"] = "notrios.v08e.archive-manifest.v1"
+    manifest["milestone"] = milestone
+    manifest["evidence_directory"] = str(EVIDENCE)
+    manifest["honest_provenance"] = note
+    manifest["archives"] = []
+    for item, name in sorted(taken_at_close.items()):
+        path = EVIDENCE / name
+        if not path.is_file():
+            raise SystemExit(f"{item}: {path} is not there")
+        entry = collections.OrderedDict(item=item, archive=name)
+        entry["commit"] = git("rev-parse", name.rsplit("-", 1)[1][:-4])
+        entry["taken"] = "when the slice closed"
+        entry.update(describe(path))
+        manifest["archives"].append(entry)
+    manifest["counts"] = {
+        "items": len(manifest["archives"]),
+        "retroactive": 0,
+        "total_bytes": sum(a["bytes"] for a in manifest["archives"]),
+    }
+    return manifest
+
+
 def build() -> dict:
     closeouts = {e["item"]: e for e in json.loads((HERE / "CLOSEOUTS.json").read_text())["items"]}
     rebuilt = {}

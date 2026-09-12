@@ -121,7 +121,7 @@
     "prerequisite": {
       "detail": "Met on 2026-09-11 by v1.0 J1: .github/workflows/release.yml builds the package with `make deb` and attests it with actions/attest-build-provenance. The validator derives this state from the workflows rather than reading it here, which is how the change was noticed -- writing the workflow made this record false and the gate said so.",
       "permissions": "id-token: write and attestations: write, declared on the job that needs them rather than inherited. performance/v0.9-i6/check_workflow_hardening.py refuses a workflow that declares no permissions at all, and least privilege means these two appear only where they are used.",
-      "proven": "Statically. The workflow lints clean, passes the hardening and secret-exposure gates, and its two assertions were exercised locally against the real package. The attestation itself is unproven until a run produces one: it needs the runner's OIDC identity and cannot be exercised on a workstation.",
+      "proven": "End to end on 2026-09-11. The workflow was dispatched from main and gh attestation verify accepted the package it built: SLSA provenance v1, subject notrios_0.8.0-1_amd64.deb sha256 ef3aceff5da88b02, built by .github/workflows/release.yml@refs/heads/main from commit 3180659fa70e, issuer token.actions.githubusercontent.com. The refusals were checked too -- a byte appended, a different repository, and the workstation-built package of the same version are all refused, the last being the sharpest because it shows the attestation is about this build rather than this project.",
       "state": "met",
       "tracked_in": "ROADMAP.md, under v1.0"
     },

@@ -107,7 +107,7 @@ def build_sbom(subject: dict) -> dict:
     }
 
 
-def build_provenance(subjects: list[dict], version: str) -> dict:
+def build_provenance(subjects: list[dict], version: str, signed: bool = False) -> dict:
     """An in-toto statement describing how the subjects were produced."""
     return {
         "_type": "https://in-toto.io/Statement/v1",
@@ -134,11 +134,11 @@ def build_provenance(subjects: list[dict], version: str) -> dict:
             },
         },
         "notrios:signing": {
-            "state": "unsigned",
-            "why": "v0.9 I5 decided the signing policy and deliberately created no key. A "
-                   "release built from this set is signed at the point a key exists, under "
-                   "performance/v0.9-i5/POLICY.json; recording the absence here keeps an "
-                   "unsigned set from being mistaken for a signed one.",
+            "state": "signed" if signed else "unsigned",
+            "why": "A set records whether it carries signatures so that an unsigned one cannot "
+                   "be mistaken for a signed one, and -- since v1.0 J2 -- so that a set claiming "
+                   "to be signed is refused unless every signature verifies against the key at "
+                   "keys/release-public.asc.",
             "policy": "performance/v0.9-i5/POLICY.json",
         },
     }
@@ -148,6 +148,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--deb", type=pathlib.Path)
     parser.add_argument("--out", type=pathlib.Path, default=ROOT / "dist" / "release-set")
+    parser.add_argument("--signed", action="store_true",
+                        help="record the set as one that will carry signatures; the verifier "
+                             "then refuses it unless it actually does")
     arguments = parser.parse_args()
 
     deb = arguments.deb
@@ -171,16 +174,29 @@ def main() -> int:
         json.dumps(build_sbom(subject), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (out / "PROVENANCE.json").write_text(
         json.dumps(build_provenance(
-            [{"name": subject["name"], "digest": subject["digest"]}], version),
+            [{"name": subject["name"], "digest": subject["digest"]}], version,
+            signed=arguments.signed),
             indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     # Checksums last, over everything else, so the file that verifies the set is
     # the file a reader checks first.
+    # SHA256SUMS covers everything except itself and its own signature: the
+    # signature is made over the finished file, so hashing it would require the
+    # file to contain a hash of something derived from it.
     lines = [f"{sha256(path)}  {path.name}\n"
-             for path in sorted(out.iterdir()) if path.name != "SHA256SUMS"]
+             for path in sorted(out.iterdir())
+             if path.name not in ("SHA256SUMS", "SHA256SUMS.asc")]
     (out / "SHA256SUMS").write_text("".join(lines), encoding="ascii")
 
-    print(f"release set at {out.relative_to(ROOT)}: {len(lines)} artifacts, version {version}")
+    # relative_to raises when --out is outside the repository, which is a
+    # legitimate place to put a set and was a crash on the last line after every
+    # file had already been written -- a failure that looks like the build broke
+    # and is only the report.
+    try:
+        where = out.relative_to(ROOT)
+    except ValueError:
+        where = out
+    print(f"release set at {where}: {len(lines)} artifacts, version {version}")
     return 0
 
 

@@ -21,8 +21,8 @@
     "No signature and no timestamp. I5 created no key deliberately; the provenance records the set as unsigned and the verifier refuses a set that claims otherwise without one.",
     "No draft was created, so the upload path, asset size limits and the rendering of the notes are unexercised.",
     "The SBOM covers dependencies, not the contents of the .deb. It says what the software was built from, not what the package ships.",
-    "Provenance is not attested: it is a statement this repository wrote about its own build, on a workstation, with no builder identity anybody else can check. SLSA build level 1 at most.",
-    "Reachability is established for Go only. govulncheck analyses the Go call graph; nothing equivalent ran for the 361 npm packages, so grype's findings there are module-level and unreduced. A scan result is also true only on the day it was taken."
+    "Reachability is established for Go only. govulncheck analyses the Go call graph; nothing equivalent ran for the 361 npm packages, so grype's findings there are module-level and unreduced. A scan result is also true only on the day it was taken.",
+    "Provenance for the set this item builds is not attested: build_release_set.py runs on a workstation, so its in-toto statement is one this repository wrote about its own build, with no builder identity anybody else can check -- SLSA build level 1 at most. SUPERSEDED FOR WORKFLOW BUILDS on 2026-09-11 by v1.0 J1, which builds the package in GitHub Actions and attests it; that raises the claim for the workflow-built package and does not retroactively change this set, which is still built locally."
   ],
   "release_set": {
     "artifacts": [
