@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**12 items: 3 complete, 1 in progress, 8 not started, 0 deferred.**
+**12 items: 4 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -72,17 +72,9 @@ this section is archived when the plan completes and the rules are not.
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
-| J12. Make the README true, and generate what can be generated | in-progress | 3/4 | 1 |
+| J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 
-### Started and not finished
-
-**J12. Make the README true, and generate what can be generated**
-
-- `J12-C` docs/configuration.md documents every configuration key, checked against internal/config, and the README points at it — *not-started*
-
-### Not started
-
-Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -872,7 +864,7 @@ This is an index only; each decision is owned and explained inside its item.
 | Whether the CI secret holds the primary key or only a signing subkey | J2 → J10 | **Deferred 2026-09-11.** Safe for now because the key has signed nothing, so reissuing costs a keygen; revisit before the first release anyone relies on |
 | How the large-scale corpus is generated | J5 | Non-blocking default: import the real supplied libraries first, generate only to fill gaps, never write SQLite directly for correctness claims |
 
-## J12. Make the README true, and generate what can be generated — in progress
+## J12. Make the README true, and generate what can be generated — complete
 
 **Goal.** The repository's front page answers what it claims to answer, and the
 parts of it that go stale are derived from tracked data rather than edited by

@@ -263,7 +263,7 @@
     {
       "id": "J12",
       "title": "Make the README true, and generate what can be generated",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J12-A",
@@ -280,7 +280,8 @@
         {
           "id": "J12-C",
           "statement": "docs/configuration.md documents every configuration key, checked against internal/config, and the README points at it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestEverySettableKeyIsListed"
         },
         {
           "id": "J12-D",
