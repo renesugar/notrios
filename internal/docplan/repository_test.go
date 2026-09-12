@@ -1,6 +1,7 @@
 package docplan
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -115,6 +116,33 @@ func TestProgressLogIsCurrent(t *testing.T) {
 		t.Error("the project status in README.md is stale; run: go run ./cmd/docplan --write")
 	}
 
+	// The evidence index, same document and same failure. The paragraph it
+	// replaced named 13 of 77 directories and stopped at v0.5, so v0.7, v0.8,
+	// v0.8e, v0.9 and v1.0 went unmentioned -- the large majority of the
+	// evidence in this repository, missing from the only place a reader looks
+	// for it.
+	const evidBegin = "<!-- notrios:generated:readme:evidence:begin -->"
+	const evidFinish = "<!-- notrios:generated:readme:evidence:end -->"
+	start, end = strings.Index(body, evidBegin), strings.Index(body, evidFinish)
+	if start < 0 || end < start {
+		t.Fatal("README.md has no evidence-index markers")
+	}
+	index := strings.TrimSpace(body[start+len(evidBegin) : end])
+	counted, total, err := evidenceDirectories(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(index, fmt.Sprintf("%d evidence directories", total)) {
+		t.Errorf("the evidence index does not count %d directories; "+
+			"run: go run ./cmd/docplan --write", total)
+	}
+	for milestone, count := range counted {
+		if !strings.Contains(index, fmt.Sprintf("| %s | %d |", milestone, count)) {
+			t.Errorf("the evidence index does not report %s as %d directories; "+
+				"run: go run ./cmd/docplan --write", milestone, count)
+		}
+	}
+
 	// The generated block replaces the version claim; nothing may keep a second
 	// copy of it beside the block. "(current, 0.8.0)" is the exact string that
 	// was wrong, and a milestone row that marks itself current is the shape of
@@ -150,4 +178,29 @@ func archivedMilestoneNames(root string) ([]string, error) {
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+// evidenceDirectories counts performance/ directories per milestone.
+//
+// Duplicated from cmd/docplan for the same reason archivedMilestoneNames is:
+// the command owns rendering, this owns catching the rendering go stale, and
+// one shared function would let a single bug satisfy both.
+func evidenceDirectories(root string) (map[string]int, int, error) {
+	entries, err := os.ReadDir(filepath.Join(root, "performance"))
+	if err != nil {
+		return nil, 0, err
+	}
+	shaped := regexp.MustCompile(`^(v[0-9]+\.[0-9]+[a-z]?)(?:-.*)?$`)
+	counts := map[string]int{}
+	total := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if match := shaped.FindStringSubmatch(entry.Name()); match != nil {
+			counts[match[1]]++
+			total++
+		}
+	}
+	return counts, total, nil
 }

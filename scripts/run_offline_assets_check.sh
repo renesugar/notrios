@@ -7,6 +7,7 @@
 # injected remote script or stylesheet, any CSP violation, or math that did not
 # render.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 PORT=${NOTRIOS_OFFLINE_PORT:-18092}

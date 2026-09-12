@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Check the local agent's remaining usage before a long, non-checkpointed run.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "usage: $0 <operation> [history-path]" >&2

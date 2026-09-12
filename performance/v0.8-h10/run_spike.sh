@@ -12,6 +12,7 @@
 # Needs Xvfb and the GTK3+webkit2gtk-4.1 and GTK4+webkitgtk-6.0 stacks, which
 # are what the two shells respectively link.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 out=$(mktemp -d "${TMPDIR:-/tmp}/notrios-h10.XXXXXX")

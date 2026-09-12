@@ -80,6 +80,14 @@ Feature contracts, which describe one capability rather than the project:
   in-memory committed-Markdown freshness gate.
 - `cmd/docjourney/` and `internal/docjourney/` — the GUI journey manifest and
   its source and test anchors, for the documented steps a browser can reach.
+- `scripts/check_python_hygiene.py` — two checks, kept separate on purpose.
+  `--sources` is a gate in `make validate`: every tracked shell script that
+  invokes Python, the Makefile, and every workflow must export
+  `PYTHONDONTWRITEBYTECODE` and `PYTHONUNBUFFERED`, because twenty scripts were
+  edited by hand to add that line and the twenty-first is where it gets
+  forgotten. `--byproducts` is a report behind `make bytecode`: leftover
+  `__pycache__` is untidy rather than wrong, and a gate refusing a commit over a
+  git-ignored byproduct would be switched off inside a week.
 - `cmd/docconfig/` — generates the key table at the end of
   `docs/configuration.md` by reflecting over `internal/config.Config` and
   `config.Default()`, so the documented default for a key is the default the

@@ -31,6 +31,8 @@ required = [
     'scripts/verify_evidence_pre_push.sh',
     'scripts/check_agent_usage.py',
     'scripts/claude_statusline_usage.py',
+    'scripts/check_docs_site_fresh.py',
+    'scripts/check_python_hygiene.py',
     'scripts/check_sqlite_provenance.py',
     'web/src/desktop.ts',
     'web/src/mermaid-render.ts',

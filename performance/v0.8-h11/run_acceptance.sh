@@ -16,6 +16,7 @@
 # Requires a booted emulator on adb. It does not start one: choosing the device
 # an acceptance run measures is the operator's decision, not the script's.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 sdk=${ANDROID_HOME:-$HOME/Android/Sdk}

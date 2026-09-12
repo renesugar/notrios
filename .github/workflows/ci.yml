@@ -10,6 +10,15 @@ on:
 permissions:
   contents: read
 
+# A runner is thrown away after the job, so bytecode left on it harms nothing.
+# These are set for the other reason: unbuffered output means a failing step's
+# log ends where the failure happened rather than wherever the buffer flushed,
+# and the same environment everywhere means a script behaves here as it does on
+# a workstation.
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+
 jobs:
   go:
     runs-on: ubuntu-latest

@@ -19,6 +19,7 @@
 #
 #   bash performance/v0.8e/backfill.sh
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 # The two knobs a later milestone needs. Defaulting them to v0.8 keeps this

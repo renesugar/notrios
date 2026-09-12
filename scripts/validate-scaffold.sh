@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 go test ./...
 
@@ -66,6 +67,16 @@ fi
 # lifecycle tests being added beside it delete directories for a living.
 python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check_required_files.py
+# The source half only: every entry point that runs Python must export
+# PYTHONDONTWRITEBYTECODE and PYTHONUNBUFFERED. Twenty scripts were edited by
+# hand to add that line, which is exactly where the twenty-first gets
+# forgotten, and this is a fact about tracked files -- the same kind
+# check_required_files.py above asserts.
+#
+# The byproduct half stays out, and `make bytecode` reports it instead: a
+# git-ignored __pycache__ is untidy rather than wrong, and a gate that refused a
+# commit over one would be switched off inside a week.
+python3 scripts/check_python_hygiene.py --sources
 python3 scripts/check_sqlite_provenance.py
 python3 performance/v0.8-h2a/validate_evidence.py
 bash -n scripts/mvp_smoke.sh

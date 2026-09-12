@@ -13,6 +13,7 @@
 # authenticated, and the exact command is printed so a person can read what
 # would happen before it does.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 SET=${RELEASE_SET:-$ROOT/dist/release-set}

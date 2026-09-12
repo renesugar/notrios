@@ -12,6 +12,7 @@
 # learned the hard way: inside a checkout the CLI resolves source mode and the
 # drill measures the developer's own library.
 set -uo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 HERE=$ROOT/performance/v1.0-j3

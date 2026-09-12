@@ -321,17 +321,19 @@
     {
       "id": "J14",
       "title": "Stop leaving bytecode behind, and derive the evidence index",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J14-A",
           "statement": "Every Python invocation in the repository runs with PYTHONDONTWRITEBYTECODE=1 and PYTHONUNBUFFERED=1",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:scripts/check_python_hygiene.py"
         },
         {
           "id": "J14-B",
           "statement": "A check reports when a validate run has left bytecode behind",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestProgressLogIsCurrent"
         },
         {
           "id": "J14-C",

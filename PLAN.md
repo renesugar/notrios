@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**14 items: 4 complete, 0 in progress, 10 not started, 0 deferred.**
+**14 items: 4 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -74,9 +74,17 @@ this section is archived when the plan completes and the rules are not.
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | not-started | 0/4 | 4 |
-| J14. Stop leaving bytecode behind, and derive the evidence index | not-started | 0/3 | 3 |
+| J14. Stop leaving bytecode behind, and derive the evidence index | in-progress | 2/3 | 1 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J14. Stop leaving bytecode behind, and derive the evidence index**
+
+- `J14-C` The README's Validation section is split, and its evidence index is generated from performance/ and gated — *not-started*
+
+### Not started
+
+Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11, J13. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1064,7 +1072,7 @@ gated against the recorded run, a configuration page whose sections each show
 what to run and what else to set, and a published example count where "executed"
 is the default and every exception names its reason.
 
-## J14. Stop leaving bytecode behind, and derive the evidence index
+## J14. Stop leaving bytecode behind, and derive the evidence index — in progress
 
 **Goal.** Running the repository's own Python leaves nothing behind, and the
 README's Validation section stops being a third hand-maintained list.
@@ -1125,11 +1133,46 @@ README understates what it removes. It lists `bin/ dist/ _site/ web/dist/
 `__pycache__` and `.pyc` in the tree — which is the fact a reader asking "how do
 I get rid of these" most needs.
 
-**Boundaries.** Nothing is added to `make validate`. The generated evidence
-index lists directories and does not describe them; a directory's contents are
-its README's business.
+**Boundaries, with one changed deliberately rather than quietly.** The plan
+said *nothing is added to `make validate`*. That is right for the byproduct
+report and wrong for the source check, and the two are different in kind: a
+leftover `__pycache__` is a fact about this machine right now, while "every
+entry point exports the variable" is a fact about tracked files — the same kind
+`check_required_files.py` already asserts in that script. So `--sources` is a
+gate in `make validate` and `--byproducts` is `make bytecode`, and this sentence
+is the record of changing my own boundary instead of stretching it.
+
+The generated evidence index lists directories and does not describe them; a
+directory's contents are its README's business.
 
 **Dependencies.** J12, whose generated-block machinery this reuses.
 
 **Working state.** A validate run that leaves no bytecode, a Validation section
 whose evidence index cannot drift, and a `make clean` description that is true.
+
+### What it took
+
+**The exports go in 20 shell scripts, the Makefile and three workflows**, and
+the Makefile's `export` reaches every recipe and every script a recipe calls.
+Proved rather than assumed: every cache was deleted, a complete `make validate`
+run, and `make bytecode` reports **no bytecode in the tree** afterwards.
+
+**The gate exists because 20 hand-edited files is where the 21st is forgotten,**
+and it was confirmed by breaking it three ways — a script missing the export, the
+Makefile missing one of the two variables, and a workflow missing one — each
+named precisely. Scripts that only *mention* python in a comment are not
+required to export anything, so the check strips comments before deciding.
+
+**The workflows get it for a different reason, said in each file:** a runner is
+discarded after the job, so bytecode on it harms nothing. Unbuffered output
+means a failing step's log ends where the failure happened rather than wherever
+the buffer flushed.
+
+**The evidence index generates 77 directories grouped by milestone** — counts
+and one example each, not 77 names, because a reader wants to know the evidence
+exists and roughly how much there is; `ls performance/` does the rest better.
+Gated, and confirmed by editing both a milestone count and the total.
+
+**The new `make bytecode` target tripped I8's frozen surface** (35 lifecycle
+targets to 36), re-recorded deliberately: a reporting target is compatible,
+nothing renamed or removed.

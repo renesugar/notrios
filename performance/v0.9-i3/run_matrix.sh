@@ -19,6 +19,7 @@
 # user installs with sudo and then runs as themselves, and a rehearsal that only
 # ever ran as root would miss every permission mistake.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 HERE=$ROOT/performance/v0.9-i3

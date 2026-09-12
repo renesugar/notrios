@@ -10,11 +10,29 @@
 
 .DEFAULT_GOAL := help
 
+# Every recipe below runs Python with these set, and so does every shell script
+# a recipe calls, because make exports them into the recipe's environment.
+#
+# PYTHONDONTWRITEBYTECODE: the repository's own scripts were leaving 19
+# __pycache__ directories and 48 .pyc files across the tree. `clean` removes
+# them, so they accumulated between cleans. Nothing here benefits from the
+# cache -- deleting every one of them and running `make validate` cold proved
+# that -- and not writing one is simpler than cleaning up after it. (The
+# sharper worry, stale bytecode being used, does not apply: an orphaned
+# __pycache__ entry whose source is gone is not importable at all, per PEP
+# 3147, and a changed source invalidates its cache.)
+#
+# PYTHONUNBUFFERED: these scripts print progress somebody reads while waiting.
+# Through a pipe, buffered output arrives in one block at the end, which is why
+# a long validate could look hung when it was working.
+export PYTHONDONTWRITEBYTECODE := 1
+export PYTHONUNBUFFERED := 1
+
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
         g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
         install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck \
-        docs-stale
+        docs-stale bytecode
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -57,6 +75,9 @@ docs: docs-site/node_modules ## Build the pinned offline Hugo/Ledger site into _
 
 docs-stale: ## Report whether _site/ is older than the documents under docs/
 	python3 scripts/check_docs_site_fresh.py
+
+bytecode: ## Report any __pycache__/.pyc left in the tree, and who could have left it
+	python3 scripts/check_python_hygiene.py --byproducts
 
 test: ## Run all Go tests
 	go test ./...
