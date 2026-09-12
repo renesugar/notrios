@@ -686,12 +686,28 @@ uploaded before that. The evidence is sealed into the reserve before the release
 is published, for the reason v0.8e exists: a timestamp taken afterwards cannot
 establish that the evidence predates disclosure.
 
-**One decision arrives here from J2.** The CI secret holds the release key's
-primary, which can certify as well as sign. That was deferred because the key
-had signed nothing and reissuing the identity cost a keygen — a calculation that
-stops being true at exactly this point, because a published release is a key
-other people hold. Narrow the secret to a signing subkey before publishing, or
-record here that it was decided otherwise and why.
+**One decision arrives here from J2, and the owner has acted on it.** The CI
+secret held the release key's primary, which can certify as well as sign; it was
+replaced on 2026-09-12 with an export narrowed to the signing subkey.
+
+**What confirms that, and what cannot.** A GitHub secret is write-only, so the
+value cannot be inspected — and the workflow's existing fingerprint check cannot
+see the difference either: a `--export-secret-subkeys` export still imports a
+stub for the primary, so the first `fpr` line is the published primary
+fingerprint either way. What separates them is field 15 of the `sec` record:
+`+` when the primary's secret material is present, `#` when it is only a stub.
+Measured on a throwaway key rather than taken from a manual page, and the check
+was run against both export shapes before being installed — the full export
+refused, the subkeys-only export accepted. The workflow now asserts `#`, and
+asserts the signing subkey's own secret is present so that a narrowing which
+went too far fails at the gate rather than at the signing step.
+
+**Still to do here:** the gate is on `develop` and the `production` environment
+only admits `main` and `v*`, so no run has exercised it yet. The last two
+dispatches (2026-09-12 01:55Z and 02:32Z) predate the secret being replaced at
+13:14Z and therefore say nothing about the new value. J10 closes this by
+carrying the gate to `main` and dispatching once, which is also the point at
+which the narrowing is proven rather than reported.
 
 **Dependencies.** Every other item.
 
