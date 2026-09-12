@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**14 items: 4 complete, 1 in progress, 9 not started, 0 deferred.**
+**14 items: 5 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -74,17 +74,9 @@ this section is archived when the plan completes and the rules are not.
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | not-started | 0/4 | 4 |
-| J14. Stop leaving bytecode behind, and derive the evidence index | in-progress | 2/3 | 1 |
+| J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 
-### Started and not finished
-
-**J14. Stop leaving bytecode behind, and derive the evidence index**
-
-- `J14-C` The README's Validation section is split, and its evidence index is generated from performance/ and gated — *not-started*
-
-### Not started
-
-Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11, J13. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1072,7 +1064,7 @@ gated against the recorded run, a configuration page whose sections each show
 what to run and what else to set, and a published example count where "executed"
 is the default and every exception names its reason.
 
-## J14. Stop leaving bytecode behind, and derive the evidence index — in progress
+## J14. Stop leaving bytecode behind, and derive the evidence index — complete
 
 **Goal.** Running the repository's own Python leaves nothing behind, and the
 README's Validation section stops being a third hand-maintained list.

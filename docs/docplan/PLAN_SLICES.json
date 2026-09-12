@@ -321,7 +321,7 @@
     {
       "id": "J14",
       "title": "Stop leaving bytecode behind, and derive the evidence index",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J14-A",
@@ -338,7 +338,8 @@
         {
           "id": "J14-C",
           "statement": "The README's Validation section is split, and its evidence index is generated from performance/ and gated",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:README.md"
         }
       ]
     }
