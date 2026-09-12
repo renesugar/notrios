@@ -15,7 +15,6 @@ this milestone did.
     python3 performance/v0.9/build_manifest.py [--check]
 """
 import argparse
-import collections
 import json
 import pathlib
 import sys
@@ -23,7 +22,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "performance" / "v0.8e"))
-from build_manifest import EVIDENCE, describe, git  # noqa: E402
+from build_manifest import simple_manifest  # noqa: E402
 
 MANIFEST = HERE / "MANIFEST.json"
 
@@ -47,33 +46,17 @@ TAKEN_AT_CLOSE = {"I1": "notrios-v0.9-i1-3799c6f.zip",
                   "I2": "notrios-v0.9-i2-e3f6de7.zip"}
 
 
+NOTE = ("Each archive here was built from the commit that closed its item, by the same worktree "
+        "path v0.8e used, and verified byte-identical to that commit. A file timestamp says when "
+        "the archive was built and nothing about when the work happened. I2 is deferred rather "
+        "than complete: its archive records the commit that made and explained that decision, "
+        "which is the work the item produced.")
+
+
 def build() -> dict:
-    manifest = collections.OrderedDict()
-    manifest["schema"] = "notrios.v08e.archive-manifest.v1"
-    manifest["milestone"] = "v0.9"
-    manifest["evidence_directory"] = str(EVIDENCE)
-    manifest["honest_provenance"] = (
-        "Each archive here was built from the commit that closed its item, by the same "
-        "worktree path v0.8e used, and verified byte-identical to that commit. A file "
-        "timestamp says when the archive was built and nothing about when the work happened. "
-        "I2 is deferred rather than complete: its archive records the commit that made and "
-        "explained that decision, which is the work the item produced.")
-    manifest["archives"] = []
-    for item, name in sorted(TAKEN_AT_CLOSE.items()):
-        path = EVIDENCE / name
-        if not path.is_file():
-            raise SystemExit(f"{item}: {path} is not there")
-        entry = collections.OrderedDict(item=item, archive=name)
-        entry["commit"] = git("rev-parse", name.rsplit("-", 1)[1][:-4])
-        entry["taken"] = "when the slice closed"
-        entry.update(describe(path))
-        manifest["archives"].append(entry)
-    manifest["counts"] = {
-        "items": len(manifest["archives"]),
-        "retroactive": sum(1 for a in manifest["archives"] if a["taken"] != "when the slice closed"),
-        "total_bytes": sum(a["bytes"] for a in manifest["archives"]),
-    }
-    return manifest
+    # Folded into performance/v0.8e/build_manifest.py by v1.0 J1, which is the
+    # fourth milestone this note said should do it.
+    return simple_manifest("v0.9", TAKEN_AT_CLOSE, NOTE)
 
 
 def main() -> int:

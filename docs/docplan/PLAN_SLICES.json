@@ -4,22 +4,25 @@
     {
       "id": "J1",
       "title": "Build the package in a workflow, and attest what it built",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J1-A",
           "statement": "The .deb is built by a GitHub Actions workflow rather than a workstation",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:.github/workflows/release.yml"
         },
         {
           "id": "J1-B",
           "statement": "actions/attest-build-provenance attests the artifact and gh attestation verify accepts it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:.github/workflows/release.yml"
         },
         {
           "id": "J1-C",
           "statement": "The signing policy records the attestation prerequisite as met, derived from the workflows",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i5/POLICY.json"
         }
       ]
     },

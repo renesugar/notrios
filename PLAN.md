@@ -57,11 +57,11 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**11 items: 0 complete, 0 in progress, 11 not started, 0 deferred.**
+**11 items: 1 complete, 0 in progress, 10 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
-| J1. Build the package in a workflow, and attest what it built | not-started | 0/3 | 3 |
+| J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
 | J2. Create the release signing key, and sign what ships | not-started | 0/3 | 3 |
 | J3. Give a packaged installation a supported way to delete its data | not-started | 0/3 | 3 |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | not-started | 0/3 | 3 |
@@ -76,7 +76,7 @@ this section is archived when the plan completes and the rules are not.
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
-## J1. Build the package in a workflow, and attest what it built
+## J1. Build the package in a workflow, and attest what it built — complete
 
 **Goal.** The artifact people download is built by a workflow, and carries proof
 of where it came from.

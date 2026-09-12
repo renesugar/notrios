@@ -1,0 +1,22 @@
+{
+  "schema": "notrios.v08e.archive-manifest.v1",
+  "milestone": "v1.0",
+  "evidence_directory": "/home/renes/evidence/notrios",
+  "honest_provenance": "Each archive here was built from the commit that closed its item, by the same worktree path v0.8e used, and verified byte-identical to that commit. A file timestamp says when the archive was built and nothing about when the work happened.",
+  "archives": [
+    {
+      "item": "J1",
+      "archive": "notrios-v1.0-j1-ab4186c.zip",
+      "commit": "ab4186c4507fb06594eef9dd97330efbf8db14aa",
+      "taken": "when the slice closed",
+      "bytes": 25163116,
+      "entries": 2510,
+      "sha256": "e6a1ce0adfe93716d7deedb415d09941af3e8dec088f3315ef2a9eaae4c42e91"
+    }
+  ],
+  "counts": {
+    "items": 1,
+    "retroactive": 0,
+    "total_bytes": 25163116
+  }
+}
