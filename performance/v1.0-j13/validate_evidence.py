@@ -73,10 +73,26 @@ def main() -> None:
     require({r["id"] for r in rows} == registry_ids,
             "the classification and docs/docaudit/registry.json cover different blocks")
 
+    # No recorded reason may contradict its own block. This was a count in
+    # J13-A and is a gate since J13-D closed the ten it found: a synopsis
+    # excused as "interactive" names a cause that could never have applied, and
+    # a literal recipe filed as "illustrative" is a runnable command called
+    # decoration. Both are how a documented command stops being checked without
+    # anybody deciding to stop checking it.
+    #
+    # Fixing the ten and leaving the number in a report would have meant the
+    # eleventh arrives silently, which is the failure this repository keeps
+    # finding in its own gates.
+    contradictions = report["reason_contradicts_class"]
+    require(not contradictions,
+            "a recorded reason contradicts its block: "
+            + "; ".join(f"{c['id']} is a {c['class']} excused as {c['reason']}"
+                        for c in contradictions))
+
     print(f"J13-A classification valid: {report['counts']['examples']} blocks "
           f"({report['counts']['by_class']}), "
           f"{len(report['recipes_never_run'])} recipes never run, "
-          f"{len(report['reason_contradicts_class'])} recorded reasons contradict their block")
+          "no recorded reason contradicts its block")
 
 
 if __name__ == "__main__":

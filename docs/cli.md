@@ -1251,8 +1251,8 @@ physical snapshot and its database identity at invocation, so a stale database
 record cannot stand in for a directory that was deleted:
 
 ```sh
-notriosctl sync retention --snapshot /safe/notrios-snapshot
-notriosctl sync retention --snapshot /safe/notrios-snapshot --apply --confirm-digest <digest-from-review>
+notriosctl sync retention --snapshot <snapshot-dir>
+notriosctl sync retention --snapshot <snapshot-dir> --apply --confirm-digest <digest-from-review>
 ```
 
 The configurable default is 90 days. Time alone never authorizes collection:

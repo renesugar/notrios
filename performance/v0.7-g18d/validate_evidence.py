@@ -19,6 +19,19 @@ REASONS = {
     "shared-user-state",
     "interactive-or-long-running",
     "illustrative-placeholder",
+    # Two codes added in v1.0 J13-D, for situations the six above could not
+    # express without lying. J13-A found them by classifying every block and
+    # crossing it with these codes: a literal block filed as
+    # illustrative-placeholder is a runnable command called decoration, and
+    # "illustrative" was the only category left for both of these.
+    #
+    # artifact-not-in-repository: the command is literal and correct, and the
+    # file it names comes from something this repository does not contain -- a
+    # published release set -- and deliberately does not fabricate.
+    "artifact-not-in-repository",
+    # incompatible-prerequisites: literal, and unrunnable as one block because
+    # it needs the same fixture in two states that cannot both hold.
+    "incompatible-prerequisites",
 }
 
 

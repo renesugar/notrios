@@ -1108,6 +1108,52 @@ called them "never shown working", which was false: most are exercised by
 `cmd/notriosctl`'s tests and by the I4, I7 and J3 drills. The claim is about
 documentation only.
 
+### J13-D, the ten contradictions and the gate that keeps them at zero
+
+All ten are fixed, and the count that found them is now a gate: **no recorded
+reason may contradict its block.**
+
+**Seven were synopses** excused as `interactive-or-long-running`,
+`shared-user-state` or `external-network` — none of which can be why a synopsis
+was not run. Two details were describing a different block entirely:
+`cli-jobs-example-1` was recorded as "literal body starts or controls a daemon",
+and those commands report on jobs and start nothing. They are
+`illustrative-placeholder` now, and the secondary fact moved into the detail
+rather than being discarded: for five of the seven both were true, so the code
+names the reason that applies first and the detail names the one a reader wants,
+with where the concrete form does run.
+
+**Two literal recipes had nowhere honest to go,** so the closed reason set in
+`internal/docaudit` gained two codes rather than stretching one.
+`sha256sum -c SHA256SUMS` has nothing placeholder in it — it is exactly what a
+downloader runs, and what it lacks is a published release set this repository
+does not contain and deliberately does not fabricate:
+`artifact-not-in-repository`. The REST block is literal after substitution and
+unrunnable as one block because the same `$DOC` must be both active and in
+Trash, which one fixture cannot be: `incompatible-prerequisites`. The set stays
+closed, because a free-text reason is a place to put "later".
+
+**One was the document's fault, not the record's.**
+`operations-garbage-collection-example-1` was excused for mixing in
+"illustrative `/safe/snapshot` paths", and `/safe/snapshot` reads like a path
+somebody could type and is not one. The page changed instead of the label — it
+is `<snapshot-dir>` now, in four places in `docs/operations.md` and two in
+`docs/cli.md` — so the block is honestly a synopsis and its code is true of it.
+
+**The unverified-recipe count went 54 to 53, and that is the honest figure.**
+J13-A's point was that the number was never the target: 19 are
+`shared-user-state`, 17 `host-installation`, 9 `external-network` — blocks that
+install as root, delete a library or need a remote peer, each running in the
+container matrix or the drills and saying so. Converting them would mean faking
+the environment or moving the drills into the documentation.
+
+**And it confirmed what J13-B is worth.** Changing three hand-written fences
+meant three registry hashes to move by hand — the work `cmd/docexamples` removes
+for the one page it owns. They came from `cmd/docaudit --list-executables`, the
+owning tool's own scan rather than a second opinion. Migrating the remaining
+pages to the tracked set is the natural follow-on, and this is the evidence for
+it.
+
 ### J13-C, done before the generator so the format has a real customer
 
 Four executed examples and one that says why it cannot be. Each writes a small

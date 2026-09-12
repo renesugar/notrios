@@ -270,3 +270,86 @@ Only `docs/configuration.md` is generated. Migrating the other documents is
 J13-D, and doing it now would mean designing the migration against 15 pages
 before the format has survived one — which is the reverse of why J13-C was done
 before J13-B.
+
+---
+
+# J13-D — the ten contradictions, and the gate that keeps them at zero
+
+J13-A found ten records that disagreed with their own block. All ten are fixed,
+and the count that found them is now a gate: **no recorded reason may
+contradict its block.**
+
+## The seven synopses
+
+Each was excused as `interactive-or-long-running`, `shared-user-state` or
+`external-network`. None of those can be why a synopsis was not run — you cannot
+run one at all. Two of the details were also simply describing a different
+block: `cli-jobs-example-1` was recorded as "literal body starts or controls a
+daemon", and those commands report on jobs and start nothing.
+
+They are `illustrative-placeholder` now, and **the secondary fact moved into the
+detail rather than being discarded**. For five of the seven both things were
+true — it is a synopsis *and* it would need a network, a second enrolled signer,
+or a long measured import — so the code names the reason that applies first and
+the detail names the one a reader wants, along with where the concrete form does
+run.
+
+## The two literal recipes that had nowhere honest to go
+
+| | was | is |
+|---|---|---|
+| `installation-verifying-what-you-downloaded-example-1` | `illustrative-placeholder` | `artifact-not-in-repository` |
+| `api-rest-notebooks-tags-search-notebooks-trash-example-1` | `illustrative-placeholder` | `incompatible-prerequisites` |
+
+`sha256sum -c SHA256SUMS` has **nothing placeholder in it** — it is exactly what
+a downloader runs. What it lacks is a published release set, which this
+repository does not contain and deliberately does not fabricate. The REST block
+is literal after substitution and unrunnable as one block because the same
+`$DOC` must be both active, to be filed and tagged, and in Trash, to be restored
+and purged; one scratch fixture cannot hold both.
+
+Two codes were added to the closed set in `internal/docaudit` rather than
+stretching an existing one, because the alternative was leaving a runnable
+command filed as decoration. The set stays closed: a free-text reason is a place
+to put "later".
+
+## The one where the document was wrong, not the record
+
+`operations-garbage-collection-example-1` was excused for mixing in
+"illustrative `/safe/snapshot` paths" — and `/safe/snapshot` reads like a path
+somebody could type and is not one. The fix is the page, not the label: it is
+`<snapshot-dir>` now, in all four places in `docs/operations.md` and the two in
+`docs/cli.md`, so the block is honestly a synopsis and `illustrative-placeholder`
+is true of it. A reader gains as much as the record does.
+
+## The gate
+
+`reason_contradicts_class` was a count in J13-A. Fixing the ten and leaving it a
+count would mean the eleventh arrives silently, which is the failure this
+repository keeps finding in its own gates. It fails now, and was confirmed by
+putting `cli-jobs-example-1` back:
+
+```
+J13-A record invalid: a recorded reason contradicts its block:
+cli-jobs-example-1 is a synopsis excused as interactive-or-long-running
+```
+
+## What J13-D did not do, and why the number moved so little
+
+The 54 unverified recipes are **53** now, and that is the honest figure rather
+than a disappointing one. J13-A's whole point was that the number was not the
+target: 19 are `shared-user-state`, 17 `host-installation`, 9 `external-network`
+— blocks that install as root, delete a library, or need a remote peer, each
+running in the container matrix or the drills instead and saying so. Converting
+those would mean either faking the environment or moving the drills into the
+documentation. The ten that *were* wrong are fixed, and the gate stops an
+eleventh.
+
+## What this slice confirmed about J13-B's value
+
+Changing three hand-written fences meant three registry hashes to move by hand,
+which is exactly the work `cmd/docexamples` removes for the one page it owns. I
+took them from `cmd/docaudit --list-executables` rather than computing them
+separately — the owning tool's own scan, not a second opinion. Migrating the
+remaining pages to the tracked set is the natural next item, and this is the
+evidence for it.

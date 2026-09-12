@@ -3,22 +3,22 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "cdf16cdd568252d03b218073e78db815762785a8",
+  "content_commit": "cd24d3290ae3f9e295585b3379a0c9a027446228",
   "counts": {
     "examples": 169,
     "executed": 69,
     "by_class": {
       "fragment": 3,
-      "recipe": 120,
-      "synopsis": 45,
+      "recipe": 119,
+      "synopsis": 46,
       "transcript": 1
     },
     "by_class_and_state": {
       "fragment/executed": 2,
       "fragment/unverified": 1,
       "recipe/executed": 66,
-      "recipe/unverified": 54,
-      "synopsis/unverified": 45,
+      "recipe/unverified": 53,
+      "synopsis/unverified": 46,
       "transcript/executed": 1
     }
   },
@@ -70,7 +70,6 @@
     "installation-verifying-what-you-downloaded-example-1",
     "installation-where-the-interface-files-have-to-be-example-1",
     "operations-commands-that-must-never-touch-protocol-state-example-1",
-    "operations-garbage-collection-example-1",
     "operations-watching-it-example-1",
     "service-backup-and-restore-example-1",
     "service-network-exposure-example-1",
@@ -145,68 +144,7 @@
       "verify archive-v2"
     ]
   },
-  "reason_contradicts_class": [
-    {
-      "id": "api-rest-notebooks-tags-search-notebooks-trash-example-1",
-      "class": "recipe",
-      "reason": "illustrative-placeholder",
-      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
-    },
-    {
-      "id": "cli-jobs-example-1",
-      "class": "synopsis",
-      "reason": "interactive-or-long-running",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "cli-profile-example-1",
-      "class": "synopsis",
-      "reason": "interactive-or-long-running",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "cli-seeing-and-ending-trust-example-1",
-      "class": "synopsis",
-      "reason": "shared-user-state",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "installation-verifying-what-you-downloaded-example-1",
-      "class": "recipe",
-      "reason": "illustrative-placeholder",
-      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
-    },
-    {
-      "id": "operations-commands-that-are-safe-against-a-carrier-example-1",
-      "class": "synopsis",
-      "reason": "external-network",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "operations-garbage-collection-example-1",
-      "class": "recipe",
-      "reason": "illustrative-placeholder",
-      "why": "a literal recipe filed as illustrative; it is runnable or it is wrong"
-    },
-    {
-      "id": "operations-if-a-device-is-lost-example-1",
-      "class": "synopsis",
-      "reason": "shared-user-state",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "operations-planning-and-resuming-imports-example-3",
-      "class": "synopsis",
-      "reason": "interactive-or-long-running",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    },
-    {
-      "id": "operations-watching-a-long-import-or-export-example-1",
-      "class": "synopsis",
-      "reason": "interactive-or-long-running",
-      "why": "a synopsis cannot be run, so this is not why it was not run"
-    }
-  ],
+  "reason_contradicts_class": [],
   "configuration_page": {
     "settable_keys": 53,
     "examples": 5,
@@ -254,8 +192,8 @@
     "docs/operations.md": {
       "fragment/executed": 1,
       "recipe/executed": 10,
-      "recipe/unverified": 3,
-      "synopsis/unverified": 6
+      "recipe/unverified": 2,
+      "synopsis/unverified": 7
     },
     "docs/publishing.md": {
       "recipe/executed": 2,
@@ -377,7 +315,7 @@
       "state": "unverified",
       "class": "recipe",
       "rule": "16 literal command line(s), nothing to substitute",
-      "unrun_reason": "illustrative-placeholder"
+      "unrun_reason": "incompatible-prerequisites"
     },
     {
       "id": "api-rest-notes-create-read-edit-example-1",
@@ -728,7 +666,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 4 of 4 line(s)",
-      "unrun_reason": "interactive-or-long-running"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "cli-jobs-example-2",
@@ -863,7 +801,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 10 of 10 line(s)",
-      "unrun_reason": "interactive-or-long-running"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "cli-publish-example-1",
@@ -962,7 +900,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
-      "unrun_reason": "shared-user-state"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "cli-seeing-and-ending-trust-example-2",
@@ -979,7 +917,7 @@
       "section": "seeing-and-ending-trust",
       "state": "unverified",
       "class": "synopsis",
-      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
       "unrun_reason": "illustrative-placeholder"
     },
     {
@@ -1484,7 +1422,7 @@
       "state": "unverified",
       "class": "recipe",
       "rule": "1 literal command line(s), nothing to substitute",
-      "unrun_reason": "illustrative-placeholder"
+      "unrun_reason": "artifact-not-in-repository"
     },
     {
       "id": "installation-where-the-interface-files-have-to-be-example-1",
@@ -1502,7 +1440,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 3 of 5 line(s)",
-      "unrun_reason": "external-network"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "operations-commands-that-must-never-touch-protocol-state-example-1",
@@ -1554,8 +1492,8 @@
       "path": "docs/operations.md",
       "section": "garbage-collection",
       "state": "unverified",
-      "class": "recipe",
-      "rule": "4 literal command line(s), nothing to substitute",
+      "class": "synopsis",
+      "rule": "optional-argument or metavariable notation in 2 of 4 line(s)",
       "unrun_reason": "illustrative-placeholder"
     },
     {
@@ -1564,7 +1502,7 @@
       "section": "garbage-collection",
       "state": "unverified",
       "class": "synopsis",
-      "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
+      "rule": "optional-argument or metavariable notation in 2 of 2 line(s)",
       "unrun_reason": "illustrative-placeholder"
     },
     {
@@ -1574,7 +1512,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 1 of 2 line(s)",
-      "unrun_reason": "shared-user-state"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "operations-inspecting-resource-references-example-1",
@@ -1628,7 +1566,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 1 of 1 line(s)",
-      "unrun_reason": "interactive-or-long-running"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "operations-renaming-a-tag-hierarchy-example-1",
@@ -1664,7 +1602,7 @@
       "state": "unverified",
       "class": "synopsis",
       "rule": "optional-argument or metavariable notation in 2 of 3 line(s)",
-      "unrun_reason": "interactive-or-long-running"
+      "unrun_reason": "illustrative-placeholder"
     },
     {
       "id": "operations-watching-it-example-1",

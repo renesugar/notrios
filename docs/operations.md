@@ -318,8 +318,8 @@ Garbage collection is retention-aware and dry-run first:
 
 ```sh
 notriosctl gc                 # same as --dry-run for an unsynchronized library
-notriosctl gc --snapshot /safe/snapshot --dry-run  # sync-enrolled library
-notriosctl gc --snapshot /safe/snapshot --apply    # explicit destructive step
+notriosctl gc --snapshot <snapshot-dir> --dry-run  # sync-enrolled library
+notriosctl gc --snapshot <snapshot-dir> --apply    # explicit destructive step
 curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
 
@@ -339,8 +339,8 @@ gate; only explicit signed retirement does.
 Operation/tombstone retention has a separate exact-digest review:
 
 ```sh
-notriosctl sync retention --snapshot /safe/snapshot
-notriosctl sync retention --snapshot /safe/snapshot --apply --confirm-digest <reviewed-digest>
+notriosctl sync retention --snapshot <snapshot-dir>
+notriosctl sync retention --snapshot <snapshot-dir> --apply --confirm-digest <reviewed-digest>
 ```
 
 The Sync Center shows the same horizon, blockers, and repair source without a

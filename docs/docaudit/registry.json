@@ -306,8 +306,8 @@
       "sha256": "4ad40fe16331cfcba9bc9cdf865ae749ecd55730d190c4ca486666013b2666de",
       "state": "unverified",
       "unrun_reason": {
-        "code": "illustrative-placeholder",
-        "detail": "final illustrative-placeholder: one literal $DOC is required in both active and trashed prerequisite states, which are incompatible in a single scratch fixture"
+        "code": "incompatible-prerequisites",
+        "detail": "Literal after substitution, and unrunnable as one block: the same $DOC must be both active (to be filed and tagged) and in Trash (to be restored and purged), and one scratch fixture cannot hold both states at once. Recoded from illustrative-placeholder in v1.0 J13-D, which was the wrong category for a literal block -- the reason is a fixture that cannot be in two states, not notation a reader must substitute. Every route in it is executed individually elsewhere in this page."
       }
     },
     {
@@ -1138,8 +1138,8 @@
       "sha256": "b60d7206cee05d06c303223bc88096d45a1da703047e3f92c15727e4d2f994a4",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl jobs list   [--db path] [--kind k] [--state s] [--limit 50]"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: [--db path], [--kind k], [--state s] and [--limit 50] are optional-argument notation. The previous reason said \"literal body starts or controls a daemon\", which described a different block -- these commands report on jobs and start nothing. v1.0 J13-A found the mismatch by classifying the block."
       }
     },
     {
@@ -1334,8 +1334,8 @@
       "sha256": "1a5f27d7349df03ee2761a18ee8064b4b71dbbfae796ce0d376bbc3a28c15d41",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl profile create --name <profile> [--listen 127.0.0.1:8080]"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: <profile> is a profile-name metavariable and [--listen ...] is optional-argument notation. `profile start` does launch a service, which is what the previous reason described, but this block cannot run for the earlier reason that it is a synopsis."
       }
     },
     {
@@ -1466,8 +1466,8 @@
       "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
       "state": "unverified",
       "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "The peer listing plus revoke/epoch-advance recipe requires a deliberately enrolled second signing key and mutates persistent trust and group-key state; the literal key ID is a reviewed operator substitution."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the signer key id is an operator-selected trust identity rather than a repository constant. It would also mutate persistent trust and group-key state, which is why no fixture is offered for it -- but a synopsis cannot be run whatever the state, and that is the reason that applies first."
       }
     },
     {
@@ -1487,7 +1487,7 @@
       "path": "docs/cli.md",
       "section": "seeing-and-ending-trust",
       "language": "sh",
-      "sha256": "37fd05998ba824b3e59dc561b1a8abd9c280dd85f0782450d05881146c6a0033",
+      "sha256": "3d439bbb80741d48de0ccadf1b7caf2b70ddff44895568c82a7b5f041b49ad27",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -2511,8 +2511,8 @@
       "sha256": "1c3a5379c3697b98c9d81c5f5acb32d321db9786ce6fa28fadcc15bac246769d",
       "state": "unverified",
       "unrun_reason": {
-        "code": "illustrative-placeholder",
-        "detail": "Literal shell, but SHA256SUMS stands for a file from a downloaded release set that this repository does not contain. The same verification is executed against a real set by performance/v0.9-i6/verify_release_set.py."
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct: `sha256sum -c SHA256SUMS` is exactly what a downloader runs. SHA256SUMS comes from a published release set, which this repository does not contain and deliberately does not fabricate. Recoded from illustrative-placeholder in v1.0 J13-D: nothing in it is a placeholder. The same verification runs against a real set in performance/v0.9-i6/verify_release_set.py."
       }
     },
     {
@@ -2535,8 +2535,8 @@
       "sha256": "1f90411b0f4e15b5982b1c6a29861448d6d3006ff447817a4d9e991b2e33f2c5",
       "state": "unverified",
       "unrun_reason": {
-        "code": "external-network",
-        "detail": "Literal body requires a remote Git/HTTPS/SSH/rclone peer: # One exchange. Run it by hand, from cron, or after an import."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the carrier directory is an operator path. It would also require a remote Git/HTTPS/SSH/rclone peer, which the previous reason named; the synopsis is the earlier blocker. The concrete exchange is executed against a local carrier in performance/v0.7-g10."
       }
     },
     {
@@ -2657,11 +2657,11 @@
       "path": "docs/operations.md",
       "section": "garbage-collection",
       "language": "sh",
-      "sha256": "2b6334c29c39103160a68c1c875164f20cb07728b9c7cfffae4bd07869d287f6",
+      "sha256": "368ae77d7ad3ad4f1f419e211a43847b6b4f50032d42a3f32ce8df968f8c38e2",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Composite operator recipe mixes the safe default with illustrative /safe/snapshot paths, an explicit destructive apply, and a separately running REST service; the concrete dry-run behavior is executed by operations-fixing-what-can-be-fixed-mechanically-example-1."
+        "detail": "Command synopsis since v1.0 J13-D: the snapshot path was written as /safe/snapshot, which reads like a path somebody could type and is not one, and is now <snapshot-dir>. The block also carries an explicit destructive --apply and a REST call needing a running service; the concrete dry-run behaviour is executed by operations-fixing-what-can-be-fixed-mechanically-example-1."
       }
     },
     {
@@ -2669,7 +2669,7 @@
       "path": "docs/operations.md",
       "section": "garbage-collection",
       "language": "sh",
-      "sha256": "bde6201e3fe38e88ee8bea7145f199e0a112eec35f65623e80f92b8f8cbbc082",
+      "sha256": "3cf0b86438222aa7e7286d63727d1477c73b99f2d54f5513a754a6fc0f90aad8",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -2684,8 +2684,8 @@
       "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
       "state": "unverified",
       "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "This lost-device response intentionally lists and revokes a real enrolled signer, then advances the shared group-key epoch; signer-key-id is an operator-selected trust identity, not a repository constant."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: signer-key-id is an operator-selected trust identity, not a repository constant. The recipe would also revoke a real enrolled signer and advance the shared group-key epoch, which is why it is not fixtured; the synopsis is why it cannot run at all."
       }
     },
     {
@@ -2844,8 +2844,8 @@
       "sha256": "481c6c37effeeea55fdebbf1f350f0f55a4ca3adf505739b4df11947489d61dc",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "This is the full-corpus capacity profiling workflow: <label> and /path/to/raw select an operator dataset and the script intentionally runs a long measured import, not a bounded example fixture."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: <label> and /path/to/raw select an operator dataset. The workflow does run a long measured import, which the previous reason named, and scripts/run_real_joplin_profile.sh is where that happens -- but this block is a synopsis before it is long-running."
       }
     },
     {
@@ -2930,8 +2930,8 @@
       "sha256": "45f4858a169a40ae927e16dc65cc6e7d359c280b2fc42bcbc2d47454f7f68cbc",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl jobs list"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the job identifier is a metavariable. Watching a running job is long-running, which the previous reason named; a synopsis cannot be run either way."
       }
     },
     {

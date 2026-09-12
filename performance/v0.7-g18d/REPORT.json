@@ -4,14 +4,16 @@
   "executed": 69,
   "unverified": 100,
   "unrun_reasons": {
-    "external-network": 10,
+    "artifact-not-in-repository": 1,
+    "external-network": 9,
     "host-installation": 17,
-    "illustrative-placeholder": 42,
-    "interactive-or-long-running": 8,
+    "illustrative-placeholder": 47,
+    "incompatible-prerequisites": 1,
+    "interactive-or-long-running": 4,
     "privileged-host-change": 2,
-    "shared-user-state": 21
+    "shared-user-state": 19
   },
-  "runtime_ms": 19696,
+  "runtime_ms": 19112,
   "topics": [
     {
       "topic": "api-mcp",
@@ -19,7 +21,7 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 67
+      "runtime_ms": 65
     },
     {
       "topic": "api-rest",
@@ -27,7 +29,7 @@
         "executed": 25,
         "unverified": 1
       },
-      "runtime_ms": 1665
+      "runtime_ms": 1675
     },
     {
       "topic": "archive-v2",
@@ -35,7 +37,7 @@
         "executed": 1,
         "unverified": 1
       },
-      "runtime_ms": 239
+      "runtime_ms": 213
     },
     {
       "topic": "cli",
@@ -43,7 +45,7 @@
         "executed": 3,
         "unverified": 53
       },
-      "runtime_ms": 651
+      "runtime_ms": 633
     },
     {
       "topic": "configuration",
@@ -51,7 +53,7 @@
         "executed": 4,
         "unverified": 1
       },
-      "runtime_ms": 907
+      "runtime_ms": 824
     },
     {
       "topic": "gui",
@@ -59,7 +61,7 @@
         "executed": 4,
         "unverified": 2
       },
-      "runtime_ms": 602
+      "runtime_ms": 585
     },
     {
       "topic": "import-export",
@@ -67,7 +69,7 @@
         "executed": 10,
         "unverified": 2
       },
-      "runtime_ms": 2167
+      "runtime_ms": 2157
     },
     {
       "topic": "index",
@@ -82,7 +84,7 @@
         "executed": 1,
         "unverified": 23
       },
-      "runtime_ms": 261
+      "runtime_ms": 267
     },
     {
       "topic": "operations",
@@ -90,7 +92,7 @@
         "executed": 11,
         "unverified": 9
       },
-      "runtime_ms": 2520
+      "runtime_ms": 2470
     },
     {
       "topic": "publishing",
@@ -98,21 +100,21 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 561
+      "runtime_ms": 503
     },
     {
       "topic": "query-language",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 403
+      "runtime_ms": 364
     },
     {
       "topic": "selection-planning",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 40
+      "runtime_ms": 39
     },
     {
       "topic": "service",
@@ -120,7 +122,7 @@
         "executed": 1,
         "unverified": 2
       },
-      "runtime_ms": 188
+      "runtime_ms": 162
     },
     {
       "topic": "stable-links",
@@ -128,7 +130,7 @@
         "executed": 3,
         "unverified": 2
       },
-      "runtime_ms": 477
+      "runtime_ms": 458
     },
     {
       "topic": "troubleshooting",
