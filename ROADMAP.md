@@ -826,6 +826,26 @@ published, and no bundle leaves the machine or the reserve.
   v0.8, v0.8e, v0.9 and v1.0 go unmentioned. It is a list of directories on
   disk, so it is derivable, which makes this the third arrival of the same
   lesson.
+- **The remaining documents migrated to the tracked example set, where that
+  earns its keep.** J13 built the mechanism and used it on one page; measured on
+  2026-09-12, **5 of 169 published examples are generated and 164 are
+  hand-written fences** whose registry hashes are moved by hand when they change.
+
+  It is not a mechanical conversion, and the plan says why. The tracked entry is
+  a list of configuration keys, so it cannot yet express a `curl` call with a
+  JSON body, a multi-step CLI recipe, or a synopsis — the work is adding example
+  *kinds*, and each has to earn the indirection. Generation earns it when the
+  example encodes an agreement ("these keys must be set together"), because the
+  declaration is then the claim and the rendered text cannot disagree with it,
+  and when fences churn: J13-D moved three registry hashes by hand, right each
+  time and one keystroke from wrong each time. It does not obviously earn it for
+  a one-line literal like `sha256sum -c SHA256SUMS`, where a JSON description
+  adds a second file to read for no gain, and it does not apply to synopses at
+  all — 38 of `docs/cli.md`'s 56 examples are synopses, and generating a form
+  from a declaration of the form is a tautology with extra steps.
+
+  So the target is not 164 of 164, and a document left alone must carry a
+  recorded reason rather than be left alone silently.
 - **A way to notice `_site` has gone stale.** `make docs` builds it and
   `make g18g-validate` rebuilds and checks it, but neither is reached by
   `make validate`; only `scripts/package_release.sh` runs the latter. A checkout
@@ -1141,7 +1161,7 @@ requirements below are the ones H7 already carried.
 The scaffold handoff is complete; see `CODING_CLIENT_HANDOFF.md`. Future roadmap planning should be driven from `ROADMAP.md`, but each active implementation cycle should create a small `PLAN.md` slice and archive it under `plans/` when complete.
 
 <!-- notrios:generated:roadmap:status:begin -->
-`PLAN.md` holds the active plan derived from this roadmap: 14 items, 5 complete, 1 in progress, 8 not started, 0 deferred.
+`PLAN.md` holds the active plan derived from this roadmap: 15 items, 5 complete, 1 in progress, 9 not started, 0 deferred.
 
 Started and unfinished: J13. What remains in each is in the plan's own Progress section.
 <!-- notrios:generated:roadmap:status:end -->

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**14 items: 5 complete, 1 in progress, 8 not started, 0 deferred.**
+**15 items: 5 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -75,6 +75,7 @@ this section is archived when the plan completes and the rules are not.
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | in-progress | 3/4 | 1 |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
+| J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -84,7 +85,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11. Their slices are listed under each item.
+Written and not begun: J4, J5, J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1349,3 +1350,80 @@ Gated, and confirmed by editing both a milestone count and the total.
 **The new `make bytecode` target tripped I8's frozen surface** (35 lifecycle
 targets to 36), re-recorded deliberately: a reporting target is compatible,
 nothing renamed or removed.
+
+## J15. Migrate the remaining documents to the tracked example set
+
+**Goal.** A published command line is generated from a tracked declaration
+wherever generating it earns its keep, and where it does not, the plan says so
+in writing instead of leaving a reader to wonder why one page is different.
+
+**Why this is a separate item.** J13 built the mechanism and used it on one
+page. It never promised the other fifteen, and saying "the natural follow-on"
+in a summary is not the same as planning it — this item is the correction of
+that.
+
+**Measured, 2026-09-12.** 169 published examples across 16 documents. **5 are
+generated from a tracked set; 164 are hand-written fences** whose registry
+hashes are moved by hand when they change.
+
+| Document | Examples | recipes / synopses |
+|---|---|---|
+| `docs/cli.md` | 56 | 17 / 38 |
+| `docs/api/rest.md` | 26 | 26 / 0 |
+| `docs/installation.md` | 24 | 24 / 0 |
+| `docs/operations.md` | 20 | 12 / 7 |
+| `docs/import-export.md` | 12 | 12 / 0 |
+| ten others | 31 | — |
+
+**The format only models one kind of example, and that is the real work.**
+`cmd/docexamples` renders a configuration file and the command that checks it:
+its tracked entry is a list of `key`/`value` settings. It cannot express a
+`curl` call with a JSON body, a multi-step CLI recipe, or a command synopsis. So
+"migrate the remaining pages" is not a mechanical conversion — it is adding
+example *kinds*, and each kind has to earn the indirection.
+
+**Where generation earns it, and where it does not.** This is the judgement the
+item exists to make rather than assume:
+
+- **It earns it when the example encodes an agreement** — "these keys must be
+  set together", "this flag requires that one" — because the declaration is
+  then the claim, and the rendered text cannot disagree with it. That is why
+  `docs/configuration.md` went first.
+- **It earns it when fences churn.** J13-D changed three fences and had to move
+  three registry hashes by hand, right each time and one keystroke from wrong
+  each time.
+- **It does not obviously earn it for a one-line literal** like
+  `sha256sum -c SHA256SUMS`, where the fence is already the clearest possible
+  statement and a JSON description of it would add a second file to read for no
+  gain. A page of those should stay as it is, with the reason recorded.
+- **It does not apply to synopses at all.** 38 of `docs/cli.md`'s 56 examples
+  are command synopses, which exist to show the *form*; generating a form from
+  a declaration of the form is a tautology with extra steps.
+
+So the honest target is not 164 of 164.
+
+**Scope.**
+
+- **J15-A.** The example kinds the other documents need — at least a shell
+  recipe and a REST request — added to the tracked schema and each proven on one
+  page, with the same discipline J13 used: the check derived from the
+  declaration, and the generator moving the registry hash.
+- **J15-B.** Migrate document by document, in the order the measurement above
+  suggests, and **record per document why it was migrated or why it was left**.
+  A document left alone with a reason is a finished decision; a document left
+  alone silently is the thing this item is fixing.
+- **J15-C.** No migrated page's fence can be hand-edited without a failure, and
+  no migrated page's hash is moved by a human. `cmd/docexamples`' test already
+  does this for one page; it should hold for every page it owns.
+
+**Boundaries.** No page is migrated to raise a count. A synopsis stays a
+synopsis. Where the declaration would be longer and less clear than the fence,
+the fence stays and the record says the comparison was made — the same rule
+J13-A used to keep good synopses from being deleted to improve a statistic.
+
+**Dependencies.** J13, for the mechanism and the classification the order comes
+from.
+
+**Working state.** Every document either generated from its tracked set or
+carrying a recorded reason it is not, and no hand-moved registry hash left on a
+generated page.
