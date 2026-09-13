@@ -406,6 +406,9 @@ func (s *SQLiteStore) applySchema(ctx context.Context) error {
 	if err := s.ensureSchemaV27(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV28(ctx); err != nil {
+		return err
+	}
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -1182,7 +1185,7 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 	if err := s.insertRevisionLocked(revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message, ""); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.Body); err != nil {
+	if err := s.insertDocumentFTSLocked(docID, req.CollectionID, req.Title, req.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(docID, req.CollectionID, req.Body); err != nil {
@@ -1329,10 +1332,7 @@ func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequ
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, req.Title, req.BodyMIMEType, revID, req.ID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.ID, current.CollectionID, req.Title, req.Body); err != nil {
+	if err := s.replaceDocumentFTSLocked(req.ID, current.CollectionID, req.Title, req.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(req.ID, current.CollectionID, req.Body); err != nil {
@@ -1404,7 +1404,7 @@ func (s *SQLiteStore) deleteDocumentLocked(req DeleteDocumentRequest, revID stri
 	if err := s.execPreparedLocked(`UPDATE documents SET current_revision_id = ?, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, revID, req.ID); err != nil {
 		return err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
+	if err := s.deleteDocumentFTSLocked(req.ID); err != nil {
 		return err
 	}
 	return s.enqueueProjectionLocked(req.ID, "delete")
@@ -1500,10 +1500,7 @@ func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRe
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, target.Title, target.BodyMIMEType, newRevID, req.DocumentID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.DocumentID); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.DocumentID, collectionID, target.Title, target.Body); err != nil {
+	if err := s.replaceDocumentFTSLocked(req.DocumentID, collectionID, target.Title, target.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(req.DocumentID, collectionID, target.Body); err != nil {

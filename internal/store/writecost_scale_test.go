@@ -52,6 +52,17 @@ func TestJ17WriteCostAgainstLibrarySize(t *testing.T) {
 			defer st.Close()
 			ctx := context.Background()
 
+			// Bootstrap runs the migrations, which is what opening an existing
+			// library does for a real user. Timed, because v1.0 J18's migration
+			// scans the full-text index once and the cost of that one scan is
+			// part of what the change costs.
+			migrationStarted := time.Now()
+			if err := st.Bootstrap(ctx); err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("%s: bootstrap/migration took %s", path,
+				time.Since(migrationStarted).Round(time.Millisecond))
+
 			// Counted, not assumed: the point of the comparison is the size of
 			// the library each write lands in.
 			counted, err := store.SearchCount(ctx, st, store.SearchRequest{Query: "the"})

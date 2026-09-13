@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**18 items: 8 complete, 1 in progress, 9 not started, 0 deferred.**
+**18 items: 8 complete, 2 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -78,7 +78,7 @@ this section is archived when the plan completes and the rules are not.
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 | J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
-| J18. Stop scanning the full-text index on every document write | not-started | 0/3 | 3 |
+| J18. Stop scanning the full-text index on every document write | in-progress | 2/3 | 1 |
 
 ### Started and not finished
 
@@ -88,9 +88,13 @@ this section is archived when the plan completes and the rules are not.
 - `J17-B` The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number — *not-started*
 - `J17-C` Every remaining per-item store call in import and export is either batched or recorded — *not-started*
 
+**J18. Stop scanning the full-text index on every document write**
+
+- `J18-C` The write-cost measurement is re-run on the same three libraries, beside the old numbers — *not-started*
+
 ### Not started
 
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J18. Their slices are listed under each item.
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1631,7 +1635,7 @@ Five eliminated causes, a corrected characterisation of the gap, and — found
 while the second theory was being disproved — J18, which is a larger problem
 than the one this item was created for.
 
-## J18. Stop scanning the full-text index on every document write
+## J18. Stop scanning the full-text index on every document write — in progress
 
 **Goal.** Writing a document costs what the document costs, not what the library
 costs.

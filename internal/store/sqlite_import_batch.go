@@ -66,8 +66,7 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 			if err := s.insertRevisionLocked(revisionID, document.PreferredID, document.Title, document.Body, document.BodyMIMEType, document.Message, ""); err != nil {
 				return err
 			}
-			if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`,
-				document.PreferredID, document.CollectionID, document.Title, document.Body); err != nil {
+			if err := s.insertDocumentFTSLocked(document.PreferredID, document.CollectionID, document.Title, document.Body); err != nil {
 				return err
 			}
 			if err := s.enqueueProjectionLocked(document.PreferredID, "upsert"); err != nil {
@@ -101,11 +100,7 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 					WHERE id = ? AND deleted_at IS NULL`, document.NotebookID, document.Title, document.BodyMIMEType, revisionID, document.PreferredID); err != nil {
 					return err
 				}
-				if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, document.PreferredID); err != nil {
-					return err
-				}
-				if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`,
-					document.PreferredID, document.CollectionID, document.Title, document.Body); err != nil {
+				if err := s.replaceDocumentFTSLocked(document.PreferredID, document.CollectionID, document.Title, document.Body); err != nil {
 					return err
 				}
 				if err := s.enqueueProjectionLocked(document.PreferredID, "upsert"); err != nil {

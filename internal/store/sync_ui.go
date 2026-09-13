@@ -182,11 +182,7 @@ func (s *SQLiteStore) ResolveSyncConflict(ctx context.Context, req ResolveSyncCo
 		title, detail.BodyMIMEType, revisionID, detail.DocumentID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, detail.DocumentID); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body)
-		VALUES(?, ?, ?, ?)`, detail.DocumentID, current.CollectionID, title, req.Body); err != nil {
+	if err := s.replaceDocumentFTSLocked(detail.DocumentID, current.CollectionID, title, req.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(detail.DocumentID, current.CollectionID, req.Body); err != nil {

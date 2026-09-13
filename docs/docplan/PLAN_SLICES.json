@@ -422,17 +422,19 @@
     {
       "id": "J18",
       "title": "Stop scanning the full-text index on every document write",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J18-A",
           "statement": "A document_id to rowid mapping exists and is populated for an existing library by migration",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/store/migrations/0028_fts_rowid_map.sql"
         },
         {
           "id": "J18-B",
           "statement": "All ten call sites delete from documents_fts by rowid, with search results proven unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "test:TestJ18SearchIsUnchangedByTheRowidMapping"
         },
         {
           "id": "J18-C",

@@ -1,7 +1,7 @@
 {
   "format": "notrios-sqlite-image",
   "version": 1,
-  "commit_sha256": "1d184b58bc3be435833b3294dd7ef0b82a3fafe7f04fab0e3858a2ce588bc3d0",
+  "commit_sha256": "276f95b80fb9d009ecdfa01ee2783d6854451af0ed5d10c887628b0805a110aa",
   "content_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
   "snapshot": {
     "id": "snap_physical_refusal",
@@ -15,9 +15,9 @@
   "compatibility": {
     "application_id": "notrios",
     "application_version": "0.7.0-contract",
-    "source_schema_version": 27,
-    "minimum_schema_version": 27,
-    "maximum_schema_version": 27,
+    "source_schema_version": 28,
+    "minimum_schema_version": 28,
+    "maximum_schema_version": 28,
     "required_capabilities": [
       "archive-v2.fallback.v1",
       "sqlite-image+packed-assets.v1"

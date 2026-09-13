@@ -127,6 +127,10 @@ func (s *SQLiteStore) ClearLibraryForReplace(ctx context.Context) error {
 	// Order matters: dependents before the rows they reference.
 	for _, statement := range []string{
 		`DELETE FROM documents_fts`,
+		// The mapping is emptied with the index it maps. A restore that left
+		// it behind would hand every later write a rowid for a row that no
+		// longer exists (v1.0 J18).
+		`DELETE FROM documents_fts_rowid`,
 		`DELETE FROM document_links`,
 		`DELETE FROM document_blocks`,
 		`DELETE FROM document_resource_refs`,
@@ -539,10 +543,20 @@ func (s *SQLiteStore) FinalizeRestoredDocuments(ctx context.Context) error {
 		`UPDATE documents SET title = COALESCE((SELECT r.title FROM document_revisions r
 			WHERE r.id = documents.current_revision_id), 'Untitled') WHERE title = ''`,
 		`DELETE FROM documents_fts`,
+		// The mapping is emptied with the index it maps. A restore that left
+		// it behind would hand every later write a rowid for a row that no
+		// longer exists (v1.0 J18).
+		`DELETE FROM documents_fts_rowid`,
 		`INSERT INTO documents_fts(document_id, collection_id, title, body)
 			SELECT d.id, d.collection_id, r.title, r.body
 			FROM documents d JOIN document_revisions r ON r.id = d.current_revision_id
 			WHERE d.deleted_at IS NULL`,
+		// Rebuilt from the index in one pass, the way migration 0028 populates
+		// it: a whole-index rebuild has no per-row moment at which to record a
+		// rowid, and reading them back afterwards is one scan against a scan
+		// per write forever (v1.0 J18).
+		`INSERT OR REPLACE INTO documents_fts_rowid(document_id, fts_rowid)
+			SELECT document_id, rowid FROM documents_fts`,
 		// The archive-v2 container records a document's revisions but not
 		// their parent edges, so the restored history is relinked from each
 		// document's own revision order. It belongs here rather than per chunk

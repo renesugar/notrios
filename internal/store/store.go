@@ -99,7 +99,7 @@ const (
 //notrios:doc user current-schema-version
 //notrios:help service configuration-reference
 //notrios:claim current-schema-status go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema
-const CurrentSchemaVersion = 27
+const CurrentSchemaVersion = 28
 
 // MaxResourceContentBytes is the canonical whole-resource ceiling shared by
 // local admission and G8's synchronization manifests. HTTP adapters enforce it

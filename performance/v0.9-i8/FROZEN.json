@@ -1,5 +1,5 @@
 {
-  "content_commit": "a89ed8c6931e616011e3f91a7812695596875991",
+  "content_commit": "9ece728f9159c0fef6e52183c0614f3ad0a4e4aa",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -13,7 +13,7 @@
       "count": 27,
       "members": [
         "README.md:ca4b2c9f7c3b71c3",
-        "contract.json:41f6e47474c8491e",
+        "contract.json:9e19cc3a55e66fac",
         "fixtures/README.md:6ebfdc6f93d44ff2",
         "fixtures/fixture-matrix.json:cc65f497c9480bd8",
         "fixtures/loose-schema12/manifest.json:5162c68006d5f6ae",
@@ -25,7 +25,7 @@
         "fixtures/packed-schema12/manifest.json:2d438c482006a000",
         "fixtures/packed-schema12/objects/sha256/28/7c/287cc19436247b2e5aa9f2002e79aae9f275f4d4af341fc55fa7850ef1be5835:287cc19436247b2e",
         "fixtures/packed-schema12/objects/sha256/ca/e9/cae9e9f30049f7a3b3e897d54aebffc88e2f00d4d448c12a7b50dbe44f4d13e6:cae9e9f30049f7a3",
-        "fixtures/physical-refusal/manifest.json:44aba336b017af92",
+        "fixtures/physical-refusal/manifest.json:09f2f35981d874b7",
         "fixtures/previous-explicit-zero-record-counts/index-entry.json:18a5345de1a66a04",
         "fixtures/sync-era-schema27-packed/manifest.json:a4079a5b68c0e6e9",
         "fixtures/sync-era-schema27-packed/objects/sha256/28/7c/287cc19436247b2e5aa9f2002e79aae9f275f4d4af341fc55fa7850ef1be5835:287cc19436247b2e",
@@ -40,7 +40,7 @@
         "sync-wire/golden-inputs.json:48a34203af078103",
         "sync-wire/goldens.json:f6a77d5f4f9aa515"
       ],
-      "sha256": "a440d2003fe002273bb9a071a93ce3d646fe4f4007133ab5d75152e6186274dc"
+      "sha256": "b5b2e0f1be18d64226bb0bfa5eb84dde0eb2a5db8cda3e8eaaa4bab06e5c9f91"
     },
     "c_abi": {
       "count": 12,

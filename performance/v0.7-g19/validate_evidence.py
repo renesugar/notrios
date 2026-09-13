@@ -27,7 +27,13 @@ require(report["physical_refusal"]["manifest_only"] is True, "physical fixture b
 require(report["external_consumer"]["status"] == "absent" and report["external_consumer"]["external_writes"] == 0, "external consumer claim")
 
 registry = load(CONTRACT / "contract.json")
-require((registry["format"], registry["version"], registry["minimum_schema_version"], registry["current_schema_version"]) == ("notrios-archive", 2, 12, 27), "portable version bounds")
+# The archive format and its *minimum* schema are the portability promise: a
+# reader at schema 12 or later can open one. `current_schema_version` says what
+# the writer was at, and it moves whenever the store's schema does -- v1.0 J18
+# took it to 28. Pinning it here asserted that the store would never migrate
+# again, which was never the intent of a portability bound.
+require((registry["format"], registry["version"], registry["minimum_schema_version"]) == ("notrios-archive", 2, 12), "portable version bounds")
+require(registry["current_schema_version"] >= 27, "the writer schema went backwards")
 require(set(registry["reader_profiles"]) == {"current-v2", "previous-loose-v2"}, "reader profiles")
 require(registry["separate_formats"]["physical_snapshot"]["portable_consumer_decision"] == "refuse", "physical separation")
 require(registry["separate_formats"]["sync_wire"]["archive_v2_capability"] is False, "sync separation")

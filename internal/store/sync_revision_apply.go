@@ -577,7 +577,7 @@ func (s *SQLiteStore) finishDocumentConvergenceLocked(documentID string, rows ma
 		if err != nil {
 			return err
 		}
-		if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, documentID); err != nil {
+		if err := s.deleteDocumentFTSLocked(documentID); err != nil {
 			return err
 		}
 		deleted, err := s.countLocked(`SELECT COUNT(*) FROM documents WHERE id = ? AND deleted_at IS NOT NULL`, documentID)
@@ -585,9 +585,7 @@ func (s *SQLiteStore) finishDocumentConvergenceLocked(documentID string, rows ma
 			return err
 		}
 		if deleted == 0 {
-			if err := s.execPreparedLocked(
-				`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`,
-				documentID, collectionID, title, row.body); err != nil {
+			if err := s.insertDocumentFTSLocked(documentID, collectionID, title, row.body); err != nil {
 				return err
 			}
 		}

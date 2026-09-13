@@ -22,7 +22,13 @@ const (
 	ProtocolMinor = 0
 
 	MinCompatibleSchema = 24
-	MaxCompatibleSchema = 27
+	// 27 -> 28 in v1.0 J18. Schema 28 adds `documents_fts_rowid`, a private
+	// index from a document to the rowid FTS5 gave its row, so that deleting
+	// from the full-text index stops scanning it. It carries nothing a peer
+	// sends or receives and nothing a user wrote, and it can be rebuilt from
+	// `documents_fts` alone -- so a v27 peer and a v28 peer exchange exactly
+	// the same bytes and the range widens rather than moving.
+	MaxCompatibleSchema = 28
 
 	MaxStateVectorEntries = 1_024
 	MaxMissingRanges      = 1_024
