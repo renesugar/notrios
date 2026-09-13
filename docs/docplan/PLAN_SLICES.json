@@ -117,7 +117,7 @@
     {
       "id": "J5",
       "title": "Prove the library at scale",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J5-A",
@@ -134,7 +134,8 @@
         {
           "id": "J5-C",
           "statement": "What degraded at scale is recorded, including an external comparison that names what each tool builds",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j5/README.md"
         }
       ]
     },

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**17 items: 7 complete, 1 in progress, 9 not started, 0 deferred.**
+**17 items: 8 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -65,7 +65,7 @@ this section is archived when the plan completes and the rules are not.
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
 | J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
-| J5. Prove the library at scale | in-progress | 2/3 | 1 |
+| J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | not-started | 0/2 | 2 |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
@@ -79,15 +79,7 @@ this section is archived when the plan completes and the rules are not.
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 | J17. Batch the per-item work J5 found in import and export | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**J5. Prove the library at scale**
-
-- `J5-C` What degraded at scale is recorded, including an external comparison that names what each tool builds — *not-started*
-
-### Not started
-
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J17. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -647,7 +639,7 @@ none.
 
 Both were found by probing checks I had just written and believed.
 
-## J5. Prove the library at scale — in progress
+## J5. Prove the library at scale — complete
 
 **Goal.** Notrios works on a library far larger than any it has been measured
 on.

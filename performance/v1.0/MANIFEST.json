@@ -66,11 +66,20 @@
       "bytes": 25311801,
       "entries": 2552,
       "sha256": "e45a162891d29e1eb054a57c3cf4c84b81d95e434a0852a83414cd28da8160d6"
+    },
+    {
+      "item": "J5",
+      "archive": "notrios-v1.0-j5-fde1330.zip",
+      "commit": "fde133078ca467cfd2f9a8a0bf733ab73e6cccd0",
+      "taken": "when the slice closed",
+      "bytes": 25326172,
+      "entries": 2558,
+      "sha256": "3d72a8b8fcd175d151a03ca31b02518e55d228b8524b0b185fc54af043301ce1"
     }
   ],
   "counts": {
-    "items": 7,
+    "items": 8,
     "retroactive": 0,
-    "total_bytes": 176626172
+    "total_bytes": 201952344
   }
 }
