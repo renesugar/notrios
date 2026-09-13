@@ -422,7 +422,7 @@
     {
       "id": "J18",
       "title": "Stop scanning the full-text index on every document write",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J18-A",
@@ -439,7 +439,8 @@
         {
           "id": "J18-C",
           "statement": "The write-cost measurement is re-run on the same three libraries, beside the old numbers",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j18/REPORT.json"
         }
       ]
     }
