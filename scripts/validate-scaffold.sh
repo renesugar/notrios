@@ -180,6 +180,9 @@ python3 performance/v1.0-j13/validate_evidence.py
 # J4: the surface review. Derived from the freeze and the repository on every
 # run, so a route added to the freeze and not reviewed fails here.
 python3 performance/v1.0-j4/validate_evidence.py
+# J5: the scale record. The measurements cannot be re-derived in a validate run,
+# so this checks the record against itself and against the call sites it describes.
+python3 performance/v1.0-j5/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

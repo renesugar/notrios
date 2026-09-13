@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**16 items: 7 complete, 0 in progress, 9 not started, 0 deferred.**
+**17 items: 7 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -65,7 +65,7 @@ this section is archived when the plan completes and the rules are not.
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
 | J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
-| J5. Prove the library at scale | not-started | 0/3 | 3 |
+| J5. Prove the library at scale | in-progress | 2/3 | 1 |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | not-started | 0/2 | 2 |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
@@ -77,8 +77,17 @@ this section is archived when the plan completes and the rules are not.
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
+| J17. Batch the per-item work J5 found in import and export | not-started | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J5. Prove the library at scale**
+
+- `J5-C` What degraded at scale is recorded, including an external comparison that names what each tool builds — *not-started*
+
+### Not started
+
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J17. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -638,7 +647,7 @@ none.
 
 Both were found by probing checks I had just written and believed.
 
-## J5. Prove the library at scale
+## J5. Prove the library at scale — in progress
 
 **Goal.** Notrios works on a library far larger than any it has been measured
 on.
@@ -1521,3 +1530,66 @@ URL.
 **Working state.** Two carrier paths with one meaning each, an OpenAPI
 description with honest parameter names, a re-recorded frozen surface, and a
 round trip through `notriosctl sync exchange` proving peers still talk.
+
+## J17. Batch the per-item work J5 found in import and export
+
+**Goal.** No importer or exporter calls the store once per item where a batch
+call exists, and the improvement is measured rather than assumed.
+
+**What J5 found, and how firm it is.** The recipe corpus exists as both an
+Obsidian vault and a Joplin RAW export, so the store does identical work either
+way and the difference is the importer. The Joplin import of 382,206 notes took
+**1.72 h**; the Obsidian import of the same notes took **4.52 h**, while reading
+*fewer* files and *fewer* bytes.
+
+The code says where to look, and the batch API already exists:
+
+| importer | link rebuild |
+|---|---|
+| Joplin | `RebuildImportDocumentLinksBatch(ctx, {DocumentIDs: […]})` — 3,823 calls |
+| Obsidian | `RebuildDocumentLinks(ctx, note.TargetID)` — **382,206 calls** |
+
+`internal/importers/obsidian/obsidian.go` batches its *reads* — `GetDocuments`
+over a slice — and then rebuilds links one document at a time inside that loop.
+Its sibling calls the batch method for the same work.
+
+**This is a lead, not a proven cause, and the item is shaped accordingly.**
+Nothing profiled the import or changed the call and re-measured. What is
+established is 382,206 calls where 3,823 would do. So the first slice measures,
+and the fix is only justified if the measurement supports it.
+
+**Scope.**
+
+- **J17-A, prove the cause before fixing it.** Profile one Obsidian import, or
+  change the call and re-measure the same corpus. J5's corpus is on disk and its
+  harness repeats, so this is cheap. If the link rebuild is not where the time
+  goes, the finding is corrected in `performance/v1.0-j5` and this item narrows
+  to whatever is.
+- **J17-B, use the batch API.** Have the Obsidian importer call
+  `RebuildImportDocumentLinksBatch` the way the Joplin importer does, and
+  re-measure the same corpus. The number goes in the record next to the old one;
+  a change that did not help is reported as not having helped.
+- **J17-C, survey the rest of import and export.** The two importers and
+  `internal/archivev2` for any other store call made once per item where a batch
+  method exists. A per-item call with no batch equivalent is recorded, not
+  invented — adding a batch API is a store change and belongs to whatever item
+  needs it, not to a survey.
+
+**Why this is not "make import faster".** Import time at this size is dominated
+by work Notrios chooses to do — J5's comparison against `movenotes-v3` showed a
+tool doing 2.83× better while building no full-text index — and nothing here
+proposes to stop doing it. The target is the *asymmetry*: two importers, the
+same store, the same notes, and one of them four and a half hours slower.
+
+**Boundaries.** Correctness first: the Obsidian importer's link rebuild must
+still produce the same link index, proven by comparing the two libraries rather
+than by the import finishing. No batch size is raised to win a number — J5
+recorded that `movenotes-v3` ran in one 1.4 GB transaction, which is fast and
+loses everything on a crash, and Notrios's checkpointed batches are a
+deliberate trade this item does not reopen.
+
+**Dependencies.** J5, for the finding and the corpus.
+
+**Working state.** A measured cause, an Obsidian import that uses the batch API
+if the measurement justifies it, a re-measured number beside the old one, and a
+recorded list of any remaining per-item calls in import and export.
