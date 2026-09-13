@@ -183,6 +183,10 @@ python3 performance/v1.0-j4/validate_evidence.py
 # J5: the scale record. The measurements cannot be re-derived in a validate run,
 # so this checks the record against itself and against the call sites it describes.
 python3 performance/v1.0-j5/validate_evidence.py
+# J18: the full-text index is addressed by rowid. The measurements cannot be
+# re-derived here, but an eleventh call site addressing it by document_id can
+# be, and that is the defect coming back.
+python3 performance/v1.0-j18/validate_evidence.py
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

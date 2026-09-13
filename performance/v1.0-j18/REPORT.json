@@ -1,0 +1,64 @@
+{
+  "content_commit": "01367b5deb708e9bb0e798fd911893bc8dcb340f",
+  "correctness": {
+    "a_probe_that_did_not_fire": "Swapping INSERT OR REPLACE for INSERT OR IGNORE changed nothing, because the replace path deletes the mapping row first. Recorded as a bad probe rather than a gap.",
+    "boundary": "A wrong mapping deletes another document's row. The symptom is a note that quietly stops being findable, or one still found after deletion -- neither appears in a timing, so the tests assert what a reader would notice.",
+    "confirmed_by_breaking": [
+      "recording a wrong rowid: 'after update, kestrel matches [the wrong note]' and '1 mapping rows point at nothing'",
+      "deleting nothing from the index: 'kestrel matches two notes, want only one' and '7 rows in the index and 4 in the mapping'"
+    ],
+    "tests": [
+      "TestJ18SearchIsUnchangedByTheRowidMapping",
+      "TestJ18MappingTracksTheIndexExactly"
+    ]
+  },
+  "defect": {
+    "call_sites": 10,
+    "full_write_ms_on_382k": 2087,
+    "isolated_scan_ms_on_382k": 2068,
+    "statement": "DELETE FROM documents_fts WHERE document_id = ?",
+    "why": "documents_fts declares document_id UNINDEXED, so FTS5 builds no index on it and the delete plans as SCAN documents_fts VIRTUAL TABLE. A document write was O(library size)."
+  },
+  "item": "J18",
+  "measurements": [
+    {
+      "bytes": 1011712,
+      "library": "generated",
+      "migration_seconds": 0.414,
+      "notes": 60,
+      "write_ms_after": 7,
+      "write_ms_before": 156
+    },
+    {
+      "bytes": 916209664,
+      "library": "joplin-export-with-resources",
+      "migration_seconds": 29.99,
+      "notes": 103349,
+      "write_ms_after": 26,
+      "write_ms_before": 490
+    },
+    {
+      "bytes": 7284244480,
+      "library": "recipe-vault-obsidian",
+      "migration_seconds": 229.017,
+      "notes": 382206,
+      "write_ms_after": 17,
+      "write_ms_before": 2087
+    }
+  ],
+  "milestone": "v1.0",
+  "schema": "notrios.v10.j18-fts-rowid.v1",
+  "schema_bump": {
+    "caught_by": "I8's frozen archive_v2 surface refused until it was re-recorded",
+    "from": 27,
+    "to": 28,
+    "widened_not_moved": [
+      "syncstate.MaxCompatibleSchema 27 -> 28: the mapping is a private index carrying nothing a peer sends and rebuildable from documents_fts, so v27 and v28 peers exchange identical bytes",
+      "contracts/archive-v2/contract.json current_schema_version, and its golden",
+      "G19's portability bound, which had pinned current_schema_version and so asserted the store would never migrate again; format, version and minimum schema stay pinned",
+      "G20's canonical-schema check, which read today's source for exactly 27"
+    ]
+  },
+  "the_property_that_was_wanted": "Not the ratio. A write now costs what the document costs rather than what the library costs: 17 ms at 382,206 notes against 26 ms at 103,349 is noise, where before it was 2,087 ms against 490 ms.",
+  "what_this_is": "The cost of writing one document before and after the full-text index stopped being scanned to find the row to delete. Measured by the same test on the same three libraries, two of them built by different importers from different corpora."
+}

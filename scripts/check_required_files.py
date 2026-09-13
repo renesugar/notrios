@@ -34,6 +34,7 @@ required = [
     'docs/docexamples/configuration.json',
     'performance/v1.0-j17/README.md',
     'performance/v1.0-j18/README.md',
+    'performance/v1.0-j18/validate_evidence.py',
     'performance/v1.0-j5/scale_profile.sh',
     'performance/v1.0-j5/backup_restore_profile.sh',
     'performance/v1.0-j5/validate_evidence.py',
