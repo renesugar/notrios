@@ -72,6 +72,19 @@ commit. The measurement puts a commit at ~3.2 ms of the 9.5 ms per document.
 That was a number fitted to a hypothesis rather than a test of it, and it is
 left in this record with its correction rather than quietly replaced.
 
+**A second batching theory was measured and also failed.** The Obsidian importer
+writes each document with per-document calls where the Joplin importer uses
+`ApplyImportDocumentBatch`; running 400 documents each way gave **0.99×** — 400
+transactions against 1 changed nothing. See `performance/v1.0-j17`.
+
+**So the gap this section reports is, as of now, unexplained.** Two call-site
+differences that looked like causes are not causes. The measurements did find
+something larger on the way — every document write scans the whole full-text
+index, which is `performance/v1.0-j18` — but that is a property of writing to a
+*full* library, and an import writes to one that starts empty. The 2.6× stands
+as a measured fact with no established mechanism, which is the honest state of
+it.
+
 ## Two structural results
 
 **Restore streams; import does not.** Restore peak RSS is 44–58 MiB whatever the

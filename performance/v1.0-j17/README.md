@@ -49,11 +49,41 @@ importer asks the store to do:
 a note costs at least two explicit transactions on the Obsidian path and a
 fraction of one on the Joplin path.
 
-**That is a structural difference, not a measurement, and this record does not
-convert it into one.** The last theory also looked obvious from the call sites.
-What would settle it is a comparison of `ApplyImportDocumentBatch` against the
-per-document sequence over the same documents, the way the link rebuild was
-compared — which is the next thing J17-A does.
+**That was a structural difference, and it was measured too. It is also wrong.**
+
+```
+per-document: 13m14.552s total, 1.986379s each (400 documents, 400 transactions)
+batched:      13m18.590s total, 1.996476s each (400 documents,   1 transaction)
+ratio: 0.99x
+```
+
+400 transactions against 1 makes **no difference at all** — the batched path was
+marginally slower, which at this margin is noise. So transaction count is not
+what makes the Obsidian importer slow, and two independent measurements now say
+so: 34% on the link rebuild, 0% on the document write.
+
+## What the second failure revealed
+
+Both runs had been reporting the same thing without being asked: **a single
+document write against this 382,206-note library costs about two seconds**,
+whichever path it takes. That is only worth noticing once batching is ruled out,
+because while a batching theory is alive the per-unit number looks like
+something batching will fix.
+
+It is not. `documents_fts` declares `document_id UNINDEXED`, so
+`DELETE FROM documents_fts WHERE document_id = ?` scans the entire full-text
+index on every write — 2,068 ms of the 2,087 ms. That is **J18**, it is a
+product problem rather than an importer one, and it is the largest thing either
+of these measurements found.
+
+## What J17 is left holding
+
+The importer gap J5 measured — 4.52 h against 1.72 h on the same notes — is
+**still unexplained**. J18 does not explain it: during a fresh import every
+document is a create, so the `DELETE` never runs and no scan is paid, which is
+why the Joplin import averaged ~16 ms per note. Both of J17's own theories are
+dead. What remains is to look outside the store calls entirely — inventory
+scanning, resource handling, or something in the Obsidian importer's own work.
 
 ## Three harness bugs on the way to the number
 

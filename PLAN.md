@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**17 items: 8 complete, 1 in progress, 8 not started, 0 deferred.**
+**18 items: 8 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -78,6 +78,7 @@ this section is archived when the plan completes and the rules are not.
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 | J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
+| J18. Stop scanning the full-text index on every document write | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -89,7 +90,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J18. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1614,3 +1615,62 @@ deliberate trade this item does not reopen.
 **Working state.** A measured cause, an Obsidian import that uses the batch API
 if the measurement justifies it, a re-measured number beside the old one, and a
 recorded list of any remaining per-item calls in import and export.
+
+## J18. Stop scanning the full-text index on every document write
+
+**Goal.** Writing a document costs what the document costs, not what the library
+costs.
+
+**The defect.** `documents_fts` declares `document_id UNINDEXED`, so FTS5 builds
+no index on it, and `DELETE FROM documents_fts WHERE document_id = ?` plans as
+`SCAN documents_fts VIRTUAL TABLE`. Every document write scans the whole
+full-text index. **A write is O(library size).**
+
+**Measured, on three libraries, two of them built by different importers from
+different corpora:**
+
+| library | notes | one `UpdateDocument` |
+|---|---|---|
+| generated | 60 | 156 ms |
+| Joplin export | 103,349 | 490 ms |
+| Obsidian vault | 382,206 | **2,087 ms** |
+
+The scan is the whole cost: the `document_id` lookup alone on the largest
+library takes **2,068 ms** of the 2,087 ms write.
+
+**The fix is confirmed before being proposed.** Deleting by `rowid` on the same
+library takes **19 ms** — about 109× — and needs a `document_id → rowid`
+mapping, because the rowid is what FTS5 can find without scanning. Note that
+`EXPLAIN QUERY PLAN` still prints `SCAN` for the rowid form, with an `INDEX 0:=`
+suffix; a reader comparing plans rather than timings would conclude nothing had
+improved.
+
+**Ten call sites, so this is a pattern rather than a slow function.** Three in
+`sqlite.go`, three in `sqlite_notebooks.go`, and one each in
+`sqlite_import_batch.go`, `sync_retention.go`, `sync_ui.go` and
+`sync_revision_apply.go`. The cost lands on updating a note, deleting one,
+notebook operations, retention, sync apply and the import batch path alike.
+
+**Why it is a 1.0 item.** `UpdateDocument` is what runs when a user saves an
+edited note. At 382,206 notes that is two seconds and it grows with the library.
+J5 recorded search at ~9 s on the same library; this is the write side of the
+same story, and both are interactive.
+
+**Why it is a migration and not a patch — the owner should weigh this.** The fix
+changes the full-text schema and touches ten call sites across sync, retention
+and notebooks. Existing libraries need the mapping populated, which is a
+migration over every document. That is a larger change than anything else
+outstanding in this milestone, arriving at freeze time, and the alternative —
+shipping 1.0 with a two-second note save that worsens as libraries grow — is
+worse. Recorded so the decision is made rather than inherited.
+
+**Boundaries.** Correctness before speed: the full-text index after a write must
+contain exactly what it contains today, proven by comparing search results
+before and after on the same library rather than by the write being faster. No
+other use of `documents_fts` changes shape in this item.
+
+**Dependencies.** None. It is independent of J17, which is what found it.
+
+**Working state.** A document write whose cost does not depend on the size of
+the library, the same measurement re-run on the same three libraries beside the
+old numbers, and a migration that populates the mapping for an existing library.
