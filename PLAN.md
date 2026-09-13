@@ -57,14 +57,14 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**16 items: 6 complete, 1 in progress, 9 not started, 0 deferred.**
+**16 items: 7 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
 | J1. Build the package in a workflow, and attest what it built | complete | 3/3 | — |
 | J2. Create the release signing key, and sign what ships | complete | 3/3 | — |
 | J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
-| J4. Stabilise the REST and MCP surfaces for 1.0 | in-progress | 2/3 | 1 |
+| J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | not-started | 0/3 | 3 |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | not-started | 0/2 | 2 |
@@ -78,15 +78,7 @@ this section is archived when the plan completes and the rules are not.
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**J4. Stabilise the REST and MCP surfaces for 1.0**
-
-- `J4-C` The one change that would break a wire protocol is recorded for the owner rather than made — *not-started*
-
-### Not started
-
-Written and not begun: J5, J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -568,7 +560,7 @@ CLI was a shell stub, which was fine while purge only asked the binary where the
 roots were; now that purge asks it to do the deleting, the suite builds and
 installs the real one.
 
-## J4. Stabilise the REST and MCP surfaces for 1.0 — in progress
+## J4. Stabilise the REST and MCP surfaces for 1.0 — complete
 
 **Goal.** The REST API and the MCP tool and resource schemas are what 1.0
 promises, and a change to either is a deliberate, visible act.

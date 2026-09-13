@@ -92,7 +92,7 @@
     {
       "id": "J4",
       "title": "Stabilise the REST and MCP surfaces for 1.0",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J4-A",
@@ -109,7 +109,8 @@
         {
           "id": "J4-C",
           "statement": "The one change that would break a wire protocol is recorded for the owner rather than made",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j4/REPORT.json"
         }
       ]
     },
