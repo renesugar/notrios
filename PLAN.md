@@ -84,7 +84,7 @@ this section is archived when the plan completes and the rules are not.
 
 **J17. Batch the per-item work J5 found in import and export**
 
-- `J17-A` The cause is measured rather than inferred: the link-rebuild theory is tested and rejected, and the document-write path is measured next — *not-started*
+- `J17-A` A CPU profile names where the Obsidian importer's per-note time goes, after five call-site hypotheses were tested and rejected — *not-started*
 - `J17-B` The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number — *not-started*
 - `J17-C` Every remaining per-item store call in import and export is either batched or recorded — *not-started*
 
@@ -1579,12 +1579,22 @@ rather than by assuming the second theory because the first one failed.
 
 **Scope.**
 
-- **J17-A, prove the cause before fixing it.** *Partly done.* The link-rebuild
-  theory is measured and rejected, and `performance/v1.0-j5` is corrected. What
-  remains is the same treatment for the document write: compare
-  `ApplyImportDocumentBatch` against the per-document `CreateDocument` /
-  `UpdateDocument` / `SetDocumentSource` / `MoveDocumentToNotebook` sequence over
-  the same documents.
+- **J17-A, prove the cause before fixing it.** *Five hypotheses tested, five
+  rejected; the cause is still unknown and the method has changed.* Link-rebuild
+  batching gave 1.51×, document-write batching gave 0.99×, directory
+  concentration gave 1.07×, transaction count is falsified by the first two, and
+  J18's full-text scan is never executed on the create path an import takes. A
+  claim that the importer was superlinear was made on two points and withdrawn
+  on four: per-note cost rises from 28.5 ms at 10,000 notes to ~40 ms by 40,000
+  and is then flat to 382,206, so the gap is a **constant factor** of roughly
+  40 ms against 16 ms, not a scaling defect.
+
+  **The remaining work is a CPU profile of the Obsidian importer, and that is a
+  deliberate change of method.** Reading a call site and testing it finds only
+  causes somebody thought of, and it has been wrong five times in a row here at
+  the cost of a measurement each. A profile answers "where does the per-note
+  time go" without guessing first. No sixth call site is proposed in this plan,
+  because proposing one would repeat the mistake.
 - **J17-B, batch what measurement justifies.** The link rebuild is worth
   batching on its own evidence — 1.51×, and the batch path additionally records
   a resumable checkpoint the per-document path does not — but it must be
@@ -1612,9 +1622,14 @@ deliberate trade this item does not reopen.
 
 **Dependencies.** J5, for the finding and the corpus.
 
-**Working state.** A measured cause, an Obsidian import that uses the batch API
-if the measurement justifies it, a re-measured number beside the old one, and a
-recorded list of any remaining per-item calls in import and export.
+**Working state.** A profile naming where the ~24 ms per note goes, whatever
+follows from it measured before it is claimed, and a recorded list of any
+remaining per-item calls in import and export.
+
+**What this item has already produced, whether or not the gap is ever closed.**
+Five eliminated causes, a corrected characterisation of the gap, and — found
+while the second theory was being disproved — J18, which is a larger problem
+than the one this item was created for.
 
 ## J18. Stop scanning the full-text index on every document write
 

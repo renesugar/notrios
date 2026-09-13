@@ -77,6 +77,11 @@ writes each document with per-document calls where the Joplin importer uses
 `ApplyImportDocumentBatch`; running 400 documents each way gave **0.99×** — 400
 transactions against 1 changed nothing. See `performance/v1.0-j17`.
 
+**Characterised since, and still unexplained.** The Obsidian importer costs
+~40 ms per note and the Joplin importer ~16 ms, both stable across corpus size,
+so the 2.6× is a constant factor rather than a scaling defect. Five candidate
+causes have been tested and rejected — see `performance/v1.0-j17`.
+
 **So the gap this section reports is, as of now, unexplained.** Two call-site
 differences that looked like causes are not causes. The measurements did find
 something larger on the way — every document write scans the whole full-text

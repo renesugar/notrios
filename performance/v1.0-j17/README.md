@@ -76,14 +76,65 @@ index on every write — 2,068 ms of the 2,087 ms. That is **J18**, it is a
 product problem rather than an importer one, and it is the largest thing either
 of these measurements found.
 
-## What J17 is left holding
+## Two more hypotheses, two more rejections
 
-The importer gap J5 measured — 4.52 h against 1.72 h on the same notes — is
-**still unexplained**. J18 does not explain it: during a fresh import every
-document is a create, so the `DELETE` never runs and no scan is paid, which is
-why the Joplin import averaged ~16 ms per note. Both of J17's own theories are
-dead. What remains is to look outside the store calls entirely — inventory
-scanning, resource handling, or something in the Obsidian importer's own work.
+**Directory concentration.** The vault holds 118,866 of its 382,206 files in one
+directory; the Joplin export is flat, so nothing it does can depend on directory
+size. Twenty thousand notes drawn entirely from that directory against twenty
+thousand spread across 110 others:
+
+| subset | directories | ms/note |
+|---|---|---|
+| deep | 4 | 39.3 |
+| wide | 110 | 36.8 |
+
+6.7% apart. Not the cause.
+
+**Superlinear growth — which I claimed and then had to withdraw.** Two points
+suggested the per-note cost was rising with corpus size: 28.5 ms at 10,000 notes
+against 42.5 ms at 382,206. Four points show a curve that saturates:
+
+| notes | ms/note |
+|---|---|
+| 10,000 | 28.5 |
+| 20,000 | ~38 |
+| 40,000 | 39.5 |
+| 382,206 | 42.5 |
+
+From 40,000 to 382,206 — 9.5× the notes — the per-note cost rises 7.6%. That is
+a warm-up that flattens, not growth. **The claim was made on two points and a
+slope, and it was wrong**; it is recorded here rather than deleted because the
+reasoning that produced it is the same reasoning that produced the first three
+theories.
+
+## Where the gap stands, precisely
+
+**Established:** the Obsidian importer costs ~40 ms per note and the Joplin
+importer ~16 ms, both stable across corpus size. The difference is ~24 ms of
+per-note work, and it is a **constant factor**, not a scaling defect.
+
+**Rejected, each by measurement rather than by argument:**
+
+| hypothesis | measured | verdict |
+|---|---|---|
+| link-rebuild batching | 1.51× | too small |
+| document-write batching | 0.99× | nothing |
+| transaction count in general | — | falsified by the two above |
+| directory concentration | 1.07× | nothing |
+| the J18 full-text scan | not executed on create | not this |
+
+**Unresolved:** what the ~24 ms is.
+
+## Why the next step is a profiler and not a sixth hypothesis
+
+Five call-site guesses have now been tested and rejected. Each was plausible
+from reading the code, each cost a measurement, and the method has an obvious
+flaw: it can only find causes I happen to think of, and it has been wrong every
+time. "Where does the per-note time go" is the question a CPU profile answers
+directly, and it does not require guessing first.
+
+That is J17-A's remaining work, and the item says so rather than proposing
+another call site.
 
 ## Three harness bugs on the way to the number
 
