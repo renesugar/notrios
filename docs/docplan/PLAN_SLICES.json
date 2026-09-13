@@ -378,17 +378,19 @@
     {
       "id": "J16",
       "title": "Give the carrier write its own path shape",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J16-A",
           "statement": "The carrier write has a literal path segment, so no two carrier routes share a shape",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/httpapi/sync_data.go"
         },
         {
           "id": "J16-B",
           "statement": "api/openapi.yaml describes each carrier path once, with parameter names that mean something",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:api/openapi.yaml"
         },
         {
           "id": "J16-C",

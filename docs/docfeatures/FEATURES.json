@@ -487,9 +487,9 @@
         "GET /api/v1/sync/status",
         "GET /api/v1/sync/carrier/namespaces",
         "GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
-        "GET /api/v1/sync/carrier/{segment1}/{segment2}",
-        "PUT /api/v1/sync/carrier/{segment1}/{segment2}",
-        "DELETE /api/v1/sync/carrier/{segment1}/{segment2}",
+        "GET /api/v1/sync/carrier/{namespace}/{class}",
+        "PUT /api/v1/sync/carrier/mine/{class}/{name}",
+        "DELETE /api/v1/sync/carrier/mine/{class}/{name}",
         "POST /api/v1/jobs/sync/plan",
         "POST /api/v1/jobs/sync/start",
         "GET /api/v1/jobs/{job_id}/sync"

@@ -251,16 +251,26 @@ func TestAPeerCannotPublishIntoAnotherNamespace(t *testing.T) {
 	fixture.exchange(t, 2)
 
 	// The guest asks to write under the host's namespace by naming it in the
-	// path. There is no such path: the route takes a class and a name, and the
-	// namespace comes from who is asking.
+	// path. There is no route that accepts a namespace for a write: writes live
+	// under the literal `mine`, and the namespace comes from who is asking.
+	//
+	// Two shapes are tried since v1.0 J16. The old two-segment write no longer
+	// exists, and the three-segment read shape -- which does take a namespace --
+	// has no PUT or DELETE. Neither may publish anything.
 	hostNamespace := syncwire.CarrierName(fixture.host.keys.group, "replica", fixture.host.handshake.ReplicaID)
-	status, _, err := fixture.client.Do(context.Background(), http.MethodPut,
-		"/api/v1/sync/carrier/"+hostNamespace+"/envelopes", []byte("not an artifact"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if status == http.StatusOK {
-		t.Fatal("a peer published into another namespace")
+	for _, path := range []string{
+		"/api/v1/sync/carrier/" + hostNamespace + "/envelopes",
+		"/api/v1/sync/carrier/" + hostNamespace + "/envelopes/forged",
+	} {
+		for _, method := range []string{http.MethodPut, http.MethodDelete} {
+			status, _, err := fixture.client.Do(context.Background(), method, path, []byte("not an artifact"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if status >= 200 && status < 300 {
+				t.Fatalf("%s %s returned %d: a peer wrote into another namespace", method, path, status)
+			}
+		}
 	}
 }
 

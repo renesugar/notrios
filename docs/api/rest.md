@@ -10,7 +10,7 @@ and store behavior.
 - DELETE /api/v1/notebooks/{notebook_id}
 - DELETE /api/v1/resources/{resource_id}
 - DELETE /api/v1/search-notebooks/{search_notebook_id}
-- DELETE /api/v1/sync/carrier/{segment1}/{segment2}
+- DELETE /api/v1/sync/carrier/mine/{class}/{name}
 - DELETE /api/v1/trash/{document_id}
 - GET /api/v1/admin/gc/report
 - GET /api/v1/admin/lint/report
@@ -50,8 +50,8 @@ and store behavior.
 - GET /api/v1/sync-ui/retention
 - GET /api/v1/sync/backups/{backup_id}
 - GET /api/v1/sync/carrier/namespaces
+- GET /api/v1/sync/carrier/{namespace}/{class}
 - GET /api/v1/sync/carrier/{namespace}/{class}/{name}
-- GET /api/v1/sync/carrier/{segment1}/{segment2}
 - GET /api/v1/sync/handshake
 - GET /api/v1/sync/status
 - GET /api/v1/tags
@@ -112,7 +112,7 @@ and store behavior.
 - POST /mcp
 - PUT /api/v1/documents/{document_id}
 - PUT /api/v1/sync-ui/configuration
-- PUT /api/v1/sync/carrier/{segment1}/{segment2}
+- PUT /api/v1/sync/carrier/mine/{class}/{name}
 <!-- notrios:generated:user:rest-api:end -->
 <!-- notrios:generated:api:rest-api:begin -->
 <!-- source: go:github.com/renesugar/notrios/internal/httpapi#Server -->
@@ -126,7 +126,7 @@ same method/path set is present in the checked OpenAPI document.
 - DELETE /api/v1/notebooks/{notebook_id}
 - DELETE /api/v1/resources/{resource_id}
 - DELETE /api/v1/search-notebooks/{search_notebook_id}
-- DELETE /api/v1/sync/carrier/{segment1}/{segment2}
+- DELETE /api/v1/sync/carrier/mine/{class}/{name}
 - DELETE /api/v1/trash/{document_id}
 - GET /api/v1/admin/gc/report
 - GET /api/v1/admin/lint/report
@@ -166,8 +166,8 @@ same method/path set is present in the checked OpenAPI document.
 - GET /api/v1/sync-ui/retention
 - GET /api/v1/sync/backups/{backup_id}
 - GET /api/v1/sync/carrier/namespaces
+- GET /api/v1/sync/carrier/{namespace}/{class}
 - GET /api/v1/sync/carrier/{namespace}/{class}/{name}
-- GET /api/v1/sync/carrier/{segment1}/{segment2}
 - GET /api/v1/sync/handshake
 - GET /api/v1/sync/status
 - GET /api/v1/tags
@@ -228,7 +228,7 @@ same method/path set is present in the checked OpenAPI document.
 - POST /mcp
 - PUT /api/v1/documents/{document_id}
 - PUT /api/v1/sync-ui/configuration
-- PUT /api/v1/sync/carrier/{segment1}/{segment2}
+- PUT /api/v1/sync/carrier/mine/{class}/{name}
 <!-- notrios:generated:api:rest-api:end -->
 
 Everything the GUI does goes through the REST API; a third-party client can implement the entire feature set with it. The machine-readable schema lives in `api/openapi.yaml` in the repository; this page is the operational guide.

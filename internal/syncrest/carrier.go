@@ -117,7 +117,7 @@ func (c *Carrier) Publish(ctx context.Context, class synccarrier.Class, name str
 		return "", errors.New("syncrest: a published artifact needs its protocol name")
 	}
 	status, body, err := c.client.Do(ctx, http.MethodPut,
-		fmt.Sprintf("/api/v1/sync/carrier/%s/%s", class, name), artifact)
+		fmt.Sprintf("/api/v1/sync/carrier/mine/%s/%s", class, name), artifact)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", synccarrier.ErrCarrierUnavailable, err)
 	}
@@ -131,7 +131,7 @@ func (c *Carrier) Publish(ctx context.Context, class synccarrier.Class, name str
 // Remove implements synccarrier.Carrier.
 func (c *Carrier) Remove(ctx context.Context, class synccarrier.Class, name string) error {
 	status, _, err := c.client.Do(ctx, http.MethodDelete,
-		fmt.Sprintf("/api/v1/sync/carrier/%s/%s", class, name), nil)
+		fmt.Sprintf("/api/v1/sync/carrier/mine/%s/%s", class, name), nil)
 	if err != nil {
 		return fmt.Errorf("%w: %v", synccarrier.ErrCarrierUnavailable, err)
 	}

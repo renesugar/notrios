@@ -78,6 +78,16 @@ because a replica must not publish as another one.
 **Nothing was changed.** A breaking change to a wire protocol between peers is
 not a call this review makes on its own.
 
+**Resolved by the owner, and implemented in J16.** The owner chose the second
+option. Writes are now `PUT`/`DELETE /api/v1/sync/carrier/mine/{class}/{name}`,
+with `mine` a literal segment. `api/openapi.yaml` describes the listing as
+`/api/v1/sync/carrier/{namespace}/{class}` and the write under its own path, so
+`{segment1}` and `{segment2}` no longer exist anywhere in the contract, and
+`internal/docgen`'s special case that folded the two shapes together is gone.
+The namespace is still derived from the authenticated principal and never read
+from the URL. It was free to change because no release had been published, so
+no peers existed outside the repository.
+
 ### Evidence that the description is worth fixing
 
 The owner read `{segment1}`/`{segment2}` and asked whether the asymmetry was

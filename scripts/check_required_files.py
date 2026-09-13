@@ -32,6 +32,7 @@ required = [
     'scripts/check_agent_usage.py',
     'scripts/claude_statusline_usage.py',
     'docs/docexamples/configuration.json',
+    'performance/v1.0-j16/README.md',
     'performance/v1.0-j17/README.md',
     'performance/v1.0-j18/README.md',
     'performance/v1.0-j18/validate_evidence.py',

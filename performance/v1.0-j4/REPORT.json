@@ -4,7 +4,7 @@
   "milestone": "v1.0",
   "what_this_is": "What is known about every frozen REST route and MCP tool, derived rather than recalled, so the review of what 1.0 should promise happens against evidence and in a defensible order.",
   "these_are_not_verdicts": "described/documented/exercised/tested are facts about the repository, not judgements about the surface. A route with all four may still be a promise 1.0 should not make; a route with none may be load-bearing and correct. The decisions are recorded separately, by a person, and say so.",
-  "content_commit": "bfc805e86df0d7b290f706efdca98b0cf4147de3",
+  "content_commit": "06b8914832a465675ba44c0660a622c5e00b673f",
   "counts": {
     "rest": {
       "members": 113,
@@ -104,9 +104,9 @@
     },
     {
       "surface": "rest",
-      "member": "DELETE /api/v1/sync/carrier/{class}/{name}",
+      "member": "DELETE /api/v1/sync/carrier/mine/{class}/{name}",
       "method": "DELETE",
-      "path": "/api/v1/sync/carrier/{class}/{name}",
+      "path": "/api/v1/sync/carrier/mine/{class}/{name}",
       "described": true,
       "documented": [
         "docs/api/rest.md"
@@ -1456,9 +1456,9 @@
     },
     {
       "surface": "rest",
-      "member": "PUT /api/v1/sync/carrier/{class}/{name}",
+      "member": "PUT /api/v1/sync/carrier/mine/{class}/{name}",
       "method": "PUT",
-      "path": "/api/v1/sync/carrier/{class}/{name}",
+      "path": "/api/v1/sync/carrier/mine/{class}/{name}",
       "described": true,
       "documented": [
         "docs/api/rest.md"

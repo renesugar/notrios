@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**19 items: 9 complete, 1 in progress, 9 not started, 0 deferred.**
+**19 items: 9 complete, 2 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -76,12 +76,16 @@ this section is archived when the plan completes and the rules are not.
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
-| J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
+| J16. Give the carrier write its own path shape | in-progress | 2/3 | 1 |
 | J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
 
 ### Started and not finished
+
+**J16. Give the carrier write its own path shape**
+
+- `J16-C` The frozen REST surface and J4's review are re-recorded, and sync exchange still round-trips — *not-started*
 
 **J17. Batch the per-item work J5 found in import and export**
 
@@ -91,7 +95,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J19. Their slices are listed under each item.
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J19. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1488,7 +1492,7 @@ from.
 carrying a recorded reason it is not, and no hand-moved registry hash left on a
 generated page.
 
-## J16. Give the carrier write its own path shape
+## J16. Give the carrier write its own path shape — in progress
 
 **Goal.** Every carrier path means one thing, and the API description can name
 its parameters honestly.
@@ -1534,6 +1538,24 @@ URL.
 **Working state.** Two carrier paths with one meaning each, an OpenAPI
 description with honest parameter names, a re-recorded frozen surface, and a
 round trip through `notriosctl sync exchange` proving peers still talk.
+
+### What it took
+
+Writes are `PUT`/`DELETE /api/v1/sync/carrier/mine/{class}/{name}`. The server
+routes, the remote-peer allow-list in `internal/service` and the client in
+`internal/syncrest` moved together, because moving any one alone leaves a peer
+refused on one side. `api/openapi.yaml` now describes the listing and the write
+under separate paths, so `{segment1}` and `{segment2}` are gone from the
+contract, and `internal/docgen`'s special case for folding the two shapes is
+gone with them. The frozen REST surface is re-recorded at 113 members with
+exactly the two write routes moved, and J4's review reports every carrier route
+described under its own path.
+
+The impersonation test is stronger than before: it tries `PUT` and `DELETE`
+against both the removed two-segment shape and the three-segment read shape
+with another replica's namespace, and none may succeed. `internal/syncrest`'s
+exchange tests round-trip through the real client and server on the new paths.
+Record in `performance/v1.0-j16`.
 
 ## J17. Batch the per-item work J5 found in import and export — in progress
 

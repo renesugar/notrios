@@ -1,5 +1,5 @@
 {
-  "content_commit": "9ece728f9159c0fef6e52183c0614f3ad0a4e4aa",
+  "content_commit": "06b8914832a465675ba44c0660a622c5e00b673f",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -326,7 +326,7 @@
         "DELETE /api/v1/notebooks/{notebook_id}",
         "DELETE /api/v1/resources/{resource_id}",
         "DELETE /api/v1/search-notebooks/{search_notebook_id}",
-        "DELETE /api/v1/sync/carrier/{class}/{name}",
+        "DELETE /api/v1/sync/carrier/mine/{class}/{name}",
         "DELETE /api/v1/trash/{document_id}",
         "GET /",
         "GET /api/v1/admin/gc/report",
@@ -432,9 +432,9 @@
         "POST /mcp",
         "PUT /api/v1/documents/{document_id}",
         "PUT /api/v1/sync-ui/configuration",
-        "PUT /api/v1/sync/carrier/{class}/{name}"
+        "PUT /api/v1/sync/carrier/mine/{class}/{name}"
       ],
-      "sha256": "85fee1980900714198502b653f2c59af6dbcc5f4eaa4b924258bb1f1b22f0816"
+      "sha256": "ac82f968c46594d21de1b1b2f7732cfd52221a47e8e97fda8d44db3d992a01c4"
     }
   },
   "what_this_is": "The surfaces 1.0 will promise, derived from the source that defines them and recorded so a change has to be deliberate. A freeze is not a promise never to change; it is a promise that changing is visible."

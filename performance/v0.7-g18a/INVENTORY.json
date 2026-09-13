@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "4608f0822051397cbc263c9f823534b9d4dc8da8adb9889f6a38e34c11721a76",
+      "sha256": "4dbe187e1a3e5f77d3cc804fc033b2526e782ceff25651ec418edb67ab2605ba",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
