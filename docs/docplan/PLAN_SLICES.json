@@ -443,6 +443,28 @@
           "evidence": "file:performance/v1.0-j18/REPORT.json"
         }
       ]
+    },
+    {
+      "id": "J19",
+      "title": "Test the external performance review, and adopt only what measures better",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J19-A",
+          "statement": "Every review suggestion that survives a source check is measured on J5's corpora and given a recorded verdict",
+          "state": "not-started"
+        },
+        {
+          "id": "J19-B",
+          "statement": "Only the suggestions J19-A measured as improvements are implemented, each with its own before and after",
+          "state": "not-started"
+        },
+        {
+          "id": "J19-C",
+          "statement": "Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

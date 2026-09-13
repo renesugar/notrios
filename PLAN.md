@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**18 items: 9 complete, 1 in progress, 8 not started, 0 deferred.**
+**19 items: 9 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,6 +79,7 @@ this section is archived when the plan completes and the rules are not.
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
 | J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
+| J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -90,7 +91,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16, J19. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1689,3 +1690,90 @@ other use of `documents_fts` changes shape in this item.
 **Working state.** A document write whose cost does not depend on the size of
 the library, the same measurement re-run on the same three libraries beside the
 old numbers, and a migration that populates the mapping for an existing library.
+
+## J19. Test the external performance review, and adopt only what measures better
+
+**Goal.** Every suggestion in the performance review is either shown by
+measurement to help and implemented, or shown not to and recorded — nothing is
+adopted because it reads well.
+
+**Source, and how it is treated.** A code review produced by
+`openrouter/google/gemini-3.1-pro-preview` through `opencode`, kept at
+`/home/renes/prompts/notrios_gemini_pro_performance_review_report.md`. It is
+treated as untrusted input: a list of hypotheses, not findings. That is not a
+judgement of its quality — it is the standard J17 had to learn the hard way,
+where five plausible call-site theories, each obvious from reading the code,
+were each rejected by measurement.
+
+**The review's claims, checked against the source before planning** (2026-09-13):
+
+| claim | in the code? | note |
+|---|---|---|
+| 32 KiB buffers allocated per file in hot paths | **yes** — `joplinraw/scalable.go:630`, `obsidian/obsidian.go:1264`, `store/sqlite.go:1845` | a `sync.Pool` is a measurable candidate |
+| `os.ReadFile` slurps whole items | **yes** — three call sites in each importer | but see below: both importers need the whole body |
+| `sha256Hex([]byte(a + "\x00" + b))` string/byte churn | **yes** — `obsidian.go:368`, `:1243` | concatenation then conversion allocates twice |
+| `string(bytes.TrimSuffix(…))` in `splitFrontmatterBytes` allocates | **probably not** — `obsidian.go:1406` | the Go compiler elides `string(b)` when it is only compared; a benchmark settles it |
+| `seen := map[string]bool{}` without capacity per note | **yes** — `joplinraw.go:545`, `scalable.go:1568` | small; worth measuring, not assuming |
+| FTS5 written inside the import transaction | **yes** — `sqlite_import_batch.go:69`, `:103` | a correctness change if deferred; see boundaries |
+| full-vault Go maps cost hundreds of MB | **consistent with J5** — import peak RSS was 1,721 MiB (Obsidian) and 2,881 MiB (Joplin) at 382,206 notes | a heap profile says how much is maps |
+
+**Three places the review's proposal cannot be taken as written.**
+
+- **Streaming only the frontmatter does not fit these importers.** The Obsidian
+  importer rewrites links across the whole body and both importers write the
+  whole body to the full-text index, so the body is read regardless. What is
+  testable is streaming the *hash* and avoiding a second copy, not skipping the
+  body.
+- **Changing how a fingerprint is computed is not a free optimisation.**
+  Fingerprints are persisted in import item state (`store.ImportItemState`), and
+  the importers use them to recognise unchanged items on re-import. A hash
+  computed differently — even over the same bytes in a different composition —
+  makes every item look changed once, and a resumed import mid-change would
+  misclassify. Any change here must produce byte-identical fingerprints, proven
+  by comparison, or carry a migration and say so.
+- **Deferring FTS indexing changes what "imported" means.** Today a note is
+  searchable the moment its batch commits. An outbox drained by a background
+  worker makes notes invisible to search for a while, needs crash recovery for
+  the queue, and interacts with J18's rowid mapping. That is a product decision
+  as much as a performance one, so it is measured first and decided explicitly.
+  The sketch's APIs (`execTx`, `QueryTransientMapping`, `QueueForFTS`) do not
+  exist in this repository and are read as intent, not as code.
+
+**Scope.**
+
+- **J19-A, investigate — every surviving claim, measured, with a recorded
+  verdict.** Starts from the CPU and heap profile J17-A already names, so that
+  each suggestion is tested against where time and memory actually go rather
+  than where the review guessed. For each candidate: a benchmark or A/B on J5's
+  corpora (a subset first, the 382,206-note vault where the subset shows an
+  effect), reporting wall time, peak RSS, allocations and GC, and a verdict of
+  **improves**, **no effect**, or **worse**, with the numbers. Candidates:
+  pooled I/O buffers; streamed hashing without a second copy; avoiding the
+  concatenate-then-convert in fingerprint composition (fingerprints must stay
+  byte-identical); preallocated `seen` maps; the `splitFrontmatterBytes`
+  conversion (expected to be free — the benchmark confirms or refutes); the
+  memory held by inventory maps, from the heap profile, before any move to
+  transient tables; and FTS writes inside versus after the import transaction,
+  measured including the time until the last note is searchable.
+- **J19-B, implement what J19-A showed improves — and only that.** Each change
+  lands with its own before/after on the same corpus beside J19-A's numbers, and
+  a candidate that measured as no effect or worse is not implemented, however
+  reasonable it looks. If deferring FTS measures better, it comes to the owner
+  as a decision with the visibility cost stated, not as a merged change.
+- **J19-C, prove nothing else moved.** Import reports identical counts on the
+  same corpus, fingerprints are byte-identical for unchanged items (a re-import
+  of an unchanged vault reports every item unchanged), search results match
+  before and after, and J18's mapping validator and tests still pass.
+
+**Boundaries.** A suggestion is adopted on measurement, never on plausibility —
+J17 is the record of why. No measurement is extrapolated from a subset to the
+full corpus; where the full corpus is not run, the record says so. No
+fingerprint composition changes without byte-identical proof or an explicit
+migration. No asynchronous indexing is merged without the owner's decision.
+
+**Dependencies.** J17-A's profile, which J19-A uses rather than repeats. J5's
+corpora and harness. J18, whose rowid mapping any FTS change must keep correct.
+
+**Working state.** A table of every review suggestion with a measured verdict,
+the improvements that measured better implemented with their before/after, and
+a recorded reason for each suggestion that was not adopted.
