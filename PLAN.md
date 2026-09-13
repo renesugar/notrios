@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**17 items: 8 complete, 0 in progress, 9 not started, 0 deferred.**
+**17 items: 8 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -77,9 +77,19 @@ this section is archived when the plan completes and the rules are not.
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | not-started | 0/3 | 3 |
-| J17. Batch the per-item work J5 found in import and export | not-started | 0/3 | 3 |
+| J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J17. Batch the per-item work J5 found in import and export**
+
+- `J17-A` The cause is measured rather than inferred: the link-rebuild theory is tested and rejected, and the document-write path is measured next — *not-started*
+- `J17-B` The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number — *not-started*
+- `J17-C` Every remaining per-item store call in import and export is either batched or recorded — *not-started*
+
+### Not started
+
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J16. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1523,7 +1533,7 @@ URL.
 description with honest parameter names, a re-recorded frozen surface, and a
 round trip through `notriosctl sync exchange` proving peers still talk.
 
-## J17. Batch the per-item work J5 found in import and export
+## J17. Batch the per-item work J5 found in import and export — in progress
 
 **Goal.** No importer or exporter calls the store once per item where a batch
 call exists, and the improvement is measured rather than assumed.
@@ -1545,22 +1555,41 @@ The code says where to look, and the batch API already exists:
 over a slice — and then rebuilds links one document at a time inside that loop.
 Its sibling calls the batch method for the same work.
 
-**This is a lead, not a proven cause, and the item is shaped accordingly.**
-Nothing profiled the import or changed the call and re-measured. What is
-established is 382,206 calls where 3,823 would do. So the first slice measures,
-and the fix is only justified if the measurement supports it.
+**J17-A measured it, and the lead was wrong.** `TestJ17LinkRebuildTransactionCost`
+runs both paths over the same 2,000 documents in a copy of J5's library:
+per-document 9.547 ms, batched 6.320 ms, **ratio 1.51×**. Collapsing 500 commits
+into one buys 34%, not 2.6×; a commit is worth ~3.2 ms of the 9.5 ms, where J5's
+record had inferred ~27 ms by dividing the gap by the call difference — which is
+arithmetic that can only agree with itself. The experiment that could disagree
+took 138 seconds, and `performance/v1.0-j5` now carries the correction beside
+the claim rather than instead of it.
+
+**The lead that replaces it is structural and deliberately not yet a
+conclusion.** The link rebuild is one per-document call among several:
+
+| | Obsidian | Joplin |
+|---|---|---|
+| document write | `CreateDocument`/`UpdateDocument`, plus `SetDocumentSource` and `MoveDocumentToNotebook` — **per document** | `ApplyImportDocumentBatch` — **per batch** |
+| link rebuild | `RebuildDocumentLinks` — per document | `RebuildImportDocumentLinksBatch` — per batch |
+
+`CreateDocument` and `UpdateDocument` each open their own `BEGIN IMMEDIATE`. So
+the item continues by measuring that pair the way the link rebuild was measured,
+rather than by assuming the second theory because the first one failed.
 
 **Scope.**
 
-- **J17-A, prove the cause before fixing it.** Profile one Obsidian import, or
-  change the call and re-measure the same corpus. J5's corpus is on disk and its
-  harness repeats, so this is cheap. If the link rebuild is not where the time
-  goes, the finding is corrected in `performance/v1.0-j5` and this item narrows
-  to whatever is.
-- **J17-B, use the batch API.** Have the Obsidian importer call
-  `RebuildImportDocumentLinksBatch` the way the Joplin importer does, and
-  re-measure the same corpus. The number goes in the record next to the old one;
-  a change that did not help is reported as not having helped.
+- **J17-A, prove the cause before fixing it.** *Partly done.* The link-rebuild
+  theory is measured and rejected, and `performance/v1.0-j5` is corrected. What
+  remains is the same treatment for the document write: compare
+  `ApplyImportDocumentBatch` against the per-document `CreateDocument` /
+  `UpdateDocument` / `SetDocumentSource` / `MoveDocumentToNotebook` sequence over
+  the same documents.
+- **J17-B, batch what measurement justifies.** The link rebuild is worth
+  batching on its own evidence — 1.51×, and the batch path additionally records
+  a resumable checkpoint the per-document path does not — but it must be
+  reported as a 1.51× improvement to one phase, **not** as the fix for a 2.6×
+  gap. Whatever J17-A finds in the document write is batched on the same terms:
+  measured first, claimed at the size measured.
 - **J17-C, survey the rest of import and export.** The two importers and
   `internal/archivev2` for any other store call made once per item where a batch
   method exists. A per-item call with no batch equivalent is recorded, not

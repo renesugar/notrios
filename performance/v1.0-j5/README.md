@@ -50,10 +50,27 @@ The Obsidian importer batches its *reads* — `GetDocuments` over a slice — an
 then rebuilds links one document at a time inside that loop. The batch API it
 needs already exists and its sibling already uses it.
 
-**This is a strong lead, not a proven cause.** Nothing here profiled the import
-or changed the call and re-measured, so "382,206 calls where 3,823 would do" is
-what was established. The corpus is on disk and the measurement repeats, so
-proving it is cheap — which is J17.
+**This was a strong lead and J17-A measured it. It is not the cause.**
+
+`TestJ17LinkRebuildTransactionCost` runs both paths over the same 2,000
+documents in a copy of this library:
+
+```
+per-document: 19.095s total, 9.547ms per document (2000 transactions)
+batched:      12.639s total, 6.320ms per document (4 transactions)
+ratio: 1.51x
+```
+
+Collapsing 500 commits into one buys **34%**, not the 2.6× the importers differ
+by. Most of the cost is the rebuild itself, not the transaction around it: even
+batched, a document costs ~6.3 ms, so 382,206 of them is about 40 minutes of
+work neither importer can avoid — real, and far short of the 2 h 48 m gap.
+
+**The arithmetic published here before that measurement was wrong.** It reasoned
+that ~378,000 extra commits across a 10,068-second gap implied ~27 ms per
+commit. The measurement puts a commit at ~3.2 ms of the 9.5 ms per document.
+That was a number fitted to a hypothesis rather than a test of it, and it is
+left in this record with its correction rather than quietly replaced.
 
 ## Two structural results
 

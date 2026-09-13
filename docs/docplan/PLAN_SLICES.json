@@ -400,11 +400,11 @@
     {
       "id": "J17",
       "title": "Batch the per-item work J5 found in import and export",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J17-A",
-          "statement": "The cause of the Obsidian importer's 2.6x penalty is measured, not inferred",
+          "statement": "The cause is measured rather than inferred: the link-rebuild theory is tested and rejected, and the document-write path is measured next",
           "state": "not-started"
         },
         {
