@@ -1864,6 +1864,13 @@ were each rejected by measurement.
   frontmatter copies. Cloning them cut the inventory from 672 to 438 MiB. The
   library is proven identical, including item states and fingerprints. This
   is implemented under J19-B.
+
+  **The Joplin importer had the same defect, much larger.** Each note-ID map
+  key kept its note's entire file alive. Cloning the parsed fields cut the
+  inventory from 1,301 to 52 MiB at 382,206 notes, and from 217 to 15 MiB on a
+  103,349-note export. A SHA-256 of the whole inventory is identical before and
+  after on both exports. J5's 2,881 MiB Joplin import peak is probably mostly
+  this; the full import has not been re-run.
 - **Full-text writes after the batches: 22% faster on a write path that
   excludes links, blocks and sources.** That is about 4.5% of a real import,
   inferred rather than measured. Both of its forms change when notes become

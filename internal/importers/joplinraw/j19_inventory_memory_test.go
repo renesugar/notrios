@@ -2,6 +2,9 @@ package joplinraw
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -37,6 +40,17 @@ func TestJ19InventoryMemory(t *testing.T) {
 		len(inv.NoteIDs), len(inv.Folders), len(inv.Tags), len(inv.Resources), walked.Round(time.Millisecond))
 	t.Logf("live heap held by the inventory: %.1f MiB (%.0f bytes per note)",
 		float64(after-before)/(1<<20), float64(after-before)/float64(max(len(inv.NoteIDs), 1)))
+	// A digest of the whole inventory, for proving that a memory change leaves
+	// every value the import reads identical. encoding/json sorts map keys, so
+	// two runs over the same export agree exactly when the inventories do.
+	if os.Getenv("NOTRIOS_J19_DIGEST") != "" {
+		raw, err := json.Marshal(inv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256(raw)
+		t.Logf("inventory digest: %s (%d bytes of JSON)", hex.EncodeToString(sum[:]), len(raw))
+	}
 	if path := os.Getenv("NOTRIOS_J19_HEAP"); path != "" {
 		file, err := os.Create(path)
 		if err != nil {

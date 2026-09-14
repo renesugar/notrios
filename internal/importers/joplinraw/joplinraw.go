@@ -195,7 +195,14 @@ func parseInventoryItemBytes(path string, raw []byte) (parsedItem, bool, error) 
 	if id == "" {
 		id = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	}
-	return parsedItem{Path: path, ID: id, Type: itemType, Fields: fields}, true, nil
+	// Every field value and the ID are substrings of the whole file's text,
+	// and a substring keeps that text alive. The inventory holds these for the
+	// entire import (note IDs as map keys, folder and tag titles), so without
+	// the clones each note's full file stays on the heap. J19 measured it.
+	for key, value := range fields {
+		fields[key] = strings.Clone(value)
+	}
+	return parsedItem{Path: path, ID: strings.Clone(id), Type: strings.Clone(itemType), Fields: fields}, true, nil
 }
 
 func parseInventoryFields(lines []string) map[string]string {

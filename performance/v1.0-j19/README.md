@@ -171,6 +171,44 @@ the same library with and without the clones:
 `j17_compare.py` finds only the three random-identifier columns that differ
 between any two libraries. The Obsidian importer tests pass.
 
+### The same defect in the Joplin importer, and much larger
+
+The Joplin RAW importer does not hold notes in its inventory, only a map of
+note IDs. `parseInventoryItemBytes` converts each file with `string(raw)` and
+cuts every field, the ID included, from that text. The ID then becomes a key
+in `NoteIDs`. **Each key kept its note's entire file alive.**
+`TestJ19InventoryMemory` in `internal/importers/joplinraw`, on the full
+382,206-note recipe export:
+
+| | before | cloned |
+|---|---|---|
+| live heap held by the inventory | **1,301.4 MiB** (3,571 bytes per note) | **51.9 MiB** (142 bytes per note) |
+| process peak RSS | 2,295 MiB | 258 MiB |
+
+Before, 97% of the held heap sat under `parseInventoryItemBytes`. After, the
+largest holder is the note-ID map's own values, at 20 MB. **Verdict: improves,
+by 96%.** J5 recorded a 2,881 MiB peak for the full Joplin import, and this
+inventory is probably most of it. That is inferred: the full import has not
+been re-run.
+
+The Joplin inventory reads took 10 m 30 s and 9 m 45 s. Both ran while the
+Obsidian clone measurement shared the disk, so no timing claim is made.
+
+**Proven to leave every inventory value identical.** `TestJ19InventoryMemory`
+with `NOTRIOS_J19_DIGEST` writes a SHA-256 of the whole inventory, serialised as
+JSON with sorted map keys. It ran on the importer before the change (a worktree
+at `111a53c`) and after, on two real exports:
+
+| export | digest, before and after | live heap before → after |
+|---|---|---|
+| personal, 103,349 notes, 763 resources | `a9d03f8029ee6031aab676038a32ac26c3e762526761380e264c2b494b6fde08` (9,149,711 bytes of JSON) | 216.5 → **14.6 MiB** |
+| recipe, 382,206 notes, 11,753 tags | `e0d23c26ad80bf377f9c956dc86dd6d4a9b68b01202d39b31719026d70ca5316` (32,148,136 bytes of JSON) | 1,301.4 → **51.9 MiB** |
+
+The change touches only the values `parseInventoryItemBytes` returns. So
+identical inventories mean every later phase reads identical input. The
+personal export is recorded here only as these totals. The Joplin importer
+tests pass.
+
 **The review's remedy has not been measured, and is not the only one.** The
 review proposes transient SQLite tables and sorted merges in place of the maps.
 That is a redesign of how links resolve. Smaller candidates come first, sized
