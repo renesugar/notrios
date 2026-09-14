@@ -1843,6 +1843,36 @@ were each rejected by measurement.
   of an unchanged vault reports every item unchanged), search results match
   before and after, and J18's mapping validator and tests still pass.
 
+**What J19-A has measured so far** (`performance/v1.0-j19/README.md`):
+
+- **Run noise.** Five clean sequential imports of the same 10,000 notes repeat
+  within 1.5%. Shared-machine timings had differed by 43%. That exposed J17-B's
+  1.46× as contaminated: clean, it is about 2.2×, and the J17 and J5 records
+  carry the correction.
+- **Micro-level suggestions.**
+  - Pooled `hashFile` buffer: **no effect**, since the buffer never reaches the
+    heap.
+  - Streamed fingerprint: **worse**, 9 allocations against 6, though
+    byte-identical.
+  - `splitFrontmatterBytes` conversions: **refuted**, 0 allocations.
+  - Preallocated `seen` maps: **no effect**.
+  - Frontmatter-only streaming instead of `os.ReadFile`: **not applicable**,
+    because the whole body is needed.
+- **Whole-vault memory: confirmed, and the cause was not the maps.** At 382,206
+  notes the Obsidian inventory and link namespace held 795 MiB live. About
+  390 MB of that was titles, aliases and property names pinning per-note
+  frontmatter copies. Cloning them cut the inventory from 672 to 438 MiB. The
+  library is proven identical, including item states and fingerprints. This
+  is implemented under J19-B.
+- **Full-text writes after the batches: 22% faster on a write path that
+  excludes links, blocks and sources.** That is about 4.5% of a real import,
+  inferred rather than measured. Both of its forms change when notes become
+  searchable, so it is an owner decision and is not merged.
+- **Not in the review, and larger than anything it named:**
+  - SQL compiled on every call: 35% of import CPU
+  - regexp link extraction: 22%
+  - block extraction: half of all allocation
+
 **Boundaries.** A suggestion is adopted on measurement, never on plausibility —
 J17 is the record of why. No measurement is extrapolated from a subset to the
 full corpus; where the full corpus is not run, the record says so. No
