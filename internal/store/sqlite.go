@@ -327,6 +327,29 @@ func (s *SQLiteStore) migrateUnderLock(ctx context.Context, existing int) error 
 // applySchema runs every forward step. It is idempotent: a database already at
 // the current version passes through it unchanged.
 func (s *SQLiteStore) applySchema(ctx context.Context) error {
+	// A library already at the current schema has run every step below, so
+	// none runs again. Running them was not harmless. 0001_initial.sql ends at
+	// `PRAGMA user_version = 17` and the unguarded V4–V18 steps end at 18, so
+	// every open lowered the version and every guarded step from V19 on ran
+	// again. At 382,206 notes that was ~7 s rebuilding V28's full-text mapping
+	// and ~4.6 s in V22's revision backfill, on every open, read-only commands
+	// included (v1.0 J20-A, J21). A fresh library reads 0 and a library being
+	// migrated reads below the current version, so both still run every step.
+	s.mu.Lock()
+	version, err := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	if version >= CurrentSchemaVersion {
+		return s.applyOpenInvariants(ctx)
+	}
+	return s.applyMigrations(ctx)
+}
+
+// applyMigrations runs every schema step in order. Each step is idempotent
+// against a library that already has what it creates.
+func (s *SQLiteStore) applyMigrations(ctx context.Context) error {
 	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("read migration: %w", err)
@@ -409,6 +432,14 @@ func (s *SQLiteStore) applySchema(ctx context.Context) error {
 	if err := s.ensureSchemaV28(ctx); err != nil {
 		return err
 	}
+	return s.applyOpenInvariants(ctx)
+}
+
+// applyOpenInvariants runs on every open, current library or not: the
+// database identity, the default collection, the built-in notebooks and the
+// sync metadata baseline. Each is an INSERT OR IGNORE or a read-then-write that
+// changes nothing when the row is already there.
+func (s *SQLiteStore) applyOpenInvariants(ctx context.Context) error {
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
