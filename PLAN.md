@@ -1632,6 +1632,16 @@ rather than by assuming the second theory because the first one failed.
   ran while J18's 2 s full-text scan dominated every write, so it could not
   detect commit cost, and "transaction count is falsified" overstated it. That
   question is re-measured before anything is claimed about it.
+
+  **Re-measured.** The same 10,000-note import with the library on tmpfs takes
+  16.7 ms/note against 28.7 ms/note on the HDD. User CPU is unchanged (158.9 s
+  against 161.8 s), and 132 s of waiting on the disk goes away, which is 42% of
+  the HDD run. This makes per-note commits a strong lead. It is not proof: the
+  run moved the whole library, not just the commits. The next measurement is
+  the same import on the HDD with the commits batched, which J17-B must report
+  at the size it measures. Separately, the 30.7% spent compiling SQL is CPU cost
+  that persists on tmpfs, and it is a store-wide question for J19, not an
+  importer asymmetry.
 - **J17-B, batch what measurement justifies.** The link rebuild is worth
   batching on its own evidence — 1.51×, and the batch path additionally records
   a resumable checkpoint the per-document path does not — but it must be

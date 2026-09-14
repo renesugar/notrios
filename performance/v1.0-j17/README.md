@@ -196,6 +196,31 @@ so it could not rule commit cost out, and "transaction count is falsified" went
 further than the evidence. J18 has since removed the scan, so the question can
 be asked again on a library where it is answerable.
 
+### Asked again: the same import with the library on tmpfs
+
+The same binary, vault and 10,000 notes, with only the library moved from the
+HDD to tmpfs, where a commit's sync to disk costs nothing:
+
+| library on | wall | user | sys | ms/note |
+|---|---|---|---|---|
+| HDD | 298.9 s | 161.8 s | 43.0 s | 28.7 |
+| tmpfs | 167.0 s | 158.9 s | 14.0 s | 16.7 |
+
+User CPU is unchanged (−1.8%), so the computation does not depend on where the
+library lives. **Everything that moved is waiting on the disk: 132 s, or 12 ms
+per note, 42% of the HDD run.** System time falls by 29 s because it includes
+the sync calls. At least three commits per note on a disk that syncs each one
+fits that cost, which makes commit count a strong lead again. It is not yet
+proven to be the cause: this run moved the whole library off the disk, not just
+the commits. Proving it takes the same import on the HDD with the commits
+batched.
+
+**Not claimed:** that this closes the gap with the Joplin importer. The
+~16 ms/note Joplin figure comes from all 382,206 notes on the HDD. This is a
+10,000-note subset on tmpfs, and the Obsidian importer's per-note cost rises
+between 10,000 and 40,000 notes (table above). Only a comparison on the same
+disk and the same corpus size can say how much of the gap this is.
+
 ## Three harness bugs on the way to the number
 
 All mine, all recorded because each cost a run and none was a product defect.
