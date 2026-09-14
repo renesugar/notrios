@@ -136,6 +136,20 @@ costing what the document costs rather than what the library costs.
 Just under four minutes on the largest library, once, when it is first opened
 after upgrading. Against two seconds on every note save, forever.
 
+**Corrected by J20-A: it is not once.** `ensureSchemaV18` is unguarded. It runs
+on every open and rewrites `user_version` to 18. So V28's guard reads 18, and
+the backfill in migration 0028 runs again every time a library is opened:
+- every CLI command, read-only ones included
+- every server start
+- every external-profile open
+
+On the 382,206-note vault that is about 7 s per open. It rescans
+`documents_fts` and rewrites every mapping row. The final `PRAGMA user_version
+= 28` restores the version, so the file always reads 28 and nothing outside
+shows the re-run. The per-write saving above is real. The one-time framing was
+wrong, and "Against two seconds on every note save" was compared against a cost
+that recurs. Found by J20-A, profiled in `performance/v1.0-j20/README.md`.
+
 ## How it is built
 
 `documents_fts_rowid(document_id TEXT PRIMARY KEY, fts_rowid INTEGER)`,
