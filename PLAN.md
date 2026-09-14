@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**20 items: 12 complete, 0 in progress, 8 not started, 0 deferred.**
+**20 items: 12 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -80,9 +80,19 @@ this section is archived when the plan completes and the rules are not.
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
-| J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | not-started | 0/3 | 3 |
+| J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline**
+
+- `J20-A` J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers — *not-started*
+- `J20-B` The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven — *not-started*
+- `J20-C` The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured — *not-started*
+
+### Not started
+
+Written and not begun: J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1892,7 +1902,7 @@ a recorded reason for each suggestion that was not adopted.
 - **Carried to J20:** the remaining Obsidian inventory memory (structs stored
   twice, hex hashes), and a clean re-run of J5's corpora.
 
-## J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline
+## J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline — in progress
 
 **Goal.** The Obsidian importer holds no per-note data twice. Its memory and
 time, and the Joplin importer's, are measured again on J5's full corpora under
