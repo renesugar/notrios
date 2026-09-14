@@ -70,6 +70,15 @@ only if an early step gained one after later versions existed. Git shows
 since V19 was added on 2026-08-12 (`86aa149`). Every object those steps create
 existed before any library could reach v19.
 
+**Every caller of `Bootstrap` still passes its tests:**
+- `internal/service` (server start)
+- `internal/profiles` (external-profile open)
+- `internal/abi` (registry)
+- `internal/syncstate`
+- `internal/archivev2`, which includes the archive contract's schema range and
+  restore paths
+- `cmd/notriosctl`
+
 **Schema gates.** G19's evidence validates against the fixed tree (5 schemas,
 3 complete goldens, 12 matrix cases, physical refusal) and so does G20's
 (0.7.0/schema-v27, 11 closed gates).
