@@ -78,6 +78,25 @@ with nothing else running:
   drop the page cache, and every run reads the vault from a warm cache. That is
   the same condition for each run, and it excludes cold-read cost.
 
+## Reading whole files with `os.ReadFile`
+
+The review says both importers read whole items into memory "before checking
+boundaries", and proposes streaming the frontmatter and breaking early.
+
+**Verdict: not applicable as proposed.** The Obsidian importer rewrites links
+across the whole body, and both importers write the whole body to the full-text
+index and the revision. The body is read in full whatever happens, so breaking
+early after the frontmatter would skip work that still has to be done.
+
+What remains is copying, and the heap profile above sizes it:
+- `os.readFileContents`: 2.8% of the run's allocation
+- the `string(raw)` conversion in `canonicalBody`: under `canonicalBody`'s 7.1%
+
+`readExact` hashes the bytes it has already read, with no second copy. A 1–3%
+allocation share sits inside a CPU profile where allocation and GC together are
+under 3%. No change here can reach the 1.5% run-to-run noise floor on import
+time, so no variant is built.
+
 ## Whole-vault maps: the one review claim that points at a real cost
 
 `TestJ19InventoryMemory` builds what an Obsidian import holds for its whole run:
@@ -99,6 +118,58 @@ most of it.
 1,845 bytes per file is also far more than a path, a title and two hashes
 should need. The breakdown comes next, from a heap profile written while the
 inventory is still live.
+
+**Where it goes.** An in-use heap profile, written by the test while the
+inventory is still live (`NOTRIOS_J19_HEAP`), accounts for 804 MB:
+
+| held by | MB | why |
+|---|---|---|
+| `markdownTitle` → `splitFrontmatter` | 144 | the title is a substring of a copy of the frontmatter, so it keeps that whole copy alive |
+| `string(frontmatter)` for `frontmatterPropertyOrder` | 164 | property names are substrings of this copy, so it stays alive too |
+| `PropertyOrder` slices | 81 | |
+| `Notes` slice of `vaultFile` | 80 | every note's struct is stored here… |
+| `Files` slice of `vaultFile` | 80 | …and again here |
+| `buildLinkNamespace` maps | 120 | |
+| hex hash strings | 47 | |
+| paths, IDs, the rest | ~88 | |
+
+**About 390 MB of it is substrings keeping their source strings alive.** A
+title of a few dozen bytes holds the frontmatter copy it was cut from, and the
+inventory lives for the whole import. That is not the "native Go maps" the
+review blamed. The maps (the link namespace) hold 120 MB.
+
+**Candidate: clone the substrings the inventory keeps.** `readInventory` now
+stores `strings.Clone` of the title, and of each alias and property name, so
+none of them pins the frontmatter copy it came from. Values are unchanged, so
+fingerprints are unchanged: they hash file bytes, not these fields. Same vault,
+same test:
+
+| | before | cloned |
+|---|---|---|
+| live heap, inventory | 672.4 MiB | **438.1 MiB** (−35%) |
+| live heap, inventory + link namespace | 794.8 MiB | **560.5 MiB** (−29%) |
+| process peak RSS | 1,279 MiB | 1,016 MiB |
+
+**Verdict: improves.** The substrings accounted for about 390 MB. Cloning frees
+234 MiB, because the clones themselves cost 54.5 MB and the property-name
+slices remain. What is left is mostly structure:
+- `Notes` and `Files` each hold a full copy of every note's struct (160 MB
+  between them)
+- hex hash strings (57 MB)
+- the link namespace (116 MB)
+
+Those are the next candidates, each to be measured on its own. `Files` is read
+only by the source-bundle phase and to copy target IDs across, so it need not
+hold a second full struct per note. That still has to be measured before it
+counts.
+
+**Proven not to change the import.** J17's generated 300-note vault imports to
+the same library with and without the clones:
+- 1,055 links, 170 attachment references and 3,129 blocks
+- the checkpoint, and all 329 item states and their fingerprints
+
+`j17_compare.py` finds only the three random-identifier columns that differ
+between any two libraries. The Obsidian importer tests pass.
 
 **The review's remedy has not been measured, and is not the only one.** The
 review proposes transient SQLite tables and sorted merges in place of the maps.

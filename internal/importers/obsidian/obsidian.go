@@ -421,10 +421,15 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 			frontmatter, _, _ := splitFrontmatterBytes(raw)
 			body := normalizeNewlines(string(raw))
 			file.ItemType = "markdown"
-			file.Title = markdownTitle(rel, body)
-			file.Aliases = frontmatterAliases(string(frontmatter))
+			// These are substrings of a copy of the note's frontmatter or body.
+			// A substring keeps its whole backing string alive, and the
+			// inventory lives for the entire import, so without the clones
+			// each note's text stays on the heap to keep a title and a few
+			// property names. J19 measured it at 382,206 notes.
+			file.Title = strings.Clone(markdownTitle(rel, body))
+			file.Aliases = cloneStrings(frontmatterAliases(string(frontmatter)))
 			file.FrontmatterSHA = sha256Hex(frontmatter)
-			file.PropertyOrder = frontmatterPropertyOrder(string(frontmatter))
+			file.PropertyOrder = cloneStrings(frontmatterPropertyOrder(string(frontmatter)))
 			file.TargetID = documentID(rel)
 			if previous := seenTargets[file.TargetID]; previous != "" {
 				file.TargetID += "_" + shortPathHash(rel)
@@ -634,6 +639,15 @@ func buildLinkNamespace(inv inventory) linkNamespace {
 		sort.Strings(ns.assetsByBase[key])
 	}
 	return ns
+}
+
+// cloneStrings copies each string so the slice holds no reference into the
+// larger string its values were cut from.
+func cloneStrings(values []string) []string {
+	for index, value := range values {
+		values[index] = strings.Clone(value)
+	}
+	return values
 }
 
 func appendUnique(values []string, value string) []string {
