@@ -285,7 +285,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if sourceKey == "" {
 		sourceKey = filepath.Clean(absoluteDir)
 	}
-	inv, err := readInventory(ctx, absoluteDir)
+	inv, err := readInventory(ctx, absoluteDir, options.PreserveSource)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,12 @@ func normalizedCollection(value string) string {
 	return "default"
 }
 
-func readInventory(ctx context.Context, root string) (inventory, error) {
+// readInventory walks the vault once. retainFiles keeps a full per-file list
+// in Files, which only the source-bundle phase reads. Every note and asset is
+// otherwise already held in Notes or Assets, so an import that does not
+// preserve source skips that second copy: ~160 MB at 382,206 notes (v1.0 J20).
+// The inventory fingerprint covers every file either way.
+func readInventory(ctx context.Context, root string, retainFiles bool) (inventory, error) {
 	result := inventory{}
 	hash := sha256.New()
 	seenPaths := map[string]string{}
@@ -448,7 +453,9 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 				result.Assets = append(result.Assets, file)
 			}
 		}
-		result.Files = append(result.Files, file)
+		if retainFiles {
+			result.Files = append(result.Files, file)
+		}
 		_, _ = io.WriteString(hash, file.ItemKey+"\x00"+file.Fingerprint+"\x00")
 		return nil
 	})

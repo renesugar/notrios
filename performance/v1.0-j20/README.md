@@ -118,3 +118,54 @@ anything is changed.
 No candidate is adopted until `TestJ19InventoryMemory` shows held memory falling
 on the full vault. Each must also pass the J17 library comparison, including
 item states, and keep the inventory fingerprint identical.
+
+## J20-B, candidate 1: build `Files` only when source is preserved
+
+`readInventory` put every note and asset into `Files` as well as `Notes` or
+`Assets`. Only the source-bundle phase reads `Files`, and `runAll` and
+`firstPhase` run that phase only with `--preserve-source`, which the CLI
+defaults to false. The other uses of `Files`:
+- `workTotal` counts it only under `PreserveSource`
+- `applyLegacySourceIDs` copies target IDs into it, which is a no-op when it is
+  empty
+
+The inventory fingerprint is still hashed from every file during the walk.
+`readInventory` now takes `retainFiles`, and `newImportRun` passes
+`options.PreserveSource`.
+
+`TestJ19InventoryMemory` on the full 382,206-note vault, run once without
+`Files` (the default import) and once with them (`NOTRIOS_J19_RETAIN_FILES`,
+the preserve-source shape):
+
+| | before (J19 clones) | default, no `Files` | retained, as control |
+|---|---|---|---|
+| live heap, inventory | 438.1 MiB | **358.1 MiB** | 438.1 MiB |
+| live heap, inventory + link namespace | 560.5 MiB | **480.5 MiB** | 560.5 MiB |
+| process peak RSS | 1,016 MiB | **900 MiB** | 1,023 MiB |
+
+**Verdict: improves, by 80 MiB (18% of the inventory), for every import that
+does not preserve source.** The control reproduces 438.1 MiB exactly, so the
+80 MiB is `Files` alone. That is half the ~160 MB the heap profile had put
+under the two slices, because `Files` shared its strings with `Notes`. Only the
+structs were a second copy. A preserve-source import holds what it held
+before. The two walks took 2 m 22 s and 1 m 12 s; the first ran from a cold
+page cache, and no timing is claimed.
+
+**Proven not to change the default import.** J17's generated 300-note vault
+imports to a library table-by-table identical to the post-clone library, apart
+from the three random-identifier columns. The checkpoint matches, so the
+inventory fingerprint is unchanged, and so do all 329 item states. All
+Obsidian importer tests pass, including `TestH9HierarchyRichLinksAndExactSourceBundle`,
+which imports with source preserved and so exercises the retained path.
+
+**What remains live**, from the in-use heap profile of the default run
+(482 MB):
+
+| holder | MB |
+|---|---|
+| `readInventory` structs and paths | 108 |
+| `bytealg.MakeNoZero` (string building: paths, IDs) | 91 |
+| `frontmatterPropertyOrder` slices | 83 |
+| link namespace | 128 |
+| clones (titles, aliases, property names) | 52 |
+| hex hash strings | 45 |

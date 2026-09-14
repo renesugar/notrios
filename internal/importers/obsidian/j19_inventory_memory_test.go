@@ -23,7 +23,8 @@ func TestJ19InventoryMemory(t *testing.T) {
 
 	before := liveHeap()
 	started := time.Now()
-	inv, err := readInventory(ctx, vault)
+	// false is what an import without --preserve-source holds, the CLI default.
+	inv, err := readInventory(ctx, vault, os.Getenv("NOTRIOS_J19_RETAIN_FILES") != "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +36,7 @@ func TestJ19InventoryMemory(t *testing.T) {
 	t.Logf("%d files, %d notes, %d assets, %d folders; inventory walked in %s",
 		len(inv.Files), len(inv.Notes), len(inv.Assets), len(inv.Folders), walked.Round(time.Millisecond))
 	t.Logf("live heap held by the inventory: %.1f MiB (%.0f bytes per file)",
-		mib(afterInventory-before), float64(afterInventory-before)/float64(max(len(inv.Files), 1)))
+		mib(afterInventory-before), float64(afterInventory-before)/float64(max(len(inv.Notes)+len(inv.Assets), 1)))
 	t.Logf("live heap held by the link namespace: %.1f MiB (%.0f bytes per note)",
 		mib(afterNamespace-afterInventory), float64(afterNamespace-afterInventory)/float64(max(len(inv.Notes), 1)))
 	t.Logf("together: %.1f MiB", mib(afterNamespace-before))
