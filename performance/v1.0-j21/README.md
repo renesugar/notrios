@@ -84,5 +84,19 @@ existed before any library could reach v19.
 (0.7.0/schema-v27, 11 closed gates).
 
 The "migrated" shapes above hold the current schema with the version lowered.
-A genuinely old library is checked below: J5's real v27 library, migrated by the
-fixed binary, compared with the same library migrated by the old one.
+So a genuinely old library is checked too: J5's real v27 library, migrated by
+the fixed binary, against the same library migrated by the old one.
+
+**J5's real v27 Obsidian library, 382,206 notes.** The copy made before
+migration digests as `fc6fb625…` (231 objects, v27). Two copies were migrated,
+one by each binary:
+
+| migrated by | schema digest | rowid mapping digest |
+|---|---|---|
+| old binary (`17aa250` tree) | `8b7b6640…9f842` (234 objects, v28) | `a4679b01a821fb3b75fdd5732467aba7ca1c5123bc1f3342993fe984372ae0e1`, 382,206 rows |
+| fixed binary (`9256f25`) | `8b7b6640…9f842` (234 objects, v28) | `a4679b01a821fb3b75fdd5732467aba7ca1c5123bc1f3342993fe984372ae0e1`, 382,206 rows |
+
+**The same schema as every synthetic shape, and a byte-identical mapping.**
+The fixed binary migrated in 217.09 s, against 210.50 s for the old binary on
+the other copy. That cost is paid once. The fix still backed the library up
+first, and the verified copy is in `pre-migration-backups/27-to-28-…`.
