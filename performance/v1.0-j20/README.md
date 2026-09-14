@@ -35,8 +35,59 @@ notebooks, 11,753 Joplin tags, and checkpoints `completed`.
     built before either started.
   - Each run shows zero tracked changes.
 
-**Search, measured after each import: slower than J5, not yet explained.**
-See below.
+**Search, measured after each import: slower than J5.** The cause is found
+below, and it is not search.
+
+| query | J5 Obsidian | J20-A Obsidian | J5 Joplin | J20-A Joplin |
+|---|---|---|---|---|
+| "the" (187,518 notes) | 9.1 s | 16.4 s | 8.6 s | 14.7 s |
+| "quinoa" (385) | 4.9 s | 12.4 s | 4.3 s | 10.7 s |
+| "chicken stock" (9,703) | 5.2 s | 12.6 s | 4.8 s | 11.1 s |
+
+Counts are identical. Every query is about 7 s slower, whatever it matches.
+
+### The 7 s is paid on every open, and it is a J18 regression
+
+**One library, two binaries.** J5's Obsidian library was copied, and each
+binary searched the copy, alone on the machine:
+
+| binary | "the" | "quinoa" | "chicken stock" |
+|---|---|---|---|
+| J5 (`fde1330`), library at v27 | 9.00, 9.06 s | 4.82, 5.00 s | 5.02, 5.07 s |
+| current (`17aa250`), same copy after migrating to v28 | 15.84, 16.03 s | 12.09, 13.36 s | 12.20, 12.35 s |
+
+J5's binary reproduces J5's numbers, so the machine has not changed.
+`notriosctl collections list` reads almost nothing, and it takes 12.4 s with
+the current binary (8.4 s user, 3.7 s system). **The cost is in opening the
+library, not in search.**
+
+**Profile.** `TestJ20OpenCost` (`internal/store/j20_open_cost_test.go`) opens
+the migrated copy twice under `-cpuprofile`. Each time, opening takes 10 ms and
+`Bootstrap` takes 12.1–12.2 s:
+
+| step, re-run on every open | CPU over two opens | per open |
+|---|---|---|
+| `ensureSchemaV28`: rebuild the whole rowid mapping from `documents_fts` | 14.1 s | ~7 s |
+| `ensureSchemaV22` → `backfillRevisionObjects` | 9.2 s | ~4.6 s |
+
+**Why steps that are guarded by version still run.**
+1. `ensureSchemaV18`, like V4–V17, is unguarded. It runs on every open and ends
+   with `PRAGMA user_version = 18`, rewriting a v28 library's version downward.
+2. The guarded steps (V21, V22, V27, V28) then read 18 and run again.
+3. The last step sets 28 again, so the file on disk always reads 28, and the
+   defect cannot be seen from outside.
+
+- **J18's V28 turned a one-time migration into a per-open cost.** Its
+  `INSERT OR REPLACE … SELECT document_id, rowid FROM documents_fts` rescans the
+  full-text index and rewrites 382,206 mapping rows on every command, read-only
+  ones included. J18's record calls that scan "one scan, once, at migration
+  time". That is wrong, and so is J18's claim that V28 costs 3 m 49 s once.
+- **V22's backfill has cost ~4.6 s per open since before J5.** J5's search
+  numbers already contained it, so J5's baseline was never a search
+  measurement either.
+
+The rewrite is idempotent, so the mapping stays correct. What it costs is time
+and writes on every open.
 
 ## J20-B: what the remaining Obsidian candidates must preserve
 
