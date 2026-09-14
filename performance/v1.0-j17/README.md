@@ -221,6 +221,132 @@ batched.
 between 10,000 and 40,000 notes (table above). Only a comparison on the same
 disk and the same corpus size can say how much of the gap this is.
 
+## J17-B — the commits batched, measured on the disk that was slow
+
+The note phase now builds one `ImportDocumentMutation` per note and applies the
+batch with `ApplyImportDocumentBatch`. The document, its source, its attachment
+references, its item state and the checkpoint all land in one transaction. The
+link phase calls `RebuildImportDocumentLinksBatch`. These are the store methods
+the Joplin importer already uses. `eachBatch` still saves its checkpoint after
+each batch, one commit per 100 notes, so the report counters stay exact.
+
+The same binary harness, vault and 10,000 notes, on J5's HDD:
+
+| importer | wall | user | sys | ms/note |
+|---|---|---|---|---|
+| per-note commits (before) | 298.9 s | 161.8 s | 43.0 s | 28.7 |
+| batched commits (after) | 198.1 s | 174.8 s | 17.3 s | 19.7 |
+| per-note commits, library on tmpfs | 167.0 s | 158.9 s | 14.0 s | 16.7 |
+
+**1.46× on 10,000 notes on the HDD.** The lead now has a direct measurement
+behind it: moving only the commits recovers 101 s of the 132 s that moving the
+whole library recovered. System time falls to within 3 s of the tmpfs run.
+User CPU rose by 13 s (8%). That rise has not been explained and is not claimed
+to be noise. It is small against the 101 s gained, and the profile attributes
+none of it yet.
+
+**Claimed at the size measured, and no larger.** This is 10,000 notes. The
+382,206-note import, and the gap against the Joplin importer on that corpus,
+have not been re-run. The per-note cost of the old importer rose between 10,000
+and 40,000 notes, so the 10k ratio is not extrapolated to J5's 4.52 hours.
+
+### Same library, proven by comparison rather than by the import finishing
+
+`j17_compare.py` compares two libraries table by table, ignoring only timestamp
+columns. When a table differs, it re-compares column by column and names the
+columns that differ.
+
+```sh
+python3 performance/v1.0-j17/j17_make_vault.py /tmp/vault17 300
+# import /tmp/vault17 once with the importer before the change and once after,
+# each into a new library via TestJ17ImportRealVaultOnDisk, then:
+python3 performance/v1.0-j17/j17_compare.py /tmp/before.sqlite /tmp/after.sqlite
+```
+
+**The 10,000-note subset**, old importer against new:
+
+```
+same  document_blocks (249455 rows)      same  documents_fts (10000 rows)
+same  document_links (2 rows)            same  documents_fts_rowid (10000 rows)
+same  document_sources (10000 rows)      same  import_checkpoints (1 rows)
+same  import_item_states (10113 rows)    same  index_outbox (10000 rows)
+same  notebooks (117 rows)               ...
+DIFF  database_identity   columns: ['database_id', 'replica_id']
+DIFF  document_revisions  columns: ['id']
+DIFF  documents           columns: ['current_revision_id']
+```
+
+The three differences are the random identifiers each new library and each
+revision is given. They could not match between two separate imports.
+
+That corpus has 2 links and no attachments, so on its own it proves little
+about the paths that changed most. `j17_make_vault.py` generates a
+deterministic 300-note vault with these link forms:
+- wikilinks, both forward and backward
+- display text and heading anchors
+- relative markdown links
+- alias targets
+- embedded PNG attachments across nested folders
+- a missing target
+
+Old importer against new: **1,055 links (865 resolved), 170 attachment
+references, 3,129 blocks, 329 item states. Every table is the same except the
+same three random-identifier columns.** Resolving forward references depends on
+the separate link phase, and it produced the same 865.
+
+The update path had no test that changed a note's body and re-imported it.
+`TestImportObsidianVaultFixture` now does: exactly one update, a new revision,
+the new body, and a link index rebuilt from the new body.
+
+## J17-C — every other per-item store call in import and export
+
+The survey counts each store call in `internal/importers/*` and
+`internal/archivev2`, then checks each call inside a per-item loop against the
+batch methods the store interface actually offers. For writes, those are
+`PutImportItemStates`, `ApplyImportDocumentBatch`,
+`RebuildImportDocumentLinksBatch` and `ApplyRestoreRecords`. For reads, they are
+`GetDocuments`, `GetResources`, `GetDocumentTags`, `GetDocumentSources`,
+`FindDocumentsBySourceIDs`, `GetImportItemStates` and the `Export*` family.
+
+**Batched, nothing to do:**
+
+| where | calls |
+|---|---|
+| `internal/archivev2` export | every read is an `Export*` call over a batch of IDs |
+| `internal/archivev2` restore | writes go through `ApplyRestoreRecords` per batch |
+| Obsidian and Joplin notes and links | `ApplyImportDocumentBatch` and `RebuildImportDocumentLinksBatch` (Obsidian since J17-B) |
+| Obsidian and Joplin item states | `PutImportItemStates` per batch |
+
+**Per item, with no batch method to use. Recorded, not invented:**
+
+| importer | per-item call | once per |
+|---|---|---|
+| Obsidian, Joplin | `PutSourceBundleItem` | preserved source file, only with source preservation on |
+| Obsidian, Joplin | `CreateNotebook` / `UpdateNotebook` | folder or notebook |
+| Obsidian, Joplin | `CreateResource` / `UpdateResource` | attachment |
+| Joplin | `UpsertTag` | tag |
+
+None of these has a batch equivalent in the store, and adding one is a store
+change. The plan keeps that for whatever item needs it. On J5's corpora these
+are the small counts: 117 notebooks in the 10k subset and 781 folders in the
+whole vault, against 382,206 notes. Attachments are the one count that can grow
+like notes, and nothing here measured their cost.
+
+**Per item, where a batch method exists but does not fit:**
+
+| importer | per-item calls |
+|---|---|
+| ChatGPT | `FindDocumentBySource`, `GetDocument`, `CreateDocument` / `UpdateDocument`, `SetDocumentSource` per conversation |
+| Claude | the same, per conversation |
+| Twitter | the same, plus `CreateResource`, `AttachDocumentResource` and `AddDocumentTag`, per tweet |
+
+`ApplyImportDocumentBatch` requires an import checkpoint and an item state for
+each document. These three importers have neither (no `Checkpoint` or
+`ImportItemState` anywhere in them). So moving them onto it means giving them
+resumable, fingerprinted imports: a design change to each importer, not a change
+of call site. They are recorded here. No cost is claimed for them, because none
+has been measured on a corpus large enough to matter.
+
 ## Three harness bugs on the way to the number
 
 All mine, all recorded because each cost a run and none was a product defect.

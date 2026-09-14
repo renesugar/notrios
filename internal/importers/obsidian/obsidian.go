@@ -893,7 +893,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		if err != nil {
 			return err
 		}
-		newStates := make([]store.ImportItemState, 0, len(items))
+		mutations := make([]store.ImportDocumentMutation, 0, len(items))
 		for _, item := range items {
 			raw, err := readExact(item)
 			if err != nil {
@@ -938,61 +938,55 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				run.report.NotesUnchanged++
 			}
 			run.report.AttachmentsCreated += len(attachments)
-			if write && !trashed {
-				if action == "create" {
-					current, err = run.st.CreateDocument(run.ctx, store.CreateDocumentRequest{
-						PreferredID: targetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
-						Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
-						Message: "import from Obsidian vault",
-					})
-					if err != nil {
-						return err
-					}
-				} else if action == "update" {
-					if current.Title != item.Title || current.Body != canonical {
-						current, err = run.st.UpdateDocument(run.ctx, store.UpdateDocumentRequest{
-							ID: targetID, Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
-							BaseRevisionID: current.CurrentRevisionID, Message: "import update from Obsidian vault",
-						})
-						if err != nil {
-							return err
-						}
-					}
-					if current.NotebookID != notebookID {
-						if _, err := run.st.MoveDocumentToNotebook(run.ctx, targetID, notebookID); err != nil {
-							return err
-						}
-					}
-				}
+			if !write {
+				continue
+			}
+			// Every note in the batch becomes one mutation, applied in one
+			// transaction with the checkpoint. J17 measured the per-note calls
+			// this replaces at three or more durable commits per note, and on
+			// a disk that syncs each commit that waiting was 42% of the import.
+			state := run.itemState(item, action)
+			state.TargetID = targetID
+			state.Fingerprint = fingerprint
+			mutation := store.ImportDocumentMutation{
+				Action: action,
+				Document: store.CreateDocumentRequest{
+					PreferredID: targetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
+					Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
+					Message: "import from Obsidian vault",
+				},
+				State:        state,
+				SkipDocument: trashed,
+			}
+			if action == "update" {
+				mutation.Document.Message = "import update from Obsidian vault"
+				mutation.BaseRevisionID = current.CurrentRevisionID
+			}
+			if !trashed {
 				metadata, _ := json.Marshal(map[string]any{
 					"relative_path": item.RelPath, "aliases": item.Aliases,
 					"frontmatter_sha256": item.FrontmatterSHA,
 				})
-				if _, err := run.st.SetDocumentSource(run.ctx, store.SetDocumentSourceRequest{
+				mutation.Source = store.SetDocumentSourceRequest{
 					DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
-				}); err != nil {
-					return err
 				}
 				for _, attachment := range attachments {
-					if _, err := run.st.AttachDocumentResource(run.ctx, store.AttachResourceRequest{
+					mutation.Resources = append(mutation.Resources, store.AttachResourceRequest{
 						DocumentID: targetID, ResourceID: attachment.ResourceID, RelationType: attachment.RelationType,
 						AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
-					}); err != nil && !errors.Is(err, store.ErrNotFound) {
-						return err
-					}
+					})
 				}
 			}
-			if write {
-				state := run.itemState(item, action)
-				state.TargetID = targetID
-				state.Fingerprint = fingerprint
-				newStates = append(newStates, state)
-			}
+			mutations = append(mutations, mutation)
 		}
-		if write {
-			return run.st.PutImportItemStates(run.ctx, newStates)
+		if !write || len(mutations) == 0 {
+			return nil
 		}
-		return nil
+		checkpoint, err := run.batchCheckpoint("notes", end, len(run.inventory.Notes), nextPhase)
+		if err != nil {
+			return err
+		}
+		return run.st.ApplyImportDocumentBatch(run.ctx, store.ImportDocumentBatchRequest{Documents: mutations, Checkpoint: checkpoint})
 	})
 }
 
@@ -1009,16 +1003,21 @@ func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
 		if err != nil {
 			return err
 		}
-		for _, note := range run.inventory.Notes[start:end] {
-			if _, found := existing[note.TargetID]; !found {
-				continue
+		present := make([]string, 0, len(ids))
+		for _, id := range ids {
+			if _, found := existing[id]; found {
+				present = append(present, id)
 			}
-			if err := run.st.RebuildDocumentLinks(run.ctx, note.TargetID); err != nil {
-				return err
-			}
-			run.report.LinkIndexesRefreshed++
 		}
-		return nil
+		if len(present) == 0 {
+			return nil
+		}
+		run.report.LinkIndexesRefreshed += len(present)
+		checkpoint, err := run.batchCheckpoint("link_rebuild", end, len(run.inventory.Notes), nextPhase)
+		if err != nil {
+			return err
+		}
+		return run.st.RebuildImportDocumentLinksBatch(run.ctx, store.ImportLinkBatchRequest{DocumentIDs: present, Checkpoint: checkpoint})
 	})
 }
 
@@ -1190,15 +1189,34 @@ func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase s
 }
 
 func (run *importRun) saveCheckpoint(phase string, nextIndex int, status string) error {
-	raw, err := json.Marshal(run.report)
+	checkpoint, err := run.checkpoint(phase, nextIndex, status)
 	if err != nil {
 		return err
 	}
-	return run.st.PutImportCheckpoint(run.ctx, store.ImportCheckpoint{
+	return run.st.PutImportCheckpoint(run.ctx, checkpoint)
+}
+
+func (run *importRun) checkpoint(phase string, nextIndex int, status string) (store.ImportCheckpoint, error) {
+	raw, err := json.Marshal(run.report)
+	if err != nil {
+		return store.ImportCheckpoint{}, err
+	}
+	return store.ImportCheckpoint{
 		SourceSystem: sourceSystem, SourceKey: run.report.SourceKey, CollectionID: run.options.CollectionID,
 		InventoryFingerprint: run.inventory.Fingerprint, Phase: phase, NextIndex: nextIndex,
 		TotalItems: run.workTotal, ProcessedItems: run.processed, Status: status, ReportJSON: string(raw),
-	})
+	}, nil
+}
+
+// batchCheckpoint is the checkpoint a batch commits with its own writes, so a
+// crash cannot leave the writes durable and the position behind them. It names
+// the same phase and index eachBatch saves after the batch; that later save
+// still runs, and carries the report counters the batch has just advanced.
+func (run *importRun) batchCheckpoint(phase string, end, total int, nextPhase string) (store.ImportCheckpoint, error) {
+	if end == total {
+		return run.checkpoint(nextPhase, 0, "running")
+	}
+	return run.checkpoint(phase, end, "running")
 }
 
 func (run *importRun) currentDocumentIDs() ([]string, error) {

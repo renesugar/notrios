@@ -77,6 +77,22 @@ writes each document with per-document calls where the Joplin importer uses
 `ApplyImportDocumentBatch`; running 400 documents each way gave **0.99×** — 400
 transactions against 1 changed nothing. See `performance/v1.0-j17`.
 
+**That second rejection was confounded, and J17-B has since measured the
+commits directly.** The 0.99× ran on this 382,206-note library before J18. At
+that point every write spent about 2 s scanning the full-text index, and a commit
+of a few milliseconds cannot show up beside that. J17-A's CPU profile then found
+at least three durable commits per note on the Obsidian path. Moving the library
+to tmpfs removed 132 s of waiting from a 10,000-note import.
+
+J17-B moved the Obsidian importer onto `ApplyImportDocumentBatch` and
+`RebuildImportDocumentLinksBatch`, the methods the Joplin importer uses. It then
+re-measured on the same HDD: **19.7 ms/note against 28.7 (1.46×) on 10,000
+notes**, and a table-by-table comparison found the same library.
+
+So the call-site table above describes the tree J5 measured, not the current
+one. The 382,206-note import has not been re-run, and nothing here claims how
+much of the 2.6× that 1.46× on a subset closes. See `performance/v1.0-j17`.
+
 **Characterised since, and still unexplained.** The Obsidian importer costs
 ~40 ms per note and the Joplin importer ~16 ms, both stable across corpus size,
 so the 2.6× is a constant factor rather than a scaling defect. Five candidate

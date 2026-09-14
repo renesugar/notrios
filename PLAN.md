@@ -77,7 +77,7 @@ this section is archived when the plan completes and the rules are not.
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
-| J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
+| J17. Batch the per-item work J5 found in import and export | in-progress | 2/3 | 1 |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
 
@@ -85,8 +85,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J17. Batch the per-item work J5 found in import and export**
 
-- `J17-A` A CPU profile names where the Obsidian importer's per-note time goes, after five call-site hypotheses were tested and rejected — *not-started*
-- `J17-B` The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number — *not-started*
 - `J17-C` Every remaining per-item store call in import and export is either batched or recorded — *not-started*
 
 ### Not started
@@ -1639,7 +1637,22 @@ rather than by assuming the second theory because the first one failed.
   the HDD run. This makes per-note commits a strong lead. It is not proof: the
   run moved the whole library, not just the commits. The next measurement is
   the same import on the HDD with the commits batched, which J17-B must report
-  at the size it measures. Separately, the 30.7% spent compiling SQL is CPU cost
+  at the size it measures.
+
+  **J17-B measured it.** With the note and link phases on the batch store
+  methods, the same 10,000-note import on the HDD takes **19.7 ms/note, against
+  28.7 (1.46×)**. Wall time drops from 298.9 s to 198.1 s, and system time from
+  43.0 s to 17.3 s. Batching only the commits recovers 101 s of the 132 s that
+  moving the whole library to tmpfs recovered. User CPU rose 13 s, which is
+  recorded as unexplained. The libraries are compared table by table against
+  the old importer's:
+  - on the 10k subset
+  - on a generated 300-note vault with 1,055 links, 170 attachment references
+    and forward references
+
+  In both, they match everywhere except the random database and revision
+  identifiers. The 382,206-note corpus has not been re-run, so no claim is made
+  about J5's 4.52 hours. Separately, the 30.7% spent compiling SQL is CPU cost
   that persists on tmpfs, and it is a store-wide question for J19, not an
   importer asymmetry.
 - **J17-B, batch what measurement justifies.** The link rebuild is worth
@@ -1653,6 +1666,20 @@ rather than by assuming the second theory because the first one failed.
   method exists. A per-item call with no batch equivalent is recorded, not
   invented — adding a batch API is a store change and belongs to whatever item
   needs it, not to a survey.
+
+  **Surveyed.**
+  - **Archive:** export reads through batched `Export*` calls, and restore writes
+    through `ApplyRestoreRecords`. Nothing is per item.
+  - **Obsidian and Joplin, notes and links:** batched in both importers.
+  - **Obsidian and Joplin, no batch method in the store:** source-bundle files,
+    notebooks, resources, and Joplin's tags stay per item. That is recorded,
+    along with the counts: notebooks number in the hundreds against 382,206
+    notes, and attachment cost is unmeasured.
+  - **ChatGPT, Claude and Twitter:** each writes one document at a time.
+    `ApplyImportDocumentBatch` requires a checkpoint and an item state per
+    document, and these importers have neither, so adopting it would be a
+    resumable-import design for each one. It is recorded without a cost claim.
+    The table is in `performance/v1.0-j17/README.md`.
 
 **Why this is not "make import faster".** Import time at this size is dominated
 by work Notrios chooses to do — J5's comparison against `movenotes-v3` showed a

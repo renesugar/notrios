@@ -124,6 +124,51 @@ Referenced block. ^block-a
 		t.Fatalf("second import was not idempotent enough: %#v", report2)
 	}
 
+	// A changed note is updated through the batch: a new revision, the new
+	// body, and a link index rebuilt from that body rather than the old one.
+	before, err := st.GetDocument(ctx, targetID)
+	if err != nil {
+		t.Fatalf("get target before update: %v", err)
+	}
+	writeFile(t, filepath.Join(dir, "Projects", "Target Note.md"), `---
+title: Target Note
+aliases:
+  - Target Alias
+---
+# Target
+
+Referenced block. ^block-a
+
+Now pointing back at [[Source Note]].
+`)
+	updated, err := Import(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatalf("import after edit: %v", err)
+	}
+	if updated.NotesUpdated != 1 || updated.NotesUnchanged != 1 || updated.NotesImported != 0 {
+		t.Fatalf("edit was not applied as one update: %#v", updated)
+	}
+	after, err := st.GetDocument(ctx, targetID)
+	if err != nil {
+		t.Fatalf("get target after update: %v", err)
+	}
+	if after.CurrentRevisionID == before.CurrentRevisionID || !strings.Contains(after.Body, "Now pointing back") {
+		t.Fatalf("update did not create a revision with the new body: %#v", after)
+	}
+	outgoing, err := st.ListDocumentLinks(ctx, targetID, "outgoing")
+	if err != nil {
+		t.Fatalf("list target links: %v", err)
+	}
+	sawBack := false
+	for _, link := range outgoing.Outgoing {
+		if link.TargetDocumentID == sourceID && link.ResolutionStatus == "resolved" {
+			sawBack = true
+		}
+	}
+	if !sawBack {
+		t.Fatalf("link index was not rebuilt from the updated body: %#v", outgoing.Outgoing)
+	}
+
 	// Trashing an imported note and re-running the import must not
 	// resurrect it (or crash on the reserved document ID).
 	trashed, _ := st.GetDocument(ctx, targetID)

@@ -408,12 +408,14 @@
         {
           "id": "J17-A",
           "statement": "A CPU profile names where the Obsidian importer's per-note time goes, after five call-site hypotheses were tested and rejected",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
         },
         {
           "id": "J17-B",
           "statement": "The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
         },
         {
           "id": "J17-C",

@@ -69,9 +69,18 @@ def main() -> None:
     require("RebuildImportDocumentLinksBatch" in joplin_src,
             "the Joplin importer no longer uses the batch link rebuild, so J5's comparison "
             "no longer describes this tree")
-    require("RebuildDocumentLinks(run.ctx, note.TargetID)" in obsidian,
-            "the Obsidian importer no longer rebuilds links per document -- if that was J17, "
-            "this record needs updating and re-measuring rather than just passing")
+    # J5 measured the tree as it was. Once J17-B batched the importer, the
+    # record stays valid only if it says so beside the claim, pointing at the
+    # re-measurement rather than silently describing code that is gone.
+    if "RebuildDocumentLinks(run.ctx, note.TargetID)" not in obsidian:
+        require("RebuildImportDocumentLinksBatch" in obsidian
+                and "ApplyImportDocumentBatch" in obsidian,
+                "the Obsidian importer no longer rebuilds links per document, and does not "
+                "use the batch methods either -- this record no longer describes the tree")
+        readme = (ROOT / "performance/v1.0-j5/README.md").read_text(encoding="utf-8")
+        require("J17-B" in readme and "performance/v1.0-j17" in readme,
+                "the Obsidian importer was batched, but J5's record does not say so -- "
+                "correct the record beside the claim and point at J17's re-measurement")
 
     print(f"J5 record valid: 3 corpora, {vault:,} notes in the controlled pair, "
           f"round trip measured, comparison against {comparison['tool']} "
