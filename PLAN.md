@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**21 items: 12 complete, 2 in progress, 7 not started, 0 deferred.**
+**21 items: 13 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -81,7 +81,7 @@ this section is archived when the plan completes and the rules are not.
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 0/3 | 3 |
-| J21. Stop re-running schema migrations every time a library is opened | in-progress | 2/3 | 1 |
+| J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 
 ### Started and not finished
 
@@ -90,10 +90,6 @@ this section is archived when the plan completes and the rules are not.
 - `J20-A` J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers — *not-started*
 - `J20-B` The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven — *not-started*
 - `J20-C` The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured — *not-started*
-
-**J21. Stop re-running schema migrations every time a library is opened**
-
-- `J21-C` Open cost and search are re-measured on both 382,206-note libraries beside J20-A's numbers — *not-started*
 
 ### Not started
 
@@ -1975,7 +1971,7 @@ and J20-C wait until J21 has fixed it, and J20-C measures the fixed tree.
 the current code, and every Obsidian inventory candidate with a measured
 verdict.
 
-## J21. Stop re-running schema migrations every time a library is opened — in progress
+## J21. Stop re-running schema migrations every time a library is opened — complete
 
 **Goal.** Opening a library that is already at the current schema costs what
 opening costs, not what migrating costs, and no step that migrates data runs
