@@ -297,3 +297,33 @@ support a claim; J20-C measures the whole import instead.
 - per-note titles and IDs
 
 Each would be a separate measured candidate.
+
+## J20-C: the full Obsidian import again, after J20-B
+
+`baseline_profile.sh` ran with the same corpus, HDD and conditions as J20-A:
+one process, a warm page cache, and a clean tree at `06fbda9`, which includes
+J20-B's four changes and J21's open fix. The import completed with J20-A's
+counts: 382,206 notes, 780 notebooks, 382,206 link indexes, 7,654 batches, and
+checkpoint `completed`.
+
+| Obsidian vault, 382,206 notes | J5 | J20-A | J20-C |
+|---|---|---|---|
+| wall | 16,261.5 s | 5,245.5 s | 5,278.2 s |
+| user / sys | not recorded | 4,881.3 s / 389.4 s | 4,933.4 s / 382.9 s |
+| peak RSS | 1,720.5 MiB | 1,197.0 MiB | **842.6 MiB** |
+| search "the" (187,518) | 9.1 s | 16.4 s | **3.9 s** |
+| search "quinoa" (385) | 4.9 s | 12.4 s | **0.07 s** |
+| search "chicken stock" (9,703) | 5.2 s | 12.6 s | **0.35 s** |
+
+- **Import time is unchanged:** +0.6% on one run each, inside the run-to-run
+  noise J19 measured. J20-B was a memory change, and no time effect is claimed.
+- **Peak RSS is 354 MiB lower than J20-A (−30%) and 878 MiB lower than J5
+  (−51%).** Each import ran once, and peak RSS is not exactly repeatable: two
+  runs of one inventory test gave 900 and 822 MiB. The drop here is more than
+  four times that spread. J20-B measured 169 MiB less held by the inventory,
+  so the rest of the difference is not attributed to anything.
+- **Search reflects J21's fix**, which is in this tree. The J21 record measures
+  it on its own.
+
+Against J5 at 382,206 notes, the Obsidian import is **3.1× faster with 51% less
+peak memory**, and every search probe is faster.
