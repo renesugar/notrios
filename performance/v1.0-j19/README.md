@@ -1,4 +1,51 @@
-# v1.0 J19-A: the external performance review, measured
+# v1.0 J19: the external performance review, measured
+
+## Outcome
+
+| review suggestion | verdict | adopted |
+|---|---|---|
+| pool the 32 KiB `hashFile` buffer | no effect | no |
+| stream the fingerprint composition | worse (more allocations), though byte-identical | no |
+| avoid `string(...)` in `splitFrontmatterBytes` | refuted: 0 allocations | no |
+| preallocate `seen` maps | no effect | no |
+| stream frontmatter instead of `os.ReadFile` | not applicable: the whole body is needed | no |
+| whole-vault in-memory structures cost hundreds of MB | **confirmed**, but the cause was substrings keeping text alive, not maps | **yes**, as clones, in both importers |
+| full-text writes after the transaction | 22% faster on a partial write path, about 4.5% of an import by inference | **no, by owner decision** |
+
+**Owner decision on full-text placement: keep it inline (option a).** A note
+stays searchable as soon as its batch commits. The measured gain was small,
+and it was never measured through the importer. Both alternatives would make
+notes invisible to search for longer: an indexing phase at the end of the
+import, and the review's background worker.
+
+**Carried to J20, not done here:**
+- The Obsidian inventory still stores every note's struct twice, in `Notes` and
+  `Files` (160 MB).
+- It keeps hashes as hex strings (57 MB).
+- J5's two 382,206-note corpora are re-run there for a clean baseline under
+  the current importers. None of J19's memory results has been confirmed on a
+  full import.
+
+**Found here, outside the review, and not planned by this item:**
+- SQL compiled on every call: 35% of import CPU
+- regexp link extraction: 22%
+- block extraction: half of all allocation
+
+## J19-C: nothing else moved
+
+- **Obsidian clone.** J17's generated 300-note vault imports to a library that
+  is table by table the same as before the change. That includes:
+  - the full-text rows and rowid mapping (`documents_fts`,
+    `documents_fts_rowid`)
+  - every item state and fingerprint, and the checkpoint
+  - links, blocks and attachment references
+
+  The fixture test also re-imports an unchanged vault and gets every item
+  unchanged.
+- **Joplin clone.** The whole inventory is byte-identical before and after, by
+  SHA-256, on a 103,349-note and a 382,206-note export.
+- **Store tests and J18.** The store is untouched, and J18's validator passes.
+  The micro-level variants live only in `_test.go` files.
 
 The review (`openrouter/google/gemini-3.1-pro-preview` through `opencode`) is
 treated as a list of hypotheses. Each one gets a measurement and a verdict:

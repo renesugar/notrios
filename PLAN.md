@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**19 items: 11 complete, 1 in progress, 7 not started, 0 deferred.**
+**20 items: 11 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,19 +79,18 @@ this section is archived when the plan completes and the rules are not.
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
-| J19. Test the external performance review, and adopt only what measures better | in-progress | 0/3 | 3 |
+| J19. Test the external performance review, and adopt only what measures better | in-progress | 2/3 | 1 |
+| J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
 **J19. Test the external performance review, and adopt only what measures better**
 
-- `J19-A` Every review suggestion that survives a source check is measured on J5's corpora and given a recorded verdict — *not-started*
-- `J19-B` Only the suggestions J19-A measured as improvements are implemented, each with its own before and after — *not-started*
 - `J19-C` Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged — *not-started*
 
 ### Not started
 
-Written and not begun: J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Written and not begun: J6, J7, J8, J9, J10, J11, J15, J20. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1892,3 +1891,77 @@ corpora and harness. J18, whose rowid mapping any FTS change must keep correct.
 **Working state.** A table of every review suggestion with a measured verdict,
 the improvements that measured better implemented with their before/after, and
 a recorded reason for each suggestion that was not adopted.
+
+**Closing.**
+- **Full-text placement: inline, by owner decision** (2026-09-13). Notes stay
+  searchable as soon as their batch commits.
+- **Adopted:** the clones in both importers' inventories, each with its
+  before/after and an equivalence proof. That is `performance/v1.0-j19`.
+- **Carried to J20:** the remaining Obsidian inventory memory (structs stored
+  twice, hex hashes), and a clean re-run of J5's corpora.
+
+## J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline
+
+**Goal.** The Obsidian importer holds no per-note data twice. Its memory and
+time, and the Joplin importer's, are measured again on J5's full corpora under
+the current code, so later work compares against numbers that describe this
+tree.
+
+**Why a new baseline first.** J5's numbers describe importers that no longer
+exist:
+- J17-B moved the Obsidian importer onto batch commits, about 2.2× faster on
+  10,000 notes.
+- J18 removed a full-text scan from every write.
+- J19 cut the Joplin inventory from 1,301 to 52 MiB and the Obsidian inventory
+  from 672 to 438 MiB.
+
+None of that has been measured on a full 382,206-note import. J5's 4.52 h,
+1.72 h, 1,721 MiB and 2,881 MiB are history now, not a baseline. J19 also
+showed that timings taken beside other work differ by 43%, so every run here is
+one process at a time.
+
+**What J19 left in the Obsidian inventory** (live heap at 382,206 notes, after
+the clones; `performance/v1.0-j19`):
+
+| holder | MB |
+|---|---|
+| `Notes` slice of `vaultFile` | ~80 |
+| `Files` slice of `vaultFile`, a second full copy of every note's struct | ~80 |
+| link namespace maps | 116 |
+| hex hash strings (fingerprints, frontmatter SHA) | 57 |
+| property-name slices | 77 |
+
+`Files` is read only by the source-bundle phase and to copy target IDs, so a
+second copy of every struct is avoidable in principle.
+
+**Scope.**
+
+- **J20-A, the fresh baseline.** Import J5's Obsidian vault and Joplin RAW
+  export, 382,206 notes each, into new libraries on the same HDD with the
+  current code. Runs go one at a time, and nothing else runs on the machine.
+  For each import, record wall time, user and system CPU, peak RSS and the
+  report counts. Put them beside J5's numbers without replacing them. The
+  harness says whether the page cache was cold or warm.
+- **J20-B, the remaining Obsidian memory, measured before it is changed.**
+  Candidates:
+  - `Files` holding indices or target IDs rather than a second `vaultFile`
+  - hashes held as fixed-size bytes rather than hex strings
+
+  Each is measured with `TestJ19InventoryMemory` on the full vault and adopted
+  only if it lowers held memory. It is proven by the J17 library comparison and
+  the inventory's item states and fingerprints. A fingerprint composition must
+  stay byte-identical: J19's rule.
+- **J20-C, the baseline again after J20-B.** The Obsidian import re-runs on the
+  same corpus under J20-A's conditions, with the difference stated at the size
+  measured.
+
+**Boundaries.** No change is adopted on plausibility. No subset result is
+extrapolated to the full corpus. No batch size is raised to win a number. J5's
+and J17's records keep their numbers, and new numbers are placed beside them.
+
+**Dependencies.** J17, J18 and J19, whose changes the baseline measures. J5's
+corpora, which must still be on the machine.
+
+**Working state.** A baseline table for both importers at 382,206 notes under
+the current code, and every Obsidian inventory candidate with a measured
+verdict.
