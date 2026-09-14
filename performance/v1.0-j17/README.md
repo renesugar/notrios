@@ -250,6 +250,31 @@ none of it yet.
 have not been re-run. The per-note cost of the old importer rose between 10,000
 and 40,000 notes, so the 10k ratio is not extrapolated to J5's 4.52 hours.
 
+### Re-measured clean: the 1.46× was wrong, and so was the CPU rise
+
+J19-A found that two timings of the same importer disagreed: 19.7 ms/note here
+and 13.8 there. **Both had shared the machine with other work.** The 19.7 ran
+alongside the 300-note equivalence imports, `go vet` and the package tests. The
+old importer's 28.7 ran alone. So the 1.46× compared a contended run against a
+clean one, and the "user CPU rose 13 s" was that contention, not the change.
+
+Re-run in J19-A: one process at a time, same binaries, vault and HDD, with
+nothing else running:
+
+| importer | runs | ms/note | user | sys |
+|---|---|---|---|---|
+| per-note commits (before J17-B) | 2 | 27.1, 31.1 | 147.4 s, 152.5 s | 41.5 s, 42.9 s |
+| batched commits (J17-B) | 3 | 13.2, 13.1, 13.3 | 124.3 s, 123.3 s, 125.8 s | 12.4 s, 12.1 s, 12.6 s |
+
+**J17-B is about 2.2× on 10,000 notes (29.1 against 13.2 ms/note means), not
+1.46×. User CPU falls by about 25 s, not rises.** The batched importer repeats
+within 1.5%. The per-note importer varies by 15% between its two runs, which
+fits a cost that is mostly waiting on the disk.
+
+Warm page cache throughout: no passwordless `sudo`, so no cache drop between
+runs. The table above is left as it was measured, with this correction beside
+it. The 382,206-note import still has not been re-run.
+
 ### Same library, proven by comparison rather than by the import finishing
 
 `j17_compare.py` compares two libraries table by table, ignoring only timestamp

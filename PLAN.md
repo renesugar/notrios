@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**19 items: 11 complete, 0 in progress, 8 not started, 0 deferred.**
+**19 items: 11 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,9 +79,19 @@ this section is archived when the plan completes and the rules are not.
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
-| J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
+| J19. Test the external performance review, and adopt only what measures better | in-progress | 0/3 | 3 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J19. Test the external performance review, and adopt only what measures better**
+
+- `J19-A` Every review suggestion that survives a source check is measured on J5's corpora and given a recorded verdict — *not-started*
+- `J19-B` Only the suggestions J19-A measured as improvements are implemented, each with its own before and after — *not-started*
+- `J19-C` Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged — *not-started*
+
+### Not started
+
+Written and not begun: J6, J7, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1636,8 +1646,11 @@ rather than by assuming the second theory because the first one failed.
   28.7 (1.46×)**. Wall time drops from 298.9 s to 198.1 s, and system time from
   43.0 s to 17.3 s. Batching only the commits recovers 101 s of the 132 s that
   moving the whole library to tmpfs recovered. User CPU rose 13 s, which is
-  recorded as unexplained. The libraries are compared table by table against
-  the old importer's:
+  recorded as unexplained. *Corrected by J19-A:* that 19.7 ran while other work
+  shared the machine. In clean sequential runs, the batched importer takes 13.1–13.3
+  ms/note (three runs) against 27.1–31.1 for the per-note importer (two runs).
+  That is **about 2.2×**, with user CPU falling about 25 s, not rising. The
+  libraries are compared table by table against the old importer's:
   - on the 10k subset
   - on a generated 300-note vault with 1,055 links, 170 attachment references
     and forward references
@@ -1756,7 +1769,7 @@ other use of `documents_fts` changes shape in this item.
 the library, the same measurement re-run on the same three libraries beside the
 old numbers, and a migration that populates the mapping for an existing library.
 
-## J19. Test the external performance review, and adopt only what measures better
+## J19. Test the external performance review, and adopt only what measures better — in progress
 
 **Goal.** Every suggestion in the performance review is either shown by
 measurement to help and implemented, or shown not to and recorded — nothing is

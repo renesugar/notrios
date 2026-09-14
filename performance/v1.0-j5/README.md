@@ -87,7 +87,9 @@ to tmpfs removed 132 s of waiting from a 10,000-note import.
 J17-B moved the Obsidian importer onto `ApplyImportDocumentBatch` and
 `RebuildImportDocumentLinksBatch`, the methods the Joplin importer uses. It then
 re-measured on the same HDD: **19.7 ms/note against 28.7 (1.46×) on 10,000
-notes**, and a table-by-table comparison found the same library.
+notes**, and a table-by-table comparison found the same library. *That ratio
+was itself contaminated:* the 19.7 ran while other work shared the machine.
+Clean sequential runs in J19-A give **13.2 against 29.1 ms/note, about 2.2×**.
 
 So the call-site table above describes the tree J5 measured, not the current
 one. The 382,206-note import has not been re-run, and nothing here claims how
