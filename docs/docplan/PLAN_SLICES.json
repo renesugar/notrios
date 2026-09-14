@@ -378,7 +378,7 @@
     {
       "id": "J16",
       "title": "Give the carrier write its own path shape",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J16-A",
@@ -395,7 +395,8 @@
         {
           "id": "J16-C",
           "statement": "The frozen REST surface and J4's review are re-recorded, and sync exchange still round-trips",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j16/README.md"
         }
       ]
     },

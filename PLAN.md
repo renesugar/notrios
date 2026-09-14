@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**19 items: 9 complete, 2 in progress, 8 not started, 0 deferred.**
+**19 items: 10 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -76,16 +76,12 @@ this section is archived when the plan completes and the rules are not.
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
-| J16. Give the carrier write its own path shape | in-progress | 2/3 | 1 |
+| J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | in-progress | 0/3 | 3 |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
 
 ### Started and not finished
-
-**J16. Give the carrier write its own path shape**
-
-- `J16-C` The frozen REST surface and J4's review are re-recorded, and sync exchange still round-trips — *not-started*
 
 **J17. Batch the per-item work J5 found in import and export**
 
@@ -1492,7 +1488,7 @@ from.
 carrying a recorded reason it is not, and no hand-moved registry hash left on a
 generated page.
 
-## J16. Give the carrier write its own path shape — in progress
+## J16. Give the carrier write its own path shape — complete
 
 **Goal.** Every carrier path means one thing, and the API description can name
 its parameters honestly.
