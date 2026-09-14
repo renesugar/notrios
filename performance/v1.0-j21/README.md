@@ -100,3 +100,38 @@ one by each binary:
 The fixed binary migrated in 217.09 s, against 210.50 s for the old binary on
 the other copy. That cost is paid once. The fix still backed the library up
 first, and the verified copy is in `pre-migration-backups/27-to-28-…`.
+
+## J21-C: open and search, re-measured at full size
+
+`open_search_profile.sh` ran with the fixed `bin/notriosctl` on J20-A's two
+382,206-note libraries, and on J5's library after the fixed binary migrated it.
+Everything ran one process at a time, from a warm page cache (no passwordless
+`sudo`). It recorded `dd7d7f8`, the `HEAD` when it started. The only commit made
+while it ran changed this README, and the binary was built from the fixed tree.
+
+| Obsidian vault, 382,206 notes | J5 | J20-A, before the fix | J21, fixed |
+|---|---|---|---|
+| open: `collections list` | not measured | 12.4 s | **0.24 s** (2.33 s on the first, cold open) |
+| search "the" (187,518 notes) | 9.1 s | 16.4 s | **4.1 s** warm, 7.2 s cold |
+| search "quinoa" (385) | 4.9 s | 12.4 s | **0.07 s** |
+| search "chicken stock" (9,703) | 5.2 s | 12.6 s | **0.35 s** |
+
+| Joplin export, 382,206 notes | J5 | J20-A, before the fix | J21, fixed |
+|---|---|---|---|
+| open: `collections list` | not measured | not measured | **0.21–0.25 s** |
+| search "the" | 8.6 s | 14.7 s | **4.2 s** |
+| search "quinoa" | 4.3 s | 10.7 s | **0.06 s** |
+| search "chicken stock" | 4.8 s | 11.1 s | **0.36 s** |
+
+J5's library, migrated by the fixed binary, opens in 0.24–0.25 s and answers
+the three probes in 4.14 s, 0.06 s and 0.35 s.
+
+- **Opening a library now costs about a quarter of a second at 382,206 notes,
+  instead of 12.** Every CLI command, server start and profile open gets that
+  back.
+- **J5's search numbers were never search numbers.** Its 4.9 s for "quinoa" was
+  about 4.6 s of V22's re-run backfill and the rest open overhead. A rare-word
+  search of the full library takes 0.06 s.
+- **The common-word search is the only probe that still takes seconds.**
+  Counting 187,518 matches takes about 4 s warm. That is real query work, and
+  this item does not change it.

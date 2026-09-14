@@ -505,12 +505,14 @@
         {
           "id": "J21-A",
           "statement": "Opening a library at the current schema runs no migration step's work, proven by a test that fails if any guarded step runs again",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j21/README.md"
         },
         {
           "id": "J21-B",
           "statement": "Fresh, older and current libraries still reach the same schema, proven by comparing their schemas before and after the change",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j21/README.md"
         },
         {
           "id": "J21-C",

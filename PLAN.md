@@ -81,7 +81,7 @@ this section is archived when the plan completes and the rules are not.
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 0/3 | 3 |
-| J21. Stop re-running schema migrations every time a library is opened | in-progress | 0/3 | 3 |
+| J21. Stop re-running schema migrations every time a library is opened | in-progress | 2/3 | 1 |
 
 ### Started and not finished
 
@@ -93,8 +93,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J21. Stop re-running schema migrations every time a library is opened**
 
-- `J21-A` Opening a library at the current schema runs no migration step's work, proven by a test that fails if any guarded step runs again — *not-started*
-- `J21-B` Fresh, older and current libraries still reach the same schema, proven by comparing their schemas before and after the change — *not-started*
 - `J21-C` Open cost and search are re-measured on both 382,206-note libraries beside J20-A's numbers — *not-started*
 
 ### Not started
@@ -1977,7 +1975,7 @@ and J20-C wait until J21 has fixed it, and J20-C measures the fixed tree.
 the current code, and every Obsidian inventory candidate with a measured
 verdict.
 
-## J21. Stop re-running schema migrations every time a library is opened
+## J21. Stop re-running schema migrations every time a library is opened — in progress
 
 **Goal.** Opening a library that is already at the current schema costs what
 opening costs, not what migrating costs, and no step that migrates data runs
