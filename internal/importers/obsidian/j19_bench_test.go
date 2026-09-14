@@ -25,7 +25,7 @@ func fingerprintStreamed(item vaultFile, notebookID, canonical string) string {
 	var innerHex [sha256.Size * 2]byte
 	hex.Encode(innerHex[:], inner.Sum(nil))
 	outer := sha256.New()
-	_, _ = io.WriteString(outer, item.Fingerprint)
+	_, _ = io.WriteString(outer, item.fingerprintHex())
 	_, _ = outer.Write([]byte{0})
 	_, _ = io.WriteString(outer, notebookID)
 	_, _ = outer.Write([]byte{0})
@@ -41,7 +41,7 @@ func TestJ19StreamedFingerprintIsByteIdentical(t *testing.T) {
 	notebooks := []string{"", "nb_default", "nb_ümlaut"}
 	for i, body := range bodies {
 		for _, notebook := range notebooks {
-			item := vaultFile{Fingerprint: sha256Hex([]byte(fmt.Sprintf("file-%d", i)))}
+			item := vaultFile{Fingerprint: sha256.Sum256([]byte(fmt.Sprintf("file-%d", i)))}
 			if got, want := fingerprintStreamed(item, notebook, body), noteFingerprint(item, notebook, body); got != want {
 				t.Fatalf("body %d notebook %q: streamed %s, current %s", i, notebook, got, want)
 			}
@@ -55,7 +55,7 @@ func benchmarkBody(size int) string {
 }
 
 func BenchmarkJ19Fingerprint(b *testing.B) {
-	item := vaultFile{Fingerprint: sha256Hex([]byte("file"))}
+	item := vaultFile{Fingerprint: sha256.Sum256([]byte("file"))}
 	for _, size := range []int{2 << 10, 32 << 10} {
 		body := benchmarkBody(size)
 		b.Run(fmt.Sprintf("current/%dKiB", size>>10), func(b *testing.B) {

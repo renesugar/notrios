@@ -95,11 +95,11 @@ type Report struct {
 type vaultFile struct {
 	RelPath        string
 	ItemType       string
-	Fingerprint    string
+	Fingerprint    [sha256.Size]byte
 	SizeBytes      int64
 	Title          string
 	Aliases        []string
-	FrontmatterSHA string
+	FrontmatterSHA [sha256.Size]byte
 	PropertyOrder  []string
 	NotebookPath   string
 	TargetID       string
@@ -411,7 +411,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 		}
 		file := vaultFile{
 			RelPath:     rel,
-			Fingerprint: fingerprint, SizeBytes: size,
+			Fingerprint: sha256FromHex(fingerprint), SizeBytes: size,
 			NotebookPath: folderPath(rel),
 		}
 		ext := strings.ToLower(filepath.Ext(rel))
@@ -433,7 +433,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 			// property names. J19 measured it at 382,206 notes.
 			file.Title = strings.Clone(markdownTitle(rel, body))
 			file.Aliases = cloneStrings(frontmatterAliases(string(frontmatter)))
-			file.FrontmatterSHA = sha256Hex(frontmatter)
+			file.FrontmatterSHA = sha256.Sum256(frontmatter)
 			file.PropertyOrder = cloneStrings(frontmatterPropertyOrder(string(frontmatter)))
 			file.TargetID = documentID(rel)
 			if previous := seenTargets[file.TargetID]; previous != "" {
@@ -456,7 +456,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 		if retainFiles {
 			result.Files = append(result.Files, file)
 		}
-		_, _ = io.WriteString(hash, file.itemKey()+"\x00"+file.Fingerprint+"\x00")
+		_, _ = io.WriteString(hash, file.itemKey()+"\x00"+file.fingerprintHex()+"\x00")
 		return nil
 	})
 	if err != nil {
@@ -775,7 +775,7 @@ func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
 				if closeErr != nil {
 					return closeErr
 				}
-				if bundled.SHA256 != item.Fingerprint {
+				if bundled.SHA256 != item.fingerprintHex() {
 					return fmt.Errorf("%w: Obsidian file %s changed during source-bundle capture", store.ErrConflict, item.RelPath)
 				}
 			}
@@ -836,12 +836,12 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 			action := "create"
 			if found {
 				action = "update"
-				if current.SHA256 == item.Fingerprint && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
+				if current.SHA256 == item.fingerprintHex() && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
 					action = "unchanged"
 				}
 			}
-			if state, ok := states[item.itemKey()]; ok && state.Fingerprint == item.Fingerprint && found &&
-				current.SHA256 == item.Fingerprint && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
+			if state, ok := states[item.itemKey()]; ok && state.Fingerprint == item.fingerprintHex() && found &&
+				current.SHA256 == item.fingerprintHex() && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
 				action = "unchanged"
 			}
 			switch action {
@@ -857,7 +857,7 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 				if err != nil {
 					return err
 				}
-				if actual != item.Fingerprint {
+				if actual != item.fingerprintHex() {
 					return fmt.Errorf("%w: Obsidian asset %s changed during import", store.ErrConflict, item.RelPath)
 				}
 				file, err := os.Open(run.absPath(item))
@@ -986,7 +986,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			if !trashed {
 				metadata, _ := json.Marshal(map[string]any{
 					"relative_path": item.RelPath, "aliases": item.Aliases,
-					"frontmatter_sha256": item.FrontmatterSHA,
+					"frontmatter_sha256": item.frontmatterSHAHex(),
 				})
 				mutation.Source = store.SetDocumentSourceRequest{
 					DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
@@ -1264,7 +1264,7 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 func (run *importRun) itemState(item vaultFile, action string) store.ImportItemState {
 	return store.ImportItemState{
 		SourceSystem: sourceSystem, SourceKey: run.report.SourceKey, CollectionID: run.options.CollectionID,
-		ItemKey: item.itemKey(), ItemType: item.ItemType, Fingerprint: item.Fingerprint,
+		ItemKey: item.itemKey(), ItemType: item.ItemType, Fingerprint: item.fingerprintHex(),
 		TargetID: item.TargetID, Action: action,
 	}
 }
@@ -1279,7 +1279,32 @@ func (run *importRun) addWarning(message string) {
 }
 
 func noteFingerprint(item vaultFile, notebookID, canonical string) string {
-	return sha256Hex([]byte(item.Fingerprint + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
+	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
+}
+
+// fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,
+// resource records, bundle items and the inventory fingerprint were written
+// with. The inventory holds the 32 bytes rather than the 64-character string,
+// for every file for the whole import (v1.0 J20), and every comparison and
+// composition goes through this method so the text it sees is unchanged.
+func (file vaultFile) fingerprintHex() string {
+	return hex.EncodeToString(file.Fingerprint[:])
+}
+
+// frontmatterSHAHex is the frontmatter's SHA-256 as lowercase hex, as recorded
+// in a note source's metadata.
+func (file vaultFile) frontmatterSHAHex() string {
+	return hex.EncodeToString(file.FrontmatterSHA[:])
+}
+
+// sha256FromHex decodes a digest hashFile produced with hex.EncodeToString.
+// That input is always 64 valid hex characters. Were it ever not, the zero
+// value would make readExact refuse the file as changed during import, which
+// fails loudly, not silently.
+func sha256FromHex(value string) [sha256.Size]byte {
+	var sum [sha256.Size]byte
+	_, _ = hex.Decode(sum[:], []byte(value))
+	return sum
 }
 
 // itemKey is the import item-state key for a vault file. It is derived from
@@ -1304,7 +1329,7 @@ func readExact(path string, item vaultFile) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if sha256Hex(raw) != item.Fingerprint {
+	if sha256Hex(raw) != item.fingerprintHex() {
 		return nil, fmt.Errorf("%w: Obsidian note %s changed during import", store.ErrConflict, item.RelPath)
 	}
 	return raw, nil

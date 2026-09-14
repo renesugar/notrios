@@ -80,15 +80,13 @@ this section is archived when the plan completes and the rules are not.
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
-| J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 0/3 | 3 |
+| J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 2/3 | 1 |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 
 ### Started and not finished
 
 **J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline**
 
-- `J20-A` J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers — *not-started*
-- `J20-B` The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven — *not-started*
 - `J20-C` The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured — *not-started*
 
 ### Not started

@@ -241,3 +241,59 @@ and preserve-source.
 | clones (titles, aliases, property names, paths) | 73 |
 | string building (IDs, notebook paths) | 58 |
 | hex hash strings | 53 |
+
+## J20-B, candidate 4: hold the file hashes as bytes
+
+`vaultFile.Fingerprint` and `FrontmatterSHA` were 64-character hex strings, two
+per note for the whole import. They are now `[sha256.Size]byte`. Every place
+that compares or composes them calls `fingerprintHex()` or
+`frontmatterSHAHex()`, which return exactly the lowercase hex they held before:
+- the inventory fingerprint hash
+- the bundle, resource and rehash comparisons
+- item states
+- `noteFingerprint`
+- `readExact`
+- the source's `frontmatter_sha256` metadata
+
+| inventory live heap, 382,206-note vault | MiB |
+|---|---|
+| before (candidate 3 adopted) | 316.7 |
+| hashes held as bytes | **269.2** |
+
+**Verdict: improves, by 47.5 MiB (15% of the inventory).** Every stored hash
+string is proven byte-identical. J17's generated vault imports to a library
+identical to candidate 3's, including:
+- `document_sources` (with each note's `frontmatter_sha256`)
+- all 329 `import_item_states` fingerprints
+- the checkpoint's inventory fingerprint
+
+Only the three random-identifier columns differ. The Obsidian importer tests
+pass, including J19's fingerprint identity test.
+
+## J20-B: where the Obsidian inventory ended
+
+| step | inventory live heap | change |
+|---|---|---|
+| J19 (substring clones) | 438.1 MiB | |
+| 1: keep `Files` only when preserving source | 358.1 MiB | −80.0 |
+| 2: derive `AbsPath`, clone `RelPath` | 352.7 MiB | −5.4 |
+| 3: derive `ItemKey` | 316.7 MiB | −36.0 |
+| 4: hashes as bytes | **269.2 MiB** | −47.5 |
+
+**−168.9 MiB (−39%) from J19's result**, and −403 MiB from the 672.4 MiB the
+inventory held before J19. With the link namespace, 391.6 MiB is held against
+560.5 MiB at J19. One step was measured worse and not adopted: deriving
+`AbsPath` alone, +10.2 MiB, unexplained.
+
+Each step was measured on the full vault with a live-heap figure that repeats
+exactly. Each proved the import unchanged with the J17 library comparison. No
+subset result is used. Peak RSS varies too much between identical runs to
+support a claim; J20-C measures the whole import instead.
+
+**Not done, and left as found:**
+- the link namespace (114 MB)
+- `frontmatterPropertyOrder`'s slices (72 MB), which the source bundle needs
+  only with `--preserve-source`
+- per-note titles and IDs
+
+Each would be a separate measured candidate.

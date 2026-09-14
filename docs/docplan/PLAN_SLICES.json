@@ -483,12 +483,14 @@
         {
           "id": "J20-A",
           "statement": "J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
         },
         {
           "id": "J20-B",
           "statement": "The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
         },
         {
           "id": "J20-C",
