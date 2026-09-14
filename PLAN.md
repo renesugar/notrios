@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**20 items: 11 complete, 1 in progress, 8 not started, 0 deferred.**
+**20 items: 12 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -79,18 +79,10 @@ this section is archived when the plan completes and the rules are not.
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
-| J19. Test the external performance review, and adopt only what measures better | in-progress | 2/3 | 1 |
+| J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**J19. Test the external performance review, and adopt only what measures better**
-
-- `J19-C` Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged — *not-started*
-
-### Not started
-
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J20. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1768,7 +1760,7 @@ other use of `documents_fts` changes shape in this item.
 the library, the same measurement re-run on the same three libraries beside the
 old numbers, and a migration that populates the mapping for an existing library.
 
-## J19. Test the external performance review, and adopt only what measures better — in progress
+## J19. Test the external performance review, and adopt only what measures better — complete
 
 **Goal.** Every suggestion in the performance review is either shown by
 measurement to help and implemented, or shown not to and recorded — nothing is

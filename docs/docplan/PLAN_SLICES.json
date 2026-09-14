@@ -453,7 +453,7 @@
     {
       "id": "J19",
       "title": "Test the external performance review, and adopt only what measures better",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J19-A",
@@ -470,7 +470,8 @@
         {
           "id": "J19-C",
           "statement": "Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j19/README.md"
         }
       ]
     },
