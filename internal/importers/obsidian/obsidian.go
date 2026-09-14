@@ -94,7 +94,6 @@ type Report struct {
 
 type vaultFile struct {
 	RelPath        string
-	ItemKey        string
 	ItemType       string
 	Fingerprint    string
 	SizeBytes      int64
@@ -411,7 +410,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 			return err
 		}
 		file := vaultFile{
-			RelPath: rel, ItemKey: "file:" + rel,
+			RelPath:     rel,
 			Fingerprint: fingerprint, SizeBytes: size,
 			NotebookPath: folderPath(rel),
 		}
@@ -457,7 +456,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 		if retainFiles {
 			result.Files = append(result.Files, file)
 		}
-		_, _ = io.WriteString(hash, file.ItemKey+"\x00"+file.Fingerprint+"\x00")
+		_, _ = io.WriteString(hash, file.itemKey()+"\x00"+file.Fingerprint+"\x00")
 		return nil
 	})
 	if err != nil {
@@ -765,7 +764,7 @@ func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
 				}
 				bundled, putErr := run.st.PutSourceBundleItem(run.ctx, store.PutSourceBundleItemRequest{
 					SourceSystem: sourceSystem, SourceKey: run.report.SourceKey,
-					CollectionID: run.options.CollectionID, ItemKey: item.ItemKey,
+					CollectionID: run.options.CollectionID, ItemKey: item.itemKey(),
 					ItemType: item.ItemType, ExternalID: item.RelPath,
 					RelativePath: item.RelPath, PropertyOrder: item.PropertyOrder, Content: file,
 				})
@@ -821,7 +820,7 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 		ids, keys := make([]string, 0, len(items)), make([]string, 0, len(items))
 		for _, item := range items {
 			ids = append(ids, item.TargetID)
-			keys = append(keys, item.ItemKey)
+			keys = append(keys, item.itemKey())
 		}
 		existing, err := run.st.GetResources(run.ctx, ids)
 		if err != nil {
@@ -841,7 +840,7 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 					action = "unchanged"
 				}
 			}
-			if state, ok := states[item.ItemKey]; ok && state.Fingerprint == item.Fingerprint && found &&
+			if state, ok := states[item.itemKey()]; ok && state.Fingerprint == item.Fingerprint && found &&
 				current.SHA256 == item.Fingerprint && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
 				action = "unchanged"
 			}
@@ -901,7 +900,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		for _, item := range items {
 			ids = append(ids, item.TargetID)
 			externalIDs = append(externalIDs, item.RelPath)
-			keys = append(keys, item.ItemKey)
+			keys = append(keys, item.itemKey())
 		}
 		documents, err := run.st.GetDocuments(run.ctx, ids)
 		if err != nil {
@@ -946,7 +945,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				if current.Title == item.Title && current.Body == canonical && current.NotebookID == notebookID {
 					action = "unchanged"
 				}
-				if state, ok := states[item.ItemKey]; ok && state.Fingerprint == fingerprint &&
+				if state, ok := states[item.itemKey()]; ok && state.Fingerprint == fingerprint &&
 					current.Title == item.Title && current.Body == canonical && current.NotebookID == notebookID {
 					action = "unchanged"
 				}
@@ -1265,7 +1264,7 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 func (run *importRun) itemState(item vaultFile, action string) store.ImportItemState {
 	return store.ImportItemState{
 		SourceSystem: sourceSystem, SourceKey: run.report.SourceKey, CollectionID: run.options.CollectionID,
-		ItemKey: item.ItemKey, ItemType: item.ItemType, Fingerprint: item.Fingerprint,
+		ItemKey: item.itemKey(), ItemType: item.ItemType, Fingerprint: item.Fingerprint,
 		TargetID: item.TargetID, Action: action,
 	}
 }
@@ -1281,6 +1280,14 @@ func (run *importRun) addWarning(message string) {
 
 func noteFingerprint(item vaultFile, notebookID, canonical string) string {
 	return sha256Hex([]byte(item.Fingerprint + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
+}
+
+// itemKey is the import item-state key for a vault file. It is derived from
+// RelPath, not stored beside it, so the inventory does not hold a second copy
+// of every path for the whole import (v1.0 J20). The composition is the one
+// item states were written with, and must not change.
+func (file vaultFile) itemKey() string {
+	return "file:" + file.RelPath
 }
 
 // absPath is where a vault file lives on disk. The inventory holds only the

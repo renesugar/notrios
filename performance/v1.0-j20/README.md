@@ -205,3 +205,39 @@ apart from the three random-identifier columns.
 
 This candidate was estimated at tens of MB and measured at 5.4 MiB. The
 estimate is not repeated anywhere as a result.
+
+## J20-B, candidate 3: derive each file's item-state key
+
+`vaultFile.ItemKey` held `"file:" + RelPath`, a second copy of every path, for
+the whole import. It is read in these places:
+- the inventory fingerprint hash
+- the source-bundle and resource phases
+- the notes phase
+- `itemState`
+
+It is now built on demand by `vaultFile.itemKey()`, with the same composition
+the stored item states were written with. Folders keep their stored key.
+
+| inventory live heap, 382,206-note vault | MiB |
+|---|---|
+| before (candidate 2 adopted) | 352.7 |
+| `ItemKey` derived on demand | **316.7** |
+
+**Verdict: improves, by 36.0 MiB (10% of the inventory).** Live heap repeats
+exactly on this measurement (candidate 2's variance run), so the difference is
+real. Item keys are proven unchanged: J17's generated 300-note vault imports to
+a library identical to candidate 2's, with the same checkpoint (so the same
+inventory fingerprint) and all 329 item states, apart from the three
+random-identifier columns. The Obsidian importer tests pass, including resume
+and preserve-source.
+
+**What remains**, from the in-use heap profile (465 MB, sampled):
+
+| holder | MB |
+|---|---|
+| link namespace | 143 |
+| `readInventory` structs | 81 |
+| `frontmatterPropertyOrder` slices | 81 |
+| clones (titles, aliases, property names, paths) | 73 |
+| string building (IDs, notebook paths) | 58 |
+| hex hash strings | 53 |
