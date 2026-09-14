@@ -478,7 +478,7 @@
     {
       "id": "J20",
       "title": "Finish the Obsidian inventory memory work, on a fresh J5 baseline",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J20-A",
@@ -495,7 +495,8 @@
         {
           "id": "J20-C",
           "statement": "The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
         }
       ]
     },
