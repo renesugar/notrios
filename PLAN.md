@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**20 items: 12 complete, 1 in progress, 7 not started, 0 deferred.**
+**21 items: 12 complete, 2 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -81,6 +81,7 @@ this section is archived when the plan completes and the rules are not.
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | in-progress | 0/3 | 3 |
+| J21. Stop re-running schema migrations every time a library is opened | in-progress | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -89,6 +90,12 @@ this section is archived when the plan completes and the rules are not.
 - `J20-A` J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers — *not-started*
 - `J20-B` The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven — *not-started*
 - `J20-C` The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured — *not-started*
+
+**J21. Stop re-running schema migrations every time a library is opened**
+
+- `J21-A` Opening a library at the current schema runs no migration step's work, proven by a test that fails if any guarded step runs again — *not-started*
+- `J21-B` Fresh, older and current libraries still reach the same schema, proven by comparing their schemas before and after the change — *not-started*
+- `J21-C` Open cost and search are re-measured on both 382,206-note libraries beside J20-A's numbers — *not-started*
 
 ### Not started
 
@@ -1962,8 +1969,75 @@ extrapolated to the full corpus. No batch size is raised to win a number. J5's
 and J17's records keep their numbers, and new numbers are placed beside them.
 
 **Dependencies.** J17, J18 and J19, whose changes the baseline measures. J5's
-corpora, which must still be on the machine.
+corpora, which must still be on the machine. **J21, by owner decision
+(2026-09-14):** J20-A found every library open re-running migrations, so J20-B
+and J20-C wait until J21 has fixed it, and J20-C measures the fixed tree.
 
 **Working state.** A baseline table for both importers at 382,206 notes under
 the current code, and every Obsidian inventory candidate with a measured
 verdict.
+
+## J21. Stop re-running schema migrations every time a library is opened
+
+**Goal.** Opening a library that is already at the current schema costs what
+opening costs, not what migrating costs, and no step that migrates data runs
+again.
+
+**What J20-A found** (`performance/v1.0-j20/README.md`). Every CLI command on
+the 382,206-note Obsidian library took about 12 s before doing any work, and
+`Bootstrap` was all of it. On every open, `applySchema`:
+1. re-runs `0001_initial.sql`, whose statements end with
+   `PRAGMA user_version = 17`
+2. runs the unguarded `ensureSchemaV4`–`V18`, each ending with
+   `PRAGMA user_version = n`
+3. reaches the guarded steps (V19–V28) with the version at 18, so every one of
+   them runs again
+
+Two of those re-runs are expensive at this size:
+
+| step | per open, 382,206 notes | since |
+|---|---|---|
+| V28: rebuild the full-text rowid mapping from `documents_fts` | ~7 s | J18 |
+| V22: `backfillRevisionObjects` | ~4.6 s | before J5 |
+
+The last step sets the version to 28 again, so the file always reads 28 and
+the re-run cannot be seen from outside. The cost reaches every `Bootstrap`
+caller: every CLI command (read-only ones write 382,206 mapping rows), every
+server start, the ABI registry and every external-profile open. J5's and
+J20-A's search timings both include it.
+
+**Scope.**
+
+- **J21-A, a current library runs no migration work on open.** A test opens a
+  library at the current schema a second time and fails if any guarded step
+  does work again. Two options for the fix:
+  - read the version once, before any step runs, and skip the steps a library
+    has already passed
+  - stop the unguarded steps writing a lower version
+
+  The test decides between them, not the reading of them.
+- **J21-B, every library still reaches the same schema.** The migration steps
+  are "mostly idempotent" today, and a re-run may silently be supplying objects
+  a current library would otherwise lack. So the schema (`sqlite_master`, and
+  `user_version`) is compared before and after the change for:
+  - a fresh library
+  - a library migrated from an old version
+  - a library already current
+
+  J18's archive contract, G19 and G20 must still pass.
+- **J21-C, re-measured at full size.** Open cost and the J5 search probes are
+  re-run on J20-A's two 382,206-note libraries, one run at a time, beside
+  J20-A's numbers.
+
+**Boundaries.**
+- No library at the current schema has its version or data rewritten on open.
+- A library behind the current schema still migrates under the existing lock,
+  backup and marker, with nothing about that path weakened.
+- No schema object is dropped or renamed.
+
+**Dependencies.** J18, whose V28 made the re-run cost what it costs. J20-A's
+libraries and its measurements.
+
+**Working state.** Opening a current library does no migration work. The
+schema of every library shape is proven unchanged. Open and search are
+re-measured on both full corpora.

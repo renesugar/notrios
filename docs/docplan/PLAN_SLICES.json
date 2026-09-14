@@ -496,6 +496,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J21",
+      "title": "Stop re-running schema migrations every time a library is opened",
+      "state": "in-progress",
+      "slices": [
+        {
+          "id": "J21-A",
+          "statement": "Opening a library at the current schema runs no migration step's work, proven by a test that fails if any guarded step runs again",
+          "state": "not-started"
+        },
+        {
+          "id": "J21-B",
+          "statement": "Fresh, older and current libraries still reach the same schema, proven by comparing their schemas before and after the change",
+          "state": "not-started"
+        },
+        {
+          "id": "J21-C",
+          "statement": "Open cost and search are re-measured on both 382,206-note libraries beside J20-A's numbers",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
