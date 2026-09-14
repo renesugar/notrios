@@ -1614,6 +1614,24 @@ rather than by assuming the second theory because the first one failed.
   the cost of a measurement each. A profile answers "where does the per-note
   time go" without guessing first. No sixth call site is proposed in this plan,
   because proposing one would repeat the mistake.
+
+  **The profile has run** (`TestJ17ImportRealVaultOnDisk`, a 10,000-note subset
+  on J5's HDD, 28.7 ms/note, 69% CPU and 31% waiting). SQLite accounts for 70% of
+  samples. Three facts come out of the call graph:
+  - **Nothing is prepared once.** `execPreparedLocked` compiles its SQL on every
+    call, and `sqlite3_prepare_v2` takes 30.7% of the CPU.
+  - **Links and blocks are rebuilt twice per note**, in `CreateDocument` and
+    again in the link phase. The Joplin path also does this, so it is waste but
+    not the asymmetry.
+  - **The Obsidian path commits at least three times per note.** Those commits
+    come from `CreateDocument`, from `SetDocumentSource` and each attachment
+    write (both autocommit), and from `RebuildDocumentLinks`. The Joplin path
+    commits twice per 100 notes.
+
+  The profile also reopens a rejection. The 0.99× document-write measurement
+  ran while J18's 2 s full-text scan dominated every write, so it could not
+  detect commit cost, and "transaction count is falsified" overstated it. That
+  question is re-measured before anything is claimed about it.
 - **J17-B, batch what measurement justifies.** The link rebuild is worth
   batching on its own evidence — 1.51×, and the batch path additionally records
   a resumable checkpoint the per-document path does not — but it must be

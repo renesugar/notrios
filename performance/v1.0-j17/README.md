@@ -136,6 +136,66 @@ directly, and it does not require guessing first.
 That is J17-A's remaining work, and the item says so rather than proposing
 another call site.
 
+## The profile
+
+```sh
+NOTRIOS_J17_VAULT=/path/to/vault NOTRIOS_J17_DB=/path/on/the/disk/under/test.sqlite \
+  go test ./internal/importers/obsidian -run TestJ17ImportRealVaultOnDisk \
+  -count=1 -v -cpuprofile cpu.out -timeout 60m
+```
+
+A 10,000-note subset of the recipe vault, imported into a library on the same
+HDD J5 used: **28.7 ms per note**, 298.9 s wall against 161.8 s user and 43.0 s
+system. So about 69% of the wall clock is CPU and about 31% is waiting. 187.8 s of
+samples:
+
+| where | cumulative | what it is |
+|---|---|---|
+| `runtime.cgocall` (flat) | 70.4% | time inside SQLite |
+| `CreateDocument` | 48.0% | the document write, its own transaction |
+| `rebuildDocumentLinksLocked` | 38.8% | links **and** blocks |
+| `prepareLocked` → `sqlite3_prepare_v2` | 30.7% | compiling SQL text |
+| `rebuildDocumentBlocksLocked` | 29.4% | one `DELETE` plus one `INSERT` per block |
+| `processLinkRebuild` → `RebuildDocumentLinks` | 27.5% | the second link phase |
+| `sqlite3_exec` via `execLocked` | 22.3% | `BEGIN`/`COMMIT`, 74% of it from `CreateDocument` |
+| regexp backtracking | 17.7% | 13.7% from `markdownlinks.Extract` |
+| `markdownblocks.Extract` | 7.5% | block parsing |
+
+Three facts come out of it, each read from the call graph rather than guessed.
+
+1. **Every statement is compiled on every call.** `execPreparedLocked` calls
+   `sqlite3_prepare_v2`, steps once, and finalizes. Nothing is cached. Compiling
+   SQL takes 30.7% of the importer's CPU, and 91% of that comes from
+   `execPreparedLocked`. The block rebuild issues one `INSERT` per block and
+   compiles it again each time.
+2. **Links and blocks are rebuilt twice per note.** The first rebuild runs inside
+   `CreateDocument` (33.95 s). The second runs in the importer's link phase
+   (38.93 s). The first cannot resolve links to notes that have not been imported
+   yet, which is why the second exists, so the first one's output is discarded.
+   **This is not the asymmetry.** `ApplyImportDocumentBatch` also rebuilds links
+   for changed bodies, and the Joplin importer's
+   `RebuildImportDocumentLinksBatch` rebuilds them again. Both importers pay for
+   it twice.
+3. **Commits happen per note, not per batch.** For each created note, the
+   Obsidian path runs:
+   - `CreateDocument`: one `BEGIN IMMEDIATE`…`COMMIT`
+   - `SetDocumentSource`: no explicit transaction, so it autocommits
+   - `AttachDocumentResource`: autocommits, once per attachment
+   - `RebuildDocumentLinks`: one `BEGIN IMMEDIATE`…`COMMIT`
+
+   That is at least three durable commits per note. The Joplin path makes two per
+   100 notes, one for the document batch and one for the link batch.
+
+### A rejection this reopens
+
+The table above lists "document-write batching, 0.99×" as a rejection. That
+measurement ran against the 382,206-note library, where J18's full-text scan
+made **every** write cost about 2 s. A commit worth a few milliseconds cannot
+show up beside a 2,000 ms scan. The experiment could not have found commit cost,
+so it could not rule commit cost out, and "transaction count is falsified" went
+further than the evidence. J18 has since removed the scan, so the question can
+be asked again on a library where it is answerable.
+
 ## Three harness bugs on the way to the number
 
 All mine, all recorded because each cost a run and none was a product defect.
