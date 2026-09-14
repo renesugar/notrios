@@ -93,7 +93,6 @@ type Report struct {
 }
 
 type vaultFile struct {
-	AbsPath        string
 	RelPath        string
 	ItemKey        string
 	ItemType       string
@@ -395,7 +394,9 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 		if err != nil {
 			return err
 		}
-		rel = filepath.ToSlash(rel)
+		// filepath.Rel returns a slice of path, so without the clone RelPath
+		// would keep the whole absolute path alive for the entire import.
+		rel = strings.Clone(filepath.ToSlash(rel))
 		normalized := normalizeVaultPath(rel)
 		if previous := seenPaths[normalized]; previous != "" {
 			return fmt.Errorf("%w: case-insensitive vault path collision between %s and %s", store.ErrInvalidInput, previous, rel)
@@ -410,7 +411,7 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 			return err
 		}
 		file := vaultFile{
-			AbsPath: path, RelPath: rel, ItemKey: "file:" + rel,
+			RelPath: rel, ItemKey: "file:" + rel,
 			Fingerprint: fingerprint, SizeBytes: size,
 			NotebookPath: folderPath(rel),
 		}
@@ -758,7 +759,7 @@ func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
 	return run.eachBatch("source_bundle", len(run.inventory.Files), write, nextPhase, func(start, end int) error {
 		for _, item := range run.inventory.Files[start:end] {
 			if write {
-				file, err := os.Open(item.AbsPath)
+				file, err := os.Open(run.absPath(item))
 				if err != nil {
 					return err
 				}
@@ -853,14 +854,14 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 				run.report.ResourcesExisting++
 			}
 			if write && action != "unchanged" {
-				actual, _, err := hashFile(run.ctx, item.AbsPath)
+				actual, _, err := hashFile(run.ctx, run.absPath(item))
 				if err != nil {
 					return err
 				}
 				if actual != item.Fingerprint {
 					return fmt.Errorf("%w: Obsidian asset %s changed during import", store.ErrConflict, item.RelPath)
 				}
-				file, err := os.Open(item.AbsPath)
+				file, err := os.Open(run.absPath(item))
 				if err != nil {
 					return err
 				}
@@ -916,7 +917,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		mutations := make([]store.ImportDocumentMutation, 0, len(items))
 		for _, item := range items {
-			raw, err := readExact(item)
+			raw, err := readExact(run.absPath(item), item)
 			if err != nil {
 				return err
 			}
@@ -1282,8 +1283,17 @@ func noteFingerprint(item vaultFile, notebookID, canonical string) string {
 	return sha256Hex([]byte(item.Fingerprint + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
 }
 
-func readExact(item vaultFile) ([]byte, error) {
-	raw, err := os.ReadFile(item.AbsPath)
+// absPath is where a vault file lives on disk. The inventory holds only the
+// slash-separated path relative to the vault, and readInventory walked that
+// same cleaned root, so joining them rebuilds the path it read. Storing the
+// absolute path as well kept a second, longer copy of every path for the whole
+// import (v1.0 J20).
+func (run *importRun) absPath(item vaultFile) string {
+	return filepath.Join(run.sourceDir, filepath.FromSlash(item.RelPath))
+}
+
+func readExact(path string, item vaultFile) ([]byte, error) {
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

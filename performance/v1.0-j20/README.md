@@ -141,7 +141,7 @@ the preserve-source shape):
 |---|---|---|---|
 | live heap, inventory | 438.1 MiB | **358.1 MiB** | 438.1 MiB |
 | live heap, inventory + link namespace | 560.5 MiB | **480.5 MiB** | 560.5 MiB |
-| process peak RSS | 1,016 MiB | **900 MiB** | 1,023 MiB |
+| process peak RSS, not repeatable (see candidate 2) | 1,016 MiB | 900 MiB | 1,023 MiB |
 
 **Verdict: improves, by 80 MiB (18% of the inventory), for every import that
 does not preserve source.** The control reproduces 438.1 MiB exactly, so the
@@ -169,3 +169,39 @@ which imports with source preserved and so exercises the retained path.
 | link namespace | 128 |
 | clones (titles, aliases, property names) | 52 |
 | hex hash strings | 45 |
+
+## J20-B, candidate 2: derive the absolute path
+
+`vaultFile.AbsPath` held each file's absolute path for the whole import. It is
+read only to open files, in the source-bundle and resource phases and in
+`readExact`, and it equals the vault root joined with `RelPath`. The importer
+now derives it with `run.absPath(item)`.
+
+**How much one measurement varies, first.** Candidate 1's committed binary was
+run again on the full vault. Its inventory held **358.1 MiB, the same as the
+first run to the tenth of a MiB**. Live heap after two forced GCs is
+repeatable here, so a difference of a few MiB is real. Peak RSS is not
+repeatable: 900 MiB and then 822 MiB for the same binary. No candidate claims
+an RSS change.
+
+| inventory live heap, 382,206-note vault | MiB | vs candidate 1 |
+|---|---|---|
+| candidate 1 (committed), two runs | 358.1, 358.1 | — |
+| derive `AbsPath` only | 368.3 | **+10.2, worse** |
+| derive `AbsPath`, and clone `RelPath` | **352.7** | **−5.4** |
+
+**Deriving the path alone made the inventory larger, and the reason is not
+known.** Removing a field should not add memory. The heap profile samples
+allocations, so it attributes MB only approximately and cannot place 10 MiB.
+This is recorded as measured, not explained. `filepath.Rel` returns a slice of
+the absolute path, so `RelPath` was keeping that whole path alive either way.
+That is why removing `AbsPath` alone could not free the path bytes.
+
+**Cloning `RelPath` as well lowers the held heap by 5.4 MiB (1.5%). Verdict:
+improves, by a small amount, and adopted on that measurement.** Candidate 1's
+repeat run shows the difference is not noise. The Obsidian importer tests pass,
+and J17's generated vault imports to a library identical to candidate 1's,
+apart from the three random-identifier columns.
+
+This candidate was estimated at tens of MB and measured at 5.4 MiB. The
+estimate is not repeated anywhere as a result.
