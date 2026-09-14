@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**19 items: 10 complete, 1 in progress, 8 not started, 0 deferred.**
+**19 items: 11 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -77,19 +77,11 @@ this section is archived when the plan completes and the rules are not.
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
 | J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
-| J17. Batch the per-item work J5 found in import and export | in-progress | 2/3 | 1 |
+| J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
 | J19. Test the external performance review, and adopt only what measures better | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**J17. Batch the per-item work J5 found in import and export**
-
-- `J17-C` Every remaining per-item store call in import and export is either batched or recorded — *not-started*
-
-### Not started
-
-Written and not begun: J6, J7, J8, J9, J10, J11, J15, J19. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -1551,7 +1543,7 @@ with another replica's namespace, and none may succeed. `internal/syncrest`'s
 exchange tests round-trip through the real client and server on the new paths.
 Record in `performance/v1.0-j16`.
 
-## J17. Batch the per-item work J5 found in import and export — in progress
+## J17. Batch the per-item work J5 found in import and export — complete
 
 **Goal.** No importer or exporter calls the store once per item where a batch
 call exists, and the improvement is measured rather than assumed.

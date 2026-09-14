@@ -403,7 +403,7 @@
     {
       "id": "J17",
       "title": "Batch the per-item work J5 found in import and export",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J17-A",
@@ -420,7 +420,8 @@
         {
           "id": "J17-C",
           "statement": "Every remaining per-item store call in import and export is either batched or recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
         }
       ]
     },
