@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 16 complete, 1 in progress, 7 not started, 0 deferred.**
+**24 items: 17 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -84,17 +84,9 @@ this section is archived when the plan completes and the rules are not.
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 | J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
-| J24. Check the running agent's own usage, not every agent's | in-progress | 2/3 | 1 |
+| J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 
-### Started and not finished
-
-**J24. Check the running agent's own usage, not every agent's**
-
-- `J24-C` Every caller of the preflight gets the selection without changes of its own, and the guard's documentation says whose usage is checked and how to choose — *not-started*
-
-### Not started
-
-Written and not begun: J6, J8, J9, J10, J11, J15, J22. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2225,7 +2217,7 @@ between them.
 change to a peer's pinned compatibility is still refused, each proven by a
 test.
 
-## J24. Check the running agent's own usage, not every agent's — in progress
+## J24. Check the running agent's own usage, not every agent's — complete
 
 **Goal.** The usage preflight that guards archives, drills and other long work
 checks the quota of the coding agent actually running it. A Claude run is

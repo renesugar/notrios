@@ -83,6 +83,24 @@ After the change, all of `scripts/` passes (66 tests). So do
 `test_agent_usage_preflight.sh`, which now asserts `--agent self`,
 `check_required_files.py` and `check_python_hygiene.py --sources`.
 
+## J24-C: the callers get the selection unchanged, and the archive proves it
+
+The J24 archive `notrios-v1.0-j24-b92f715.zip` was built from `b92f715` by
+`package_release.sh`, unmodified. The usage guard stayed on: no override, the
+first archive since J21 not to need one.
+
+Its preflight recorded `"agent": "claude"`, with 90% remaining against the 20%
+reserve, and `"selection": "process ancestry: pid 1616574 is claude"`. It passed
+without consulting Codex, whose weekly bucket had paused J23's archive.
+`check_release_zip.py` accepted it: 25,455,843 bytes, 2,604 entries.
+
+The documentation for the guard names whose usage is checked and how to choose:
+- `AGENTS.md`
+- `ENVIRONMENT_SETUP.md`
+- `skills/agent-usage-preflight/SKILL.md`
+- `TESTING_POLICY.md`
+- `CONTEXT_MAP.md`
+
 ## Live checks on this machine
 
 These ran with the Codex session still running beside this one:

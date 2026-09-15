@@ -583,7 +583,7 @@
     {
       "id": "J24",
       "title": "Check the running agent's own usage, not every agent's",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J24-A",
@@ -600,7 +600,8 @@
         {
           "id": "J24-C",
           "statement": "Every caller of the preflight gets the selection without changes of its own, and the guard's documentation says whose usage is checked and how to choose",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
         }
       ]
     }
