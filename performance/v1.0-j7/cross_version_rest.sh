@@ -104,14 +104,22 @@ serve_and_try() {
     kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
     return
   fi
-  for cmd in handshake exchange; do
-    out="$cdir/rest-$cmd-against-$slabel"
-    if guarded "$cbin" sync "$cmd" --url "http://127.0.0.1:$port" $(flags "$cdir") > "$out.out" 2> "$out.err"; then
-      record "$version" "$slabel" "$clabel" "sync $cmd" fail "succeeded; expected a refusal: $(head -c 200 "$out.out" | tr '\n' ' ')"
-    else
-      record "$version" "$slabel" "$clabel" "sync $cmd" pass "refused: $(firsterr "$out.err")"
-    fi
-  done
+  # sync handshake is an authenticated identity check that carries no note
+  # content, so it has no pass or fail here: the drill records what each side
+  # reports. The first run expected it to refuse, which was wrong.
+  out="$cdir/rest-handshake-against-$slabel"
+  if guarded "$cbin" sync handshake --url "http://127.0.0.1:$port" $(flags "$cdir") > "$out.out" 2> "$out.err"; then
+    record "$version" "$slabel" "$clabel" "sync handshake" info "identity check succeeded; peer reports compatible schema $(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(f\"{d.get('min_compatible_schema')}-{d.get('max_compatible_schema')}\")" "$out.out" 2>/dev/null)"
+  else
+    record "$version" "$slabel" "$clabel" "sync handshake" info "identity check refused: $(firsterr "$out.err")"
+  fi
+  # Exchange moves data, so here the owner's rule applies: it must be refused.
+  out="$cdir/rest-exchange-against-$slabel"
+  if guarded "$cbin" sync exchange --url "http://127.0.0.1:$port" $(flags "$cdir") > "$out.out" 2> "$out.err"; then
+    record "$version" "$slabel" "$clabel" "sync exchange" fail "succeeded; data must not move between pre-1.0 and 1.0: $(head -c 200 "$out.out" | tr '\n' ' ')"
+  else
+    record "$version" "$slabel" "$clabel" "sync exchange" pass "refused: $(firsterr "$out.err")"
+  fi
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
   if [[ $(overall "$sdir/notes.sqlite") == "$before_s" && $(overall "$cdir/notes.sqlite") == "$before_c" ]]; then
     record "$version" "$slabel" "$clabel" "libraries unchanged" pass ""
