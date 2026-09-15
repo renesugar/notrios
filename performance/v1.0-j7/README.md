@@ -264,3 +264,66 @@ the owner.
 
 The export at 382,206 notes peaked at 340 MiB, in line with J5's 348 MiB. The
 export was never the memory problem.
+
+## J7-B: the REST check, with real servers
+
+```sh
+bash performance/v1.0-j7/cross_version_rest.sh <work-dir> <bin-dir> 0.7.0:c1127f1 0.8.0:10e7077 v0.9:d6f7ca2
+```
+
+For each older version, a 1.0 library and a replica made from it paired offline,
+with the older version inviting. A 1.0 server then took `sync handshake` and
+`sync exchange` from the older client, and the older server took both from the
+1.0 client. Servers listened only on 127.0.0.1, behind the keychain guards.
+
+| older version | exchange, 1.0 server | exchange, older server | libraries unchanged | handshake, either way |
+|---|---|---|---|---|
+| 0.7.0 | refused: `peer answered 405: Method Not Allowed` | refused: 405 | yes | succeeds |
+| 0.8.0 | refused: 405 | refused: 405 | yes | succeeds |
+| v0.9 | refused: 405 | refused: 405 | yes | succeeds |
+
+**No data moves over REST between pre-1.0 and 1.0.** The 405 is J16's moved
+carrier write path, seen from both sides.
+
+**The handshake succeeds, and the harness was wrong to expect a refusal.**
+`sync handshake` is an authenticated identity check, and it carries no note
+content. The 1.0 server answers the older client with its range
+(`max_compatible_schema: 28`), and the older server answers with 27. The harness
+recorded these as failures because it expected every REST call to refuse. This
+record states the correct reading instead of the harness's verdict.
+
+## J7-B: upgrading in place breaks sync between existing peers, a 1.0 defect
+
+```sh
+bash performance/v1.0-j7/upgrade_in_place.sh <work-dir> <bin-dir> 0.7.0:c1127f1 0.8.0:10e7077 v0.9:d6f7ca2
+```
+
+| step | 0.7.0 | 0.8.0 | v0.9 |
+|---|---|---|---|
+| both replicas on the older version: sync converges | pass, 2 rounds | pass, 2 rounds | pass, 2 rounds |
+| upgrade the first to 1.0 (migrates v27 → v28) | pass | pass | pass |
+| mixed versions: nothing moves, nothing corrupted | pass | pass | pass |
+| upgrade the second to 1.0 | pass | pass | pass |
+| **both on 1.0: sync converges on the original pairing** | **fail** | **fail** | **fail** |
+
+After both upgrades, each replica publishes its new edit: 1 envelope, 2
+operations. Neither admits the other's; every round reports `refused_admission`,
+and neither edit ever arrives.
+
+**Cause, read from the code and the upgraded libraries:**
+1. **Pairing pins the peer's compatibility.** `ConfigureSyncAdmissionPeer`
+   stores the peer's handshake in `sync_peer_compatibility`. Pairing is the only
+   caller: CLI `accept`/`enroll` and the REST pairing endpoints.
+2. **The stored row outlives the upgrade.** Both upgraded libraries are at
+   `user_version 28`, and each still holds its peer as `schema_version 27`,
+   range 24–27.
+3. **Admission compares against that row.** `AdmitSyncOperations` calls
+   `validateConfiguredSyncPeerLocked`, which refuses when the peer's current
+   handshake differs from the stored one: "peer compatibility differs from
+   explicit configuration". The peer now reports 28 with range 24–28, so every
+   batch is refused.
+
+The explicit configuration is a deliberate guard, so a peer cannot silently
+change what it claims to support. The fix is therefore a design decision, and
+it is put to the owner. Until it lands, replicas upgraded in place to 1.0 do not
+sync with each other again.
