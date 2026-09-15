@@ -54,7 +54,9 @@ func New(cfg config.Config) (*Service, error) {
 	if err := config.EnsureDirectories(cfg); err != nil {
 		return nil, err
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	// The instance's temporary work goes in its own temp directory, closed with
+	// the store: other instances may be running on the same machine (J22).
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		return nil, err
 	}

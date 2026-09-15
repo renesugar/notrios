@@ -20,8 +20,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 62 -> 63 and 52 -> 53 in v0.8 H9 slice B:
 		// sync.rest.credential_store names where the secret protecting the
 		// key material lives.
-		{configAnchor, 63},
-		{defaultAnchor, 53},
+		// 63 -> 64 and 53 -> 54 in v1.0 J22 slice B: data.temp_dir is each
+		// instance's own temp directory, so instances on one machine never share
+		// temporary work.
+		{configAnchor, 64},
+		{defaultAnchor, 54},
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
 		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.

@@ -268,6 +268,15 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).
+- `internal/tempspace/` — each instance's own temp directory (J22). Several
+  Notrios instances can run on one machine, so temporary work goes in
+  `data.temp_dir`, one flock-held `p-<id>` subdirectory per process, never in
+  the shared system temp root. Opening a Space removes only the same instance's
+  unlocked leftovers from crashed processes. A nil Space means no instance, and
+  uses a private system temp directory its caller removes.
+  `store.OpenInstanceSQLite` attaches one to a store, and `store.TempSpaceOf`
+  hands it to import manifests, archive verification, export, restore and the
+  Joplin inventory.
 - `internal/store` now exposes update, soft-delete, revision list/read, and revision restore operations with optimistic concurrency.
 - `internal/store` now streams resource bytes into the configured asset store and deduplicates exact blobs by SHA-256.
 - `internal/store` rebuilds `document_links` rows transactionally on document create/update/restore and clears outgoing links on soft delete.

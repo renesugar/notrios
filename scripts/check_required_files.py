@@ -85,6 +85,7 @@ required = [
     'performance/v0.8-h8/RESULTS.json',
     'performance/v0.8-h8/validate_evidence.py',
     'scripts/test_agent_usage_preflight.sh',
+    'scripts/check_temp_leaks.sh',
     'skills/agent-usage-preflight/SKILL.md',
     'plans/v0.7/037-agent-usage-preflight.md',
     'FLUTTER_GO_CLIENT.md',

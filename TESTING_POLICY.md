@@ -867,6 +867,7 @@ account.
 python3 scripts/test_check_agent_usage.py
 bash scripts/test_agent_usage_preflight.sh
 go test ./...
+bash scripts/check_temp_leaks.sh
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
 ```

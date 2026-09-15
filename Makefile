@@ -82,6 +82,9 @@ bytecode: ## Report any __pycache__/.pyc left in the tree, and who could have le
 test: ## Run all Go tests
 	go test ./...
 
+temp-leak-check: ## Run all Go tests in a fresh TMPDIR and fail on any notrios-* entry left behind
+	bash scripts/check_temp_leaks.sh
+
 validate: ## Run tests plus scaffold/script validation
 	bash scripts/validate-scaffold.sh
 
@@ -103,7 +106,7 @@ evidence-pre-push: ## Verify the signed checkpoint and external ISO reserve
 g18e-validate: ## Validate the G18e GUI journey manifest and evidence
 	python3 -m unittest discover -s performance/v0.7-g18e -p 'test_*.py'
 	python3 performance/v0.7-g18e/validate_evidence.py
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g18e-gocache}" go run ./cmd/docjourney
+	go run ./cmd/docjourney
 
 g18f-validate: docgen ## Validate G18f generation and committed advisory evidence (no model)
 	python3 -m unittest discover -s performance/v0.7-g18f -p 'test_*.py'
@@ -115,14 +118,14 @@ g18g-validate: docs-site/node_modules docgen ## Build and validate pinned Hugo/L
 	python3 performance/v0.7-g18g/validate_evidence.py --site _site
 
 g19-validate: ## Validate published archive-v2 schemas, goldens, and reader matrix
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g19-gocache}" go test ./internal/archivev2 ./cmd/notriosctl -run 'Compatibility|PublicGolden|PhysicalRefusal|DeclarationProbe|PublishedJSON|PublishedContract|PublishedSyncWire' -count=1
+	go test ./internal/archivev2 ./cmd/notriosctl -run 'Compatibility|PublicGolden|PhysicalRefusal|DeclarationProbe|PublishedJSON|PublishedContract|PublishedSyncWire' -count=1
 	python3 performance/v0.7-g19/validate_evidence.py
 
 g20-validate: ## Validate v0.7 release identity, security boundaries, evidence, and licenses
 	python3 -m unittest discover -s performance/v0.7-g20 -p 'test_*.py'
 	python3 performance/v0.7-g20/check_dependency_licenses.py
 	python3 performance/v0.7-g20/validate_evidence.py
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g20-gocache}" go test ./internal/service ./internal/httpapi ./internal/archive ./internal/synccarrier -count=1
+	go test ./internal/service ./internal/httpapi ./internal/archive ./internal/synccarrier -count=1
 	python3 performance/v0.7-g8/validate_evidence.py
 	python3 performance/v0.7-g14e/validate_evidence.py
 	python3 performance/v0.7-g17/validate_evidence.py

@@ -125,6 +125,11 @@ type DataConfig struct {
 	// staging and restore review, which briefly hold decrypted library
 	// contents.
 	RuntimeDir string `json:"runtime_dir"`
+	// TempDir is this instance's own temp directory: import manifests, archive
+	// verification spools and other temporary work, one locked subdirectory
+	// per process. Several instances can run on one machine, so none of them
+	// uses the shared system temp root. Unstated, it is <cache_dir>/tmp.
+	TempDir string `json:"temp_dir"`
 }
 
 type SearchConfig struct {
@@ -393,6 +398,9 @@ func LoadWithOrigins(path string) (Config, map[string]string, error) {
 			origins[entry.key] = OriginCompiled
 		}
 	}
+	if !provided["data.temp_dir"] && cfg.Data.TempDir != "" {
+		origins["data.temp_dir"] = OriginResolved
+	}
 	for key := range provided {
 		origins[key] = OriginFile
 	}
@@ -440,6 +448,7 @@ func UseDataDirectory(cfg *Config, dir string, provided map[string]bool) {
 		"data.state_dir":              func(v string) { cfg.Data.StateDir = v },
 		"data.cache_dir":              func(v string) { cfg.Data.CacheDir = v },
 		"data.runtime_dir":            func(v string) { cfg.Data.RuntimeDir = v },
+		"data.temp_dir":               func(v string) { cfg.Data.TempDir = filepath.Join(v, "tmp") },
 		"data.database_path":          func(v string) { cfg.Data.DatabasePath = filepath.Join(v, "notes.sqlite") },
 		"data.asset_store":            func(v string) { cfg.Data.AssetStore = filepath.Join(v, "assets") },
 		"data.projection_dir":         func(v string) { cfg.Data.ProjectionDir = filepath.Join(v, "projections") },
@@ -451,6 +460,19 @@ func UseDataDirectory(cfg *Config, dir string, provided map[string]bool) {
 		}
 	}
 	cfg.Data.Directory = dir
+}
+
+// deriveTempDir places an unstated temp directory under the instance's own
+// cache directory, after every other root has been resolved.
+//
+// It is derived from data.cache_dir rather than from the cache root, because a
+// profile's cache directory is keyed by profile: a profile config written
+// before temp_dir existed must get a temp directory of its own, not one shared
+// with every other profile under the user's cache root (J22).
+func deriveTempDir(cfg *Config) {
+	if strings.TrimSpace(cfg.Data.TempDir) == "" && strings.TrimSpace(cfg.Data.CacheDir) != "" {
+		cfg.Data.TempDir = filepath.Join(cfg.Data.CacheDir, "tmp")
+	}
 }
 
 // ApplyResolvedRoots fills every path setting the configuration did not state.
@@ -468,6 +490,7 @@ func ApplyResolvedRoots(cfg *Config, provided map[string]bool) error {
 }
 
 func applyResolvedRoots(cfg *Config, provided, assigned map[string]bool) error {
+	defer deriveTempDir(cfg)
 	// A stated data directory keeps everything under it. One directory means
 	// one directory: a configuration that says `directory: /srv/notes` and
 	// nothing else must not have its sync spools and quarantine resolved to the
@@ -615,6 +638,7 @@ func EnsureDirectories(cfg Config) error {
 		cfg.Data.StateDir,
 		cfg.Data.CacheDir,
 		cfg.Data.RuntimeDir,
+		cfg.Data.TempDir,
 		cfg.Data.ProjectionDir,
 		cfg.SearchSidecar.IndexDir,
 		cfg.RemoteMedia.QuarantineDir,
@@ -898,6 +922,8 @@ func applyData(cfg *DataConfig, key, value string) {
 		cfg.CacheDir = value
 	case "runtime_dir":
 		cfg.RuntimeDir = value
+	case "temp_dir":
+		cfg.TempDir = value
 	case "database_path":
 		cfg.DatabasePath = value
 	case "asset_store":

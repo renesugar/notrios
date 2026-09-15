@@ -62,6 +62,7 @@ func runConfigShow(args []string) {
 		{"data.state_dir", show(cfg.Data.StateDir)},
 		{"data.cache_dir", show(cfg.Data.CacheDir)},
 		{"data.runtime_dir", show(cfg.Data.RuntimeDir)},
+		{"data.temp_dir", show(cfg.Data.TempDir)},
 		{"data.projection_dir", show(cfg.Data.ProjectionDir)},
 		{"search_sidecar.enabled", fmt.Sprintf("%t", cfg.SearchSidecar.Enabled)},
 		{"search_sidecar.index_dir", show(cfg.SearchSidecar.IndexDir)},

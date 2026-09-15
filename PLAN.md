@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 17 complete, 0 in progress, 7 not started, 0 deferred.**
+**24 items: 17 complete, 1 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -82,11 +82,19 @@ this section is archived when the plan completes and the rules are not.
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
-| J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
+| J22. Stop stores and tests leaving directories in the temp root | in-progress | 2/3 | 1 |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J22. Stop stores and tests leaving directories in the temp root**
+
+- `J22-C` The CLI tests' shared binary directory is removed, validators stop defaulting Go caches into the temp root, and a check runs the Go suite in a fresh temp root and fails on any notrios-* entry left — *not-started*
+
+### Not started
+
+Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2110,7 +2118,7 @@ libraries and its measurements.
 schema of every library shape is proven unchanged. Open and search are
 re-measured on both full corpora.
 
-## J22. Stop stores and tests leaving directories in the temp root
+## J22. Stop stores and tests leaving directories in the temp root — in progress
 
 **Goal.** Nothing Notrios or its test suite creates in the temp directory
 outlives the process or test that made it.
@@ -2131,23 +2139,58 @@ The first two are this item. The asset-directory leak is in product code, not
 only in tests: any caller that opens a store without an asset store leaks one
 directory per open.
 
-**Scope, by owner decision (2026-09-15).**
+**Each instance keeps its temp files to itself, by owner decision
+(2026-09-15).** Several Notrios instances can run on one machine. Any code that
+creates or removes temp files must keep each instance's temp files in that
+instance's own temp directory, and must never touch another instance's.
+Product code today puts three kinds of temp entry straight into the shared
+system temp root:
+- the path-less store's asset root (`defaultAssetRoot`)
+- the import manifest spool (`OpenImportManifest`: export, restore, Joplin
+  import)
+- the archive verification spool (`VerifyDirectory`)
+
+On this machine that root is RAM-backed, and one import manifest reached
+3.3 GB. The owner chose:
+- **Where an instance's temp directory lives:** a new per-instance path,
+  `data.temp_dir`, defaulting to `<cache root>/tmp`. It is covered by the
+  profile path-sharing validation that already keeps two profiles' databases,
+  assets, projections, index and quarantine apart.
+- **Per process:** each process of the instance works in its own subdirectory
+  there, holding a lock.
+- **With no instance configured** (library use, tests, `:memory:` stores): each
+  temp entry is a private `0700` directory in the system temp root, and is
+  removed when the object that made it closes.
+- **Crash leftovers:** when an instance starts, it removes only subdirectories
+  of **its own** temp directory whose lock no live process holds. It never looks
+  at another instance's directory, and never scans the system temp root by name.
+
+**Scope.**
 
 - **J22-A, a store removes the temp asset root it created.** `Close` removes an
-  asset root the store made for itself with `MkdirTemp`, and never one a caller
-  supplied, nor the directory beside a database file. A test proves both halves.
-- **J22-B, tests clean up after themselves.** The CLI tests' shared binary
-  directory is removed when the package's tests finish. Any other temp entry a
-  test run leaves, found by J22-C, is fixed the same way.
-- **J22-C, a check that keeps it fixed.** The Go test suite runs with `TMPDIR`
-  pointed at a fresh directory, and the check fails if any `notrios-*` entry is
-  left in it afterwards. The validators' Go build caches are either moved out of
-  the temp root or removed by the validator that made them, and the check says
-  which.
+  asset root the store made for itself, and never one a caller supplied, nor
+  the directory beside a database file. A test proves both halves.
+- **J22-B, one temp directory per instance.** `data.temp_dir` is resolved,
+  created and validated like the other runtime paths. The import manifest, the
+  verification spool and the path-less asset root are created in the running
+  instance's per-process subdirectory when an instance is configured, and in a
+  private system-temp directory otherwise. Tests prove:
+  - two instances' temp files never share a directory
+  - an instance removes an unlocked leftover in its own directory
+  - it leaves a locked one alone, and never touches another instance's
+- **J22-C, tests clean up after themselves, and a check keeps it fixed.**
+  - The CLI tests' shared binary directory is removed when the package's tests
+    finish.
+  - The Go test suite runs with `TMPDIR` pointed at a fresh directory. The check
+    fails if any `notrios-*` entry is left in it, and any other leftover a run
+    reveals is fixed the same way.
+  - The validators' Go build caches stop defaulting into the temp root, and the
+    check refuses one that does.
 
 **Boundaries.**
-- Removal is limited to paths the store or test created and recorded. Nothing
-  is removed by name pattern at runtime.
+- Removal is limited to paths the store, the instance or the test created and
+  recorded, or to unlocked subdirectories of the running instance's own temp
+  directory. Nothing is removed by name pattern in a shared directory.
 - A caller-supplied asset store is never deleted.
 
 **Dependencies.** None.

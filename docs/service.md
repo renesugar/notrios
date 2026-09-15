@@ -22,7 +22,7 @@ An installed binary never reads a configuration file from the directory it happe
 
 **Precedence:** command-line flags override the config file, which overrides the built-in defaults.
 
-**Storage roots.** `data.directory` holds the library itself. Three further roots separate what a purge and a backup treat differently: `data.state_dir` for things Notrios must remember but you did not write (sync spools, backups, the catch-up inbox, the remote-media quarantine), `data.cache_dir` for anything rebuildable from the library (projections, the search index), and `data.runtime_dir` for work in flight that need not survive a reboot (backup staging, restore review).
+**Storage roots.** `data.directory` holds the library itself. Three further roots separate what a purge and a backup treat differently: `data.state_dir` for things Notrios must remember but you did not write (sync spools, backups, the catch-up inbox, the remote-media quarantine), `data.cache_dir` for anything rebuildable from the library (projections, the search index), and `data.runtime_dir` for work in flight that need not survive a reboot (backup staging, restore review). `data.temp_dir` is the instance's own temp directory, `<cache_dir>/tmp` unless stated. Several instances can run on one machine, so import manifests and archive verification spools go there rather than in the shared system temp root, one locked subdirectory per process. On startup an instance removes the leftovers of its own crashed processes, and never touches another instance's.
 
 Their compiled default is empty, which means *resolved at startup* rather than *unset*: on Linux they become `$XDG_STATE_HOME/notrios`, `$XDG_CACHE_HOME/notrios` and `$XDG_RUNTIME_DIR/notrios`, with the documented fallbacks. Two rules keep existing setups working. Any path you state is used exactly as written and never relocated. And if you state `data.directory` and nothing else, the other roots are placed *under it* — one directory means one directory — so a configuration written before these keys existed keeps every file where it already was.
 
@@ -61,6 +61,7 @@ chooses and pins the long-term configuration library.
 - data.projection_dir
 - data.runtime_dir
 - data.state_dir
+- data.temp_dir
 - mcp
 - mcp.default_profile
 - mcp.default_scope
@@ -127,6 +128,7 @@ configuration group.
 - data.projection_dir = "./data/projections"
 - data.runtime_dir = ""
 - data.state_dir = ""
+- data.temp_dir = ""
 - mcp.default_profile = ""
 - mcp.default_scope = ""
 - mcp.enabled = true

@@ -30,6 +30,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/stablelink"
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 // ErrPhysicalRestoreInProgress prevents a service or ordinary CLI command from
@@ -65,6 +66,16 @@ type SQLiteStore struct {
 	// lastMigration records a schema migration performed by this open, so a
 	// caller can tell the user it happened. Nil when nothing was migrated.
 	lastMigration *MigrationReport
+	// ownedAssetRoot is an asset root this store created for itself, because it
+	// was given neither a database file nor an asset store. Close removes it.
+	// The store never removes any other asset root (J22).
+	ownedAssetRoot string
+	// tempSpace is where this store's instance keeps temporary work: import
+	// manifests, archive verification spools. It is nil when no instance is
+	// configured, and then that work goes in a private system temp directory.
+	// It is set before the store is shared and never changes afterwards.
+	tempSpace     *tempspace.Space
+	ownsTempSpace bool
 }
 
 // AssetRoot returns the configured local store root for internal bulk
@@ -73,7 +84,45 @@ type SQLiteStore struct {
 func (s *SQLiteStore) AssetRoot() string { return s.assetRoot }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
-	return OpenSQLiteWithAssetStore(path, defaultAssetRoot(path))
+	return openSQLiteWithAssetStore(path, "", false)
+}
+
+// OpenInstanceSQLite opens a configured instance's store: its database, its
+// asset store, and a temp space of its own in tempDir, which the store closes
+// when it closes.
+//
+// Several Notrios instances can run on one machine, so an instance's temporary
+// work goes in its own temp directory, never in the shared system temp root.
+// An empty tempDir opens the store with no instance temp space.
+func OpenInstanceSQLite(path, assetRoot, tempDir string) (*SQLiteStore, error) {
+	var space *tempspace.Space
+	if strings.TrimSpace(tempDir) != "" {
+		var err error
+		if space, err = tempspace.Open(tempDir); err != nil {
+			return nil, fmt.Errorf("open the instance temp directory: %w", err)
+		}
+	}
+	st, err := OpenSQLiteWithAssetStore(path, assetRoot)
+	if err != nil {
+		_ = space.Close()
+		return nil, err
+	}
+	st.tempSpace, st.ownsTempSpace = space, space != nil
+	return st, nil
+}
+
+// TempSpace is the instance temp space this store's temporary work belongs in,
+// or nil when no instance is configured.
+func (s *SQLiteStore) TempSpace() *tempspace.Space { return s.tempSpace }
+
+// TempSpaceOf returns the instance temp space of a store handed over as an
+// interface (an export reader, a restore target, an import store), or nil when
+// it has none.
+func TempSpaceOf(v any) *tempspace.Space {
+	if holder, ok := v.(interface{ TempSpace() *tempspace.Space }); ok {
+		return holder.TempSpace()
+	}
+	return nil
 }
 
 func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
@@ -88,9 +137,20 @@ func OpenSQLiteWithAssetStoreForRestore(path, assetRoot string) (*SQLiteStore, e
 }
 
 func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLiteStore, error) {
+	owned := ""
 	if strings.TrimSpace(assetRoot) == "" {
-		assetRoot = defaultAssetRoot(path)
+		var err error
+		if assetRoot, owned, err = defaultAssetRoot(path); err != nil {
+			return nil, err
+		}
 	}
+	opened := false
+	defer func() {
+		// An open that fails must not leave behind the asset root it made.
+		if !opened && owned != "" {
+			_ = os.RemoveAll(owned)
+		}
+	}()
 	if path != ":memory:" {
 		if _, err := os.Lstat(PhysicalRestoreMarkerPath(path)); err == nil && !allowRestore {
 			return nil, fmt.Errorf("%w: run the same local restore command to resume", ErrPhysicalRestoreInProgress)
@@ -130,13 +190,14 @@ func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLit
 		}
 		return nil, fmt.Errorf("open sqlite: %s", msg)
 	}
-	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot}
+	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot, ownedAssetRoot: owned}
 	// busy_timeout lets a CLI import and the running service share the file
 	// without immediate "database is locked" failures on write overlap.
 	if err := s.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;"); err != nil {
 		_ = s.Close()
 		return nil, err
 	}
+	opened = true
 	return s, nil
 }
 
@@ -155,17 +216,22 @@ func contextOrBackground(ctx context.Context) context.Context {
 // directory belonged to whoever created it first. It is now a private
 // per-process directory, owner-only, which is what a database that exists only
 // for the life of this process should have.
-func defaultAssetRoot(path string) string {
+//
+// J22: that private directory is the store's, so it is returned as owned and
+// Close removes it. Nothing removed it before, and J7 found 16,888 of them in
+// /tmp. The shared-name fallback for an unwritable temp root is gone too: one
+// directory shared by every instance on the machine is what the private one
+// replaced, so failing to open is the honest result.
+func defaultAssetRoot(path string) (root, owned string, err error) {
 	if path == ":memory:" || strings.TrimSpace(path) == "" {
-		root, err := os.MkdirTemp("", "notrios-assets-")
+		var noInstance *tempspace.Space
+		root, err := noInstance.MkdirTemp("notrios-assets-")
 		if err != nil {
-			// Falling back to the shared name is worse than failing loudly
-			// later; an unwritable temp directory will surface on first use.
-			return filepath.Join(os.TempDir(), "notrios-assets")
+			return "", "", fmt.Errorf("create a private asset root: %w", err)
 		}
-		return root
+		return root, root, nil
 	}
-	return filepath.Join(filepath.Dir(path), "assets")
+	return filepath.Join(filepath.Dir(path), "assets"), "", nil
 }
 
 func (s *SQLiteStore) Close() error {
@@ -178,7 +244,16 @@ func (s *SQLiteStore) Close() error {
 		return fmt.Errorf("close sqlite: %s", C.GoString(C.sqlite3_errmsg(s.db)))
 	}
 	s.db = nil
-	return nil
+	var cleanup error
+	if s.ownedAssetRoot != "" {
+		cleanup = os.RemoveAll(s.ownedAssetRoot)
+		s.ownedAssetRoot = ""
+	}
+	if s.ownsTempSpace {
+		cleanup = errors.Join(cleanup, s.tempSpace.Close())
+		s.ownsTempSpace = false
+	}
+	return cleanup
 }
 
 // ErrSchemaTooNew means the database was written by a newer Notrios than this

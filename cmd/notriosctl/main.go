@@ -185,7 +185,7 @@ func runImportJoplinRaw(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -314,7 +314,7 @@ func runImportObsidian(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -425,7 +425,7 @@ func runLocalize(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -535,7 +535,7 @@ func runGarbageCollection(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -716,7 +716,7 @@ func runImportTwitter(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -772,7 +772,7 @@ func runImportConversations(args []string, kind string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -825,7 +825,7 @@ func openStoreFromFlags(configPath, dbPath, assetStore string) *store.SQLiteStor
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -1144,7 +1144,7 @@ func runSnapshotCreate(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -1435,7 +1435,7 @@ func runDoctor(args []string) {
 		report(true, true, "directories", "storage directories exist or were created")
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		report(false, true, "database", err.Error())
 	} else {

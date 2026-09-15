@@ -149,7 +149,6 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="notrios-g18d-") as directory:
         actual_path = Path(directory) / "REPORT.json"
         environment = dict(os.environ)
-        environment["GOCACHE"] = str(Path(tempfile.gettempdir()) / "notrios-g18d-gocache")
         environment["NOTRIOS_DOCEXEC_REPORT"] = str(actual_path)
         subprocess.run(
             ["go", "test", "./internal/docexec", "-run", "^TestRepositoryExamples$", "-count=1", "-timeout", "240s"],

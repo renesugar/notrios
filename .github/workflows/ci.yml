@@ -40,7 +40,10 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: cd web && npm ci
       - run: go vet ./...
-      - run: go test ./...
+      # The whole Go suite, run with a fresh TMPDIR: it fails if a test or the
+      # code under test leaves a notrios-* entry behind, or if a validator
+      # defaults its Go cache into the temp root (J22).
+      - run: bash scripts/check_temp_leaks.sh
       - run: python3 performance/v0.7-g18d/validate_evidence.py
       - run: python3 performance/v0.7-g18e/validate_evidence.py
       - run: make g18f-validate

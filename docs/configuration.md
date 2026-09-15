@@ -46,6 +46,7 @@ genuinely different lifetimes, and `notriosctl purge` treats them differently:
 | `data.state_dir` | what must survive a restart but you did not write: sync spools, sync backups, the catch-up inbox, the remote-media quarantine | backs it up, then deletes |
 | `data.cache_dir` | what can be rebuilt from the library: projections, the search index | deletes **without** a backup |
 | `data.runtime_dir` | work in flight that must not survive a reboot: backup staging, restore review | deletes without a backup |
+| `data.temp_dir` | this instance's own temp directory, `<cache_dir>/tmp` unless stated: import manifests and archive verification spools, one locked subdirectory per process, so instances on one machine never share temp files | not planned on its own |
 | `data.projection_dir` | rendered projections | with the cache |
 
 The distinction is not cosmetic. Anything you put in `cache_dir` is deleted
@@ -76,7 +77,7 @@ from — `file` when your file set it, `compiled` or `resolved` when it did not.
 That `origin` column is the part worth reading, because it turns "I set this"
 into "this is set". Move the files yourself; nothing here copies them for you.
 
-It reports 20 of the 53 keys, chosen as the ones that decide where data lives
+It reports 21 of the 54 keys, chosen as the ones that decide where data lives
 and what is reachable. A key absent from its output is not ignored by the
 service — it is simply not summarised, and the table at the end of this page is
 the complete list.
@@ -86,9 +87,9 @@ alone. See
 [Removing your data as well](installation.md#removing-your-data-as-well).
 
 On startup the service creates the data directory, the database's parent
-directory, the asset store, the projection directory and the search sidecar's
-index directory. It does not create anything under a path you have not
-configured.
+directory, the asset store, the projection directory, the search sidecar's
+index directory and the instance's temp directory. It does not create anything
+under a path you have not configured.
 
 ## Serving the API and the interface
 
@@ -146,7 +147,7 @@ search:
 <!-- notrios:generated:example:configuration-search-example-1:end -->
 
 There is no command-line example for this one, and the reason is worth knowing
-before you go looking for it: **`config show` reports 20 of the 53 keys**, and
+before you go looking for it: **`config show` reports 21 of the 54 keys**, and
 these two are not among them, while `notriosctl search` takes `--db` but not
 `--config`. So the effect is visible through `/api/v1/status`, which reports the
 active search limits, and not from the command line. Every other example on this
@@ -236,7 +237,7 @@ its database anywhere, including outside the roots above.
 ## Every key
 
 <!-- notrios:generated:config:keys:begin -->
-53 settable keys, generated from `internal/config` by `go run ./cmd/docconfig --write`. A dash means the default is empty, which for a path means "work it out from the XDG roots". The recorded configuration surface counts 63, because it includes the 10 section names that group these.
+54 settable keys, generated from `internal/config` by `go run ./cmd/docconfig --write`. A dash means the default is empty, which for a path means "work it out from the XDG roots". The recorded configuration surface counts 64, because it includes the 10 section names that group these.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
@@ -254,6 +255,7 @@ its database anywhere, including outside the roots above.
 | `data.state_dir` | string | — | StateDir holds what Notrios must remember across runs but the user did not write: sync carrier spools, sync backups, the catch-up inbox, and the remote-media quarantine. It is backed up before a purge. |
 | `data.cache_dir` | string | — | CacheDir holds what can be rebuilt from the library: projections and the search index. A purge disposes of it without backing it up, so nothing irreplaceable may live here. |
 | `data.runtime_dir` | string | — | RuntimeDir holds work in flight that must not survive a reboot: backup staging and restore review, which briefly hold decrypted library contents. |
+| `data.temp_dir` | string | — | TempDir is this instance's own temp directory: import manifests, archive verification spools and other temporary work, one locked subdirectory per process. Several instances can run on one machine, so none of them uses the shared system temp root. Unstated, it is <cache_dir>/tmp. |
 | `sync.target` | string | `none` |  |
 | `sync.directory` | string | — |  |
 | `sync.rest_base_url` | string | — |  |

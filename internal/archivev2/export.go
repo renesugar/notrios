@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 // stagingSuffix names the private directory that holds in-progress object and
@@ -122,7 +123,7 @@ func Export(ctx context.Context, source store.ExportReader, destination string, 
 	}
 	defer os.RemoveAll(staging)
 
-	writer, err := newArchiveWriter(root, staging, options)
+	writer, err := newArchiveWriter(root, staging, options, store.TempSpaceOf(source))
 	if err != nil {
 		return ExportReport{}, err
 	}
@@ -148,7 +149,7 @@ func Export(ctx context.Context, source store.ExportReader, destination string, 
 
 	report := export.report(manifest, started)
 	if !options.SkipVerification {
-		if _, err := VerifyDirectory(root, options.Limits); err != nil {
+		if _, err := VerifyDirectoryIn(store.TempSpaceOf(source), root, options.Limits); err != nil {
 			// A published manifest is the completion marker, so an archive that
 			// fails its own verification must not keep one.
 			_ = os.Remove(filepath.Join(root, "manifest.json"))
@@ -306,7 +307,9 @@ type archiveWriter struct {
 	sequence     int
 }
 
-func newArchiveWriter(root, staging string, options ExportOptions) (*archiveWriter, error) {
+// space is the exporting instance's temp space, where the dedup index spools;
+// nil puts it in a private system temp directory.
+func newArchiveWriter(root, staging string, options ExportOptions, space *tempspace.Space) (*archiveWriter, error) {
 	entries, err := newKeySpool(staging, "index-entries")
 	if err != nil {
 		return nil, err
@@ -318,7 +321,7 @@ func newArchiveWriter(root, staging string, options ExportOptions) (*archiveWrit
 	if options.Pack {
 		writer.packs = newPackWriter(root, staging, options.Limits, options.PackTargetBytes, options.PackMaxObjects, writer.spoolEntry)
 		// Only a packed export needs a dedup index; see writeKnownBlob.
-		seen, err := store.OpenImportManifest()
+		seen, err := store.OpenImportManifestIn(space)
 		if err != nil {
 			_ = entries.close()
 			return nil, err

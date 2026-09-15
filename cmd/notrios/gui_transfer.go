@@ -265,7 +265,7 @@ func (b *NativeUIBridge) VerifyArchive(path string) (TransferReport, error) {
 	if err != nil {
 		return TransferReport{}, err
 	}
-	report, err := archivev2.VerifyDirectory(root, archivev2.DefaultLimits())
+	report, err := archivev2.VerifyDirectoryIn(b.local.Store.TempSpace(), root, archivev2.DefaultLimits())
 	if err != nil {
 		return TransferReport{}, err
 	}

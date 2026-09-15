@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 const (
@@ -261,7 +262,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if sourceKey == "" {
 		sourceKey = filepath.Clean(absoluteDir)
 	}
-	inv, err := readInventory(ctx, absoluteDir, options.PreserveSource)
+	inv, err := readInventoryIn(ctx, absoluteDir, options.PreserveSource, store.TempSpaceOf(st))
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +356,13 @@ func contextOrBackground(ctx context.Context) context.Context {
 }
 
 func readInventory(ctx context.Context, sourceDir string, retainBundleInventory bool) (inventory, error) {
-	manifest, err := store.OpenImportManifest()
+	return readInventoryIn(ctx, sourceDir, retainBundleInventory, nil)
+}
+
+// readInventoryIn spools the inventory in space, the importing instance's temp
+// space; nil puts it in a private system temp directory.
+func readInventoryIn(ctx context.Context, sourceDir string, retainBundleInventory bool, space *tempspace.Space) (inventory, error) {
+	manifest, err := store.OpenImportManifestIn(space)
 	if err != nil {
 		return inventory{}, err
 	}
