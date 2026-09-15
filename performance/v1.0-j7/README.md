@@ -101,3 +101,36 @@ the vault:
 The only difference from `5ae93df`'s own library is two notebooks,
 `nb_recovered` ("Recovered") and `nb_reports` ("Reports"). Both are 1.0's
 built-ins, which 1.0 creates in every library. They are not content.
+
+### The matrix, re-run from the committed harness
+
+`cross_version.sh` was corrected to the revised rule, committed (`a551b6d`), and
+re-run into a new work directory. It recorded one tracked change: the edit to
+J7's decision text in `PLAN.md`, which is documentation. The verdicts are
+identical to the table above:
+- every forward check passes
+- every backward archive restore passes by restoring completely
+- 0.8.0 and v0.9 refuse a 1.0 library
+- 0.7.0 fails only the documented library-open cell
+
+## J7-B preparation: sync keys never reach the user's keychain
+
+Binaries run from outside a source checkout count as installed. An installed
+0.8.0, v0.9 or 1.0 with no key material defaults its sync keys to the operating
+system's keychain, reached through the D-Bus Secret Service. A cross-version
+drill on the owner's machine must not put test keys there. So every sync command
+in J7-B runs with two independent guards:
+
+1. **A scratch config** with `sync.rest.credential_store: development-file`,
+   plus explicit `--db` and `--keys` inside the drill's tree. An explicit
+   setting always wins in `config.ResolveCredentialStore`. The resolver is
+   byte-identical at 0.8.0, v0.9 and 1.0, and 0.7.0 has no native store.
+2. **No session bus.** `DBUS_SESSION_BUS_ADDRESS` is unset, and
+   `XDG_RUNTIME_DIR`, `HOME` and every `XDG_*` root point into the drill's
+   tree. A mistaken native selection would fail loudly, not write.
+
+A probe ran `sync init` that way on copies of J7-A's libraries, with 1.0, 0.8.0,
+v0.9 and 0.7.0. Every binary reported
+`"credential_store": "locked-file-development"` and wrote its key only to the
+scratch `keys/sync.key`. Nothing named for Notrios appeared under the user's
+`~/.config` or `~/.local/share`.

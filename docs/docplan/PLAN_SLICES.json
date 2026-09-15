@@ -169,7 +169,8 @@
         {
           "id": "J7-A",
           "statement": "Archives and library files written by 0.7.0, 0.8.0 and the v0.9 close restore and open in 1.0 with their content intact, and a 1.0 archive is refused clearly by each older version",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
         },
         {
           "id": "J7-B",

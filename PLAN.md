@@ -67,7 +67,7 @@ this section is archived when the plan completes and the rules are not.
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
-| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 0/3 | 3 |
+| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 1/3 | 2 |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
@@ -87,7 +87,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J7. Validate backup, export, restore, sync compatibility and disaster recovery**
 
-- `J7-A` Archives and library files written by 0.7.0, 0.8.0 and the v0.9 close restore and open in 1.0 with their content intact, and a 1.0 archive is refused clearly by each older version — *not-started*
 - `J7-B` Folder-carrier sync converges between 1.0 and each older version in both directions, and REST publishing between them is refused and documented — *not-started*
 - `J7-C` A disaster-recovery drill destroys and restores a library at the scale J5 measured — *not-started*
 
@@ -767,9 +766,16 @@ All four historical commits build with today's toolchain, and each has
 `j17_make_vault.py`) be written by every version.
 
 **Two further decisions.**
-- **A pre-1.0 version reading 1.0's data must refuse it clearly.** An explicit
-  error is the pass. Success is not required. Partial or corrupt data is a
-  failure.
+- **A pre-1.0 version given 1.0's data must refuse it clearly, or restore it
+  completely.** Partial or corrupt data is a failure. The rule was first framed
+  as "refuse"; the owner revised it (2026-09-15) after J7-A measured all three
+  older versions restoring a 1.0 archive with identical content, because schema
+  28 adds only a private index an archive does not carry.
+- **0.7.0 opening a 1.0 library is a documented 0.7.0 limitation.** 0.7.0
+  predates the too-new-database check. It opens a 1.0 library and rewrites
+  `user_version` from 28 to 27 with content intact, and 1.0 recovers it on the
+  next open. 0.8.0 and v0.9 refuse. 1.0 cannot change 0.7.0, so the release
+  documentation (J9) says not to do it, and that reopening with 1.0 recovers.
 - **Sync REST publishing between pre-1.0 and 1.0 is a documented break.** J16
   moved carrier writes from `PUT|DELETE /api/v1/sync/carrier/{class}/{name}`,
   which every version through the v0.9 close uses, to
