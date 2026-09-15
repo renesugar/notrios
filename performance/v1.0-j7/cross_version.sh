@@ -12,10 +12,13 @@
 #              file is opened by 1.0 (migrating to v28). Both must hold the
 #              same notes as a 1.0 import of the same vault.
 #   backward   it is given a 1.0 archive and a copy of a 1.0 library. By owner
-#              decision the pass is a clear refusal: a non-zero exit with an
-#              error, and the library copy left unchanged (user_version and
-#              content). Success is not required. A silent success or a
-#              changed library is a failure.
+#              decision (2026-09-15):
+#              - the archive passes if it is refused clearly or restored
+#                completely, with content equal to the 1.0 library. Any other
+#                successful restore is partial or corrupt, and fails.
+#              - the library copy passes only if the open is refused and the
+#                copy is left unchanged (user_version and content). 0.7.0
+#                fails this one cell; it is documented, not fixed.
 #
 # Nothing here touches a library the drill did not create. Every open of a
 # library by a version other than the one that wrote it runs on a copy.
@@ -104,10 +107,18 @@ for pair in "$@"; do
     record "$version" "$commit" "forward library open" fail "$(tail -1 "$D/new-open.err")"
   fi
 
-  # Backward: the old version is given a 1.0 archive.
+  # Backward: the old version is given a 1.0 archive. By owner decision
+  # (2026-09-15) it passes by refusing clearly, or by restoring completely:
+  # content equal to the 1.0 library the archive came from. A restore that
+  # succeeds with any other content is partial or corrupt, and fails.
   if "$OLD" restore archive-v2 --intent fork --new-database-id "db_j7_back_${version//[^a-z0-9]/_}" \
        --db "$D/back-restore/notes.sqlite" --asset-store "$D/back-restore/assets" "$WORK/v1.0/archive" > "$D/old-restore.json" 2> "$D/old-restore.err"; then
-    record "$version" "$commit" "backward archive restore" fail "succeeded; the owner's rule requires a clear refusal (restored user_version $(userversion "$D/back-restore/notes.sqlite" 2>/dev/null))"
+    got=$(overall "$D/back-restore/notes.sqlite")
+    if [[ "$got" == "$REFERENCE" ]]; then
+      record "$version" "$commit" "backward archive restore" pass "restored completely: content equals the 1.0 library (user_version $(userversion "$D/back-restore/notes.sqlite"))"
+    else
+      record "$version" "$commit" "backward archive restore" fail "restored with different content $got; partial or corrupt"
+    fi
   else
     record "$version" "$commit" "backward archive restore" pass "refused: $(tail -1 "$D/old-restore.err")"
   fi
