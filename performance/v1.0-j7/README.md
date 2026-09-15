@@ -224,3 +224,43 @@ to the owner.
 4 GiB of MemAvailable, the drill stops that step and records it as incomplete
 with the reading. Each step also records its peak RSS and the lowest
 MemAvailable seen.
+
+### The second run was stopped from outside too, at the purge
+
+The re-run started from a clean tree at `7c6d36a`, with `/tmp` cleared and the
+memory guard in place. It got much further:
+
+| step | verdict | seconds | detail |
+|---|---|---|---|
+| copy library into the data root | pass | 50.5 | 7,350,784,000 bytes |
+| open in installed mode | pass | 2.0 | |
+| baseline content digest | pass | 82.9 | `8d6f694a…` |
+| baseline search probes | pass | | the=187518, quinoa=385, chicken stock=9703 |
+| export archive-v2 off-site | pass | 3,310.2 | 1,246,840,047 bytes; peak RSS **340 MiB**; lowest MemAvailable 43,868 MiB |
+| verify the archive | pass | 296.8 | |
+| purge plan confined to the drill | pass | | 6 steps, backup off-site |
+| purge with a verified backup | **stopped from outside** | | while writing `backup.tar` |
+
+**Nothing was destroyed, which shows purge's own safeguard working.** When the
+purge was stopped:
+- `backup.tar` held 2.66 GB of the 7.35 GB library, and no `MANIFEST.json` had
+  been written
+- the data root still held every file
+- the library's content digest still equals the baseline, `8d6f694a…`
+
+An unverified backup means no deletion, as J3 requires.
+
+**The drill's memory guard did not fire, and it should not have.** MemAvailable
+never fell below 43.8 GB during the export, and after the stop it was 44.7 GB,
+with 1.7 GB of swap in use. Free memory was 750 MB, because 45 GB was page cache
+from the multi-gigabyte reads and writes. Both stops came during such writes:
+- the first run's export
+- this run's purge backup of the 7.35 GB library
+
+The task runner that supervises background jobs appears to act on free memory,
+not on memory the kernel can reclaim. That is inferred from these two runs, not
+confirmed. **Reported as incomplete.** How to run J7-C to completion is put to
+the owner.
+
+The export at 382,206 notes peaked at 340 MiB, in line with J5's 348 MiB. The
+export was never the memory problem.
