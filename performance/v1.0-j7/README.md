@@ -346,3 +346,17 @@ upgrade-in-place defect.** J7-B's statement promises that replicas syncing on an
 older version keep syncing once both are upgraded, and that is not true until
 J23 lands. So J7-B is not marked done until `upgrade_in_place.sh` converges for
 0.7.0, 0.8.0 and v0.9. J7-C can still complete, and be recorded, before then.
+
+### The upgrade path, after J23
+
+J23 (`6bf70d2`) changes admission. It accepts a paired peer whose only change is
+a schema rise both sides' ranges admit, and keeps protocol, capabilities and the
+range floor pinned. `upgrade_in_place.sh`, re-run against that build, now passes
+every row for 0.7.0, 0.8.0 and v0.9:
+- two replicas syncing on the older version are upgraded to 1.0 one at a time
+- they move nothing while the versions differ
+- **they converge again on their original pairing**, with both sides'
+  pre-upgrade edits intact
+
+J7-B's upgrade clause is satisfied. The results are in
+`performance/v1.0-j23/README.md`.

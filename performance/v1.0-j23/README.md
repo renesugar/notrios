@@ -89,3 +89,29 @@ admission, security, catch-up and retention tests.
 **The sync packages built on admission also pass with the fix:**
 `internal/synccarrier` (16.8 s), `internal/syncrest` (12.7 s),
 `internal/syncstate` and `internal/httpapi` (30.8 s).
+
+## J23-C: the drill that found it now converges
+
+`performance/v1.0-j7/upgrade_in_place.sh` was re-run against the fixed build
+(`6bf70d2`, no tracked changes). For each version:
+- two replicas on that version pair offline and converge
+- one is upgraded to 1.0, and nothing moves while the versions differ
+- the other is upgraded, and each makes a new edit
+- both must converge on their original pairing
+
+| step | 0.7.0 | 0.8.0 | v0.9 |
+|---|---|---|---|
+| both on the older version: sync converges | pass, 2 rounds | pass, 2 rounds | pass, 2 rounds |
+| upgrade the first to 1.0 (v27 → v28) | pass | pass | pass |
+| mixed versions: nothing moves, nothing corrupted | pass | pass | pass |
+| upgrade the second to 1.0 | pass | pass | pass |
+| **both on 1.0: sync converges on the original pairing** | **pass, 2 rounds** | **pass, 2 rounds** | **pass, 2 rounds** |
+
+In every case, both replicas' pre-upgrade edits are still present after the new
+edits converge. The same drill failed all three final rows before the fix
+(`performance/v1.0-j7/README.md`). Nothing named for Notrios was written outside
+the drill's work directory.
+
+The run shared the machine with J7-C's detached disaster-recovery drill. This
+drill is a correctness check with no timing claims, so the overlap affects
+nothing recorded here.
