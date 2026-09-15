@@ -834,7 +834,10 @@ All four historical commits build with today's toolchain, and each has
 
 **Dependencies.** J5, for the scale; J3, for the purge path a recovery follows;
 J16, for the REST write path; J21, whose open path the v27-to-v28 migration
-takes.
+takes. **J23, by owner decision (2026-09-15):** J7 stays open until J23 fixes
+the defect J7-B found. Replicas upgraded in place stop syncing with each other,
+and J7-B is not done until `upgrade_in_place.sh` converges for 0.7.0, 0.8.0 and
+v0.9. J7-C can complete and be recorded first.
 
 **Working state.**
 - A recorded matrix: for each historical version, each direction, and each of

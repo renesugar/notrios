@@ -340,3 +340,9 @@ upgraded in place from a pre-1.0 version do not sync with each other again.
 Re-pairing the same two replicas is not a way back either:
 `sync_peer_compatibility` is keyed by `replica_id`, and pairing writes it with a
 plain `INSERT`. That is read from the schema and code, not run.
+
+**Owner decision (2026-09-15): J7 stays open until J23 fixes the
+upgrade-in-place defect.** J7-B's statement promises that replicas syncing on an
+older version keep syncing once both are upgraded, and that is not true until
+J23 lands. So J7-B is not marked done until `upgrade_in_place.sh` converges for
+0.7.0, 0.8.0 and v0.9. J7-C can still complete, and be recorded, before then.
