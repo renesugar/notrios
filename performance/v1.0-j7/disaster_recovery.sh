@@ -53,19 +53,41 @@ installed() {
     XDG_RUNTIME_DIR="$WORK/runtime" HOME="$HOMEDIR" \
     XDG_CONFIG_HOME="$HOMEDIR/.config" XDG_DATA_HOME="$HOMEDIR/.local/share" \
     XDG_STATE_HOME="$HOMEDIR/.local/state" XDG_CACHE_HOME="$HOMEDIR/.cache" \
-    "$@")
+    /usr/bin/time -f '%M' -o "$WORK/.last-rss" "$@")
 }
-timed() { # timed <label> <command...>: runs it, prints elapsed seconds on fd 3
-  local start end
+# The first run of this drill was stopped from outside, by the machine running
+# low on memory, and could only be reported as killed. Each long step now runs
+# under a guard: if MemAvailable falls below the threshold, the drill stops that
+# step itself and reports it incomplete, with the reading that stopped it.
+MEMORY_GUARD_KIB=${J7_MEMORY_GUARD_KIB:-4194304}
+kill_tree() { local p; for p in $(ps -o pid= --ppid "$1" 2>/dev/null); do kill_tree "$p"; done; kill -TERM "$1" 2>/dev/null; }
+timed() { # timed <command...>: runs it under the memory guard; elapsed seconds on fd 3
+  local start end pid rc avail lowest=""
+  rm -f "$WORK/.guard-stop"
   start=$(date +%s.%N)
-  "$@"
-  local rc=$?
+  "$@" &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    avail=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)
+    if [[ -z "$lowest" ]] || (( avail < lowest )); then lowest=$avail; fi
+    if (( avail < MEMORY_GUARD_KIB )); then
+      echo "stopped by the drill's memory guard at MemAvailable $((avail / 1024)) MiB; " > "$WORK/.guard-stop"
+      kill_tree "$pid"
+      break
+    fi
+    sleep 2
+  done
+  wait "$pid"; rc=$?
   end=$(date +%s.%N)
+  echo "${lowest:-0}" > "$WORK/.lowest-available"
   python3 -c "print(f'{$end - $start:.1f}')" >&3
+  [[ -f "$WORK/.guard-stop" ]] && return 137
   return $rc
 }
 exec 3>"$WORK/.last-seconds"
 seconds() { tail -1 "$WORK/.last-seconds"; }
+peak() { echo "peak RSS $(( $(cat "$WORK/.last-rss" 2>/dev/null || echo 0) / 1024 )) MiB, lowest MemAvailable $(( $(cat "$WORK/.lowest-available" 2>/dev/null || echo 0) / 1024 )) MiB"; }
+guardnote() { cat "$WORK/.guard-stop" 2>/dev/null; }
 digest_of() { $DIGEST "$1" > "$2" 2>&1; head -1 "$2" | cut -d' ' -f1; }
 probes() { # probes <db> <out-file>: J5's three queries, count only
   local db=$1 out=$2 q
@@ -82,20 +104,25 @@ if timed cp "$SOURCE/notes.sqlite" "$DATAROOT/notes.sqlite"; then
   mkdir -p "$DATAROOT/assets"; [[ -d "$SOURCE/assets" ]] && cp -r "$SOURCE/assets/." "$DATAROOT/assets/"
   record "copy library into the data root" pass "$(seconds)" "$(stat -c %s "$DATAROOT/notes.sqlite") bytes"
 else
-  record "copy library into the data root" incomplete "$(seconds)" "copy failed"; exit 1
+  record "copy library into the data root" incomplete "$(seconds)" "$(guardnote)copy failed"; exit 1
 fi
 timed installed "$CLI" collections list --db "$DATAROOT/notes.sqlite" --asset-store "$DATAROOT/assets" > "$WORK/open.out" 2>&1
 record "open in installed mode" "$([[ $? == 0 ]] && echo pass || echo fail)" "$(seconds)" "$(grep -m1 -i migrat "$WORK/open.out")"
 BASELINE=$(timed digest_of "$DATAROOT/notes.sqlite" "$WORK/baseline-digest.txt")
+# A digest stopped by the guard, or one that produced nothing, is not a baseline:
+# every later comparison would be against an empty string.
+if [[ -f "$WORK/.guard-stop" || -z "$BASELINE" ]]; then
+  record "baseline content digest" incomplete "$(seconds)" "$(guardnote)no digest"; exit 1
+fi
 record "baseline content digest" pass "$(seconds)" "$BASELINE"
 probes "$DATAROOT/notes.sqlite" "$WORK/baseline-probes.tsv"
 record "baseline search probes" pass "" "$(tr '\t\n' '= ' < "$WORK/baseline-probes.tsv")"
 
 # export
 if timed installed "$CLI" export archive-v2 --db "$DATAROOT/notes.sqlite" --asset-store "$DATAROOT/assets" "$OFFSITE/archive" > "$WORK/export.json" 2> "$WORK/export.err"; then
-  record "export archive-v2 off-site" pass "$(seconds)" "$(du -sb "$OFFSITE/archive" | cut -f1) bytes"
+  record "export archive-v2 off-site" pass "$(seconds)" "$(du -sb "$OFFSITE/archive" | cut -f1) bytes; $(peak)"
 else
-  record "export archive-v2 off-site" incomplete "$(seconds)" "$(grep -m1 -vE '^[[:space:]]*$' "$WORK/export.err")"; exit 1
+  record "export archive-v2 off-site" incomplete "$(seconds)" "$(guardnote)$(grep -m1 -vE '^[[:space:]]*$' "$WORK/export.err"); $(peak)"; exit 1
 fi
 if timed installed "$CLI" verify archive-v2 "$OFFSITE/archive" > "$WORK/verify.json" 2> "$WORK/verify.err"; then
   record "verify the archive" pass "$(seconds)" ""
@@ -118,7 +145,7 @@ if [[ -n "$outside" ]]; then
 fi
 record "purge plan confined to the drill" pass "" "$(python3 -c "import json,sys; p=json.load(open(sys.argv[1])); print(len(p.get('steps',[])), 'steps, backup', p.get('backup'))" "$WORK/purge-plan.json")"
 if timed installed "$CLI" purge --confirm --backup-dir "$OFFSITE/purge-backup" --no-redact > "$WORK/purge.out" 2> "$WORK/purge.err"; then
-  record "purge with a verified backup" pass "$(seconds)" "$(grep -m1 'backup verified' "$WORK/purge.out")"
+  record "purge with a verified backup" pass "$(seconds)" "$(grep -m1 'backup verified' "$WORK/purge.out"); $(peak)"
 else
   record "purge with a verified backup" incomplete "$(seconds)" "$(grep -m1 -vE '^[[:space:]]*$' "$WORK/purge.err")"; exit 1
 fi
@@ -129,15 +156,20 @@ record "library destroyed" pass "" "no notes.sqlite in the data root"
 
 # recover (a): from the archive
 if timed installed "$CLI" restore archive-v2 --intent adopt --db "$DATAROOT/notes.sqlite" --asset-store "$DATAROOT/assets" "$OFFSITE/archive" > "$WORK/restore.json" 2> "$WORK/restore.err"; then
-  record "recover from the archive (adopt)" pass "$(seconds)" ""
+  record "recover from the archive (adopt)" pass "$(seconds)" "$(peak)"
   got=$(timed digest_of "$DATAROOT/notes.sqlite" "$WORK/restored-digest.txt")
-  [[ "$got" == "$BASELINE" ]] && record "archive recovery content" pass "$(seconds)" "equals baseline $BASELINE" \
-    || record "archive recovery content" fail "$(seconds)" "$got differs from baseline $BASELINE"
+  if [[ -f "$WORK/.guard-stop" ]]; then
+    record "archive recovery content" incomplete "$(seconds)" "$(guardnote)"
+  elif [[ "$got" == "$BASELINE" ]]; then
+    record "archive recovery content" pass "$(seconds)" "equals baseline $BASELINE"
+  else
+    record "archive recovery content" fail "$(seconds)" "$got differs from baseline $BASELINE"
+  fi
   probes "$DATAROOT/notes.sqlite" "$WORK/restored-probes.tsv"
   cmp -s "$WORK/baseline-probes.tsv" "$WORK/restored-probes.tsv" && record "archive recovery search probes" pass "" "$(tr '\t\n' '= ' < "$WORK/restored-probes.tsv")" \
     || record "archive recovery search probes" fail "" "baseline $(tr '\t\n' '= ' < "$WORK/baseline-probes.tsv") restored $(tr '\t\n' '= ' < "$WORK/restored-probes.tsv")"
 else
-  record "recover from the archive (adopt)" incomplete "$(seconds)" "$(grep -m1 -vE '^[[:space:]]*$' "$WORK/restore.err")"
+  record "recover from the archive (adopt)" incomplete "$(seconds)" "$(guardnote)$(grep -m1 -vE '^[[:space:]]*$' "$WORK/restore.err"); $(peak)"
 fi
 
 # recover (b): from purge's own backup
@@ -147,8 +179,13 @@ if timed tar -xf "$OFFSITE/purge-backup/backup.tar" -C "$WORK/from-purge-backup"
   record "extract purge's backup" pass "$(seconds)" "$extracted"
   if [[ -n "$extracted" ]]; then
     got=$(timed digest_of "$extracted" "$WORK/purge-backup-digest.txt")
-    [[ "$got" == "$BASELINE" ]] && record "purge-backup recovery content" pass "$(seconds)" "equals baseline" \
-      || record "purge-backup recovery content" fail "$(seconds)" "$got differs from baseline $BASELINE"
+    if [[ -f "$WORK/.guard-stop" ]]; then
+      record "purge-backup recovery content" incomplete "$(seconds)" "$(guardnote)"
+    elif [[ "$got" == "$BASELINE" ]]; then
+      record "purge-backup recovery content" pass "$(seconds)" "equals baseline"
+    else
+      record "purge-backup recovery content" fail "$(seconds)" "$got differs from baseline $BASELINE"
+    fi
   fi
 else
   record "extract purge's backup" incomplete "$(seconds)" "tar failed"

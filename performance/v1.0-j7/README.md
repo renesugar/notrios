@@ -183,3 +183,44 @@ or REST. The refusal is clean: no command fails, and no partial data is written.
 - `upgrade_in_place.sh` tests that path. Two replicas syncing on an older
   version are upgraded one at a time, and must keep syncing on their original
   pairing.
+
+## J7-C: the first run did not complete
+
+```sh
+bash performance/v1.0-j7/disaster_recovery.sh <work-dir> <source-library-dir>
+```
+
+The first run used J20-C's 382,206-note Obsidian library, from a clean tree at
+`8763a46`. Its baseline completed:
+- the 7.35 GB library copied into the drill's data root in 48.3 s
+- opened as an installed program in 0.9 s
+- content digest `8d6f694a…` in 107.6 s
+- search probes the=187518, quinoa=385, chicken stock=9703, matching J5 and J20-C
+
+It was then **stopped from outside during `export archive-v2`**, by the task
+runner, because the machine was running low on memory. The export had written
+1.8 GB. The purge step never ran, so nothing was destroyed: the scratch copy is
+intact in the drill's data root, and the source library was only read. No
+kernel out-of-memory record exists. **Reported as incomplete, as J7's boundary
+requires.**
+
+**What was holding the memory.** J5's export of this corpus peaked at 348 MiB.
+The export was not the cause; `/tmp` was. `/tmp` is RAM-backed tmpfs, and it
+held 16 GB in 17,078 leftover `notrios-*` entries:
+
+| entries | count | size | cause |
+|---|---|---|---|
+| `notrios-test-bin-*` | 171 | 6.53 GiB | `cmd/notriosctl/stablelinks_test.go` makes a shared test-binary directory and never removes it |
+| `notrios-import-manifest-*` | 6 | 3.33 GiB | J19's Joplin `TestJ19InventoryMemory` never closed the inventory's import manifest (fixed here; the importer itself closes it) |
+| `notrios-assets-*` | 16,888 | 1.67 GiB | `defaultAssetRoot` makes a private temp asset directory for a path-less or `:memory:` store, and `SQLiteStore.Close` never removes it |
+| G18/G19/G20 Go build caches | 4 | 2.6 GiB | the evidence validators |
+
+With no drill process running, they were removed. `/tmp` went from 16 GB used
+to 664 MB, and MemAvailable rose from 38.9 GB to 44.6 GB. The asset-directory and
+test-binary leaks are product and test defects outside J7's scope, and are put
+to the owner.
+
+**The drill now guards itself.** Each long step runs under a memory guard: below
+4 GiB of MemAvailable, the drill stops that step and records it as incomplete
+with the reading. Each step also records its peak RSS and the lowest
+MemAvailable seen.

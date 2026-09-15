@@ -33,6 +33,12 @@ func TestJ19InventoryMemory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The inventory owns an import manifest in the temp directory, up to 800 MB
+	// at 382,206 notes. The importer closes it; this test must too. Its first
+	// runs left six behind on a RAM-backed /tmp (found in v1.0 J7).
+	if inv.Manifest != nil {
+		defer inv.Manifest.Close()
+	}
 	walked := time.Since(started)
 	after := j19LiveHeap()
 
