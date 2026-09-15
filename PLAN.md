@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**21 items: 14 complete, 0 in progress, 7 not started, 0 deferred.**
+**21 items: 14 complete, 1 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -67,7 +67,7 @@ this section is archived when the plan completes and the rules are not.
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
-| J7. Validate backup, export, restore, sync compatibility and disaster recovery | not-started | 0/2 | 2 |
+| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 0/3 | 3 |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
@@ -83,7 +83,17 @@ this section is archived when the plan completes and the rules are not.
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J7. Validate backup, export, restore, sync compatibility and disaster recovery**
+
+- `J7-A` Archives and library files written by 0.7.0, 0.8.0 and the v0.9 close restore and open in 1.0 with their content intact, and a 1.0 archive is refused clearly by each older version — *not-started*
+- `J7-B` Folder-carrier sync converges between 1.0 and each older version in both directions, and REST publishing between them is refused and documented — *not-started*
+- `J7-C` A disaster-recovery drill destroys and restores a library at the scale J5 measured — *not-started*
+
+### Not started
+
+Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -736,22 +746,77 @@ not labelled as such; no iOS artifact is implied.
 compile against them, and the ABI baseline in `performance/v0.9-i8` unchanged or
 re-recorded with a reason.
 
-## J7. Validate backup, export, restore, sync compatibility and disaster recovery
+## J7. Validate backup, export, restore, sync compatibility and disaster recovery — in progress
 
 **Goal.** Data written by one version comes back through another, and a lost
 library is recoverable.
 
-**Scope.** Backup, export, restore and sync compatibility across the versions
-1.0 will interoperate with, and disaster-recovery drills at the scale J5
-establishes.
+**The versions, by owner decision (2026-09-15).** The repository has no release
+tags, so the set is taken from the project's own record:
 
-**Boundaries.** Compatibility claims name the exact versions tested. A drill
-that was not run to completion is reported as incomplete.
+| version | commit | schema | why it is in the set |
+|---|---|---|---|
+| 0.7.0 | `c1127f1` (2026-08-31, G20 release acceptance) | 27 | the only product release G20 recorded |
+| 0.8.0 | `10e7077` (2026-09-09, H13 closes v0.8 at 0.8.0) | 27 | the most recent labelled release |
+| v0.9 close | `d6f7ca2` (2026-09-09, I9) | 27 | still labelled 0.8.0, and the last state before v1.0 work |
+| historical archive writer | `5ae93df` (2026-08-04) | — | named by the archive contract's `previous-loose-v2` reader; archives only |
+| 1.0 | the tree under test | 28 | |
 
-**Dependencies.** J5, for the scale; J3, for the purge path a recovery follows.
+All four historical commits build with today's toolchain, and each has
+`import obsidian` and `export archive-v2`. That lets one generated vault (J17's
+`j17_make_vault.py`) be written by every version.
 
-**Working state.** Recorded round trips across versions, and a recovery drill
-that destroys and restores a library of the size J5 measured.
+**Two further decisions.**
+- **A pre-1.0 version reading 1.0's data must refuse it clearly.** An explicit
+  error is the pass. Success is not required. Partial or corrupt data is a
+  failure.
+- **Sync REST publishing between pre-1.0 and 1.0 is a documented break.** J16
+  moved carrier writes from `PUT|DELETE /api/v1/sync/carrier/{class}/{name}`,
+  which every version through the v0.9 close uses, to
+  `/api/v1/sync/carrier/mine/{class}/{name}`. Reads are unchanged. So neither
+  side can publish to the other over REST. 1.0 does not bridge it: pre-1.0
+  peers sync with 1.0 through a folder carrier, or upgrade. J7 proves the
+  refusal with the real binaries, and the release documentation says so.
+
+**Scope.**
+
+- **J7-A, archives and library files across versions.** Each historical version
+  imports the generated vault and exports an archive-v2. 1.0 then:
+  - verifies and restores that archive, and compares the content with a 1.0
+    import of the same vault
+  - opens the historical version's library file directly, which migrates it to
+    v28, and compares it the same way
+
+  In the other direction, each historical version is given a 1.0 archive and a
+  1.0 library. The pass is an explicit refusal.
+- **J7-B, sync across versions.** A second replica is made from the first by
+  `export archive-v2` and `restore --intent adopt`, as the documentation
+  describes. It is paired offline (`invite --offline`, `accept`, `enroll`).
+  Then `sync once` runs through a shared folder, between 1.0 and each
+  historical version, in both directions. Edits made on each side must
+  converge. The REST publish refusal is shown with both a 1.0 client against an
+  older server and an older client against a 1.0 server.
+- **J7-C, disaster recovery at J5's scale.** A 382,206-note library is
+  exported, then destroyed through the J3 purge path, with its verified backup.
+  It is restored, then compared with the original: counts, a content digest, and
+  J5's search probes. Each step is timed.
+
+**Boundaries.**
+- Compatibility claims name the exact commits above and nothing else.
+- A drill that does not run to completion is reported as incomplete, with what
+  it reached.
+- The cross-version runs use the generated vault. Only J7-C runs at full size.
+  No subset result is stated as a full-corpus one.
+
+**Dependencies.** J5, for the scale; J3, for the purge path a recovery follows;
+J16, for the REST write path; J21, whose open path the v27-to-v28 migration
+takes.
+
+**Working state.**
+- A recorded matrix: for each historical version, each direction, and each of
+  archive, library file and folder sync, a pass or a clear refusal
+- The REST break shown and documented
+- A 382,206-note library destroyed and restored with its content proven equal
 
 ## J8. Security review for remote media and MCP
 
