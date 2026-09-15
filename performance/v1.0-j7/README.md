@@ -134,3 +134,52 @@ v0.9 and 0.7.0. Every binary reported
 `"credential_store": "locked-file-development"` and wrote its key only to the
 scratch `keys/sync.key`. Nothing named for Notrios appeared under the user's
 `~/.config` or `~/.local/share`.
+
+## J7-B: sync across versions is refused in both directions
+
+```sh
+bash performance/v1.0-j7/cross_version_sync.sh <work-dir> <bin-dir> 0.7.0:c1127f1 0.8.0:10e7077 v0.9:d6f7ca2
+```
+
+For each older version, and in both directions:
+- the first replica imports a generated 60-note vault
+- the second is made from it by `export archive-v2` and
+  `restore --intent adopt`
+- they pair offline
+- each edits a different note
+- `sync once` runs through a shared folder
+
+Every command runs behind the keychain guards above. The first run stopped
+before any sync round because of two harness bugs, both fixed in `9eda287`:
+- `notes edit` was passed `--keys`
+- the second note's path was wrong
+
+The results below are from the re-run.
+
+| older version | 1.0 invites, older version accepts | older version invites, 1.0 accepts | then sync through the folder |
+|---|---|---|---|
+| 0.7.0 | refused | pass | nothing moves |
+| 0.8.0 | refused | pass | nothing moves |
+| v0.9 | refused | pass | nothing moves |
+
+**Every pre-1.0 version caps sync at schema 27.** The range is 24–27 at
+`c1127f1`, `10e7077` and `d6f7ca2`. J18 (`01367b5`) raised 1.0's range to
+24–28, so the versions refuse each other:
+- **An older version refuses a 1.0 invite:** `sync schema mismatch: local
+  schema 27 remote schema 28 range 24-27`.
+- **When the older version invites, pairing completes, and then sync moves
+  nothing.** Through four rounds each side publishes and admits nothing, and
+  reports `Skipped: {"incompatible_peer": 1, "refused_admission": 1}`. Neither
+  edit reaches the other replica, and neither library is changed by the other.
+
+**This withdraws the premise that pre-1.0 peers sync with 1.0 through a folder
+carrier.** No sync path exists between a pre-1.0 version and 1.0, over a folder
+or REST. The refusal is clean: no command fails, and no partial data is written.
+
+**Owner decision (2026-09-15):**
+- J7-B's pass is this clean refusal in both directions.
+- The supported path is to upgrade every replica to 1.0. The release
+  documentation (J9) says so.
+- `upgrade_in_place.sh` tests that path. Two replicas syncing on an older
+  version are upgraded one at a time, and must keep syncing on their original
+  pairing.

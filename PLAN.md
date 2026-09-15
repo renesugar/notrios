@@ -87,7 +87,7 @@ this section is archived when the plan completes and the rules are not.
 
 **J7. Validate backup, export, restore, sync compatibility and disaster recovery**
 
-- `J7-B` Folder-carrier sync converges between 1.0 and each older version in both directions, and REST publishing between them is refused and documented — *not-started*
+- `J7-B` Sync between 1.0 and each older version is refused cleanly in both directions, and replicas syncing on an older version keep syncing after both are upgraded to 1.0 — *not-started*
 - `J7-C` A disaster-recovery drill destroys and restores a library at the scale J5 measured — *not-started*
 
 ### Not started
@@ -776,13 +776,22 @@ All four historical commits build with today's toolchain, and each has
   `user_version` from 28 to 27 with content intact, and 1.0 recovers it on the
   next open. 0.8.0 and v0.9 refuse. 1.0 cannot change 0.7.0, so the release
   documentation (J9) says not to do it, and that reopening with 1.0 recovers.
-- **Sync REST publishing between pre-1.0 and 1.0 is a documented break.** J16
-  moved carrier writes from `PUT|DELETE /api/v1/sync/carrier/{class}/{name}`,
-  which every version through the v0.9 close uses, to
-  `/api/v1/sync/carrier/mine/{class}/{name}`. Reads are unchanged. So neither
-  side can publish to the other over REST. 1.0 does not bridge it: pre-1.0
-  peers sync with 1.0 through a folder carrier, or upgrade. J7 proves the
-  refusal with the real binaries, and the release documentation says so.
+- **Sync between pre-1.0 and 1.0 does not happen, by any path; replicas upgrade
+  first.** J16 moved the REST carrier write path, from
+  `PUT|DELETE /api/v1/sync/carrier/{class}/{name}` to
+  `/api/v1/sync/carrier/mine/{class}/{name}`, and 1.0 does not bridge it. The
+  first framing assumed pre-1.0 peers could still sync with 1.0 through a folder
+  carrier. J7-B measured that they cannot:
+  - every pre-1.0 version caps sync at schema 27 (range 24–27)
+  - J18 moved 1.0 to 28
+  - an older version refuses a 1.0 invite
+  - when the older version invites, pairing completes but each side skips the
+    other's artifacts, so nothing moves
+
+  The owner decided (2026-09-15) that the clean refusal in both directions is
+  the pass. The supported path is to upgrade every replica to 1.0, which J7-B
+  tests with replicas that were already syncing. The release documentation (J9)
+  says so.
 
 **Scope.**
 
@@ -794,14 +803,21 @@ All four historical commits build with today's toolchain, and each has
     v28, and compares it the same way
 
   In the other direction, each historical version is given a 1.0 archive and a
-  1.0 library. The pass is an explicit refusal.
+  1.0 library. The pass is a clear refusal, or a complete restore with content
+  equal to the 1.0 library.
 - **J7-B, sync across versions.** A second replica is made from the first by
   `export archive-v2` and `restore --intent adopt`, as the documentation
-  describes. It is paired offline (`invite --offline`, `accept`, `enroll`).
-  Then `sync once` runs through a shared folder, between 1.0 and each
-  historical version, in both directions. Edits made on each side must
-  converge. The REST publish refusal is shown with both a 1.0 client against an
-  older server and an older client against a 1.0 server.
+  describes. It is paired offline (`invite --offline`, `accept`, `enroll`),
+  and `sync once` runs through a shared folder between 1.0 and each historical
+  version, in both directions. The pass, by owner decision, is a clean refusal
+  both ways: nothing moves and nothing is corrupted.
+  `upgrade_in_place.sh` then tests the supported path. Two replicas already
+  syncing on each historical version are upgraded to 1.0 one at a time, and
+  must:
+  - move nothing while their versions differ
+  - converge again on their original pairing once both are upgraded
+
+  The REST path is checked with real servers to confirm it refuses too.
 - **J7-C, disaster recovery at J5's scale.** A 382,206-note library is
   exported, then destroyed through the J3 purge path, with its verified backup.
   It is restored, then compared with the original: counts, a content digest, and

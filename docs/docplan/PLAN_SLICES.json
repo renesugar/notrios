@@ -174,7 +174,7 @@
         },
         {
           "id": "J7-B",
-          "statement": "Folder-carrier sync converges between 1.0 and each older version in both directions, and REST publishing between them is refused and documented",
+          "statement": "Sync between 1.0 and each older version is refused cleanly in both directions, and replicas syncing on an older version keep syncing after both are upgraded to 1.0",
           "state": "not-started"
         },
         {
