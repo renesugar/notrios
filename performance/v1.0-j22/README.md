@@ -249,6 +249,15 @@ temp directory of its own. The freeze was rebuilt with
 
 I8 validates against the rebuilt freeze.
 
+The archive was then rebuilt from `07f3acc` with the usage guard on and no
+override:
+- **Usage guard:** it checked only Claude, 60% remaining, identified as
+  `process ancestry: pid 1616574 is claude`.
+- **Package:** `package_release.sh` passed, including its `go test ./...`,
+  `validate-scaffold.sh` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j22-07f3acc.zip`, 25,479,082 bytes, 2,614 entries.
+  `check_release_zip.py` accepts it.
+
 ## What J22 does not change
 
 - **`purge`.** Its plan and categories are unchanged. By default `data.temp_dir`

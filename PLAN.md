@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 17 complete, 1 in progress, 6 not started, 0 deferred.**
+**24 items: 18 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -82,19 +82,11 @@ this section is archived when the plan completes and the rules are not.
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
-| J22. Stop stores and tests leaving directories in the temp root | in-progress | 2/3 | 1 |
+| J22. Stop stores and tests leaving directories in the temp root | complete | 3/3 | — |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 
-### Started and not finished
-
-**J22. Stop stores and tests leaving directories in the temp root**
-
-- `J22-C` The CLI tests' shared binary directory is removed, validators stop defaulting Go caches into the temp root, and a check runs the Go suite in a fresh temp root and fails on any notrios-* entry left — *not-started*
-
-### Not started
-
-Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2118,7 +2110,7 @@ libraries and its measurements.
 schema of every library shape is proven unchanged. Open and search are
 re-measured on both full corpora.
 
-## J22. Stop stores and tests leaving directories in the temp root — in progress
+## J22. Stop stores and tests leaving directories in the temp root — complete
 
 **Goal.** Nothing Notrios or its test suite creates in the temp directory
 outlives the process or test that made it.

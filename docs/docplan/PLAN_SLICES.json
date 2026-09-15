@@ -536,7 +536,7 @@
     {
       "id": "J22",
       "title": "Stop stores and tests leaving directories in the temp root",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J22-A",
@@ -553,7 +553,8 @@
         {
           "id": "J22-C",
           "statement": "The CLI tests' shared binary directory is removed, validators stop defaulting Go caches into the temp root, and a check runs the Go suite in a fresh temp root and fails on any notrios-* entry left",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j22/README.md"
         }
       ]
     },
