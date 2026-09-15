@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 18 complete, 0 in progress, 6 not started, 0 deferred.**
+**25 items: 18 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -85,6 +85,7 @@ this section is archived when the plan completes and the rules are not.
 | J22. Stop stores and tests leaving directories in the temp root | complete | 3/3 | — |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
+| J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -2346,3 +2347,80 @@ The run has to be identified clearly as its own.
 **Working state.** A Claude run is guarded only by Claude's usage and a Codex
 run only by Codex's, each proven by a test, with `all` kept for callers that
 cannot be identified.
+
+## J25. Import a Twitter/X archive as it is downloaded, completely, at its real size
+
+**Goal.** A user can hand Notrios the ZIP they downloaded from Twitter/X. Every
+post in it is imported, however many files the archive splits them into, and a
+3.3 GB archive imports within bounded memory.
+
+**What was found** (2026-09-15, owner request). The importer from v0.2
+(`internal/importers/twitter`) has never been run on a real archive. J5 listed
+the owner's archive as a corpus but measured only Joplin and Obsidian. Read
+against that archive (`/media/renes/HD2/twitter/twitter-…dd40.zip`, 3.32 GB,
+15,088 entries), the importer falls short in three ways:
+- **It does not accept the download.** It takes an extracted folder only
+  (`notriosctl import twitter <extracted-archive-dir>`). A user is expected to
+  unzip 3.3 GB and know which folder to point at.
+- **It silently drops most of the posts.** A large archive splits its posts
+  across `data/tweets.js` and `data/tweets-part1.js`, `-part2.js`, `-part3.js`.
+  The importer reads only `tweets.js`. In this archive that holds 55,339 of
+  176,423 posts, so **121,084 (68.6%) would be silently left out**.
+  `data/tweet-headers.js` lists all 176,423 and is an independent count.
+- **It reads each file whole.** Each part is about 105 MB of JSON, read with
+  `os.ReadFile` and decoded into memory in one piece. Every post is then written
+  one document at a time (J17-C), with its media resource, attachment and tags
+  each a separate store call.
+
+The archive also holds `data/tweets_media/` (8,737 files, 3.31 GB), one post in
+`community-tweet.js`, six in `deleted-tweets.js`, and an empty `note-tweet.js`.
+The importer reads none of these except the media folder.
+
+**Scope, by owner decision (2026-09-15).**
+
+- **J25-A, the downloaded ZIP and every part.**
+  - `notriosctl import twitter` accepts the ZIP as downloaded, and still
+    accepts an extracted folder.
+  - The ZIP is read in place, with no extraction. Entries are looked up by
+    name, never written to disk by their archive path.
+  - Posts are read from `tweets.js` and every `tweets-partN.js` in part order,
+    or from an older archive's `tweet.js`.
+  - **Community posts are imported** like ordinary posts.
+  - **Deleted posts are not imported, and the report counts them.** The owner
+    decided they must not come back silently.
+  - The report compares the posts found with `tweet-headers.js` when it is
+    present, and says so if they differ.
+  - A test fails first on the unchanged importer: an archive whose posts are
+    split across parts.
+- **J25-B, bounded memory on untrusted input.**
+  - Post files are decoded as a stream rather than read whole.
+  - The media index comes from the ZIP's directory.
+  - Media are streamed into the asset store.
+  - Bounds on entry count, per-file decompressed size and media size are
+    enforced and tested, including a decompression bomb and a path escaping the
+    archive.
+  - Temporary work uses the instance's temp directory (J22).
+- **J25-C, the real archive, measured.**
+  - A dry run and a full import of the owner's archive, timed by phase with
+    peak RSS: every post and every media file accounted for against
+    `tweet-headers.js` and the ZIP's directory.
+  - A re-import, to check it is idempotent.
+  - Whether writing one document at a time needs the batched, resumable path
+    Joplin and Obsidian have is decided from these numbers. If it does, that is
+    a follow-up item for the owner, as J19 and J20 were.
+
+**Boundaries.**
+- The archive is private. Nothing from it (text, names, media, IDs) goes into
+  the repository or into evidence: only counts, sizes and timings.
+- Runs use scratch space on `/media/renes/HD2`, never RAM-backed `/tmp`, with
+  HOME, XDG and TMPDIR isolated.
+- No network access. Remote media URLs in posts are not fetched.
+- The note format, provenance, thread recovery, and re-import behaviour for
+  posts already imported are unchanged.
+
+**Dependencies.** J22, for the instance temp directory.
+
+**Working state.** `notriosctl import twitter <download>.zip` imports every
+post of the owner's 3.3 GB archive, and that count equals `tweet-headers.js`
+less the deleted posts plus the community post. It does so within bounded
+memory, measured and recorded, and fails clearly on a hostile archive.
