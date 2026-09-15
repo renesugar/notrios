@@ -327,3 +327,16 @@ The explicit configuration is a deliberate guard, so a peer cannot silently
 change what it claims to support. The fix is therefore a design decision, and
 it is put to the owner. Until it lands, replicas upgraded in place to 1.0 do not
 sync with each other again.
+
+**Owner decision (2026-09-15): fixed in a new plan item, J23, before release.**
+The rule J23 must satisfy:
+- **Accepted:** a paired peer whose handshake differs from its stored
+  compatibility only by a schema rise that both sides' compatible ranges admit.
+  Its stored record is updated, with an audit event.
+- **Still refused:** a change in protocol, capabilities or identity.
+
+J7's upgrade-in-place drill is J23's acceptance test. Until J23 lands, replicas
+upgraded in place from a pre-1.0 version do not sync with each other again.
+Re-pairing the same two replicas is not a way back either:
+`sync_peer_compatibility` is keyed by `replica_id`, and pairing writes it with a
+plain `INSERT`. That is read from the schema and code, not run.

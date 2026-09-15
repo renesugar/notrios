@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**22 items: 14 complete, 1 in progress, 7 not started, 0 deferred.**
+**23 items: 14 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -83,6 +83,7 @@ this section is archived when the plan completes and the rules are not.
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 | J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
+| J23. Keep existing sync peers syncing after both upgrade in place | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -93,7 +94,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J8, J9, J10, J11, J15, J22. Their slices are listed under each item.
+Written and not begun: J6, J8, J9, J10, J11, J15, J22, J23. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2158,3 +2159,65 @@ directory per open.
 
 **Working state.** A full Go test run leaves no `notrios-*` entry in its temp
 root, and a check fails if one returns.
+
+## J23. Keep existing sync peers syncing after both upgrade in place
+
+**Goal.** Two replicas that were syncing before an upgrade keep syncing after
+both have upgraded, on their original pairing, without weakening what pairing
+protects.
+
+**What J7 found** (`performance/v1.0-j7/README.md`, 2026-09-15). J7-B's
+`upgrade_in_place.sh` pairs two replicas on each historical version:
+- **Before the upgrade** (0.7.0, 0.8.0, v0.9), they converge.
+- **While their versions differ,** they move nothing.
+- **Once both are on 1.0, they never converge again.** Each publishes, and each
+  refuses the other on every round.
+
+The cause:
+1. **Pairing pins the peer's exact handshake.** `ConfigureSyncAdmissionPeer`
+   stores it in `sync_peer_compatibility`: schema 27, range 24–27, protocol and
+   capabilities. Pairing is its only caller.
+2. **The upgrade doesn't touch that row.** After both upgrade, each library is
+   at schema 28 and still holds its peer as 27, range 24–27.
+3. **Admission requires an exact match.** `AdmitSyncOperations` calls
+   `validateConfiguredSyncPeerLocked`, whose `sameSyncCompatibility` compares
+   protocol, schema version, compatible range and capabilities for exact
+   equality. The upgraded peer reports 28 with range 24–28, and every batch is
+   refused: "peer compatibility differs from explicit configuration".
+
+Re-pairing the same replicas is no way back: the table is keyed by `replica_id`
+and pairing writes it with a plain `INSERT`. So a pre-1.0 user who upgrades both
+replicas in place, the supported path under J7's owner decision, loses sync
+between them.
+
+**Scope, by owner decision (2026-09-15).**
+
+- **J23-A, accept a schema rise both sides admit.** When a paired peer's
+  handshake differs from its stored compatibility only in `schema_version` and
+  its compatible range, admission accepts it on two conditions:
+  - the new schema version is higher than the stored one
+  - the local schema is inside the peer's new range, and the peer's schema is
+    inside the local range
+
+  The stored row is then updated, and a `peer.compatibility_upgraded` audit
+  event records the old and new values.
+- **J23-B, keep everything else pinned.** A change in protocol major or minor
+  range, required or optional capabilities, database identity or replica
+  identity is still refused, and so is a schema version lower than the stored
+  one. Security tests prove each refusal, including a peer that raises its
+  schema and changes a capability in the same handshake.
+- **J23-C, the drill that found it.** `upgrade_in_place.sh` converges on the
+  original pairing, after both replicas upgrade, for 0.7.0, 0.8.0 and v0.9.
+
+**Boundaries.**
+- The update happens inside admission's existing transaction, after the peer's
+  signature and identity checks. A peer is never accepted on an unauthenticated
+  claim.
+- No change weakens what an explicit pairing guards against today.
+- The sync protocol and the wire formats are unchanged.
+
+**Dependencies.** J7-B's drill, which is J23-C's acceptance test.
+
+**Working state.** Replicas upgraded in place keep syncing, and every other
+change to a peer's pinned compatibility is still refused, each proven by a
+test.

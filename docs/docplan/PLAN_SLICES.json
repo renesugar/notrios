@@ -552,6 +552,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J23",
+      "title": "Keep existing sync peers syncing after both upgrade in place",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J23-A",
+          "statement": "A paired peer whose handshake differs from its stored compatibility only by a schema rise both sides' ranges admit is accepted, and the stored record is updated with an audit event",
+          "state": "not-started"
+        },
+        {
+          "id": "J23-B",
+          "statement": "A paired peer whose protocol, capabilities or identity differ from its stored compatibility is still refused, proven by security tests",
+          "state": "not-started"
+        },
+        {
+          "id": "J23-C",
+          "statement": "J7's upgrade-in-place drill converges on the original pairing for 0.7.0, 0.8.0 and v0.9",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
