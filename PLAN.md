@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 15 complete, 1 in progress, 8 not started, 0 deferred.**
+**24 items: 16 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -67,7 +67,7 @@ this section is archived when the plan completes and the rules are not.
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
-| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 2/3 | 1 |
+| J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
@@ -86,15 +86,7 @@ this section is archived when the plan completes and the rules are not.
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | not-started | 0/3 | 3 |
 
-### Started and not finished
-
-**J7. Validate backup, export, restore, sync compatibility and disaster recovery**
-
-- `J7-C` A disaster-recovery drill destroys and restores a library at the scale J5 measured — *not-started*
-
-### Not started
-
-Written and not begun: J6, J8, J9, J10, J11, J15, J22, J24. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -747,7 +739,7 @@ not labelled as such; no iOS artifact is implied.
 compile against them, and the ABI baseline in `performance/v0.9-i8` unchanged or
 re-recorded with a reason.
 
-## J7. Validate backup, export, restore, sync compatibility and disaster recovery — in progress
+## J7. Validate backup, export, restore, sync compatibility and disaster recovery — complete
 
 **Goal.** Data written by one version comes back through another, and a lost
 library is recoverable.

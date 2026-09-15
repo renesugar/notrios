@@ -164,7 +164,7 @@
     {
       "id": "J7",
       "title": "Validate backup, export, restore, sync compatibility and disaster recovery",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J7-A",
@@ -181,7 +181,8 @@
         {
           "id": "J7-C",
           "statement": "A disaster-recovery drill destroys and restores a library at the scale J5 measured",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
         }
       ]
     },
