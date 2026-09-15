@@ -360,3 +360,47 @@ every row for 0.7.0, 0.8.0 and v0.9:
 
 J7-B's upgrade clause is satisfied. The results are in
 `performance/v1.0-j23/README.md`.
+
+### The third run completed: a 382,206-note library destroyed and recovered, twice
+
+The drill was started detached from the task runner (`setsid`/`nohup`), by
+owner decision, with its own memory guard in place. It recorded `62c11f1` with
+two tracked changes, the plan ledger and this README, neither of them code.
+J23's store tests ran while the export ran, so the export and verify timings
+include that load. No timing here is claimed as a baseline.
+
+| step | verdict | seconds | detail |
+|---|---|---|---|
+| copy library into the data root | pass | 42.4 | 7350784000 bytes |
+| open in installed mode | pass | 2.0 |  |
+| baseline content digest | pass | 72.6 | 8d6f694a89afde71b5d7de6bf186e756c83814795195ace9c5797700d816b47a |
+| baseline search probes | pass |  | the=187518 quinoa=385 chicken stock=9703  |
+| export archive-v2 off-site | pass | 3279.6 | 1246840047 bytes; peak RSS 324 MiB, lowest MemAvailable 43342 MiB |
+| verify the archive | pass | 242.0 |  |
+| purge plan confined to the drill | pass |  | 6 steps, backup /media/renes/HD2/notrios-j7/dr-drill-3/offsite/purge-backup |
+| purge with a verified backup | pass | 318.6 | backup verified: 1 files verified; peak RSS 11 MiB, lowest MemAvailable 53715 MiB |
+| library destroyed | pass |  | no notes.sqlite in the data root |
+| recover from the archive (adopt) | pass | 1673.1 | peak RSS 53 MiB, lowest MemAvailable 53205 MiB |
+| archive recovery content | pass | 62.5 | equals baseline 8d6f694a89afde71b5d7de6bf186e756c83814795195ace9c5797700d816b47a |
+| archive recovery search probes | pass |  | the=187518 quinoa=385 chicken stock=9703  |
+| extract purge's backup | pass | 24.2 | /media/renes/HD2/notrios-j7/dr-drill-3/from-purge-backup/data/notes.sqlite |
+| purge-backup recovery content | pass | 68.6 | equals baseline |
+
+**J7-C passes at J5's scale.**
+- **Destroyed:** the library went through the J3 purge path with a verified
+  backup, and afterwards the data root held no `notes.sqlite`.
+- **Recovered from the off-site archive:** `restore archive-v2 --intent adopt`
+  restored it in 1,673 s. Its content digest equals the baseline
+  (`8d6f694a…`), and J5's search probes return the same counts.
+- **Recovered from purge's own backup:** extracted in 24 s, with a content
+  digest equal to the baseline.
+- **Memory:** the export peaked at 324 MiB, the restore at 53 MiB and the
+  purge at 11 MiB. MemAvailable never fell below 43 GB, so the guard never
+  fired.
+
+The drill's closing check for files named for Notrios outside its work
+directory listed two: an Okular document record and a Recent Documents entry
+for `NOTRIOS_IMPORT_PLAN.md`. Both came from that document being opened in
+Okular. The drill never runs Okular and writes no such files, so they are
+unrelated to it.
+
