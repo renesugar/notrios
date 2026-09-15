@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**24 items: 16 complete, 0 in progress, 8 not started, 0 deferred.**
+**24 items: 16 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -84,9 +84,17 @@ this section is archived when the plan completes and the rules are not.
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 | J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
-| J24. Check the running agent's own usage, not every agent's | not-started | 0/3 | 3 |
+| J24. Check the running agent's own usage, not every agent's | in-progress | 2/3 | 1 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J24. Check the running agent's own usage, not every agent's**
+
+- `J24-C` Every caller of the preflight gets the selection without changes of its own, and the guard's documentation says whose usage is checked and how to choose — *not-started*
+
+### Not started
+
+Written and not begun: J6, J8, J9, J10, J11, J15, J22. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2217,7 +2225,7 @@ between them.
 change to a peer's pinned compatibility is still refused, each proven by a
 test.
 
-## J24. Check the running agent's own usage, not every agent's
+## J24. Check the running agent's own usage, not every agent's — in progress
 
 **Goal.** The usage preflight that guards archives, drills and other long work
 checks the quota of the coding agent actually running it. A Claude run is
@@ -2250,22 +2258,44 @@ that the running agent's quota was above the reserve.
 
 **Scope.**
 
-- **J24-A, select the running agent.** The preflight passes the running agent
-  to the checker, resolved in this order:
-  1. an explicit `NOTRIOS_AGENT_USAGE_AGENT` (`claude`, `codex` or `all`), for
-     any agent or wrapper
-  2. otherwise, detection from the environment the agent sets: Claude Code
-     exports `CLAUDECODE=1` and `CLAUDE_CODE_ENTRYPOINT`. The variable a Codex
-     session sets is established from a real Codex session and recorded, not
-     guessed.
-  3. otherwise `all`, today's behaviour, so an unidentified caller is never
-     less guarded than before
+**Identifying the running agent, by owner decision (2026-09-15).** More than one
+coding agent can run on the machine at once, and a Codex session was running
+beside this Claude session when J24 started. So neither of these can say whose
+run it is:
+- **Environment variables.** An agent's variables are inherited by every shell
+  and process started under it, so they leak into other contexts.
+- **The checker's existing Claude detector.** It scans every process on the
+  machine for a `claude` binary.
 
-  The preflight prints which agent it checked and why.
-- **J24-B, tests.** `test_agent_usage_preflight.sh` checks each rung: an
-  explicit agent, a detected Claude, a detected Codex once its variable is
-  recorded, and the `all` fallback. A test shows a Claude run is not paused by
-  a Codex bucket below the reserve, and is still paused by its own.
+The run has to be identified clearly as its own.
+
+- **J24-A, select the running agent by process ancestry.** A new
+  `--agent self`, which the preflight passes, resolves in this order:
+  1. **The nearest coding agent among this process's parents.** It is found by
+     walking the parent chain and classifying each process by its executable
+     and `argv[0]`, never by its other arguments:
+     - `claude`
+     - Codex's native `codex`, a `codex-*` helper, or node running `bin/codex`
+
+     Nested agents resolve to the nearest one. Variables are not consulted.
+  2. **Otherwise, an explicit `NOTRIOS_AGENT_USAGE_AGENT`** (`claude`, `codex`
+     or `all`). This covers a caller with no agent among its parents, such as a
+     detached run whose launching shell has exited. If ancestry does find an
+     agent, a differing explicit value is ignored and reported.
+  3. **Otherwise `all`,** today's behaviour, so an unidentified caller is never
+     less guarded than before.
+
+  The checker reports which agent it checked and why.
+- **J24-B, tests.** The checker's tests cover:
+  - classification, including processes that only mention an agent in their
+    arguments
+  - nearest-ancestor resolution with nested agents, orphans and a parent cycle
+  - ancestry winning over leaked variables, and each fallback rung
+  - a Claude run that a Codex bucket below the reserve does not pause, and that
+    its own low bucket does, with the other agent's probe never called
+  - the same for a Codex run
+
+  `test_agent_usage_preflight.sh` asserts the preflight passes `--agent self`.
 - **J24-C, the callers and the docs.** Every script that calls the preflight
   gets the selection without changes of its own. The documentation for the
   guard says whose usage is checked and how to choose.

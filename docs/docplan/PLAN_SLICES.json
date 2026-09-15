@@ -583,17 +583,19 @@
     {
       "id": "J24",
       "title": "Check the running agent's own usage, not every agent's",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J24-A",
-          "statement": "The usage preflight checks the running agent's own quota: an explicit NOTRIOS_AGENT_USAGE_AGENT, else the agent detected from its environment, else all",
-          "state": "not-started"
+          "statement": "The usage preflight checks the running agent's own quota, identified as the nearest coding agent in its process ancestry, then an explicit NOTRIOS_AGENT_USAGE_AGENT only when ancestry finds none, then all",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
         },
         {
           "id": "J24-B",
-          "statement": "Tests prove each selection rung, that a Claude run is not paused by a Codex bucket below the reserve and is still paused by its own, and that the Codex and all paths are unchanged",
-          "state": "not-started"
+          "statement": "Tests prove classification, nearest-ancestor resolution, ancestry winning over leaked environment, each fallback, and that a Claude or Codex run is paused only by its own quota with the other agent's probe never called",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
         },
         {
           "id": "J24-C",

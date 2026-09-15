@@ -10,8 +10,17 @@ or repeated external harness phase when a usage-limit interruption would leave
 cleanup or interpretation unfinished:
 
 ```bash
-python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20
+python3 scripts/check_agent_usage.py --agent self --minimum-remaining 20
 ```
+
+Use your own quota, not another agent's. Codex and Claude Code are separate
+products with independent limits, and both may be running on the machine at
+once. `--agent self` finds the agent that launched the command from its process
+ancestry, the nearest `claude` or `codex` parent. It does not use environment
+variables, which one agent's shells pass on to another's. If no agent is among
+the parents, such as a detached run whose launcher has exited, set
+`NOTRIOS_AGENT_USAGE_AGENT=claude|codex`, or it checks `all`. Read the
+`selected:` line before acting on a pause.
 
 At session start, run `python3 scripts/test_check_agent_usage.py` and compare
 the installed client version/output with the parser fixtures. If a client

@@ -406,6 +406,109 @@ def _claude_running() -> bool:
         return False
 
 
+# --agent self: whose run is this? Several coding agents can run on one machine
+# at once, so a machine-wide scan like _claude_running cannot say, and an agent's
+# environment variables are inherited by every shell started under it, so they
+# leak. The process that launched this run can: walk the parent chain to the
+# nearest coding agent.
+AGENT_USAGE_AGENT_ENV = "NOTRIOS_AGENT_USAGE_AGENT"
+
+
+def read_process(pid: int) -> tuple[int, str, list[str]] | None:
+    """Return (parent pid, executable, argv) for a process, or None if unreadable."""
+    try:
+        with open(f"/proc/{pid}/stat", encoding="utf-8", errors="replace") as stream:
+            # The command name is parenthesised and may itself hold spaces or ")".
+            parent = int(stream.read().rsplit(")", 1)[1].split()[1])
+        with open(f"/proc/{pid}/cmdline", "rb") as stream:
+            argv = [item.decode(errors="replace") for item in stream.read().split(b"\0") if item]
+        try:
+            executable = os.readlink(f"/proc/{pid}/exe")
+        except OSError:
+            executable = ""
+        return parent, executable, argv
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        output = subprocess.run(
+            ["ps", "-o", "ppid=", "-o", "args=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        ).stdout.strip()
+        parent, _, arguments = output.partition(" ")
+        argv = arguments.split()
+        return int(parent), argv[0] if argv else "", argv
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return None
+
+
+def classify_agent_process(executable: str, argv: Sequence[str]) -> str | None:
+    """Name the coding agent a process is, from its executable and argv[0] only.
+
+    Other arguments are never read: `vim claude` or `bash -c codex` is not an agent.
+    """
+    names = [
+        os.path.basename(executable or "").lower(),
+        os.path.basename(argv[0]).lower() if argv else "",
+    ]
+    for name in names:
+        if name in ("claude", "claude-code"):
+            return "claude"
+        if name == "codex" or name.startswith("codex-"):
+            return "codex"
+    # Claude Code's native build runs as .../claude/versions/<version>.
+    parts = (executable or "").split("/")
+    if len(parts) >= 3 and parts[-2] == "versions" and parts[-3] == "claude":
+        return "claude"
+    # The npm launcher runs as `node .../bin/codex`.
+    if "node" in names and len(argv) > 1 and os.path.basename(argv[1]).lower() == "codex":
+        return "codex"
+    return None
+
+
+def identify_running_agent(
+    start_pid: int | None = None,
+    reader: Callable[[int], tuple[int, str, list[str]] | None] | None = None,
+    max_depth: int = 64,
+) -> tuple[str | None, str]:
+    """Return the nearest coding agent among a process's ancestors, and why."""
+    reader = reader or read_process
+    pid = os.getpid() if start_pid is None else start_pid
+    seen: set[int] = set()
+    while pid > 0 and pid not in seen and len(seen) < max_depth:
+        seen.add(pid)
+        entry = reader(pid)
+        if entry is None:
+            break
+        parent, executable, argv = entry
+        agent = classify_agent_process(executable, argv)
+        if agent is not None:
+            return agent, f"process ancestry: pid {pid} is {agent}"
+        pid = parent
+    return None, "no coding agent among this process's ancestors"
+
+
+def resolve_self_agent(
+    environ: Any, identify: Callable[[], tuple[str | None, str]]
+) -> tuple[str, str]:
+    """Ancestry first; an explicit agent only when ancestry finds none; else all."""
+    explicit = (environ.get(AGENT_USAGE_AGENT_ENV) or "").strip()
+    agent, reason = identify()
+    if agent is not None:
+        if explicit and explicit != agent:
+            reason += f"; ignored {AGENT_USAGE_AGENT_ENV}={explicit}"
+        return agent, reason
+    if explicit in ("claude", "codex", "all"):
+        return explicit, f"{reason}; {AGENT_USAGE_AGENT_ENV}={explicit}"
+    if explicit:
+        return "all", (
+            f"{reason}; {AGENT_USAGE_AGENT_ENV}={explicit} is not claude, codex "
+            "or all; checking all"
+        )
+    return "all", f"{reason}; checking all"
+
+
 def _text_percentage(value: Any) -> tuple[float, bool] | None:
     """Return (percentage, is_used); bare numeric cache values mean used."""
     if isinstance(value, (int, float)):
@@ -757,7 +860,9 @@ def _append_history(path: str, record: dict[str, Any]) -> None:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--agent", choices=("codex", "claude", "all"), default="all")
+    parser.add_argument(
+        "--agent", choices=("codex", "claude", "all", "self"), default="all"
+    )
     parser.add_argument("--minimum-remaining", type=float, default=20)
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--json", action="store_true", dest="as_json")
@@ -786,6 +891,8 @@ def _print_human(results: list[dict[str, Any]]) -> None:
             f"version={result.get('client_version') or 'unknown'} "
             f"error={result.get('error', '')}"
         )
+        if result.get("selection"):
+            print(f"  selected: {result['selection']}")
         if result.get("source"):
             age = result.get("cache_age_minutes")
             suffix = f" age_minutes={age}" if age is not None else ""
@@ -840,12 +947,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_age_minutes=arguments.claude_max_age_minutes,
         )
 
-    if arguments.agent == "codex":
+    agent, selection = arguments.agent, ""
+    if agent == "self":
+        agent, selection = resolve_self_agent(os.environ, identify_running_agent)
+
+    if agent == "codex":
         results = [probe_codex(arguments.timeout)]
-    elif arguments.agent == "claude":
+    elif agent == "claude":
         results = [claude()]
     else:
         results = [probe_codex(arguments.timeout), claude()]
+    if selection:
+        for result in results:
+            result["selection"] = selection
 
     records = _history(arguments.history)
     base_fields = {
@@ -897,7 +1011,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     if arguments.as_json:
-        output: Any = results if arguments.agent == "all" else results[0]
+        output: Any = results if agent == "all" else results[0]
         print(json.dumps(output, sort_keys=True))
     else:
         _print_human(results)

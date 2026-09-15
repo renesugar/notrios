@@ -464,5 +464,123 @@ class UsageTests(unittest.TestCase):
             self.assertIn("primary: remaining=75", output.getvalue())
 
 
+CLAUDE_EXE = "/home/user/.local/share/claude/versions/2.1.270"
+CODEX_VENDOR = (
+    "/home/user/.nvm/versions/node/v26.3.0/lib/node_modules/@openai/codex/"
+    "node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/"
+)
+
+
+def process_tree(entries: dict[int, tuple[int, str, list[str]]]):
+    """A fake process table: pid -> (parent pid, executable, argv)."""
+    return lambda pid: entries.get(pid)
+
+
+class RunningAgentTests(unittest.TestCase):
+    """J24: a run is guarded by the agent that launched it, found by ancestry.
+
+    Several agents can run on one machine at once, and an agent's environment
+    variables leak into shells started from it, so neither a machine-wide
+    process scan nor an inherited variable says which agent this run belongs to.
+    """
+
+    def test_agent_processes_are_classified_from_executable_and_argv0(self) -> None:
+        classify = usage.classify_agent_process
+        self.assertEqual(classify(CLAUDE_EXE, ["claude", "--resume", "id"]), "claude")
+        self.assertEqual(classify("/usr/local/bin/claude", ["claude"]), "claude")
+        self.assertEqual(classify(CODEX_VENDOR + "codex", [CODEX_VENDOR + "codex"]), "codex")
+        self.assertEqual(
+            classify(CODEX_VENDOR + "codex-code-mode-host", [CODEX_VENDOR + "codex-code-mode-host"]),
+            "codex",
+        )
+        self.assertEqual(
+            classify("/usr/bin/node", ["node", "/home/user/.nvm/bin/codex", "resume"]), "codex"
+        )
+        self.assertIsNone(classify("/usr/bin/bash", ["/bin/bash", "-c", "claude"]))
+        self.assertIsNone(classify("/usr/bin/vim", ["vim", "codex", "claude"]))
+        self.assertIsNone(classify("/usr/bin/node", ["node", "/srv/claude-notes/app.js"]))
+
+    def test_nearest_agent_ancestor_is_the_running_agent(self) -> None:
+        tree = {
+            50: (40, "/usr/bin/python3", ["python3", "check_agent_usage.py"]),
+            40: (30, "/usr/bin/bash", ["bash", "scripts/agent_usage_preflight.sh"]),
+            30: (20, CLAUDE_EXE, ["claude"]),
+            20: (10, "/usr/bin/bash", ["/bin/bash"]),
+            10: (1, CODEX_VENDOR + "codex", [CODEX_VENDOR + "codex"]),
+        }
+        agent, reason = usage.identify_running_agent(50, process_tree(tree))
+        self.assertEqual(agent, "claude")
+        self.assertIn("pid 30", reason)
+        agent, _ = usage.identify_running_agent(20, process_tree(tree))
+        self.assertEqual(agent, "codex")
+
+    def test_no_agent_ancestor_and_a_parent_cycle_identify_nothing(self) -> None:
+        orphan = {50: (1, "/usr/bin/python3", ["python3"]), 1: (0, "/sbin/init", ["init"])}
+        self.assertIsNone(usage.identify_running_agent(50, process_tree(orphan))[0])
+        cycle = {50: (40, "/usr/bin/bash", ["bash"]), 40: (50, "/usr/bin/bash", ["bash"])}
+        self.assertIsNone(usage.identify_running_agent(50, process_tree(cycle))[0])
+        self.assertIsNone(usage.identify_running_agent(50, process_tree({}))[0])
+
+    def test_ancestry_wins_over_inherited_environment(self) -> None:
+        claude = lambda: ("claude", "process ancestry: pid 30 claude")
+        leaked = {"CODEX_THREAD_ID": "x", "NOTRIOS_AGENT_USAGE_AGENT": "codex"}
+        agent, reason = usage.resolve_self_agent(leaked, claude)
+        self.assertEqual(agent, "claude")
+        self.assertIn("ignored NOTRIOS_AGENT_USAGE_AGENT=codex", reason)
+        codex = lambda: ("codex", "process ancestry: pid 10 codex")
+        self.assertEqual(usage.resolve_self_agent({"CLAUDECODE": "1"}, codex)[0], "codex")
+
+    def test_explicit_agent_applies_only_when_ancestry_finds_none(self) -> None:
+        nobody = lambda: (None, "no coding agent among this process's ancestors")
+        self.assertEqual(
+            usage.resolve_self_agent({"NOTRIOS_AGENT_USAGE_AGENT": "codex"}, nobody)[0], "codex"
+        )
+        self.assertEqual(usage.resolve_self_agent({"CLAUDECODE": "1"}, nobody)[0], "all")
+        agent, reason = usage.resolve_self_agent({"NOTRIOS_AGENT_USAGE_AGENT": "gpt"}, nobody)
+        self.assertEqual(agent, "all")
+        self.assertIn("gpt", reason)
+
+    def _self_run(self, running: str, claude_remaining: float, codex_remaining: float):
+        other = "codex" if running == "claude" else "claude"
+        probes = {
+            "probe_claude": mock.Mock(return_value=result("claude", claude_remaining)),
+            "probe_codex": mock.Mock(return_value=result("codex", codex_remaining)),
+        }
+        with mock.patch.object(
+            usage, "identify_running_agent", return_value=(running, f"pid 30 {running}")
+        ), mock.patch.object(usage, "probe_claude", probes["probe_claude"]), \
+                mock.patch.object(usage, "probe_codex", probes["probe_codex"]), \
+                mock.patch.dict(os.environ, {"NOTRIOS_AGENT_USAGE_AGENT": ""}), \
+                redirect_stdout(io.StringIO()):
+            status = usage.main(["--agent", "self", "--minimum-remaining", "20", "--json"])
+        probes[f"probe_{other}"].assert_not_called()
+        return status
+
+    def test_a_claude_run_is_not_paused_by_codex_quota_but_is_by_its_own(self) -> None:
+        self.assertEqual(self._self_run("claude", claude_remaining=91, codex_remaining=8), 0)
+        self.assertEqual(self._self_run("claude", claude_remaining=10, codex_remaining=90), 2)
+
+    def test_a_codex_run_is_not_paused_by_claude_quota_but_is_by_its_own(self) -> None:
+        self.assertEqual(self._self_run("codex", claude_remaining=8, codex_remaining=91), 0)
+        self.assertEqual(self._self_run("codex", claude_remaining=90, codex_remaining=10), 2)
+
+    def test_an_unidentified_run_is_guarded_by_every_agent_as_before(self) -> None:
+        with mock.patch.object(
+            usage, "identify_running_agent", return_value=(None, "none")
+        ), mock.patch.object(usage, "probe_claude", return_value=result("claude", 91)), \
+                mock.patch.object(usage, "probe_codex", return_value=result("codex", 8)), \
+                mock.patch.dict(os.environ, {"NOTRIOS_AGENT_USAGE_AGENT": ""}), \
+                redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(usage.main(["--agent", "self", "--json"]), 2)
+        self.assertEqual(len(json.loads(output.getvalue())), 2)
+
+    def test_this_process_ancestry_reads_the_real_process_table(self) -> None:
+        if not os.path.isdir("/proc/self"):
+            self.skipTest("no /proc")
+        entry = usage.read_process(os.getpid())
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry[0], os.getppid())
+
+
 if __name__ == "__main__":
     unittest.main()

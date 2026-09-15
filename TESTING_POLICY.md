@@ -842,6 +842,18 @@ than the age limit, and a window past its reset. Both of those last two report
 cache that exists but carries no window stays `unknown` and is never read as
 full quota.
 
+J24 adds the running-agent selection behind `--agent self`, which the preflight
+passes. Its tests use fake process tables and cover:
+- classification from the executable and `argv[0]` only
+- the nearest agent ancestor, with nested agents, orphans and a parent cycle
+- ancestry winning over leaked agent variables and a contrary
+  `NOTRIOS_AGENT_USAGE_AGENT`
+- the explicit and `all` fallbacks
+- a Claude run, and a Codex run, paused only by its own quota, with the other
+  agent's probe never called
+
+The `codex`, `claude` and `all` paths are unchanged.
+
 Resumable G14b/G14e harness tests must prove the preflight runs after completed-
 result reuse is checked but before a new `started` checkpoint is written. A
 pause therefore leaves the last valid result reusable. Long profile scripts

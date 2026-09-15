@@ -398,7 +398,8 @@ Feature contracts, which describe one capability rather than the project:
 - `scripts/check_agent_usage.py`, `scripts/agent_usage_preflight.sh`, and
   `skills/agent-usage-preflight/` — model-free Codex rolling-window probe,
   cache-only Claude probe, adaptive operation reserve, and durable-boundary
-  workflow used before long local profiles. CI tests parsing but never queries
+  workflow used before long local profiles. The preflight checks only the
+  agent running it, found from process ancestry (`--agent self`, J24). CI tests parsing but never queries
   a developer account.
 - `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.
 - `scripts/check_required_files.py` — verifies required scaffold files exist.

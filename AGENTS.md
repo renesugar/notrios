@@ -151,8 +151,16 @@ subtasks, verify the installed-client parser before relying on it:
 
 ```bash
 python3 scripts/test_check_agent_usage.py
-python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20
+python3 scripts/check_agent_usage.py --agent self --minimum-remaining 20
 ```
+
+`--agent self` checks only the agent running the command, never another
+agent's quota. It finds that agent as the nearest `claude` or `codex` process
+among the command's parents. Environment variables leak between agents and are
+not used for this. When no agent is found, as with a detached run whose
+launching shell has exited, it uses `NOTRIOS_AGENT_USAGE_AGENT`
+(`claude|codex|all`), and otherwise checks `all`. The output names the agent it
+checked and why. `scripts/agent_usage_preflight.sh` passes `--agent self`.
 
 Compare the reported client version and fields with the current fixtures. If a
 Codex or Claude Code update makes the result `unknown`, update the probe and
