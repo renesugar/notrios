@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**23 items: 15 complete, 1 in progress, 7 not started, 0 deferred.**
+**24 items: 15 complete, 1 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -84,6 +84,7 @@ this section is archived when the plan completes and the rules are not.
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 | J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
+| J24. Check the running agent's own usage, not every agent's | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -94,7 +95,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J8, J9, J10, J11, J15, J22. Their slices are listed under each item.
+Written and not begun: J6, J8, J9, J10, J11, J15, J22, J24. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2224,3 +2225,76 @@ between them.
 **Working state.** Replicas upgraded in place keep syncing, and every other
 change to a peer's pinned compatibility is still refused, each proven by a
 test.
+
+## J24. Check the running agent's own usage, not every agent's
+
+**Goal.** The usage preflight that guards archives, drills and other long work
+checks the quota of the coding agent actually running it. A Claude run is
+guarded by Claude's usage, and a Codex run by Codex's. Neither is paused by the
+other product's quota.
+
+**What happened** (2026-09-15, while closing J23). The J23 archive build was
+paused by `scripts/agent_usage_preflight.sh`. The run was Claude's, and Claude's
+quota was above the 20% reserve: five-hour 32% remaining, seven-day 92%
+remaining, which the owner's account page confirmed as 91%. The pause came from
+**Codex's** weekly bucket (8% remaining). Codex is a separate product with its
+own quota, and it has no bearing on a Claude run.
+
+**The cause.** `scripts/check_agent_usage.py` supports
+`--agent codex|claude|all`, and its tests exercise `claude` and `codex`
+separately. But `agent_usage_preflight.sh` always passes `--agent all`, and the
+checker then binds on the lowest bucket across every agent it can read.
+`scripts/test_agent_usage_preflight.sh` asserts exactly that argument. Every
+caller of the preflight inherits it, including `package_release.sh`,
+`validate-scaffold.sh` and the `run_*_profile.sh` scripts.
+
+**A misdiagnosis, recorded.** Before the owner pointed out that the run was
+Claude's, the agent treated the Codex reading as the relevant number. It then
+suspected that Codex's `usedPercent` field was inverted, because the owner's
+91%-remaining figure disagreed with it. That figure was Claude's. The inversion
+hypothesis is withdrawn, and Codex's 92%-used reading may well be correct.
+The owner overrode the guard for J23's archive and J7's
+(`NOTRIOS_AGENT_USAGE_GUARD=off`). Each close commit records the override and
+that the running agent's quota was above the reserve.
+
+**Scope.**
+
+- **J24-A, select the running agent.** The preflight passes the running agent
+  to the checker, resolved in this order:
+  1. an explicit `NOTRIOS_AGENT_USAGE_AGENT` (`claude`, `codex` or `all`), for
+     any agent or wrapper
+  2. otherwise, detection from the environment the agent sets: Claude Code
+     exports `CLAUDECODE=1` and `CLAUDE_CODE_ENTRYPOINT`. The variable a Codex
+     session sets is established from a real Codex session and recorded, not
+     guessed.
+  3. otherwise `all`, today's behaviour, so an unidentified caller is never
+     less guarded than before
+
+  The preflight prints which agent it checked and why.
+- **J24-B, tests.** `test_agent_usage_preflight.sh` checks each rung: an
+  explicit agent, a detected Claude, a detected Codex once its variable is
+  recorded, and the `all` fallback. A test shows a Claude run is not paused by
+  a Codex bucket below the reserve, and is still paused by its own.
+- **J24-C, the callers and the docs.** Every script that calls the preflight
+  gets the selection without changes of its own. The documentation for the
+  guard says whose usage is checked and how to choose.
+
+**Boundaries.**
+- Claude's numbers are correct as they are. The statusLine cache
+  (`scripts/claude_statusline_usage.py`) matches the owner's account page, and
+  the checker's `--agent claude` path reads it correctly. Only the selection
+  changes.
+- Other coding agents keep working. Each agent already has its own code path in
+  the checker. Claude-specific changes stay on Claude's path. Codex's path, and
+  the `all` path an unidentified caller falls back to, behave exactly as before,
+  and their existing tests still pass unchanged.
+- The reserve rule and the override stay as they are: an explicit owner
+  decision per item, recorded in the close commit.
+- Nothing from the agent's environment beyond the agent's name is logged. That
+  environment carries session identifiers and tokens.
+
+**Dependencies.** None.
+
+**Working state.** A Claude run is guarded only by Claude's usage and a Codex
+run only by Codex's, each proven by a test, with `all` kept for callers that
+cannot be identified.
