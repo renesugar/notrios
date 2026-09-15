@@ -49,6 +49,9 @@ guarded() {
     "$@")
 }
 overall() { $DIGEST "$1" 2>/dev/null | head -1 | cut -d' ' -f1; }
+# The first non-empty line of a command's stderr. A flag error is followed by
+# usage text ending in a blank line, so the last line says nothing.
+firsterr() { grep -m1 -vE '^[[:space:]]*$' "$1"; }
 docid() {
   python3 -c "import sqlite3,sys; r=sqlite3.connect(f'file:{sys.argv[1]}?mode=ro', uri=True).execute('SELECT document_id FROM document_sources WHERE external_id = ?', (sys.argv[2],)).fetchone(); print(r[0] if r else '')" "$1" "$2"
 }
@@ -70,13 +73,14 @@ edit_note() { # edit_note <binary> <replica-dir> <external-id> <marker>
   id=$(docid "$dir/notes.sqlite" "$ext")
   [[ -n "$id" ]] || { echo "no document for $ext"; return 1; }
   if guarded "$bin" notes edit -h >/dev/null 2>&1; then
-    guarded "$bin" notes edit --document "$id" --body "edited on this replica: $marker" --message "J7-B" $(flags "$dir") \
-      > "$dir/edit-$marker.out" 2> "$dir/edit-$marker.err" || { tail -1 "$dir/edit-$marker.err"; return 1; }
+    # notes edit takes --config, --db and --asset-store, not --keys.
+    guarded "$bin" notes edit --document "$id" --body "edited on this replica: $marker" --message "J7-B" $(flags "$dir" | sed 's/--keys [^ ]*//') \
+      > "$dir/edit-$marker.out" 2> "$dir/edit-$marker.err" || { firsterr "$dir/edit-$marker.err"; return 1; }
     echo "notes edit"
   else
     printf '# %s\n\nedited on this replica: %s\n' "${ext%.md}" "$marker" > "$dir/vault/$ext"
     guarded "$bin" import obsidian $(flags "$dir" | sed 's/--keys [^ ]*//') "$dir/vault" \
-      > "$dir/edit-$marker.out" 2> "$dir/edit-$marker.err" || { tail -1 "$dir/edit-$marker.err"; return 1; }
+      > "$dir/edit-$marker.out" 2> "$dir/edit-$marker.err" || { firsterr "$dir/edit-$marker.err"; return 1; }
     echo "vault edit and re-import"
   fi
 }
@@ -113,11 +117,13 @@ drill() { # drill <version> <commit> <first-binary> <first-label> <second-binary
   mechanism=$(edit_note "$firstbin" "$A" "note-0000.md" "J7B-FIRST") \
     || { record "$version" "$first" "$second" "edit on first" fail "$mechanism"; return; }
   local second_mechanism
-  second_mechanism=$(edit_note "$secondbin" "$B" "note-0001.md" "J7B-SECOND") \
+  # The generated vault puts note i in folder i % 6, so notes 0 and 6 are both
+  # at the vault root and their source id is the bare file name.
+  second_mechanism=$(edit_note "$secondbin" "$B" "note-0006.md" "J7B-SECOND") \
     || { record "$version" "$first" "$second" "edit on second" fail "$second_mechanism"; return; }
 
   local round converged=no id0 id1 digest_a digest_b
-  id0=$(docid "$A/notes.sqlite" "note-0000.md"); id1=$(docid "$A/notes.sqlite" "note-0001.md")
+  id0=$(docid "$A/notes.sqlite" "note-0000.md"); id1=$(docid "$A/notes.sqlite" "note-0006.md")
   for round in $(seq 1 "$ROUNDS"); do
     guarded "$firstbin" sync once --carrier "$D/carrier" $(flags "$A") > "$A/once-$round.out" 2> "$A/once-$round.err" \
       || { record "$version" "$first" "$second" "sync round $round" fail "$first: $(tail -1 "$A/once-$round.err")"; return; }
