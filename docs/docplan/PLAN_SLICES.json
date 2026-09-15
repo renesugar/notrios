@@ -556,7 +556,7 @@
     {
       "id": "J23",
       "title": "Keep existing sync peers syncing after both upgrade in place",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J23-A",
@@ -573,7 +573,8 @@
         {
           "id": "J23-C",
           "statement": "J7's upgrade-in-place drill converges on the original pairing for 0.7.0, 0.8.0 and v0.9",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
         }
       ]
     }

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**23 items: 14 complete, 2 in progress, 7 not started, 0 deferred.**
+**23 items: 15 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -83,13 +83,9 @@ this section is archived when the plan completes and the rules are not.
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
 | J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
-| J23. Keep existing sync peers syncing after both upgrade in place | in-progress | 2/3 | 1 |
+| J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 
 ### Started and not finished
-
-**J23. Keep existing sync peers syncing after both upgrade in place**
-
-- `J23-C` J7's upgrade-in-place drill converges on the original pairing for 0.7.0, 0.8.0 and v0.9 — *not-started*
 
 **J7. Validate backup, export, restore, sync compatibility and disaster recovery**
 
@@ -2167,7 +2163,7 @@ directory per open.
 **Working state.** A full Go test run leaves no `notrios-*` entry in its temp
 root, and a check fails if one returns.
 
-## J23. Keep existing sync peers syncing after both upgrade in place — in progress
+## J23. Keep existing sync peers syncing after both upgrade in place — complete
 
 **Goal.** Two replicas that were syncing before an upgrade keep syncing after
 both have upgraded, on their original pairing, without weakening what pairing
