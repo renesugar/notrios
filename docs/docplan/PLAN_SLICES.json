@@ -556,17 +556,19 @@
     {
       "id": "J23",
       "title": "Keep existing sync peers syncing after both upgrade in place",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J23-A",
           "statement": "A paired peer whose handshake differs from its stored compatibility only by a schema rise both sides' ranges admit is accepted, and the stored record is updated with an audit event",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
         },
         {
           "id": "J23-B",
           "statement": "A paired peer whose protocol, capabilities or identity differ from its stored compatibility is still refused, proven by security tests",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
         },
         {
           "id": "J23-C",

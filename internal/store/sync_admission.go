@@ -280,7 +280,8 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 	if err := syncstate.ValidateHandshake(local.DatabaseID, local.ReplicaID, CurrentSchemaVersion, peer); err != nil {
 		return SyncAdmissionResult{}, err
 	}
-	if err := s.validateConfiguredSyncPeerLocked(peer); err != nil {
+	upgradeFrom, err := s.validateConfiguredSyncPeerLocked(peer)
+	if err != nil {
 		return SyncAdmissionResult{}, err
 	}
 	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
@@ -292,6 +293,13 @@ func (s *SQLiteStore) admitSyncOperations(ctx context.Context, peer syncstate.Ha
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
+	// A peer that upgraded since pairing has its pinned record updated in this
+	// transaction, so a batch that fails afterwards leaves the record unchanged.
+	if upgradeFrom != nil {
+		if err := s.upgradeSyncPeerCompatibilityLocked(local.ReplicaID, *upgradeFrom, peer); err != nil {
+			return SyncAdmissionResult{}, err
+		}
+	}
 	result := SyncAdmissionResult{Received: len(operations), Duplicates: inputDuplicates}
 	for index, item := range normalized {
 		if index%128 == 0 {
@@ -680,7 +688,8 @@ func (s *SQLiteStore) RecordSyncPeerAcknowledgement(ctx context.Context, peer sy
 	if err := syncstate.ValidateHandshake(local.DatabaseID, local.ReplicaID, CurrentSchemaVersion, peer); err != nil {
 		return err
 	}
-	if err := s.validateConfiguredSyncPeerLocked(peer); err != nil {
+	upgradeFrom, err := s.validateConfiguredSyncPeerLocked(peer)
+	if err != nil {
 		return err
 	}
 	if err := s.execLocked("BEGIN IMMEDIATE"); err != nil {
@@ -692,6 +701,13 @@ func (s *SQLiteStore) RecordSyncPeerAcknowledgement(ctx context.Context, peer sy
 			_ = s.execLocked("ROLLBACK")
 		}
 	}()
+	// The same upgrade admission applies: a round that only acknowledges must
+	// not be refused for a schema rise the pinned record may follow.
+	if upgradeFrom != nil {
+		if err := s.upgradeSyncPeerCompatibilityLocked(local.ReplicaID, *upgradeFrom, peer); err != nil {
+			return err
+		}
+	}
 	for subjectReplicaID, sequence := range peer.StateVector {
 		known := local.StateVector[subjectReplicaID]
 		if subjectReplicaID != local.ReplicaID {
@@ -813,6 +829,55 @@ func sameSyncCompatibility(left, right syncstate.Handshake) bool {
 		equalStrings(left.RequiredCapabilities, right.RequiredCapabilities) && equalStrings(left.OptionalCapabilities, right.OptionalCapabilities)
 }
 
+// schemaRiseOnly reports whether peer differs from the compatibility its
+// pairing pinned only as an in-place upgrade does: a higher schema version and
+// an equal or higher compatible-range ceiling. Protocol, capabilities and the
+// range floor must be unchanged. A lower schema is never an upgrade.
+//
+// Whether this build and the peer admit each other at the new schema is not
+// decided here. ValidateHandshake runs first on every path that reaches this
+// check, and refuses a peer whose range excludes this build's schema or whose
+// schema falls outside this build's range.
+func schemaRiseOnly(stored, peer syncstate.Handshake) bool {
+	if peer.SchemaVersion <= stored.SchemaVersion || peer.MaxCompatibleSchema < stored.MaxCompatibleSchema {
+		return false
+	}
+	return stored.ProtocolMajor == peer.ProtocolMajor &&
+		stored.ProtocolMinMinor == peer.ProtocolMinMinor &&
+		stored.ProtocolMaxMinor == peer.ProtocolMaxMinor &&
+		stored.MinCompatibleSchema == peer.MinCompatibleSchema &&
+		equalStrings(stored.RequiredCapabilities, peer.RequiredCapabilities) &&
+		equalStrings(stored.OptionalCapabilities, peer.OptionalCapabilities)
+}
+
+// upgradeSyncPeerCompatibilityLocked records a peer's in-place schema upgrade:
+// the pinned row takes the new schema version and range ceiling, and an audit
+// event keeps both the old values and the new. It must run inside the caller's
+// transaction.
+func (s *SQLiteStore) upgradeSyncPeerCompatibilityLocked(localReplicaID string, stored, peer syncstate.Handshake) error {
+	if err := s.execPreparedLocked(`UPDATE sync_peer_compatibility
+		SET schema_version = ?, max_compatible_schema = ?, configured_at = CURRENT_TIMESTAMP
+		WHERE replica_id = ?`,
+		strconv.Itoa(peer.SchemaVersion), strconv.Itoa(peer.MaxCompatibleSchema), peer.ReplicaID); err != nil {
+		return err
+	}
+	auditID, err := NewID("audit")
+	if err != nil {
+		return err
+	}
+	detailsJSON, err := json.Marshal(map[string]any{
+		"from_schema_version":        stored.SchemaVersion,
+		"to_schema_version":          peer.SchemaVersion,
+		"from_max_compatible_schema": stored.MaxCompatibleSchema,
+		"to_max_compatible_schema":   peer.MaxCompatibleSchema,
+	})
+	if err != nil {
+		return err
+	}
+	return s.execPreparedLocked(`INSERT INTO sync_audit_events(id, event_type, replica_id, subject_id, details_json)
+		VALUES(?, 'peer.compatibility_upgraded', ?, ?, ?)`, auditID, localReplicaID, peer.ReplicaID, string(detailsJSON))
+}
+
 func equalStrings(left, right []string) bool {
 	if len(left) != len(right) {
 		return false
@@ -859,27 +924,41 @@ func (s *SQLiteStore) syncPeerCompatibilityLocked(replicaID string) (*syncstate.
 	}
 }
 
-func (s *SQLiteStore) validateConfiguredSyncPeerLocked(peer syncstate.Handshake) error {
+// validateConfiguredSyncPeerLocked checks a peer against the compatibility its
+// pairing pinned. It returns the stored record when the only difference is a
+// schema upgrade the pinned record may follow (schemaRiseOnly). The caller then
+// applies that update inside its own transaction, with
+// upgradeSyncPeerCompatibilityLocked. It returns nil for an exact match.
+// Everything else stays refused.
+//
+// Exact equality alone broke upgrades (v1.0 J7-B, J23). Two replicas paired on
+// schema 27 each stored the other as 27, range 24-27. After both upgraded, each
+// peer reported 28, range 24-28, and every batch was refused forever.
+func (s *SQLiteStore) validateConfiguredSyncPeerLocked(peer syncstate.Handshake) (*syncstate.Handshake, error) {
 	configured, err := s.syncPeerCompatibilityLocked(peer.ReplicaID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if configured == nil {
-		return fmt.Errorf("%w: peer %q is not explicitly configured for admission", ErrConflict, peer.ReplicaID)
+		return nil, fmt.Errorf("%w: peer %q is not explicitly configured for admission", ErrConflict, peer.ReplicaID)
 	}
+	var upgradeFrom *syncstate.Handshake
 	if !sameSyncCompatibility(*configured, peer) {
-		return fmt.Errorf("%w: peer compatibility differs from explicit configuration", ErrConflict)
+		if !schemaRiseOnly(*configured, peer) {
+			return nil, fmt.Errorf("%w: peer compatibility differs from explicit configuration", ErrConflict)
+		}
+		upgradeFrom = configured
 	}
 	role, databaseID, status, found, err := s.syncReplicaLocked(peer.ReplicaID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !found || role != "peer" || status != "active" || databaseID != peer.DatabaseID {
-		return fmt.Errorf("%w: peer is not active for this database", ErrConflict)
+		return nil, fmt.Errorf("%w: peer is not active for this database", ErrConflict)
 	}
 	stmt, err := s.prepareLocked(`SELECT replica_id, sequence FROM sync_retention_floors ORDER BY replica_id`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer C.sqlite3_finalize(stmt)
 	for {
@@ -887,12 +966,12 @@ func (s *SQLiteStore) validateConfiguredSyncPeerLocked(peer syncstate.Handshake)
 		case C.SQLITE_ROW:
 			subject, floor := columnText(stmt, 0), columnInt64(stmt, 1)
 			if peer.StateVector[subject] < floor {
-				return fmt.Errorf("%w: peer %s is below %s:%d", ErrSyncFullResyncRequired, peer.ReplicaID, subject, floor)
+				return nil, fmt.Errorf("%w: peer %s is below %s:%d", ErrSyncFullResyncRequired, peer.ReplicaID, subject, floor)
 			}
 		case C.SQLITE_DONE:
-			return nil
+			return upgradeFrom, nil
 		default:
-			return s.stepErrLocked(rc)
+			return nil, s.stepErrLocked(rc)
 		}
 	}
 }
