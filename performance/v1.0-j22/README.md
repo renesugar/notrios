@@ -207,6 +207,48 @@ in the J22 store test was corrected: `t.TempDir()` itself lives under the
 system temp root. The second started before the export verification fix. Only
 the run described above is a result.
 
+## The archive's first attempt
+
+The first archive build, from `d0cbba6` with the usage guard on, passed the
+guard: it checked only Claude, 64% remaining. It then stopped in the G18a
+evidence validator, which reported `INVENTORY.json is stale`. That inventory
+records a hash of each documentation page and the count of configuration keys.
+J22 changed two pages (`docs/configuration.md`, `docs/service.md`) and added a
+key (63 to 64). It was regenerated with `build_inventory.py --write`, and the
+diff held exactly those three changes. No ZIP was written by that attempt.
+
+Packaging stops at the first failure, so the validators after that one were run
+locally before the archive was rebuilt, each recording its own exit. One more
+failed: G18f, `stale generated hash docs/service.md`. Its `REPORT.json` pins
+the hash of five generated pages and has no regenerator. The `docs/service.md`
+hash was set to the page's new SHA-256 by hand, as J13-D did for the same
+report. G18c, G18d, G18e, G18g, G19 and G20 passed as they were.
+
+The scaffold validation then stopped in H3: `asset-store-memory: anchor occurs
+0 times in internal/store/sqlite.go; the consumer has changed and the inventory
+must be revisited`. H3's path-consumer inventory pins each consumer to an exact
+line, and J22 replaced that one. The entry was revisited, as H4 slice C
+(`771326d`) did when it last changed this anchor:
+- **Anchor:** now J22's line, `root, err := noInstance.MkdirTemp("notrios-assets-")`.
+- **"current":** now also records that the store owns the directory and removes
+  it on Close.
+
+Its category, defects, owner, status and H3's own target text are unchanged,
+and `REPORT.md`'s description of what H3 originally found stays as it was.
+
+Next, I8's freeze of the public surface reported that `temp_dir` had been added
+to the configuration surface, and nothing removed. The addition is deliberate
+and compatible: the key is optional, and a configuration that does not state it
+derives it from its own `data.cache_dir`. So every existing configuration, and
+every profile config written before the key existed, loads unchanged and gets a
+temp directory of its own. The freeze was rebuilt with
+`performance/v0.9-i8/build_freeze.py`. It moved two surfaces, and nothing else:
+- **configuration:** 60 to 61 members, adding `temp_dir`
+- **make lifecycle:** 36 to 37, adding `temp-leak-check`, which is additive: no
+  existing target changed
+
+I8 validates against the rebuilt freeze.
+
 ## What J22 does not change
 
 - **`purge`.** Its plan and categories are unchanged. By default `data.temp_dir`

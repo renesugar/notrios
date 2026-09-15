@@ -1,5 +1,5 @@
 {
-  "content_commit": "06b8914832a465675ba44c0660a622c5e00b673f",
+  "content_commit": "d0cbba613adb659d9c902b4dda1b32177f7b5783",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -159,7 +159,7 @@
       "sha256": "65c0b05e79b7a13426dc13fa6cefe9fe2338b378fc099eadb2fd3dcb1d767d7d"
     },
     "configuration": {
-      "count": 60,
+      "count": 61,
       "members": [
         "allow_private_networks",
         "allowed_domains",
@@ -217,15 +217,16 @@
         "sync_peer_warning_days",
         "sync_scope",
         "target",
+        "temp_dir",
         "tls_cert_file",
         "tls_key_file",
         "unreferenced_resource_days",
         "web_dir"
       ],
-      "sha256": "d799622e4bb3bf5cda64c25e9803e7b564d1f210ff63ffef2b89cd4ac8533e31"
+      "sha256": "b35f012e15989726174678345b5e616301c93a81a8a620814807eedbfdd6a8e8"
     },
     "make_lifecycle": {
-      "count": 36,
+      "count": 37,
       "members": [
         "build",
         "build-cli",
@@ -258,13 +259,14 @@
         "seed-help",
         "serve",
         "smoke",
+        "temp-leak-check",
         "test",
         "uninstall",
         "uninstall-dry-run",
         "validate",
         "web"
       ],
-      "sha256": "9bdbed7bf0a37cb3ea2a5352393122d1d961beea4414dd45bfb3b0f6f9b3cf7f"
+      "sha256": "b6c72cb47f7f19d9725d16ff219d3ea752d4c94b7d9231dda2aa23925dd2f597"
     },
     "mcp": {
       "count": 45,
