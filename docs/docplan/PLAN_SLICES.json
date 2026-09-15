@@ -530,6 +530,28 @@
           "evidence": "file:performance/v1.0-j21/README.md"
         }
       ]
+    },
+    {
+      "id": "J22",
+      "title": "Stop stores and tests leaving directories in the temp root",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J22-A",
+          "statement": "A store that created its own temp asset root removes it on Close, and never removes an asset root a caller supplied",
+          "state": "not-started"
+        },
+        {
+          "id": "J22-B",
+          "statement": "The CLI test's shared binary directory, and any other temp directory a test run leaves, is removed when the tests finish",
+          "state": "not-started"
+        },
+        {
+          "id": "J22-C",
+          "statement": "A check runs the Go test suite with a fresh temp root and fails if any notrios-* entry is left in it",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

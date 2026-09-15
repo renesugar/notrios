@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**21 items: 14 complete, 1 in progress, 6 not started, 0 deferred.**
+**22 items: 14 complete, 1 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -82,6 +82,7 @@ this section is archived when the plan completes and the rules are not.
 | J19. Test the external performance review, and adopt only what measures better | complete | 3/3 | — |
 | J20. Finish the Obsidian inventory memory work, on a fresh J5 baseline | complete | 3/3 | — |
 | J21. Stop re-running schema migrations every time a library is opened | complete | 3/3 | — |
+| J22. Stop stores and tests leaving directories in the temp root | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -92,7 +93,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Written and not begun: J6, J8, J9, J10, J11, J15, J22. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2112,3 +2113,48 @@ libraries and its measurements.
 **Working state.** Opening a current library does no migration work. The
 schema of every library shape is proven unchanged. Open and search are
 re-measured on both full corpora.
+
+## J22. Stop stores and tests leaving directories in the temp root
+
+**Goal.** Nothing Notrios or its test suite creates in the temp directory
+outlives the process or test that made it.
+
+**What J7 found** (`performance/v1.0-j7/README.md`, 2026-09-15). J7-C's first
+disaster-recovery run was stopped from outside because the machine ran low on
+memory. `/tmp` is RAM-backed tmpfs, and it held 16 GB in 17,078 leftover
+`notrios-*` entries:
+
+| entries | count | size | cause |
+|---|---|---|---|
+| `notrios-assets-*` | 16,888 | 1.67 GiB | `defaultAssetRoot` (`internal/store/sqlite.go`) makes a private temp asset directory for a path-less or `:memory:` store, and `SQLiteStore.Close` never removes it |
+| `notrios-test-bin-*` | 171 | 6.53 GiB | `cmd/notriosctl/stablelinks_test.go` makes a shared test-binary directory and never removes it |
+| `notrios-import-manifest-*` | 6 | 3.33 GiB | a J19 test that did not close its manifest, fixed in J7; the importers close theirs |
+| validator Go build caches | 4 | 2.6 GiB | the G18/G19/G20 evidence validators |
+
+The first two are this item. The asset-directory leak is in product code, not
+only in tests: any caller that opens a store without an asset store leaks one
+directory per open.
+
+**Scope, by owner decision (2026-09-15).**
+
+- **J22-A, a store removes the temp asset root it created.** `Close` removes an
+  asset root the store made for itself with `MkdirTemp`, and never one a caller
+  supplied, nor the directory beside a database file. A test proves both halves.
+- **J22-B, tests clean up after themselves.** The CLI tests' shared binary
+  directory is removed when the package's tests finish. Any other temp entry a
+  test run leaves, found by J22-C, is fixed the same way.
+- **J22-C, a check that keeps it fixed.** The Go test suite runs with `TMPDIR`
+  pointed at a fresh directory, and the check fails if any `notrios-*` entry is
+  left in it afterwards. The validators' Go build caches are either moved out of
+  the temp root or removed by the validator that made them, and the check says
+  which.
+
+**Boundaries.**
+- Removal is limited to paths the store or test created and recorded. Nothing
+  is removed by name pattern at runtime.
+- A caller-supplied asset store is never deleted.
+
+**Dependencies.** None.
+
+**Working state.** A full Go test run leaves no `notrios-*` entry in its temp
+root, and a check fails if one returns.
