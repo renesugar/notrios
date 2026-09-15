@@ -361,6 +361,16 @@ every row for 0.7.0, 0.8.0 and v0.9:
 J7-B's upgrade clause is satisfied. The results are in
 `performance/v1.0-j23/README.md`.
 
+**The REST and folder-carrier checks were not re-run against the J23 build, by
+owner decision (2026-09-15).** J23 changes one thing: admission for a peer that
+is already paired. It does not change how 1.0 treats a pre-1.0 peer:
+- **REST:** the exchange fails with a 405 on the carrier path J16 moved, before
+  any admission runs.
+- **Folder carrier:** an older version refuses a 1.0 invite. When the older
+  version invites, schema 28 is outside its 24–27 range.
+
+The earlier results stand as recorded above.
+
 ### The third run completed: a 382,206-note library destroyed and recovered, twice
 
 The drill was started detached from the task runner (`setsid`/`nohup`), by

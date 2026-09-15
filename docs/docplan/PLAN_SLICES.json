@@ -175,7 +175,8 @@
         {
           "id": "J7-B",
           "statement": "Sync between 1.0 and each older version is refused cleanly in both directions, and replicas syncing on an older version keep syncing after both are upgraded to 1.0",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
         },
         {
           "id": "J7-C",

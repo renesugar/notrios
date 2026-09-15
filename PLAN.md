@@ -67,7 +67,7 @@ this section is archived when the plan completes and the rules are not.
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
-| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 1/3 | 2 |
+| J7. Validate backup, export, restore, sync compatibility and disaster recovery | in-progress | 2/3 | 1 |
 | J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
@@ -90,7 +90,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J7. Validate backup, export, restore, sync compatibility and disaster recovery**
 
-- `J7-B` Sync between 1.0 and each older version is refused cleanly in both directions, and replicas syncing on an older version keep syncing after both are upgraded to 1.0 — *not-started*
 - `J7-C` A disaster-recovery drill destroys and restores a library at the scale J5 measured — *not-started*
 
 ### Not started
