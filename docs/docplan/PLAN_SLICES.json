@@ -636,32 +636,37 @@
     {
       "id": "J26",
       "title": "Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J26-A",
           "statement": "J25's ZIP-or-folder archive reader moves to a shared package, gains nested-ZIP support read in place, and the Twitter/X importer keeps its behaviour and tests",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         },
         {
           "id": "J26-B",
           "statement": "import chatgpt accepts the downloaded ZIP and every conversations shard, one note per conversation in the ChatGPT notebook, with referenced assets imported as resources and matched under either the file- or file_ id prefix",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         },
         {
           "id": "J26-C",
           "statement": "import chatgpt accepts the OpenAI Privacy Portal ZIP, reads its nested Conversations and Files ZIPs in place, recovers .dat names and types from the asset map then library_files.json then sniffing, and imports the file library with unreferenced files as stub notes",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         },
         {
           "id": "J26-D",
           "statement": "import claude accepts the downloaded ZIP and batch siblings, one note per conversation in the Claude notebook with attachment text and file references, and one note per project",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         },
         {
           "id": "J26-E",
           "statement": "Code and execution output become fenced code blocks and browsing results text, while thinking, reasoning recaps and tool plumbing are counted rather than imported",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         },
         {
           "id": "J26-F",
