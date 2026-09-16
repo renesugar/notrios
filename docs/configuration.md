@@ -217,6 +217,46 @@ notriosctl config show --config one-domain.yaml --json
 ```
 <!-- notrios:generated:example:configuration-remote-media-example-1:end -->
 
+**Refusing address ranges.** Remote media never reaches loopback, private
+networks, link-local addresses (cloud metadata among them) or the other reserved
+ranges listed in
+[`SECURITY_AND_MEDIA_POLICY.md`](../SECURITY_AND_MEDIA_POLICY.md), which is the
+default set. The check applies to an address written in a URL and to the
+address a host name resolves to when Notrios connects, redirects included. An
+IPv4 address carried inside an IPv6 one, such as `::ffff:10.0.0.1` or
+`64:ff9b::7f00:1` on a NAT64 network, is checked as the IPv4 address.
+
+To state the set yourself, write it under `security.remote_media`. The list
+**replaces** the default, so a range you leave out becomes reachable; service
+start and `config show` name every default range the list omits, and `[]`
+refuses nothing. `permitted_address_ranges` makes exceptions, such as a media
+server on your own network. An exception covers that range's IPv4-mapped and
+NAT64 forms too, and can never include loopback or `0.0.0.0/8`:
+
+<!-- notrios:generated:example:configuration-remote-media-example-2:begin -->
+```bash
+cat > address-ranges.yaml <<'YAML'
+security:
+  remote_media:
+    refused_address_ranges:
+      - 127.0.0.0/8
+      - 10.0.0.0/8
+      - 169.254.0.0/16
+      - 192.168.0.0/16
+    permitted_address_ranges:
+      - 192.168.1.0/24
+YAML
+notriosctl config show --config address-ranges.yaml --json
+```
+<!-- notrios:generated:example:configuration-remote-media-example-2:end -->
+
+Each entry is a CIDR range or a single address. An entry that is neither, a
+range with host bits set (`10.0.0.1/8`), or a list key with nothing under it
+stops the configuration from loading, and the error names the entry.
+`allow_private_networks: true` switches all of this off, the `localhost` check
+included. Notrios 1.0 is the first version that reads `security:`; an earlier
+version ignores the section and applies only its narrower built-in check.
+
 If you are deciding what to allow, read
 [the remote-media section of the service guide](service.md) before setting
 anything permissive.
@@ -237,7 +277,7 @@ its database anywhere, including outside the roots above.
 ## Every key
 
 <!-- notrios:generated:config:keys:begin -->
-54 settable keys, generated from `internal/config` by `go run ./cmd/docconfig --write`. A dash means the default is empty, which for a path means "work it out from the XDG roots". The recorded configuration surface counts 64, because it includes the 10 section names that group these.
+56 settable keys, generated from `internal/config` by `go run ./cmd/docconfig --write`. A dash means the default is empty, which for a path means "work it out from the XDG roots". The recorded configuration surface counts 68, because it includes the 12 section names that group these.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
@@ -295,4 +335,6 @@ its database anywhere, including outside the roots above.
 | `retention.purged_resource_days` | int | `90` |  |
 | `retention.sync_history_days` | int | `90` |  |
 | `retention.sync_peer_warning_days` | int | `30` |  |
+| `security.remote_media.refused_address_ranges` | []string | — | RefusedAddressRanges are the address ranges remote media may not reach, as CIDR ranges or addresses. Left out, the default set in SECURITY_AND_MEDIA_POLICY.md applies; stated, this list replaces it, [] refuses nothing, and service start warns about each default range it omits. |
+| `security.remote_media.permitted_address_ranges` | []string | — | PermittedAddressRanges are exceptions to the refused ranges, empty by default. An exception also covers its IPv4-mapped and NAT64 forms, and none may include loopback or 0.0.0.0/8, which only remote_media.allow_private_networks reaches. |
 <!-- notrios:generated:config:keys:end -->

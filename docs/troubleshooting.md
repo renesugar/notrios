@@ -80,6 +80,8 @@ your home directory by default.
 
 | Symptom | Fix |
 |---|---|
+| localization reports `address … is in refused range …` or `resolved address … is in refused range …` | the URL, or what its host name resolves to, is in a refused address range. For media on your own network, add that range to `security.remote_media.permitted_address_ranges` (see [configuration](configuration.md#remote-media)); loopback cannot be permitted |
+| the service will not start: `security.remote_media.… is not a valid address or CIDR range`, `has host bits set`, or `has no value and no items` | fix the named entry; a range must be written as its network (`10.0.0.0/8`, not `10.0.0.1/8`), and an empty list is `[]` |
 | `no tweets.js/tweet.js found under ...` | point `import twitter` at the **extracted** archive directory (the one containing `data/`), not the ZIP |
 | `not a Notrios archive (missing manifest.json)` | `import archive` needs a directory produced by `export archive` |
 | `read ChatGPT export: ... no such file` | pass the `conversations.json` file or the directory that directly contains it |

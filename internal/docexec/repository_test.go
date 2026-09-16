@@ -188,7 +188,13 @@ func TestRepositoryExamples(t *testing.T) {
 	// fragment: `config show` summarises 20 of the 53 and the two search limits
 	// are not among them, so that one says where the effect *is* visible rather
 	// than showing a command that appears to check what it cannot.
-	if report.Executed != 69 || report.Entries != 169 || len(report.Topics) != 16 {
+	//
+	// 169 -> 170 and 69 -> 70 executed in v1.0 J28-D: docs/configuration.md's
+	// remote-media section shows security.remote_media stating a refused set
+	// and an exception. `config show` reports both lists, so the check compares
+	// their members, which is why heredocLeafKeys now reads list values and one
+	// more level of nesting.
+	if report.Executed != 70 || report.Entries != 170 || len(report.Topics) != 16 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0
@@ -905,7 +911,20 @@ func heredocLeafKeys(body string) (map[string]string, error) {
 
 	body_lines := lines[start:end]
 	keys := map[string]string{}
-	section := ""
+	// section is the key at indent 0 and group the one at indent 2, for the
+	// one deeper shape J28 publishes: security.remote_media.<list>.
+	section, group := "", ""
+	keyAt := func(indent int, name string) (string, error) {
+		switch {
+		case indent == 0:
+			return name, nil
+		case indent == 2:
+			return section + "." + name, nil
+		case indent == 4 && group != "":
+			return section + "." + group + "." + name, nil
+		}
+		return "", fmt.Errorf("%q nests deeper than these examples are meant to", name)
+	}
 	for index, line := range body_lines {
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -914,7 +933,7 @@ func heredocLeafKeys(body string) (map[string]string, error) {
 		indent := len(trimmed) - len(strings.TrimLeft(trimmed, " "))
 		content := strings.TrimSpace(trimmed)
 		if strings.HasPrefix(content, "- ") {
-			continue // a list member; see the empty-value case below
+			continue // a list member, read with its key below
 		}
 		name, value, found := strings.Cut(content, ":")
 		if !found {
@@ -924,36 +943,47 @@ func heredocLeafKeys(body string) (map[string]string, error) {
 		if position := strings.Index(value, "#"); position >= 0 {
 			value = strings.TrimSpace(value[:position])
 		}
+		if indent <= 2 {
+			group = ""
+		}
 		if value != "" {
-			if indent == 0 {
-				keys[name] = value
-			} else {
-				keys[section+"."+name] = value
+			key, err := keyAt(indent, name)
+			if err != nil {
+				return nil, err
 			}
+			keys[key] = value
 			continue
 		}
 
 		// An empty value is either a section or a list, and which one decides
-		// whether this reader can go on. The next non-blank line says: `- item`
-		// makes it a list, whose membership `config show` does not report, so it
-		// is skipped; anything else at greater indentation is nesting these
-		// examples are not meant to have, and guessing at it would let a check
-		// silently stop checking.
-		kind := "section"
+		// how to read on. The next non-blank lines say: `- item` makes it a list,
+		// read as its members joined the way `config show` joins a list value
+		// (a list `config show` does not report is skipped by the caller);
+		// anything else starts a section, and nesting past the one deeper shape
+		// above is refused rather than guessed at, so a check cannot silently
+		// stop checking.
+		var members []string
 		for _, following := range body_lines[index+1:] {
 			if strings.TrimSpace(following) == "" {
 				continue
 			}
-			if strings.HasPrefix(strings.TrimSpace(following), "- ") {
-				kind = "list"
+			member, isMember := strings.CutPrefix(strings.TrimSpace(following), "- ")
+			if !isMember {
+				break
 			}
-			break
+			members = append(members, strings.Trim(strings.TrimSpace(member), `"`))
 		}
 		switch {
-		case kind == "list":
-			continue
+		case len(members) > 0:
+			key, err := keyAt(indent, name)
+			if err != nil {
+				return nil, err
+			}
+			keys[key] = strings.Join(members, ", ")
 		case indent == 0:
-			section = name
+			section, group = name, ""
+		case indent == 2:
+			group = name
 		default:
 			return nil, fmt.Errorf("%q nests deeper than these examples are meant to", content)
 		}

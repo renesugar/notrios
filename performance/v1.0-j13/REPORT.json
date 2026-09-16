@@ -3,20 +3,20 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "bdba55507a99cccdffb15f8d86dc30b1be48dbd0",
+  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
   "counts": {
-    "examples": 169,
-    "executed": 69,
+    "examples": 170,
+    "executed": 70,
     "by_class": {
       "fragment": 3,
-      "recipe": 119,
+      "recipe": 120,
       "synopsis": 46,
       "transcript": 1
     },
     "by_class_and_state": {
       "fragment/executed": 2,
       "fragment/unverified": 1,
-      "recipe/executed": 66,
+      "recipe/executed": 67,
       "recipe/unverified": 53,
       "synopsis/unverified": 46,
       "transcript/executed": 1
@@ -146,8 +146,8 @@
   },
   "reason_contradicts_class": [],
   "configuration_page": {
-    "settable_keys": 54,
-    "examples": 5,
+    "settable_keys": 56,
+    "examples": 6,
     "note": "J12 gave the page its prose and its generated key table and no examples at all, which is the gap J13-C closes."
   },
   "documents": {
@@ -172,7 +172,7 @@
     },
     "docs/configuration.md": {
       "fragment/unverified": 1,
-      "recipe/executed": 4
+      "recipe/executed": 5
     },
     "docs/gui.md": {
       "recipe/executed": 4,
@@ -1008,6 +1008,15 @@
       "state": "executed",
       "class": "recipe",
       "rule": "8 literal command line(s), nothing to substitute",
+      "unrun_reason": ""
+    },
+    {
+      "id": "configuration-remote-media-example-2",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "12 literal command line(s), nothing to substitute",
       "unrun_reason": ""
     },
     {

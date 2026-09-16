@@ -38,6 +38,16 @@ func runConfigShow(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	// The loader has refused a malformed block, so this cannot fail here.
+	addressRules, err := cfg.Security.RemoteMedia.Rules()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	addressWarnings := cfg.RemoteMediaAddressWarnings()
+	if addressWarnings == nil {
+		addressWarnings = []string{}
+	}
 
 	home := ""
 	if !*noRedact {
@@ -69,6 +79,8 @@ func runConfigShow(args []string) {
 		{"remote_media.default_action", cfg.RemoteMedia.DefaultAction},
 		{"remote_media.allow_private_networks", fmt.Sprintf("%t", cfg.RemoteMedia.AllowPrivateNetworks)},
 		{"remote_media.quarantine_dir", show(cfg.RemoteMedia.QuarantineDir)},
+		{config.RefusedAddressRangesKey, strings.Join(addressRules.Refused(), ", ")},
+		{config.PermittedAddressRangesKey, strings.Join(addressRules.Permitted(), ", ")},
 		{"sync.target", cfg.Sync.Target},
 		{"sync.rest.enabled", fmt.Sprintf("%t", cfg.Sync.REST.Enabled)},
 		{"sync.credential_ref", cfg.Sync.CredentialRef},
@@ -97,6 +109,14 @@ func runConfigShow(args []string) {
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(map[string]any{
 			"source": show(source), "settings": rows, "redacted": home != "",
+			// The address sets as lists, and what service start would say about
+			// them (J28): a row's value is one string, which a list is not.
+			"remote_media_addresses": map[string]any{
+				"refused":   addressRules.Refused(),
+				"permitted": addressRules.Permitted(),
+				"active":    !cfg.RemoteMedia.AllowPrivateNetworks,
+			},
+			"warnings": addressWarnings,
 		}); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -113,12 +133,30 @@ func runConfigShow(args []string) {
 	}
 	for _, setting := range settings {
 		value := setting.value
+		switch setting.key {
+		case config.RefusedAddressRangesKey:
+			value = fmt.Sprintf("%d ranges (listed below)", len(addressRules.Refused()))
+		case config.PermittedAddressRangesKey:
+			if len(addressRules.Permitted()) == 0 {
+				value = "none"
+			}
+		}
 		if strings.TrimSpace(value) == "" {
 			value = "(unset)"
 		}
 		fmt.Printf("  %-*s  %-40s  %s\n", width, setting.key, value, originOf(setting.key))
 	}
 
+	fmt.Printf("\n%s:\n", config.RefusedAddressRangesKey)
+	for _, prefix := range addressRules.Refused() {
+		fmt.Printf("  %s\n", prefix)
+	}
+
 	fmt.Printf("\norigin: %s = stated in the configuration file, %s = resolved from the platform roots, %s = built-in default\n",
 		config.OriginFile, config.OriginResolved, config.OriginCompiled)
+	// Warnings go to standard error, so a script reading the table is not
+	// handed them as settings, and a person at a terminal still sees them.
+	for _, warning := range addressWarnings {
+		fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
+	}
 }

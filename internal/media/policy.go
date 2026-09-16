@@ -7,12 +7,15 @@
 package media
 
 import (
+	"fmt"
 	"net"
+	"net/netip"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
 
+	"github.com/renesugar/notrios/internal/addressrange"
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/markdownlinks"
 )
@@ -36,13 +39,60 @@ type Decision struct {
 // Policy evaluates URLs against the configured remote-media rules.
 type Policy struct {
 	cfg config.RemoteMediaConfig
+	// addresses is the refused-address set (J28), shared with the fetcher's
+	// connect-time check. addressErr is set when the ranges given in code
+	// did not parse; the policy then refuses every URL.
+	addresses  *addressrange.Rules
+	addressErr error
 }
 
-func NewPolicy(cfg config.RemoteMediaConfig) *Policy {
+// Option configures a Policy or Fetcher.
+type Option func(*options)
+
+type options struct {
+	security *config.RemoteMediaSecurityConfig
+}
+
+// WithAddressRanges applies the configuration's security.remote_media block.
+// Every production caller passes it. Without it the default set applies, so
+// an omission errs strict rather than open.
+func WithAddressRanges(security config.RemoteMediaSecurityConfig) Option {
+	return func(o *options) { o.security = &security }
+}
+
+func NewPolicy(cfg config.RemoteMediaConfig, opts ...Option) *Policy {
 	if !config.MediaActions[cfg.DefaultAction] {
 		cfg.DefaultAction = ActionReview
 	}
-	return &Policy{cfg: cfg}
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+	policy := &Policy{cfg: cfg}
+	if o.security == nil {
+		policy.addresses = addressrange.MustDefault()
+	} else {
+		policy.addresses, policy.addressErr = o.security.Rules()
+	}
+	return policy
+}
+
+// checkAddress applies the refused-address set to one address literal. It is
+// the only address check: Evaluate uses it for URL literals and the fetcher
+// for every address it is about to dial. It returns "" when the address may
+// be reached.
+func (p *Policy) checkAddress(addr netip.Addr) string {
+	if p.cfg.AllowPrivateNetworks {
+		return ""
+	}
+	if p.addressErr != nil {
+		return "the remote-media address ranges are invalid: " + p.addressErr.Error()
+	}
+	decision := p.addresses.Check(addr)
+	if !decision.Refused {
+		return ""
+	}
+	return fmt.Sprintf("address %s is in refused range %s", addr, decision.Range)
 }
 
 // Evaluate returns the policy action and a human-readable reason for one URL.
@@ -77,8 +127,16 @@ func (p *Policy) Evaluate(raw string) (string, string) {
 	if !ok {
 		return ActionBlock, "malformed host"
 	}
-	if !p.cfg.AllowPrivateNetworks && isPrivateHost(host) {
-		return ActionBlock, "private, loopback, or link-local address"
+	if p.addressErr != nil {
+		return ActionBlock, "the remote-media address ranges are invalid: " + p.addressErr.Error()
+	}
+	if !p.cfg.AllowPrivateNetworks && isLocalhostName(host) {
+		return ActionBlock, "localhost name " + host + " is refused"
+	}
+	if addr, err := netip.ParseAddr(host); err == nil {
+		if reason := p.checkAddress(addr); reason != "" {
+			return ActionBlock, reason
+		}
 	}
 	if pattern, ok := matchDomain(host, p.cfg.BlockedDomains); ok {
 		return ActionBlock, "domain matches blocked pattern " + pattern
@@ -92,19 +150,13 @@ func (p *Policy) Evaluate(raw string) (string, string) {
 	return p.cfg.DefaultAction, "no domain rule matched; policy default"
 }
 
-// isPrivateHost reports whether a host literal is private, loopback, or
-// link-local. Hostnames that merely resolve to private addresses cannot be
-// caught here (no DNS by design); the fetch pipeline checks resolved
-// addresses at connect time.
-func isPrivateHost(host string) bool {
-	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
-		return true
-	}
-	ip := net.ParseIP(host)
-	if ip == nil {
-		return false
-	}
-	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()
+// isLocalhostName reports whether a normalized host is a localhost name
+// (RFC 6761). Address literals are decided by the refused-address set;
+// hostnames that merely resolve to a refused address cannot be caught here (no
+// DNS by design), and the fetch pipeline checks resolved addresses at connect
+// time.
+func isLocalhostName(host string) bool {
+	return host == "localhost" || strings.HasSuffix(host, ".localhost")
 }
 
 // normalizeHost returns the one form a host is checked in: lowercased, with a

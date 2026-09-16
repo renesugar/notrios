@@ -77,8 +77,11 @@ def validate_registry(registry: dict, report: dict) -> None:
     # docs/configuration.md, which had 53 documented keys and no command lines
     # at all. Four are executed, so this is the first of these bumps in a while
     # where the executed count moves too.
-    assert len(examples) == report["entries"] == 169
-    assert len({item["id"] for item in examples}) == 169
+    # 169 -> 170 in v1.0 J28-D: docs/configuration.md's remote-media section
+    # shows the security block stating a refused set and an exception. It is
+    # executed, checked against both lists `config show` reports.
+    assert len(examples) == report["entries"] == 170
+    assert len({item["id"] for item in examples}) == 170
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -87,7 +90,8 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 65 -> 69 in v1.0 J13-C. Each configuration example is checked against its
     # own YAML: every key it sets must be reported by `config show` with origin
     # `file`, so it cannot claim a key it does not set.
-    assert len(executed) == report["executed"] == 69
+    # 69 -> 70 in v1.0 J28-D, the example above.
+    assert len(executed) == report["executed"] == 70
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
     # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two

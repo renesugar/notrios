@@ -1,5 +1,5 @@
 {
-  "content_commit": "d0cbba613adb659d9c902b4dda1b32177f7b5783",
+  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -159,7 +159,7 @@
       "sha256": "65c0b05e79b7a13426dc13fa6cefe9fe2338b378fc099eadb2fd3dcb1d767d7d"
     },
     "configuration": {
-      "count": 61,
+      "count": 64,
       "members": [
         "allow_private_networks",
         "allowed_domains",
@@ -194,11 +194,13 @@
         "max_results",
         "mcp",
         "name",
+        "permitted_address_ranges",
         "profile",
         "projection_dir",
         "public_base_url",
         "purged_resource_days",
         "quarantine_dir",
+        "refused_address_ranges",
         "registry_path",
         "remote_media",
         "requests_per_minute",
@@ -210,6 +212,7 @@
         "runtime_dir",
         "search",
         "search_sidecar",
+        "security",
         "server",
         "state_dir",
         "sync",
@@ -223,7 +226,7 @@
         "unreferenced_resource_days",
         "web_dir"
       ],
-      "sha256": "b35f012e15989726174678345b5e616301c93a81a8a620814807eedbfdd6a8e8"
+      "sha256": "c4d25bf1834e9c2e7bda6c3f706376e647bff1ace3d6053294340a6d5c3bebf3"
     },
     "make_lifecycle": {
       "count": 37,

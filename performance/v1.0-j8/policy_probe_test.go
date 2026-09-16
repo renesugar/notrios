@@ -73,7 +73,11 @@ func TestJ8AddressLiteralsThePrivateCheckRefuses(t *testing.T) {
 	refused, allowed := []string{}, []string{}
 	for _, p := range probes {
 		action, reason := policy.Evaluate("https://" + p.host + "/photo.png")
-		isPrivateRefusal := action == media.ActionBlock && strings.Contains(reason, "private, loopback, or link-local")
+		// J28 replaced the "private, loopback, or link-local" refusal with one
+		// that names the refused range or the localhost name; either wording is
+		// an address refusal.
+		isPrivateRefusal := action == media.ActionBlock && (strings.Contains(reason, "private, loopback, or link-local") ||
+			strings.Contains(reason, "is in refused range") || strings.HasPrefix(reason, "localhost name "))
 		line := fmt.Sprintf("%-22s %-40s -> %s (%s)", p.host, p.what, action, reason)
 		if isPrivateRefusal {
 			refused = append(refused, line)

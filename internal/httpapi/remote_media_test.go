@@ -126,7 +126,7 @@ func TestMediaPolicyEndpoints(t *testing.T) {
 		t.Fatalf("check-url: expected 200, got %d: %s", rr.Code, rr.Body.String())
 	}
 	result := decodeScan(t, rr)
-	if len(result.Media) != 1 || result.Media[0].Action != "block" || !strings.Contains(result.Media[0].Reason, "private") {
+	if len(result.Media) != 1 || result.Media[0].Action != "block" || !strings.Contains(result.Media[0].Reason, "is in refused range 127.0.0.0/8") {
 		t.Fatalf("loopback must be blocked: %+v", result.Media)
 	}
 

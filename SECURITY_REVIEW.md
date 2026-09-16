@@ -17,8 +17,9 @@ published handoffs, and future sync transports are security boundaries.
 - Referenced logical resources cannot be deleted directly; exact duplicate
   bytes share a blob.
 - Remote URLs are statically scanned before fetch. Every redirect is
-  re-evaluated; unsafe schemes/domains and connect-time private/link-local
-  addresses are blocked, environment proxies are disabled, size is bounded
+  re-evaluated; unsafe schemes/domains are blocked, and the reserved address
+  ranges in `SECURITY_AND_MEDIA_POLICY.md` are refused both as URL literals
+  and at connect time, including IPv4 addresses carried in IPv6 (J28), environment proxies are disabled, size is bounded
   while streaming, MIME is sniffed, SHA-256 is computed, and bytes remain in
   quarantine until admission.
 - Localization checks exact-hash policy, creates resource/provenance rows, and

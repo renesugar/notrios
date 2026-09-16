@@ -30,6 +30,13 @@ stays visible.
   localization; whether the renderer honours that was read, not probed.
 - **Perceptual-hash hooks**, which ship disabled.
 
+> **Corrected by J28 (2026-09-16).** This review first said "multicast" held.
+> The probe used `224.0.0.2`, which is link-local multicast; the code refused
+> only that part, not `239.1.1.1`, `ff05::1` or other multicast. The two
+> sentences below now say "link-local multicast". J28 refuses all multicast,
+> and its README records that `TestJ8AddressLiteralsThePrivateCheckRefuses`'
+> classifier was updated to recognise J28's refusal wording.
+
 ## Findings
 
 Four. Each is deferred to its own plan item, for the owner to approve; none is
@@ -60,7 +67,7 @@ comparison — plus cases for the dotted form of every list.
 
 **What happens.** The static check refuses loopback, RFC 1918, link-local,
 IPv6 unique-local, IPv4-mapped IPv6 forms of both loopback and private, the
-unspecified address, `localhost`, and multicast. It does **not** refuse:
+unspecified address, `localhost`, and link-local multicast. It does **not** refuse:
 
 | literal | range |
 |---|---|
@@ -135,7 +142,8 @@ These were attempted and refused, or checked and found sound.
 - Blocked schemes (`file:`, `data:`, `javascript:`, `ftp:`) and anything that
   is not http(s).
 - Loopback, RFC 1918, link-local, IPv6 unique-local, IPv4-mapped IPv6 private
-  and loopback forms, the unspecified address, multicast, and `localhost`.
+  and loopback forms, the unspecified address, link-local multicast, and
+  `localhost`.
 - A host that carries an allowed name as **userinfo**
   (`https://images.example.org@evil.test/`) is evaluated as its real
   destination.

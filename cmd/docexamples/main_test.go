@@ -99,7 +99,7 @@ func TestTheRendererRefusesWhatItCannotRender(t *testing.T) {
 		{"unsectioned key", Example{UseCase: "flat", File: "a.yaml", Verify: "x",
 			Settings: []Setting{{Key: "loose", Value: "1"}}}, "not a sectioned key"},
 		{"too deep", Example{UseCase: "deep", File: "a.yaml", Verify: "x",
-			Settings: []Setting{{Key: "a.b.c", Value: "1"}}}, "nests deeper"},
+			Settings: []Setting{{Key: "a.b.c.d", Value: "1"}}}, "nests deeper"},
 		{"value and list", Example{UseCase: "both", File: "a.yaml", Verify: "x",
 			Settings: []Setting{{Key: "a.b", Value: "1", List: []string{"x"}}}}, "both a value and a list"},
 		{"no value", Example{UseCase: "blank", File: "a.yaml", Verify: "x",
@@ -143,5 +143,25 @@ func TestMarkersSitOutsideTheFence(t *testing.T) {
 				t.Errorf("%s: the markers do not wrap exactly one fence", id)
 			}
 		}
+	}
+}
+
+// J28: a section's surface block renders one level deeper, and a following
+// two-level key closes it.
+func TestASurfaceBlockRendersOneLevelDeeper(t *testing.T) {
+	example := Example{UseCase: "surface", File: "a.yaml", Verify: "notriosctl config show --config a.yaml --json",
+		Settings: []Setting{
+			{Key: "security.remote_media.refused_address_ranges", List: []string{"10.0.0.0/8", "127.0.0.0/8"}},
+			{Key: "security.remote_media.permitted_address_ranges", List: []string{"10.1.0.0/16"}},
+			{Key: "retention.sync_history_days", Value: "30"},
+		}}
+	rendered, err := example.Render()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "security:\n  remote_media:\n    refused_address_ranges:\n      - 10.0.0.0/8\n      - 127.0.0.0/8\n" +
+		"    permitted_address_ranges:\n      - 10.1.0.0/16\nretention:\n  sync_history_days: 30\n"
+	if !strings.Contains(rendered, want) {
+		t.Fatalf("rendered:\n%s\nwant it to contain:\n%s", rendered, want)
 	}
 }

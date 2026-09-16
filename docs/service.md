@@ -96,6 +96,10 @@ chooses and pins the long-term configuration library.
 - search_sidecar.binary
 - search_sidecar.enabled
 - search_sidecar.index_dir
+- security
+- security.remote_media
+- security.remote_media.permitted_address_ranges
+- security.remote_media.refused_address_ranges
 - server
 - server.listen_addr
 - server.public_base_url
@@ -157,6 +161,8 @@ configuration group.
 - search_sidecar.binary = "recollindex"
 - search_sidecar.enabled = false
 - search_sidecar.index_dir = "./data/search-index"
+- security.remote_media.permitted_address_ranges = null
+- security.remote_media.refused_address_ranges = null
 - server.listen_addr = "127.0.0.1:8080"
 - server.public_base_url = "http://127.0.0.1:8080"
 - server.web_dir = ""
@@ -203,19 +209,21 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `search_sidecar.binary` | `recollindex` | Recoll indexer binary (`recollq` is looked up next to it) |
 | `search_sidecar.index_dir` | `./data/search-index` | generated Recoll config + index location |
 | `remote_media.default_action` | `review` | policy for domains matched by no list: `allow`, `block`, or `review` (report only, never auto-download); invalid values fall back to `review` |
-| `remote_media.allow_private_networks` | `false` | whether downloads may reach private/link-local addresses |
+| `remote_media.allow_private_networks` | `false` | `true` switches off the refused address ranges, their exceptions and the `localhost` check, so downloads may reach private, loopback and reserved addresses |
 | `remote_media.max_redirects` | `5` | redirect-hop cap (policy re-checked per hop) |
 | `remote_media.fetch_timeout_seconds` | `30` | per-download timeout |
 | `remote_media.blocked_schemes` | `file, data, javascript, ftp` | URL schemes never fetched |
 | `remote_media.blocked_domains` / `allowed_domains` / `review_domains` | empty | domain patterns (e.g. `*.wikimedia.org`) forcing block/allow/review; `*.` matches subdomains, not the apex. Hosts and patterns are compared case-insensitively with one trailing dot ignored (`example.org.` is `example.org`), and a host with an empty label (`a..b`) is blocked as malformed |
 | `remote_media.max_bytes.<class>` | `image: 20MB`, `video: 200MB`, `pdf: 100MB` | download size caps, human-readable sizes accepted |
 | `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
+| `security.remote_media.refused_address_ranges` | the default set in `SECURITY_AND_MEDIA_POLICY.md` (shown as `null` in the lists above, meaning not stated) | CIDR ranges or addresses remote media may not reach, as URL literals or at connect time; a stated list replaces the default, and start-up and `config show` name each default range it omits; `[]` refuses nothing |
+| `security.remote_media.permitted_address_ranges` | empty | exceptions to the refused ranges, covering their IPv4-mapped and NAT64 forms; never loopback or `0.0.0.0/8` |
 | `retention.unreferenced_resource_days` | `30` | recovery window after an unattached upload or final explicit detach |
 | `retention.purged_resource_days` | `90` | longer recovery window for resources orphaned by permanent note purge |
 | `retention.sync_history_days` | `90` | minimum sync-operation/tombstone age; snapshot and active-peer acknowledgements are also mandatory |
 | `retention.sync_peer_warning_days` | `30` | warning interval before an active peer reaches the history horizon |
 
-The `remote_media` policy is reported by `/api/v1/status` under `media_policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
+The `remote_media` policy, with the effective refused and permitted address ranges, their origin and any warnings, is reported by `/api/v1/status` under `media_policy` and by `GET /api/v1/media-policy`. It drives the remote-media scan (`POST /api/v1/documents/{id}/remote-media/scan` — per-URL decisions, nothing downloaded) and localization (`POST …/remote-media/localize`, `notriosctl localize` — quarantine fetch with redirect-hop and connect-time address checks, size caps, MIME sniffing, exact hashes, then rewrite to `resource://` links in a new revision). Blocked domains and blocked schemes are never fetched; `review` means report-only until explicitly opted in.
 
 Resource reference health is available from
 `GET /api/v1/resources/reports/reference` or

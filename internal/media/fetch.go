@@ -26,6 +26,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,7 +99,11 @@ type Fetcher struct {
 
 // NewFetcher builds a quarantine fetcher for the configured policy. The
 // quarantine directory is created if missing.
-func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder) (*Fetcher, error) {
+func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder, opts ...Option) (*Fetcher, error) {
+	policy := NewPolicy(cfg, opts...)
+	if policy.addressErr != nil {
+		return nil, fmt.Errorf("remote-media address ranges: %w", policy.addressErr)
+	}
 	dir := strings.TrimSpace(cfg.QuarantineDir)
 	if dir == "" {
 		return nil, fmt.Errorf("remote_media.quarantine_dir is not configured")
@@ -109,7 +114,7 @@ func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder) (*Fetche
 		return nil, fmt.Errorf("create quarantine dir %q: %w", dir, err)
 	}
 	f := &Fetcher{
-		policy:        NewPolicy(cfg),
+		policy:        policy,
 		cfg:           cfg,
 		quarantineDir: dir,
 		recorder:      recorder,
@@ -190,8 +195,9 @@ func (f *Fetcher) checkRedirect(req *http.Request, via []*http.Request) error {
 
 type allowReviewKey struct{}
 
-// checkDialAddress rejects private, loopback, link-local, and unspecified
-// resolved addresses unless the policy allows private networks.
+// checkDialAddress applies the refused-address set (J28) to the concrete
+// address about to be dialed, unless the policy allows private networks. It
+// is the same check Evaluate applies to URL literals.
 func (f *Fetcher) checkDialAddress(address string) error {
 	if f.cfg.AllowPrivateNetworks {
 		return nil
@@ -200,12 +206,12 @@ func (f *Fetcher) checkDialAddress(address string) error {
 	if err != nil {
 		return fmt.Errorf("unexpected dial address %q: %w", address, err)
 	}
-	ip := net.ParseIP(host)
-	if ip == nil {
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
 		return fmt.Errorf("dial address %q is not an IP literal", address)
 	}
-	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
-		return fmt.Errorf("resolved address %s is private, loopback, or link-local", ip)
+	if reason := f.policy.checkAddress(addr); reason != "" {
+		return fmt.Errorf("resolved %s", reason)
 	}
 	return nil
 }

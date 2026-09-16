@@ -288,7 +288,7 @@ func TestQuarantineBlocksPrivateDialEndToEnd(t *testing.T) {
 	results := fetcher.Quarantine(context.Background(), QuarantineRequest{
 		URLs: []string{fmt.Sprintf("http://localtest.invalid:%s/a.png", parsed.Port())},
 	})
-	if results[0].Status != StatusRefused || !strings.Contains(results[0].Reason, "private") {
+	if results[0].Status != StatusRefused || !strings.Contains(results[0].Reason, "resolved address 127.0.0.1 is in refused range 127.0.0.0/8") {
 		t.Fatalf("private resolution must be refused at connect time: %+v", results[0])
 	}
 }

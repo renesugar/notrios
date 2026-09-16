@@ -51,6 +51,17 @@ func New(cfg config.Config) (*Service, error) {
 	if err := profiles.ValidateStartup(context.Background(), cfg); err != nil {
 		return nil, err
 	}
+	// The loader refuses a malformed security.remote_media block; a Config
+	// built in code is checked here, so the service never starts with ranges
+	// it cannot apply (J28).
+	if _, err := cfg.Security.RemoteMedia.Rules(); err != nil {
+		return nil, fmt.Errorf("remote-media address ranges: %w", err)
+	}
+	// Said once at start: a stated set that omits default ranges, exceptions
+	// in force, or a set switched off by allow_private_networks (J28 D2, D5).
+	for _, warning := range cfg.RemoteMediaAddressWarnings() {
+		log.Printf("remote media: %s", warning)
+	}
 	if err := config.EnsureDirectories(cfg); err != nil {
 		return nil, err
 	}

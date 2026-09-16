@@ -1647,6 +1647,28 @@
       }
     },
     {
+      "id": "configuration-remote-media-example-2",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "language": "bash",
+      "sha256": "6c3db992105ec5507aa906316a54ab3d3e91ec8b89d0fd01a1c48e71b994e0e2",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
       "id": "configuration-search-example-1",
       "path": "docs/configuration.md",
       "section": "search",

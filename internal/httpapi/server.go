@@ -126,13 +126,13 @@ func NewServerWithOptions(options ServerOptions) *Server {
 		mux:         http.NewServeMux(),
 		store:       options.Store,
 		config:      cfg,
-		mediaPolicy: media.NewPolicy(cfg.RemoteMedia),
+		mediaPolicy: media.NewPolicy(cfg.RemoteMedia, media.WithAddressRanges(cfg.Security.RemoteMedia)),
 		searchCache: newMergedSearchCache(),
 	}
 	if options.Store != nil {
 		s.app = application.New(options.Store)
 		// Lazy fetcher inside: no filesystem side effects until first use.
-		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+		s.localizer = localize.New(cfg.RemoteMedia, options.Store, media.WithAddressRanges(cfg.Security.RemoteMedia))
 	}
 	// A missing interface is not fatal for the headless service: REST and MCP
 	// work without it. The GUI checks separately and refuses to open a window.
@@ -987,17 +987,33 @@ func (s *Server) handleMediaPolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) mediaPolicyStatus() *api.MediaPolicyStatus {
+	refused, permitted := []string{}, []string{}
+	if rules, err := s.config.Security.RemoteMedia.Rules(); err == nil {
+		refused, permitted = rules.Refused(), rules.Permitted()
+	}
+	origin := "default"
+	if s.config.Security.RemoteMedia.RefusedStated() {
+		origin = "configuration"
+	}
+	warnings := s.config.RemoteMediaAddressWarnings()
+	if warnings == nil {
+		warnings = []string{}
+	}
 	return &api.MediaPolicyStatus{
-		DefaultAction:        s.config.RemoteMedia.DefaultAction,
-		AllowPrivateNetworks: s.config.RemoteMedia.AllowPrivateNetworks,
-		MaxRedirects:         s.config.RemoteMedia.MaxRedirects,
-		FetchTimeoutSeconds:  s.config.RemoteMedia.FetchTimeoutSeconds,
-		BlockedSchemes:       len(s.config.RemoteMedia.BlockedSchemes),
-		AllowedDomains:       len(s.config.RemoteMedia.AllowedDomains),
-		BlockedDomains:       len(s.config.RemoteMedia.BlockedDomains),
-		ReviewDomains:        len(s.config.RemoteMedia.ReviewDomains),
-		MaxBytes:             s.config.RemoteMedia.MaxBytes,
-		QuarantineDir:        s.config.RemoteMedia.QuarantineDir,
+		DefaultAction:          s.config.RemoteMedia.DefaultAction,
+		AllowPrivateNetworks:   s.config.RemoteMedia.AllowPrivateNetworks,
+		MaxRedirects:           s.config.RemoteMedia.MaxRedirects,
+		FetchTimeoutSeconds:    s.config.RemoteMedia.FetchTimeoutSeconds,
+		BlockedSchemes:         len(s.config.RemoteMedia.BlockedSchemes),
+		AllowedDomains:         len(s.config.RemoteMedia.AllowedDomains),
+		BlockedDomains:         len(s.config.RemoteMedia.BlockedDomains),
+		ReviewDomains:          len(s.config.RemoteMedia.ReviewDomains),
+		MaxBytes:               s.config.RemoteMedia.MaxBytes,
+		QuarantineDir:          s.config.RemoteMedia.QuarantineDir,
+		RefusedAddressRanges:   refused,
+		PermittedAddressRanges: permitted,
+		AddressRangesOrigin:    origin,
+		Warnings:               warnings,
 	}
 }
 

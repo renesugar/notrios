@@ -64,6 +64,18 @@
       ],
       "verify": "notriosctl config show --config one-domain.yaml --json",
       "postcondition": "config-show-origin-file"
+    },
+    {
+      "section": "remote-media",
+      "ordinal": 2,
+      "use_case": "refuse a stated set of address ranges and permit a home media server",
+      "file": "address-ranges.yaml",
+      "settings": [
+        {"key": "security.remote_media.refused_address_ranges", "list": ["127.0.0.0/8", "10.0.0.0/8", "169.254.0.0/16", "192.168.0.0/16"]},
+        {"key": "security.remote_media.permitted_address_ranges", "list": ["192.168.1.0/24"]}
+      ],
+      "verify": "notriosctl config show --config address-ranges.yaml --json",
+      "postcondition": "config-show-origin-file"
     }
   ]
 }

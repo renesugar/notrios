@@ -1963,6 +1963,30 @@ components:
               additionalProperties: { type: integer, format: int64 }
               description: Download size caps in bytes per media class (image/video/pdf).
             quarantine_dir: { type: string }
+            refused_address_ranges:
+              type: array
+              items: { type: string }
+              description: >
+                Effective refused address ranges in CIDR form (J28): the
+                configuration's security.remote_media.refused_address_ranges
+                when stated, otherwise the default set in
+                SECURITY_AND_MEDIA_POLICY.md. Not applied when
+                allow_private_networks is true.
+            permitted_address_ranges:
+              type: array
+              items: { type: string }
+              description: Exceptions to the refused set; never loopback or "this host".
+            address_ranges_origin:
+              type: string
+              enum: [default, configuration]
+              description: Whether the refused set is the default or stated by the configuration.
+            warnings:
+              type: array
+              items: { type: string }
+              description: >
+                What service start logs about the address set: default ranges a
+                stated set omits, exceptions in force, or a set switched off by
+                allow_private_networks.
         search_sidecar:
           type: object
           required: [configured, available, active, state, backlog, failed_jobs]

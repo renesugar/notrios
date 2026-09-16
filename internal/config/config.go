@@ -30,6 +30,7 @@ type Config struct {
 	SearchSidecar SearchSidecarConfig `json:"search_sidecar"`
 	RemoteMedia   RemoteMediaConfig   `json:"remote_media"`
 	Retention     RetentionConfig     `json:"retention"`
+	Security      SecurityConfig      `json:"security"`
 }
 
 // ProfileConfig binds a generated per-profile config file back to the local
@@ -324,7 +325,10 @@ func load(path string, provided, assigned map[string]bool) (Config, error) {
 	// Tracks which config lists have received their first dash item, so a
 	// configured list replaces the compiled default instead of appending.
 	seenLists := map[string]bool{}
+	security := &securityBlock{}
+	lineNumber := 0
 	for scanner.Scan() {
+		lineNumber++
 		raw := scanner.Text()
 		line := stripComment(raw)
 		if strings.TrimSpace(line) == "" {
@@ -332,6 +336,15 @@ func load(path string, provided, assigned map[string]bool) (Config, error) {
 		}
 		indent := leadingSpaces(line)
 		trimmed := strings.TrimSpace(line)
+		if section == "security" && indent > 0 {
+			if err := security.line(&cfg, indent, trimmed, provided); err != nil {
+				return Config{}, fmt.Errorf("parse config %q line %d: %w", path, lineNumber, err)
+			}
+			continue
+		}
+		if err := security.close(); err != nil {
+			return Config{}, fmt.Errorf("parse config %q line %d: %w", path, lineNumber, err)
+		}
 		if strings.HasPrefix(trimmed, "-") {
 			item := parseScalar(strings.TrimSpace(strings.TrimPrefix(trimmed, "-")))
 			applyListItem(&cfg, section, subsection, item, seenLists)
@@ -359,6 +372,15 @@ func load(path string, provided, assigned map[string]bool) (Config, error) {
 	}
 	if err := scanner.Err(); err != nil {
 		return Config{}, fmt.Errorf("read config %q: %w", path, err)
+	}
+	if err := security.close(); err != nil {
+		return Config{}, fmt.Errorf("parse config %q: %w", path, err)
+	}
+	// A malformed address range fails loading, naming the entry (J28 D3):
+	// dropping an entry from a refusal list would silently widen what remote
+	// media may reach.
+	if _, err := cfg.Security.RemoteMedia.Rules(); err != nil {
+		return Config{}, fmt.Errorf("config %q: %w", path, err)
 	}
 	if err := applyResolvedRoots(&cfg, provided, assigned); err != nil {
 		return Config{}, err

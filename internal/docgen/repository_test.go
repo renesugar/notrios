@@ -23,8 +23,11 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 63 -> 64 and 53 -> 54 in v1.0 J22 slice B: data.temp_dir is each
 		// instance's own temp directory, so instances on one machine never share
 		// temporary work.
-		{configAnchor, 64},
-		{defaultAnchor, 54},
+		// 64 -> 68 and 54 -> 56 in v1.0 J28 slice C: the security section, its
+		// remote_media subsection, and refused_address_ranges and
+		// permitted_address_ranges.
+		{configAnchor, 68},
+		{defaultAnchor, 56},
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
 		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.

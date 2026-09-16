@@ -124,32 +124,44 @@ func (e Example) renderSettings() (string, error) {
 		return "", fmt.Errorf("%s: an example that sets nothing", e.UseCase)
 	}
 	var out strings.Builder
-	section := ""
+	section, group := "", ""
 	for _, setting := range e.Settings {
-		head, leaf, nested := strings.Cut(setting.Key, ".")
-		if !nested {
+		parts := strings.Split(setting.Key, ".")
+		switch {
+		case len(parts) < 2:
 			return "", fmt.Errorf("%s: %q is not a sectioned key", e.UseCase, setting.Key)
-		}
-		if strings.Contains(leaf, ".") {
+		case len(parts) > 3:
 			return "", fmt.Errorf("%s: %q nests deeper than a published example should",
 				e.UseCase, setting.Key)
 		}
-		if head != section {
+		// Two levels is every section; three is a section's surface block, such
+		// as security.remote_media.<key> (J28), and nothing goes deeper.
+		head, leaf, indent := parts[0], parts[len(parts)-1], "  "
+		if parts[0] != section {
 			out.WriteString(head + ":\n")
-			section = head
+			section, group = head, ""
+		}
+		if len(parts) == 3 {
+			if parts[1] != group {
+				out.WriteString("  " + parts[1] + ":\n")
+				group = parts[1]
+			}
+			indent = "    "
+		} else {
+			group = ""
 		}
 		switch {
 		case len(setting.List) > 0 && setting.Value != "":
 			return "", fmt.Errorf("%s: %q has both a value and a list", e.UseCase, setting.Key)
 		case len(setting.List) > 0:
-			out.WriteString("  " + leaf + ":\n")
+			out.WriteString(indent + leaf + ":\n")
 			for _, member := range setting.List {
-				out.WriteString("    - " + member + "\n")
+				out.WriteString(indent + "  - " + member + "\n")
 			}
 		case setting.Value == "":
 			return "", fmt.Errorf("%s: %q has no value", e.UseCase, setting.Key)
 		default:
-			out.WriteString("  " + leaf + ": " + setting.Value + "\n")
+			out.WriteString(indent + leaf + ": " + setting.Value + "\n")
 		}
 	}
 	return out.String(), nil

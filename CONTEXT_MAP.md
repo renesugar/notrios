@@ -135,6 +135,11 @@ Feature contracts, which describe one capability rather than the project:
 
 ## Packages
 
+- `internal/addressrange/` — the reserved address ranges remote media refuses
+  (J28): the dated default set, parsing and validation of the
+  `security.remote_media` block, the embedded-IPv4 rule, and the one `Check`
+  both the static URL check and the connect-time dial check call. A leaf
+  package so the configuration loader can reject malformed entries.
 - `internal/api/` — shared API request/response models.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
 - `internal/application/` — the transport-neutral application facade H0 chose as

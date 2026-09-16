@@ -4,7 +4,7 @@
   "milestone": "v1.0",
   "what_this_is": "What is known about every frozen REST route and MCP tool, derived rather than recalled, so the review of what 1.0 should promise happens against evidence and in a defensible order.",
   "these_are_not_verdicts": "described/documented/exercised/tested are facts about the repository, not judgements about the surface. A route with all four may still be a promise 1.0 should not make; a route with none may be load-bearing and correct. The decisions are recorded separately, by a person, and say so.",
-  "content_commit": "06b8914832a465675ba44c0660a622c5e00b673f",
+  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
   "counts": {
     "rest": {
       "members": 113,
@@ -410,7 +410,8 @@
       "path": "/api/v1/media-policy",
       "described": true,
       "documented": [
-        "docs/api/rest.md"
+        "docs/api/rest.md",
+        "docs/service.md"
       ],
       "exercised": false,
       "tested": true

@@ -62,6 +62,14 @@ type MediaPolicyStatus struct {
 	ReviewDomains        int              `json:"review_domains"`
 	MaxBytes             map[string]int64 `json:"max_bytes,omitempty"`
 	QuarantineDir        string           `json:"quarantine_dir,omitempty"`
+	// RefusedAddressRanges is the effective refused set (J28), and
+	// AddressRangesOrigin says whether the configuration stated it
+	// ("configuration") or it is the default ("default").
+	RefusedAddressRanges   []string `json:"refused_address_ranges"`
+	PermittedAddressRanges []string `json:"permitted_address_ranges"`
+	AddressRangesOrigin    string   `json:"address_ranges_origin"`
+	// Warnings are the sentences service start logs about the address set.
+	Warnings []string `json:"warnings"`
 }
 
 type DatabaseStatus struct {
