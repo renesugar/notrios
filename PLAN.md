@@ -2728,7 +2728,10 @@ arbitrary:
 
 An owner who wants them refused lists them.
 
-### The default refusal set (recommended)
+### The default refusal set
+
+Decided by D4's consequence below: 15 IPv4 ranges and 16 IPv6 ranges, plus the
+embedded-IPv4 rule, which is not a list entry.
 
 IPv4:
 
@@ -2756,9 +2759,6 @@ IPv6:
 |---|---|---|
 | `::/128` | unspecified | RFC 4291 |
 | `::1/128` | loopback | RFC 4291 |
-| `::/96` | deprecated IPv4-compatible; embedded IPv4 checked (D4) | RFC 4291 |
-| `::ffff:0:0/96` | IPv4-mapped; embedded IPv4 checked (D4) | RFC 4291 |
-| `64:ff9b::/96` | NAT64 well-known prefix; embedded IPv4 checked (D4) | RFC 6052 |
 | `64:ff9b:1::/48` | local-use NAT64 | RFC 8215 |
 | `100::/64` | discard-only | RFC 6666 |
 | `100:0:0:1::/64` | dummy prefix | RFC 9780 |
@@ -2774,15 +2774,29 @@ IPv6:
 | `fec0::/10` | deprecated site-local | RFC 3879 |
 | `ff00::/8` | multicast | RFC 4291 |
 
+**The embedded-IPv4 rule (D4).** An address in `::ffff:0:0/96` (IPv4-mapped,
+RFC 4291), `::/96` (deprecated IPv4-compatible, RFC 4291) or `64:ff9b::/96`
+(NAT64 well-known prefix, RFC 6052) is refused when its IPv6 form matches an
+IPv6 entry **or** its embedded IPv4 address matches an IPv4 entry of the
+effective set. The IPv6 form is checked first, so `::` and `::1`, which lie
+inside `::/96`, stay refused as themselves.
+
+**Why these three prefixes are not in the table.** A table entry refuses its
+whole range, and D4 decided against refusing these prefixes outright. They are
+therefore not default entries. The rule is fixed behaviour, applied against
+whichever IPv4 set is in effect, stated or default. An owner who lists one of
+the prefixes in a stated set refuses that prefix outright, as an explicit
+choice. The D2 warning does not name them, because they are not default ranges.
+
 `localhost` and `*.localhost` names stay refused at the static check, as they
 are today (RFC 6761).
 
-### The configuration block (recommended shape)
+### The configuration block (D1)
 
 ```yaml
 security:
   remote_media:
-    # Absent: the default set above. Present: exactly this set.
+    # Absent: the default set above. Present, even as []: exactly this set.
     refused_address_ranges:
       - "127.0.0.0/8"
       - "10.0.0.0/8"
@@ -2793,64 +2807,92 @@ security:
 
 `notriosctl config show` reports the effective set and whether it came from
 the file or the default. The block governs remote-media fetches only (D6).
+Lists are read at `security.remote_media.<key>`, one level deeper than the
+loader reads lists today, so the loader is extended for this section only.
+
+### Owner decisions, 2026-09-16
+
+Every recommendation was accepted as written.
+
+- **D1 — Where the block lives.** A new top-level `security:` section, with a
+  `remote_media:` subsection whose name states the surface it governs.
+- **D2 — Replace or extend.** A stated list **replaces** the default. Both
+  service start and `config show` warn, naming every default range the
+  configured list omits.
+- **D3 — Malformed entries.** An entry that is not a valid CIDR or address
+  fails configuration loading, and the error names the entry.
+- **D4 — IPv4 carried inside IPv6.** For IPv4-mapped, IPv4-compatible and
+  `64:ff9b::/96` addresses, the embedded IPv4 address is extracted and checked
+  against the IPv4 set, instead of refusing the prefix outright. On IPv6-only
+  networks with DNS64, every IPv4-only media host resolves into `64:ff9b::`, so
+  refusing that prefix would break localization there; checking the embedded
+  address keeps `64:ff9b::7f00:1` refused. 6to4 (`2002::/16`) and Teredo
+  (`2001::/32`) stay refused whole.
+- **D5 — `allow_private_networks`.** Kept, a frozen configuration key (I8), with
+  its meaning unchanged: `true` switches off the refused set at both checks,
+  as it switches off today's checks.
+- **D6 — What the block governs.** Remote-media fetches only. Sync's dialing is
+  untouched.
+- **D7 — Exceptions.** `permitted_address_ranges` is included, empty by
+  default.
+
+### Consequences applied without a further decision
+
+These follow from the decisions above, and the plan now says them:
+
+- **From D4:** the three embedded-IPv4 prefixes left the default table and
+  became the rule stated beside it (above). Otherwise a default entry would
+  refuse the NAT64 prefix outright, which is what D4 rejected.
+- **From D2:** a stated empty list, `refused_address_ranges: []`, refuses
+  nothing, and the warning names every default range.
+- **From D3:** the rule covers both lists. A malformed
+  `permitted_address_ranges` entry fails loading too, since silently dropping
+  one would change what is fetchable without saying so.
+
+### Further recommendations
+
+None of these changes a decision; each makes a decided behaviour visible.
+
+- **Where warnings appear.** `config show --json` carries a `warnings` array;
+  plain `config show` prints them to standard error; the REST configuration
+  view reports the effective set, its origin and the same warnings; service
+  start logs them once.
+- **A stated set that does nothing.** When `allow_private_networks: true`,
+  `config show` and service start say that the refused set, including the
+  `localhost` names, is inactive. A stated set switched off by D5 should not
+  look as if it applies.
+- **Exceptions are visible.** A non-empty `permitted_address_ranges` is logged
+  at service start and shown by `config show`. An exception is still subject
+  to domain policy.
+- **Older binaries.** The loader ignores unknown sections by design, so a
+  binary from before J28 ignores `security:` and applies today's narrower
+  checks without warning. The configuration guide says which version first
+  reads the block. Old binaries cannot be changed; this is a documentation
+  duty, not a code one.
 
 ### Open decisions
 
-Each has a recommendation; none is decided until the owner says so.
+D7's answer did not restate two parts of its recommendation. J28-B and J28-C
+need both.
 
-- **D1 — Where the block lives.** Recommended: a new top-level `security:`
-  section, with a `remote_media:` subsection whose name states the surface it
-  governs, as above. The alternative is a `security:` subsection inside
-  `remote_media:`. That keeps every media key together but reads less like the
-  explicit security block the direction asks for. Either shape needs the
-  configuration loader extended: today it accepts lists only at
-  `remote_media.<key>`, not one level deeper.
-- **D2 — Replace or extend.** The direction says the default applies when the
-  configuration does not specify a set, so a stated list **replaces** the
-  default. That matches how `blocked_schemes` and the domain lists already
-  behave. The risk is a one-entry list that silently drops loopback.
-  Recommended: replace, and have both service start and `config show` warn,
-  naming every default range the configured list omits. Rejected: refusing to
-  start in that case, because an owner may mean it.
-- **D3 — Malformed entries.** Recommended: an entry that is not a valid CIDR
-  or address fails configuration loading and names the entry. The loader
-  today silently ignores invalid values for some keys. Dropping an entry from
-  a *refusal* list silently widens what may be fetched, which is the one
-  direction that must not be silent.
-- **D4 — IPv4 carried inside IPv6.** Recommended: for IPv4-mapped,
-  IPv4-compatible and `64:ff9b::/96` addresses, extract the embedded IPv4
-  address and apply the IPv4 set to it, instead of refusing the prefix
-  outright.
-  - This matters most for NAT64. On IPv6-only networks with DNS64, some
-    mobile carriers among them, **every** IPv4-only media host resolves to
-    `64:ff9b::<ipv4>`. Refusing the prefix would break localization there
-    entirely, while checking the embedded address keeps `64:ff9b::7f00:1`
-    refused.
-  - The prefixes still appear in the default set, so that an owner-configured
-    set without them keeps the behaviour visible.
-  - 6to4 and Teredo are refused whole, because both are deprecated or rare for
-    serving media, and Teredo's embedded address is obfuscated.
-  - The alternative is to refuse all four prefixes outright: simpler, but it
-    breaks NAT64-only networks.
-- **D5 — `allow_private_networks`.** It is a frozen configuration key (I8).
-  Recommended: keep it, with its meaning unchanged: `true` switches off the
-  refused set at both checks, as it switches off today's checks. It is
-  documented as the coarse switch, and `permitted_address_ranges` as the
-  narrow one. Deprecating it in favour of an empty list is the alternative,
-  and would need I8's compatibility sentence.
-- **D6 — What the block governs.** Recommended: remote-media fetches only. The
-  sync REST client dials a peer the owner configured by address, often on
-  their own network, and applying media's refusal set to it would break LAN
-  sync for no protection gained. The key name says `remote_media` so a later
-  surface gets its own list rather than inheriting this one.
-- **D7 — Exceptions.** The references suggest an allow-list override.
-  Recommended: include `permitted_address_ranges`, empty by default.
-  - Its use case is a home NAS or media server on `192.168.x.x`, which today
-    requires `allow_private_networks: true` for everything.
-  - An exception is still subject to domain policy, and service start logs it.
-  - Rejected: letting an exception re-permit `127.0.0.0/8`, `::1/128`,
-    `0.0.0.0/8` or `::/128`. A loopback exception would make the service fetch
-    from itself. Those four need `allow_private_networks: true`.
+- **D8 — Whether an exception may re-permit loopback or "this host".**
+  Recommended: no. `permitted_address_ranges` cannot permit anything in
+  `127.0.0.0/8`, `::1/128`, `0.0.0.0/8` or `::/128`, including through the
+  embedded-IPv4 rule (`::ffff:127.0.0.1`). An entry overlapping them fails
+  loading, naming the entry. Reaching those addresses needs
+  `allow_private_networks: true`, the coarse switch D5 kept.
+  - The reason: a loopback exception makes the service fetch from its own
+    REST, MCP and sync endpoints on a URL a note supplied.
+  - The alternative, permitting them like any other range, is the reference's
+    model. It fits a multi-service deployment, not a single-user note app
+    whose own API listens on loopback.
+- **D9 — Whether an exception reaches embedded forms.** Recommended: yes. An
+  exception is matched with the same rule as the refused set, so permitting
+  `192.168.1.0/24` also permits `::ffff:192.168.1.5` and
+  `64:ff9b::c0a8:105`, which name the same IPv4 host. D8's guard applies to
+  those forms too. The alternative, matching exceptions against the literal
+  IPv6 form only, would make a permitted NAS unreachable on a NAT64 network,
+  which is the case D4 exists for.
 
 **Scope.**
 
@@ -2861,7 +2903,7 @@ Each has a recommendation; none is decided until the owner says so.
   - the ranges deliberately left out and why;
   - how embedded IPv4 is treated.
 
-  Owner decisions D1–D7 are recorded there.
+  Owner decisions D1–D7 and, once made, D8–D9 are recorded there.
 - **J28-B, one helper at both checks.** One function in `internal/media`
   applies the effective set, the exceptions and the embedded-IPv4 rule. Both
   the static literal check and `checkDialAddress` call it, and neither keeps
@@ -2873,18 +2915,27 @@ Each has a recommendation; none is decided until the owner says so.
   - Cases prove that a registry block left out stays fetchable, that an
     embedded public IPv4 behind `64:ff9b::` is not refused, and that
     `64:ff9b::7f00:1` is.
+  - Cases also cover: `::1` and `::` still refused as themselves; an exception
+    permitting a private range and its embedded forms (D9); an exception never
+    permitting loopback or "this host" (D8); and `allow_private_networks: true`
+    switching off both checks (D5).
 - **J28-C, the configuration block.** The loader reads the block chosen in D1.
   - An absent block yields the default set; a stated block replaces it (D2).
-  - A malformed entry fails loading and names the entry (D3).
+  - A malformed entry in either list fails loading and names the entry (D3),
+    as does an exception overlapping loopback or "this host" (D8).
   - `config show`, and the REST configuration view that already exposes
     `allow_private_networks`, report the effective set and its origin.
-  - Service start warns about default ranges a stated set omits.
+  - Service start and `config show` warn about default ranges a stated set
+    omits (D2), report exceptions, and say when `allow_private_networks: true`
+    leaves the set inactive.
   - The frozen configuration surface is rebuilt with `build_freeze.py`, and the
     commit says what moved and that it is additive.
 - **J28-D, the documentation.**
   - `docs/configuration.md` gains a tracked example, through
     `docs/docexamples/configuration.json`, showing a stated set and an
     exception, checked by `config show`.
+  - The configuration guide says which version first reads `security:`, since
+    older binaries ignore it.
   - `docs/service.md`'s key list and table, `config/config.example.yaml` (the
     block commented out, with the default named), `SECURITY_REVIEW.md`'s media
     claims, and `docs/troubleshooting.md` (a refusal message and what to
@@ -2903,8 +2954,8 @@ Each has a recommendation; none is decided until the owner says so.
 - The default set is checked against the IANA registries once, when J28 is
   implemented, and dated. Notrios does not fetch the registries at run time.
 
-**Dependencies.** J8, which found it. The owner's decisions D1–D7 must be made
-before J28-B and J28-C start.
+**Dependencies.** J8, which found it. D1–D7 are decided. D8 and D9 must be
+decided before J28-B and J28-C start; J28-A can start now.
 
 **Working state.**
 - The policy names a dated default set, which the configuration can replace

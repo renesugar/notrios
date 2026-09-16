@@ -703,17 +703,17 @@
       "slices": [
         {
           "id": "J28-A",
-          "statement": "SECURITY_AND_MEDIA_POLICY.md names a dated default refusal set with each range's purpose and source, the ranges left out and why, and the owner's decisions D1-D7 (J8 finding J8-F2)",
+          "statement": "SECURITY_AND_MEDIA_POLICY.md names a dated default refusal set with each range's purpose and source, the ranges left out and why, the embedded-IPv4 rule, and the owner's decisions (J8 finding J8-F2)",
           "state": "not-started"
         },
         {
           "id": "J28-B",
-          "statement": "One helper applies the effective set, exceptions and embedded-IPv4 rule at the static check and at the connect-time check, with a case per default range at both",
+          "statement": "One helper applies the effective set, the embedded-IPv4 rule and the exceptions at the static check and at the connect-time check, with a case per default range at both",
           "state": "not-started"
         },
         {
           "id": "J28-C",
-          "statement": "An explicit security configuration block states the refused ranges, the default applies when it is absent, a malformed entry fails loading, and config show reports the effective set and its origin",
+          "statement": "security.remote_media states the refused and permitted ranges, the default applies when absent, a malformed entry fails loading, and config show and service start report the effective set, its origin and every omitted default range",
           "state": "not-started"
         },
         {
