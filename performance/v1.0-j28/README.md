@@ -119,6 +119,13 @@ Each count change carries a comment saying why.
 **Validation.** The whole Go suite passes through `scripts/check_temp_leaks.sh`,
 which left no `notrios-*` entry, and `validate-scaffold.sh` passes.
 
+**Caught by the first archive attempt.** `package_release.sh` at `3a472ed`
+stopped at `make g18g-validate`: the new paragraph in `docs/configuration.md`
+linked `../SECURITY_AND_MEDIA_POLICY.md`, which the documentation site does not
+publish. The local checks above had not built the site. The file is now named
+in backticks, as the other published pages name it, and `make g18g-validate`
+passes. The archive is built from the fix commit.
+
 **The frozen configuration surface moved (I8).** `build_freeze.py` records 3
 names added: `security`, `refused_address_ranges` and
 `permitted_address_ranges`, taking the count from 61 to 64. The change is

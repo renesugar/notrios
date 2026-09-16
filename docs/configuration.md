@@ -219,9 +219,8 @@ notriosctl config show --config one-domain.yaml --json
 
 **Refusing address ranges.** Remote media never reaches loopback, private
 networks, link-local addresses (cloud metadata among them) or the other reserved
-ranges listed in
-[`SECURITY_AND_MEDIA_POLICY.md`](../SECURITY_AND_MEDIA_POLICY.md), which is the
-default set. The check applies to an address written in a URL and to the
+ranges listed in `SECURITY_AND_MEDIA_POLICY.md` in the source repository,
+which is the default set. The check applies to an address written in a URL and to the
 address a host name resolves to when Notrios connects, redirects included. An
 IPv4 address carried inside an IPv6 one, such as `::ffff:10.0.0.1` or
 `64:ff9b::7f00:1` on a NAT64 network, is checked as the IPv4 address.
