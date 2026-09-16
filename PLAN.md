@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**25 items: 19 complete, 0 in progress, 6 not started, 0 deferred.**
+**26 items: 19 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -86,6 +86,7 @@ this section is archived when the plan completes and the rules are not.
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
+| J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | not-started | 0/6 | 6 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -2424,3 +2425,104 @@ The importer reads none of these except the media folder.
 post of the owner's 3.3 GB archive, and that count equals `tweet-headers.js`
 less the deleted posts plus the community post. It does so within bounded
 memory, measured and recorded, and fails clearly on a hostile archive.
+
+## J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded
+
+**Goal.** A user hands Notrios the ZIP they downloaded from ChatGPT, from the
+OpenAI Privacy Portal, or from Claude. Every conversation becomes its own note,
+with its code blocks and file attachments carried across, and the real archives
+are measured.
+
+**What was found** (2026-09-15, owner request; the same question J25 asked of
+the Twitter/X importer). The conversation importers from v0.2 have never run on
+a real archive. Both take `conversations.json`, read it whole with
+`os.ReadFile`, and import message text only. Measured against the owner's three
+archives:
+
+| | ChatGPT export (21.3 MB) | OpenAI Privacy Portal (154.3 MB) | Claude (5.8 MB) |
+|---|---|---|---|
+| shape | one ZIP: `conversations.json`, `chat.html`, 71 asset files | one ZIP holding **nested ZIPs**: `User Online Activity/Conversations__….zip`, `Files__….zip`, `Ads__….zip` | one ZIP: `conversations.json`, `users.json`, `projects/*.json` |
+| conversations | 72 in `conversations.json` | **147 across `conversations-000.json` and `conversations-001.json`** | 75 in `conversations.json` |
+| assets | `file-<id>-<name>.<ext>`, `user-<id>/file_<hash>-<name>.<ext>` | **225 `file-<id>.dat`**, extensions stripped | none: attachments carry extracted text, `files` carry a name and UUID only |
+| what today's importer does | needs the ZIP extracted; imports text only, no assets | cannot read it at all: the conversations are inside a nested ZIP | needs the ZIP extracted; imports text only |
+
+- **Assets can be matched, under either prefix.** File IDs appear as both
+  `file-<id>` and `file_<hash>`, on disk and in the JSON, and the second is the
+  common one: 48 of the direct export's 71 assets, 207 of the portal's 225
+  `.dat` files, and 248 of 250 `library_files.json` IDs. `file-service://`
+  pointers (18) name the first and `sediment://` pointers (40) the second.
+  Matching accepts either. In the direct export every asset
+  pointer's file ID is present on disk (58 of 58), and 64 of 79 attachment IDs
+  are. In the
+  Privacy Portal, `conversation_asset_file_names.json` names 132 of the 225
+  `.dat` files, and **all 93 of the rest appear in `library_files.json`**, which
+  carries `file_extension` and `mime_type`. Between the two, every `.dat` file
+  can be given its real name and type.
+- **`chat.html` is a reference, not a source.** It renders conversations in both
+  export formats, but in the Privacy Portal export it shows the `.dat` names
+  rather than the real ones, so the JSON files are what the importer reads.
+- **The file library is separate.** `Files__….zip` holds the ChatGPT file
+  library (27 files here), most of whose names do not match a
+  `library_files.json` record, so they are matched by ID and type rather than
+  by name.
+- **Messages carry more than text.** ChatGPT: code (181), execution output
+  (121), thoughts (105), reasoning recaps (60), browsing displays (26),
+  multimodal parts (52 asset pointers); the Privacy Portal export is mostly
+  thoughts (1,905) and text (1,638). Claude: `tool_use` (1,318),
+  `tool_result` (1,317), `thinking` (631), `text` (1,263), plus 37 attachments
+  with extracted text and 109 file references.
+
+**Scope, by owner decision (2026-09-15).**
+
+- **J26-A, one archive reader for every importer.** J25's ZIP-or-folder source
+  moves out of `internal/importers/twitter` into a package both importers use,
+  keeping its bounds, its refusal of unsafe entries and its streaming decode.
+  It gains **nested ZIP** support: a ZIP inside a ZIP is read in place, without
+  extracting either. The Twitter/X importer keeps its behaviour and its tests.
+- **J26-B, the ChatGPT export ZIP.** `import chatgpt` accepts the downloaded
+  ZIP, the extracted folder, or a `conversations.json`, and reads every
+  `conversations*.json` shard. Each conversation is one note in the **ChatGPT**
+  notebook. Assets referenced by a message are imported as resources and
+  embedded, matched by file ID.
+- **J26-C, the OpenAI Privacy Portal ZIP.** The same command accepts the portal
+  export: the conversations and files are read from the nested ZIPs under
+  `User Online Activity/`, in place.
+  - `.dat` assets recover their real name and type from
+    `conversation_asset_file_names.json`, then `library_files.json`, then by
+    sniffing the bytes; each source is recorded in the report.
+  - **The file library is imported** (owner decision). A file a conversation
+    references is attached to that note; one nothing references gets a stub
+    note in a **ChatGPT Files** notebook, so it is searchable rather than
+    silently dropped.
+- **J26-D, the Claude archive ZIP.** `import claude` accepts the downloaded
+  ZIP, and reads sibling `batch-NNNN` ZIPs when the user passes a directory
+  holding them. Each conversation is one note in the **Claude** notebook,
+  attachment text is carried into the note, and file references are recorded by
+  name. **Each project becomes a note** (owner decision): its description,
+  prompt template and each doc.
+- **J26-E, what a note contains** (owner decision). Code and execution output
+  become fenced code blocks, and browsing results become text. Thinking,
+  reasoning recaps and tool-call plumbing are **not** imported, and are counted
+  in the report. Attachments are named in the note where their message is.
+- **J26-F, the three real archives, measured.** Each is dry-run, imported and
+  re-imported, timed, with peak RSS, and every conversation and asset
+  accounted for against the archive's own counts.
+
+**Boundaries.**
+- The archives are private. Nothing from them (text, names, IDs, bytes) goes
+  into the repository or into evidence: only counts, sizes and timings. Every
+  fixture is synthetic.
+- Runs use scratch space on `/media/renes/HD2`, never RAM-backed `/tmp`, with
+  HOME, XDG and TMPDIR isolated.
+- No network access, and nothing is extracted to disk from any archive.
+- Bounds on entry counts, decompressed sizes and nesting depth are enforced and
+  tested, including a ZIP nested inside a ZIP.
+- Re-import stays idempotent, and a note the user trashed is never resurrected.
+
+**Dependencies.** J25, for the archive reader this generalises; J22, for the
+instance temp directory.
+
+**Working state.** `import chatgpt <download>.zip`, `import chatgpt
+<privacy-portal>.zip` and `import claude <download>.zip` each import every
+conversation in the owner's archives as its own note, with code blocks and
+attachments, measured and recorded, and refuse a hostile archive clearly.
