@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**25 items: 18 complete, 1 in progress, 6 not started, 0 deferred.**
+**25 items: 19 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -85,17 +85,9 @@ this section is archived when the plan completes and the rules are not.
 | J22. Stop stores and tests leaving directories in the temp root | complete | 3/3 | — |
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
-| J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | in-progress | 2/3 | 1 |
+| J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
 
-### Started and not finished
-
-**J25. Import a Twitter/X archive as it is downloaded, completely, at its real size**
-
-- `J25-C` The owner's 3.3 GB archive is dry-run, imported and re-imported with phase timings, peak RSS, and every post and media file accounted for — *not-started*
-
-### Not started
-
-Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2356,7 +2348,7 @@ The run has to be identified clearly as its own.
 run only by Codex's, each proven by a test, with `all` kept for callers that
 cannot be identified.
 
-## J25. Import a Twitter/X archive as it is downloaded, completely, at its real size — in progress
+## J25. Import a Twitter/X archive as it is downloaded, completely, at its real size — complete
 
 **Goal.** A user can hand Notrios the ZIP they downloaded from Twitter/X. Every
 post in it is imported, however many files the archive splits them into, and a

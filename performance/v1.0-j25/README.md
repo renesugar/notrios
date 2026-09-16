@@ -208,6 +208,16 @@ interrupted import can be re-run instead of resumed.
 Twitter, ChatGPT and Claude importers is worth its own item. The measurement
 that would justify it is above: 1 h 15 m for 176,424 posts and 3.3 GB of media.
 
+## The archive
+
+Built from `2fd67ec` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 80% remaining, identified as
+  `process ancestry: pid 1616574 is claude` (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j25-2fd67ec.zip`, 25,500,808 bytes, 2,621 entries.
+  `check_release_zip.py` accepts it.
+
 ## Documentation and the evidence that pins it
 
 - **CLI usage** now reads `<twitter-archive.zip | extracted-archive-dir>`, in

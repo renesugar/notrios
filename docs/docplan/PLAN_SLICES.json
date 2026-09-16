@@ -611,7 +611,7 @@
     {
       "id": "J25",
       "title": "Import a Twitter/X archive as it is downloaded, completely, at its real size",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J25-A",
@@ -628,7 +628,8 @@
         {
           "id": "J25-C",
           "statement": "The owner's 3.3 GB archive is dry-run, imported and re-imported with phase timings, peak RSS, and every post and media file accounted for",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
         }
       ]
     }
