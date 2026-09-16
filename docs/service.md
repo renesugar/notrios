@@ -207,7 +207,7 @@ The authoritative, always-current example is `config/config.example.yaml` in the
 | `remote_media.max_redirects` | `5` | redirect-hop cap (policy re-checked per hop) |
 | `remote_media.fetch_timeout_seconds` | `30` | per-download timeout |
 | `remote_media.blocked_schemes` | `file, data, javascript, ftp` | URL schemes never fetched |
-| `remote_media.blocked_domains` / `allowed_domains` / `review_domains` | empty | domain patterns (e.g. `*.wikimedia.org`) forcing block/allow/review |
+| `remote_media.blocked_domains` / `allowed_domains` / `review_domains` | empty | domain patterns (e.g. `*.wikimedia.org`) forcing block/allow/review; `*.` matches subdomains, not the apex. Hosts and patterns are compared case-insensitively with one trailing dot ignored (`example.org.` is `example.org`), and a host with an empty label (`a..b`) is blocked as malformed |
 | `remote_media.max_bytes.<class>` | `image: 20MB`, `video: 200MB`, `pdf: 100MB` | download size caps, human-readable sizes accepted |
 | `remote_media.quarantine_dir` | `./data/quarantine` | staging area for fetched bytes before policy admission |
 | `retention.unreferenced_resource_days` | `30` | recovery window after an unattached upload or final explicit detach |

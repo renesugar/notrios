@@ -70,9 +70,12 @@ func (p *Policy) Evaluate(raw string) (string, string) {
 	if scheme != "http" && scheme != "https" {
 		return ActionBlock, "only http(s) URLs can be localized"
 	}
-	host := strings.ToLower(parsed.Hostname())
-	if host == "" {
+	if parsed.Hostname() == "" {
 		return ActionBlock, "missing host"
+	}
+	host, ok := normalizeHost(parsed.Hostname())
+	if !ok {
+		return ActionBlock, "malformed host"
 	}
 	if !p.cfg.AllowPrivateNetworks && isPrivateHost(host) {
 		return ActionBlock, "private, loopback, or link-local address"
@@ -104,13 +107,47 @@ func isPrivateHost(host string) bool {
 	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified()
 }
 
-// matchDomain matches a host against configured patterns: "example.org"
-// matches exactly; "*.example.org" matches any subdomain (not the apex).
+// normalizeHost returns the one form a host is checked in: lowercased, with a
+// single trailing dot removed, since DNS treats "example.org." and
+// "example.org" as the same name (J27). It reports false for a host with an
+// empty label ("", "a..b", ".a", "a.."), which no resolver treats as a name and
+// which must not fall through to the default action. Address literals pass
+// through unchanged apart from the dot, so "127.0.0.1." is checked as
+// 127.0.0.1. Unicode and IDNA forms are not mapped here.
+func normalizeHost(host string) (string, bool) {
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	if host == "" {
+		return "", false
+	}
+	if net.ParseIP(host) != nil {
+		return host, true
+	}
+	for _, label := range strings.Split(host, ".") {
+		if label == "" {
+			return "", false
+		}
+	}
+	return host, true
+}
+
+// matchDomain matches a normalized host against configured patterns:
+// "example.org" matches exactly; "*.example.org" matches any subdomain (not
+// the apex). Patterns are normalized like hosts, so "example.org." in a list
+// means example.org; a pattern that is malformed once normalized matches
+// nothing.
 func matchDomain(host string, patterns []string) (string, bool) {
 	for _, pattern := range patterns {
-		p := strings.ToLower(strings.TrimSpace(pattern))
-		if p == "" {
+		p := strings.TrimSpace(pattern)
+		wildcard := strings.HasPrefix(p, "*.")
+		if wildcard {
+			p = p[2:]
+		}
+		p, ok := normalizeHost(p)
+		if !ok {
 			continue
+		}
+		if wildcard {
+			p = "*." + p
 		}
 		if strings.HasPrefix(p, "*.") {
 			if strings.HasSuffix(host, p[1:]) {

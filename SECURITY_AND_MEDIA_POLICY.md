@@ -58,7 +58,7 @@ Preview components may detect remote images and offer actions, but the server pe
 
 Remote-media localization must support:
 
-- configured blocked/allowed/review domain patterns;
+- configured blocked/allowed/review domain patterns, matched against one normalised host form (lowercase, one trailing dot removed) so a DNS-equivalent spelling meets the same rule, with a host that has an empty label refused as malformed;
 - redirect-chain policy checks;
 - blocked schemes and private-network protections;
 - quarantine fetches before admission to the resource store;
