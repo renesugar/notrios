@@ -159,6 +159,20 @@ number meant to make what was left out visible was not. Blocks are now counted
 whichever field carries the prose, and the same archive reports **3,339**. The
 numbers above are from the rerun, with notes and timings otherwise unchanged.
 
+## The archive
+
+Built from `fe024ae` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 38% remaining, identified as
+  `process ancestry: pid 1616574 is claude` (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j26-fe024ae.zip`, 25,538,803 bytes, 2,635 entries.
+  `check_release_zip.py` accepts it.
+
+Before it, the whole Go suite ran through `scripts/check_temp_leaks.sh` in a
+fresh temp directory and left **no `notrios-*` entry**, which covers the nested
+archives this item spools into the instance temp space.
+
 ## Boundaries kept
 
 - Nothing from the archives is in the repository or in this record: only counts,

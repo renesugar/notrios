@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**26 items: 19 complete, 1 in progress, 6 not started, 0 deferred.**
+**26 items: 20 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -86,17 +86,9 @@ this section is archived when the plan completes and the rules are not.
 | J23. Keep existing sync peers syncing after both upgrade in place | complete | 3/3 | — |
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
-| J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | in-progress | 5/6 | 1 |
+| J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
 
-### Started and not finished
-
-**J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded**
-
-- `J26-F` The owner's ChatGPT, Privacy Portal and Claude archives are each dry-run, imported and re-imported with timings, peak RSS, and every conversation and asset accounted for — *not-started*
-
-### Not started
-
-Written and not begun: J6, J8, J9, J10, J11, J15. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -2434,7 +2426,7 @@ post of the owner's 3.3 GB archive, and that count equals `tweet-headers.js`
 less the deleted posts plus the community post. It does so within bounded
 memory, measured and recorded, and fails clearly on a hostile archive.
 
-## J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded — in progress
+## J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded — complete
 
 **Goal.** A user hands Notrios the ZIP they downloaded from ChatGPT, from the
 OpenAI Privacy Portal, or from Claude. Every conversation becomes its own note,

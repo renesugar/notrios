@@ -636,7 +636,7 @@
     {
       "id": "J26",
       "title": "Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J26-A",
@@ -671,7 +671,8 @@
         {
           "id": "J26-F",
           "statement": "The owner's ChatGPT, Privacy Portal and Claude archives are each dry-run, imported and re-imported with timings, peak RSS, and every conversation and asset accounted for",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
         }
       ]
     }
