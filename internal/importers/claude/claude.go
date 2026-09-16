@@ -271,10 +271,13 @@ func importConversation(ctx context.Context, st store.Store, conv conversation, 
 }
 
 // render returns a message's prose and how many machinery blocks it left out.
+//
+// The blocks are counted even when the message's own text field carries the
+// prose, which is the usual case in a real export: counting only when the text
+// field is empty reported no machinery at all for an archive with thousands of
+// thinking and tool blocks, which is the opposite of making what was left out
+// visible.
 func (m message) render() (string, int) {
-	if strings.TrimSpace(m.Text) != "" {
-		return m.Text, 0
-	}
 	parts := []string{}
 	machinery := 0
 	for _, block := range m.Content {
@@ -287,6 +290,9 @@ func (m message) render() (string, int) {
 			// thinking, tool_use, tool_result, token_budget: counted, not kept.
 			machinery++
 		}
+	}
+	if strings.TrimSpace(m.Text) != "" {
+		return m.Text, machinery
 	}
 	return strings.Join(parts, "\n\n"), machinery
 }
