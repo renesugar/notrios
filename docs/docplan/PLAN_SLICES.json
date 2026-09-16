@@ -698,12 +698,27 @@
     },
     {
       "id": "J28",
-      "title": "Decide which reserved address ranges remote media refuses, and apply the same set at both checks",
+      "title": "Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state",
       "state": "not-started",
       "slices": [
         {
           "id": "J28-A",
-          "statement": "SECURITY_AND_MEDIA_POLICY.md names the reserved ranges that are refused, and one shared helper applies that set at the static check and at the connect-time check (J8 finding J8-F2)",
+          "statement": "SECURITY_AND_MEDIA_POLICY.md names a dated default refusal set with each range's purpose and source, the ranges left out and why, and the owner's decisions D1-D7 (J8 finding J8-F2)",
+          "state": "not-started"
+        },
+        {
+          "id": "J28-B",
+          "statement": "One helper applies the effective set, exceptions and embedded-IPv4 rule at the static check and at the connect-time check, with a case per default range at both",
+          "state": "not-started"
+        },
+        {
+          "id": "J28-C",
+          "statement": "An explicit security configuration block states the refused ranges, the default applies when it is absent, a malformed entry fails loading, and config show reports the effective set and its origin",
+          "state": "not-started"
+        },
+        {
+          "id": "J28-D",
+          "statement": "The configuration, service, example-config, security-review and troubleshooting documents say how to state the refused ranges, and J8's multicast wording is corrected",
           "state": "not-started"
         }
       ]

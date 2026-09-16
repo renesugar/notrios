@@ -88,7 +88,7 @@ this section is archived when the plan completes and the rules are not.
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
 | J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
 | J27. Normalise a host before matching it against the domain lists | not-started | 0/1 | 1 |
-| J28. Decide which reserved address ranges remote media refuses, and apply the same set at both checks | not-started | 0/1 | 1 |
+| J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | not-started | 0/4 | 4 |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
@@ -2627,37 +2627,291 @@ question and are not in this item.
 **Working state.** A blocked domain stays blocked however the host is spelled,
 proven by a test that fails on today's code.
 
-## J28. Decide which reserved address ranges remote media refuses
+## J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state
 
-**Goal.** The ranges remote-media localization refuses are written down, and
-the same set is applied everywhere it is checked.
+**Goal.** The address ranges remote-media localization refuses are one named
+set: written in `SECURITY_AND_MEDIA_POLICY.md`, stated explicitly in the
+configuration when the owner wants a different set, defaulted to the policy's
+set when the configuration says nothing, and applied by one helper at both
+places an address is checked.
 
-**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F2). Loopback,
-RFC 1918, link-local, IPv6 unique-local, IPv4-mapped IPv6 forms, the
-unspecified address, `localhost` and multicast are refused. Carrier-grade NAT
-(`100.64.0.0/10`), benchmarking (`198.18.0.0/15`), IETF assignments
-(`192.0.0.0/24`), reserved (`240.0.0.0/4`), "this network" (`0.0.0.0/8`), the
-IPv4 broadcast address, the NAT64 well-known prefix (`64:ff9b::/96`) and
-deprecated IPv6 site-local are not. The NAT64 prefix is the sharpest: it maps
-to loopback on a host configured for it.
+**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F2). The written
+policy says "private network and link-local". The code refuses what Go's
+`IsLoopback`, `IsPrivate`, `IsLinkLocalUnicast`, `IsLinkLocalMulticast` and
+`IsUnspecified` cover, plus `localhost` names, and nothing else. The same
+expression is written twice — `isPrivateHost` in `internal/media/policy.go`
+for URL literals and `checkDialAddress` in `internal/media/fetch.go` at connect
+time — sharing neither a list nor a helper.
 
-The written policy names "private network and link-local", so this is a finding
-about the policy's reach as much as the code's.
+**Owner direction, 2026-09-16.** Default reserved ranges come from the
+references supplied with the direction. The configuration gets an explicit
+security block naming the ranges to refuse. Notrios uses the default set when
+the configuration does not specify one. The documentation says how to specify
+it.
+
+**Measured, 2026-09-16.** Today's expression, run over one address in every
+range below and a few beside them: **15 of 44 refused.** Refused: `127.0.0.0/8`, the three RFC 1918
+blocks, `169.254.0.0/16`, `0.0.0.0` itself, `::1`, `::`, `fe80::/10`,
+`fc00::/7`, IPv4-mapped loopback and private forms, and **link-local
+multicast only** (`224.0.0.2`, `ff02::1`). Not refused: the rest of
+`0.0.0.0/8`, `100.64.0.0/10`, `192.0.0.0/24`, the three IPv4 documentation
+nets, `198.18.0.0/15`, `192.88.99.0/24`, `240.0.0.0/4`, `255.255.255.255`,
+admin-scoped and global multicast (`239.1.1.1`, `233.252.0.1`, `ff05::1`,
+`ff0e::1`), IPv4-mapped forms of non-private addresses (`::ffff:100.64.0.1`),
+`64:ff9b::/96` and `64:ff9b:1::/48` (NAT64; `64:ff9b::7f00:1` is `127.0.0.1`),
+the deprecated IPv4-compatible `::/96` (`::7f00:1`), 6to4 `2002::/16`
+(`2002:7f00:1::1` embeds `127.0.0.1`), Teredo `2001::/32`, `100::/64`,
+`2001:2::/48`, `2001:db8::/32`, `3fff::/20`, `fec0::/10`, `2001:10::/28` and
+`5f00::/16`.
+
+**A correction to J8's record.** J8's README lists "multicast" among what
+held. The probe used `224.0.0.2`, which is link-local multicast; wider
+multicast is not refused. J28-D corrects the README's wording.
+
+### Checking the references
+
+The references were checked against IANA's IPv4 and IPv6 Special-Purpose
+Address Registries (both last updated 2025-10-09), RFC 5771 for IPv4
+multicast, RFC 4291 for IPv6 multicast and IPv4-compatible addresses, and
+RFC 3879 for site-local.
+
+**Accurate.** Every range the references name exists with the purpose they
+give it. `169.254.169.254` is the cloud metadata address. The IPv6 metadata
+addresses providers use (for example `fd00:ec2::254`) fall inside `fc00::/7`.
+Connecting to `0.0.0.0` reaches the local host on Linux and macOS.
+`198.18.0.0/15` and `2001:2::/48` are benchmarking; `2001:db8::/32` and
+`3fff::/20` (RFC 9637) are documentation.
+
+**Inaccurate or incomplete.**
+
+- **`100.::/64` is a typo** for `100::/64`, the discard-only block (RFC 6666).
+- **"Practically exhaustive" is not so.** The references omit, among the
+  registries' not-globally-reachable blocks: `64:ff9b:1::/48` (local-use
+  NAT64, RFC 8215), `192.88.99.0/24` (deprecated 6to4 relay, RFC 7526),
+  `5f00::/16` (SRv6 SIDs, RFC 9602) and `100:0:0:1::/64` (dummy prefix,
+  RFC 9780). They omit, of the blocks marked N/A because they embed or
+  deprecate: `2002::/16` (6to4), `2001::/32` (Teredo) and `2001:10::/28`
+  (deprecated ORCHID). They also omit the deprecated IPv4-compatible `::/96`
+  and site-local `fec0::/10`, which J8 found.
+- **The sharpest J8 case is absent.** `64:ff9b::/96` is in neither list. The
+  registry marks it globally reachable, which is exactly why it needs care
+  rather than a blanket refusal (decision D4).
+- **Refusing `::ffff:0:0/96` is not enough on its own.** It stops the mapped
+  form, but IPv4 addresses also arrive embedded in NAT64, 6to4 and
+  IPv4-compatible addresses. The check has to reason about the embedded
+  address, not only the prefix.
+- **The "best-practice" JSON block is not a usable default.** It drops ranges
+  its own list names: `192.0.0.0/24`, all three IPv4 documentation nets, and
+  the limited broadcast. `255.255.255.255/32` is inside `240.0.0.0/4`, so
+  listing both is redundant, though harmless.
+- **"Covers all ... scopes defined by RFC 6890" is out of date.** RFC 8190
+  updated RFC 6890, and IANA's registries are the current source. The default
+  set records the registry date it was checked against.
+- **The implementation tips are already met.** "Resolve DNS first and pin the
+  address" is met more strictly: `Dialer.Control` checks the concrete address
+  about to be dialed, after resolution, on every connection attempt, including
+  every redirect hop and each address Happy Eyeballs tries. The transport has
+  no `Proxy`, so an environment proxy cannot dial on Notrios's behalf.
+  "Validate every redirect hop" is met by `checkRedirect`, which J8 confirmed.
+  No change to pinning is recommended.
+
+**Not refused by default, deliberately.** Blocks the registries mark globally
+reachable are not reserved against the internet, and refusing them would be
+arbitrary:
+
+- `192.0.0.9/32` and `192.0.0.10/32` (PCP and TURN anycast), which fall inside
+  the refused `192.0.0.0/24` anyway
+- `2001:1::1`, `2001:1::2` and `2001:1::3`
+- `2001:3::/32` and `192.52.193.0/24` (AMT)
+- the AS112 blocks
+- `2001:20::/28` (ORCHIDv2) and `2001:30::/28` (drone remote ID)
+
+An owner who wants them refused lists them.
+
+### The default refusal set (recommended)
+
+IPv4:
+
+| range | purpose | source |
+|---|---|---|
+| `0.0.0.0/8` | "this network"; `0.0.0.0` reaches the local host | RFC 791, RFC 1122 |
+| `10.0.0.0/8` | private use | RFC 1918 |
+| `100.64.0.0/10` | shared address space, carrier-grade NAT | RFC 6598 |
+| `127.0.0.0/8` | loopback | RFC 1122 |
+| `169.254.0.0/16` | link-local, including cloud metadata | RFC 3927 |
+| `172.16.0.0/12` | private use | RFC 1918 |
+| `192.0.0.0/24` | IETF protocol assignments | RFC 6890 |
+| `192.0.2.0/24` | documentation, TEST-NET-1 | RFC 5737 |
+| `192.88.99.0/24` | deprecated 6to4 relay anycast | RFC 7526 |
+| `192.168.0.0/16` | private use | RFC 1918 |
+| `198.18.0.0/15` | benchmarking | RFC 2544 |
+| `198.51.100.0/24` | documentation, TEST-NET-2 | RFC 5737 |
+| `203.0.113.0/24` | documentation, TEST-NET-3 | RFC 5737 |
+| `224.0.0.0/4` | multicast | RFC 5771 |
+| `240.0.0.0/4` | reserved; contains `255.255.255.255` | RFC 1112, RFC 919 |
+
+IPv6:
+
+| range | purpose | source |
+|---|---|---|
+| `::/128` | unspecified | RFC 4291 |
+| `::1/128` | loopback | RFC 4291 |
+| `::/96` | deprecated IPv4-compatible; embedded IPv4 checked (D4) | RFC 4291 |
+| `::ffff:0:0/96` | IPv4-mapped; embedded IPv4 checked (D4) | RFC 4291 |
+| `64:ff9b::/96` | NAT64 well-known prefix; embedded IPv4 checked (D4) | RFC 6052 |
+| `64:ff9b:1::/48` | local-use NAT64 | RFC 8215 |
+| `100::/64` | discard-only | RFC 6666 |
+| `100:0:0:1::/64` | dummy prefix | RFC 9780 |
+| `2001::/32` | Teredo | RFC 4380 |
+| `2001:2::/48` | benchmarking | RFC 5180 |
+| `2001:10::/28` | deprecated ORCHID | RFC 4843 |
+| `2001:db8::/32` | documentation | RFC 3849 |
+| `2002::/16` | 6to4 | RFC 3056 |
+| `3fff::/20` | documentation | RFC 9637 |
+| `5f00::/16` | SRv6 SIDs | RFC 9602 |
+| `fc00::/7` | unique local, including cloud metadata | RFC 4193 |
+| `fe80::/10` | link-local | RFC 4291 |
+| `fec0::/10` | deprecated site-local | RFC 3879 |
+| `ff00::/8` | multicast | RFC 4291 |
+
+`localhost` and `*.localhost` names stay refused at the static check, as they
+are today (RFC 6761).
+
+### The configuration block (recommended shape)
+
+```yaml
+security:
+  remote_media:
+    # Absent: the default set above. Present: exactly this set.
+    refused_address_ranges:
+      - "127.0.0.0/8"
+      - "10.0.0.0/8"
+      # ...
+    # Exceptions to the refused set; empty by default.
+    permitted_address_ranges: []
+```
+
+`notriosctl config show` reports the effective set and whether it came from
+the file or the default. The block governs remote-media fetches only (D6).
+
+### Open decisions
+
+Each has a recommendation; none is decided until the owner says so.
+
+- **D1 — Where the block lives.** Recommended: a new top-level `security:`
+  section, with a `remote_media:` subsection whose name states the surface it
+  governs, as above. The alternative is a `security:` subsection inside
+  `remote_media:`. That keeps every media key together but reads less like the
+  explicit security block the direction asks for. Either shape needs the
+  configuration loader extended: today it accepts lists only at
+  `remote_media.<key>`, not one level deeper.
+- **D2 — Replace or extend.** The direction says the default applies when the
+  configuration does not specify a set, so a stated list **replaces** the
+  default. That matches how `blocked_schemes` and the domain lists already
+  behave. The risk is a one-entry list that silently drops loopback.
+  Recommended: replace, and have both service start and `config show` warn,
+  naming every default range the configured list omits. Rejected: refusing to
+  start in that case, because an owner may mean it.
+- **D3 — Malformed entries.** Recommended: an entry that is not a valid CIDR
+  or address fails configuration loading and names the entry. The loader
+  today silently ignores invalid values for some keys. Dropping an entry from
+  a *refusal* list silently widens what may be fetched, which is the one
+  direction that must not be silent.
+- **D4 — IPv4 carried inside IPv6.** Recommended: for IPv4-mapped,
+  IPv4-compatible and `64:ff9b::/96` addresses, extract the embedded IPv4
+  address and apply the IPv4 set to it, instead of refusing the prefix
+  outright.
+  - This matters most for NAT64. On IPv6-only networks with DNS64, some
+    mobile carriers among them, **every** IPv4-only media host resolves to
+    `64:ff9b::<ipv4>`. Refusing the prefix would break localization there
+    entirely, while checking the embedded address keeps `64:ff9b::7f00:1`
+    refused.
+  - The prefixes still appear in the default set, so that an owner-configured
+    set without them keeps the behaviour visible.
+  - 6to4 and Teredo are refused whole, because both are deprecated or rare for
+    serving media, and Teredo's embedded address is obfuscated.
+  - The alternative is to refuse all four prefixes outright: simpler, but it
+    breaks NAT64-only networks.
+- **D5 — `allow_private_networks`.** It is a frozen configuration key (I8).
+  Recommended: keep it, with its meaning unchanged: `true` switches off the
+  refused set at both checks, as it switches off today's checks. It is
+  documented as the coarse switch, and `permitted_address_ranges` as the
+  narrow one. Deprecating it in favour of an empty list is the alternative,
+  and would need I8's compatibility sentence.
+- **D6 — What the block governs.** Recommended: remote-media fetches only. The
+  sync REST client dials a peer the owner configured by address, often on
+  their own network, and applying media's refusal set to it would break LAN
+  sync for no protection gained. The key name says `remote_media` so a later
+  surface gets its own list rather than inheriting this one.
+- **D7 — Exceptions.** The references suggest an allow-list override.
+  Recommended: include `permitted_address_ranges`, empty by default.
+  - Its use case is a home NAS or media server on `192.168.x.x`, which today
+    requires `allow_private_networks: true` for everything.
+  - An exception is still subject to domain policy, and service start logs it.
+  - Rejected: letting an exception re-permit `127.0.0.0/8`, `::1/128`,
+    `0.0.0.0/8` or `::/128`. A loopback exception would make the service fetch
+    from itself. Those four need `allow_private_networks: true`.
 
 **Scope.**
 
-- **J28-A, one list, named and shared.** `SECURITY_AND_MEDIA_POLICY.md` names
-  the reserved ranges that are refused and why. One helper applies that set at
-  the static URL check and at the connect-time address check, which today share
-  neither a list nor a helper. Cases cover every named range at both checks.
+- **J28-A, the named default.** `SECURITY_AND_MEDIA_POLICY.md` replaces
+  "private network and link-local" with the default refusal set above:
+  - each range with its purpose and source;
+  - the registry date it was checked against;
+  - the ranges deliberately left out and why;
+  - how embedded IPv4 is treated.
 
-**Boundaries.** The decision about which ranges belong in the set is the
-owner's; this item implements what the policy comes to say.
+  Owner decisions D1–D7 are recorded there.
+- **J28-B, one helper at both checks.** One function in `internal/media`
+  applies the effective set, the exceptions and the embedded-IPv4 rule. Both
+  the static literal check and `checkDialAddress` call it, and neither keeps
+  its own expression.
+  - A table-driven test takes one address from every default range and checks
+    it at both checks. It fails on today's code for the 27 measured
+    addresses that belong to the default set; the other 2 of the 29 not refused
+    today (`::ffff:8.8.8.8`, ORCHIDv2) should stay fetchable.
+  - Cases prove that a registry block left out stays fetchable, that an
+    embedded public IPv4 behind `64:ff9b::` is not refused, and that
+    `64:ff9b::7f00:1` is.
+- **J28-C, the configuration block.** The loader reads the block chosen in D1.
+  - An absent block yields the default set; a stated block replaces it (D2).
+  - A malformed entry fails loading and names the entry (D3).
+  - `config show`, and the REST configuration view that already exposes
+    `allow_private_networks`, report the effective set and its origin.
+  - Service start warns about default ranges a stated set omits.
+  - The frozen configuration surface is rebuilt with `build_freeze.py`, and the
+    commit says what moved and that it is additive.
+- **J28-D, the documentation.**
+  - `docs/configuration.md` gains a tracked example, through
+    `docs/docexamples/configuration.json`, showing a stated set and an
+    exception, checked by `config show`.
+  - `docs/service.md`'s key list and table, `config/config.example.yaml` (the
+    block commented out, with the default named), `SECURITY_REVIEW.md`'s media
+    claims, and `docs/troubleshooting.md` (a refusal message and what to
+    change) are updated.
+  - J8's README corrects "multicast" to "link-local multicast".
+  - Pinned documentation evidence that moves (the G18a inventory, G18f hashes,
+    the docaudit registry) is regenerated, not hand-edited.
 
-**Dependencies.** J8, which found it.
+**Boundaries.**
 
-**Working state.** A named list in the policy, one helper applying it at both
-checks, and a case per range.
+- No change to connection pinning, redirect handling or the proxy refusal,
+  which already meet the references' tips.
+- No hostname-based refusals beyond `localhost`; the connect-time check sees
+  the resolved address.
+- No change to sync's dialing (D6).
+- The default set is checked against the IANA registries once, when J28 is
+  implemented, and dated. Notrios does not fetch the registries at run time.
+
+**Dependencies.** J8, which found it. The owner's decisions D1–D7 must be made
+before J28-B and J28-C start.
+
+**Working state.**
+- The policy names a dated default set, which the configuration can replace
+  and extend with exceptions.
+- One helper applies the set at both checks.
+- Every default range has a case at both checks.
+- The documentation shows how to state the set.
 
 ## J29. Decide which HTML reference forms the remote-media scanner covers
 
