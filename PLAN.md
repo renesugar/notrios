@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 21 complete, 0 in progress, 10 not started, 0 deferred.**
+**31 items: 22 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -87,7 +87,7 @@ this section is archived when the plan completes and the rules are not.
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
 | J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
-| J27. Normalise a host before matching it against the domain lists | not-started | 0/1 | 1 |
+| J27. Normalise a host before matching it against the domain lists | complete | 1/1 | — |
 | J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | not-started | 0/4 | 4 |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
@@ -2599,7 +2599,7 @@ instance temp directory.
 conversation in the owner's archives as its own note, with code blocks and
 attachments, measured and recorded, and refuse a hostile archive clearly.
 
-## J27. Normalise a host before matching it against the domain lists
+## J27. Normalise a host before matching it against the domain lists — complete
 
 **Goal.** A host written in any of the forms DNS treats as the same name
 matches the same domain rules.

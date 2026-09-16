@@ -84,3 +84,13 @@ regression guard is this item's tests.
 - **What the patterns mean.** Only the form of the host they are matched
   against changed, apart from the new malformed-host refusal.
 - **The reserved address ranges.** That is J28.
+
+## The archive
+
+Built from `ab6fd32` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 60% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j27-ab6fd32.zip`, 25,571,167 bytes, 2,643 entries.
+  `check_release_zip.py` accepts it.

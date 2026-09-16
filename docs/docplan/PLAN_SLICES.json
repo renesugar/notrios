@@ -687,12 +687,13 @@
     {
       "id": "J27",
       "title": "Normalise a host before matching it against the domain lists",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J27-A",
           "statement": "A trailing-dot host matches the same private check and blocked, allowed and review patterns as its undotted form, and a host with an empty label is blocked as malformed, proven by cases for every list (J8 finding J8-F1)",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j27/README.md"
         }
       ]
     },
