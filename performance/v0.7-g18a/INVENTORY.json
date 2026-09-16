@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "80e6f6487179a85cca6432ea5143242233277498cbc77466af630bed73656d5c",
+      "sha256": "d2f040a62ff929e654ff3c7d743fd53ccb87334f13f0681fe80a21f8cfad176f",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1761,7 +1761,7 @@
     },
     {
       "path": "docs/import-export.md",
-      "sha256": "7aa7637048f23614cc9d2b887905cfbd61309933c4ffccdf25d6cd1044ead4a1",
+      "sha256": "788e062e92e906f4eb6395f6b164753af4bbf0223d95b4ef9adc4c483559466d",
       "help_note": "doc_help_import_export",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
       "sections": [
@@ -1876,9 +1876,9 @@
           "grade": "unverified"
         },
         {
-          "id": "twitter-x-extracted-archive",
+          "id": "twitter-x-archive",
           "level": 2,
-          "title": "Twitter/X (extracted archive)",
+          "title": "Twitter/X archive",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",

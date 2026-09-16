@@ -695,7 +695,7 @@ func runImportTwitter(args []string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl import twitter [options] <extracted-archive-dir>")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import twitter [options] <twitter-archive.zip | extracted-archive-dir>")
 		fs.PrintDefaults()
 		os.Exit(2)
 	}

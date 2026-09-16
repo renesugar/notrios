@@ -1123,11 +1123,11 @@
       "path": "docs/cli.md",
       "section": "import-twitter",
       "language": "sh",
-      "sha256": "df9abea606a9c2bdf252c397d27e796940fc6ebfaf4740f6f13ee08ad4a8a03f",
+      "sha256": "e80668e3f6dcad0f8f4054ba50f398e4d2406d19f273106bb1533bcf826b436d",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <extracted-archive-dir> is an input-directory metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <twitter-archive.zip | extracted-archive-dir> is an input-path metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
       }
     },
     {
@@ -2164,11 +2164,11 @@
       }
     },
     {
-      "id": "import-export-twitter-x-extracted-archive-example-1",
+      "id": "import-export-twitter-x-archive-example-1",
       "path": "docs/import-export.md",
-      "section": "twitter-x-extracted-archive",
+      "section": "twitter-x-archive",
       "language": "sh",
-      "sha256": "bca26de1e562c66c0d4aa7c9c59f5fa3cc30d6894c5a5d5135793e7971e556a8",
+      "sha256": "9952dedee363098e5a6fa36cacb2cbaa7101561a05539da10781362ef5ba00c4",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -2181,8 +2181,8 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/twitter-archive",
-            "source": "import.twitter_dir"
+            "token": "/path/to/twitter-archive.zip",
+            "source": "import.twitter_zip"
           }
         ],
         "expected": {
@@ -2191,7 +2191,7 @@
         },
         "postcondition": {
           "kind": "cli-import-twitter",
-          "detail": "dry run and apply parse one bounded extracted tweet into a searchable note"
+          "detail": "dry run and apply read one bounded post from the archive ZIP as downloaded, in place, into a searchable note"
         }
       }
     },

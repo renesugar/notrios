@@ -1,5 +1,6 @@
-// Package twitter imports an extracted Twitter/X archive export into the
-// canonical store (Notrios redesign task R9). It parses the `window.YTD.*`
+// Package twitter imports a Twitter/X archive into the canonical store
+// (Notrios redesign task R9). It reads the archive as it is downloaded, a ZIP
+// read in place, or its extracted folder (J25). It parses the `window.YTD.*`
 // data files, recovers conversation threads by following in-reply-to chains
 // among the archived tweets, records provenance (author, canonical handle,
 // thread ID, reply-to, post URL, published time) in document_sources, imports
@@ -9,11 +10,8 @@ package twitter
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -47,6 +45,31 @@ type Report struct {
 	Warnings          []string `json:"warnings,omitempty"`
 	NotebookID        string   `json:"notebook_id,omitempty"`
 	AttachmentsLinked int      `json:"attachments_linked"`
+
+	// SourceFormat is "zip" for a downloaded archive read in place, or
+	// "directory" for an extracted one.
+	SourceFormat string `json:"source_format"`
+	// TweetFiles names the post files read, in part order.
+	TweetFiles []string `json:"tweet_files"`
+	// PostsInTweetFiles counts the posts in TweetFiles, before duplicates are
+	// dropped. TweetHeaders is what tweet-headers.js lists, when the archive
+	// has one; a difference between the two is reported as a warning.
+	PostsInTweetFiles int `json:"posts_in_tweet_files"`
+	TweetHeaders      int `json:"tweet_headers"`
+	// CommunityPostsSeen counts posts from community-tweet.js, which are
+	// imported. DeletedPostsSkipped counts deleted-tweets.js, which is not:
+	// posts the user deleted do not come back silently (owner decision, J25).
+	CommunityPostsSeen    int `json:"community_posts_seen"`
+	DeletedPostsSkipped   int `json:"deleted_posts_skipped"`
+	DuplicatePostsSkipped int `json:"duplicate_posts_skipped"`
+	// ArchiveEntriesRejected counts ZIP entries refused as unsafe: a name that
+	// escapes the archive, or an entry that is not a regular file.
+	ArchiveEntriesRejected int `json:"archive_entries_rejected"`
+	// MediaFilesInArchive counts the media directory's files. MediaUnmatched
+	// counts those whose name names no imported post, so every media file is
+	// either attached (imported or missing) or counted here.
+	MediaFilesInArchive int `json:"media_files_in_archive"`
+	MediaUnmatched      int `json:"media_unmatched"`
 }
 
 type tweet struct {
@@ -63,8 +86,44 @@ type tweet struct {
 	ExternalURL string
 }
 
-// Import reads an extracted archive directory (the folder containing `data/`).
-func Import(ctx context.Context, st store.Store, sourceDir string, options Options) (Report, error) {
+// tweetEntry is one entry of a post file, as the archive writes it.
+type tweetEntry struct {
+	Tweet struct {
+		IDStr                string `json:"id_str"`
+		FullText             string `json:"full_text"`
+		Text                 string `json:"text"`
+		CreatedAt            string `json:"created_at"`
+		InReplyToStatusIDStr string `json:"in_reply_to_status_id_str"`
+		Entities             struct {
+			Hashtags []struct {
+				Text string `json:"text"`
+			} `json:"hashtags"`
+			URLs []struct {
+				URL         string `json:"url"`
+				ExpandedURL string `json:"expanded_url"`
+			} `json:"urls"`
+		} `json:"entities"`
+		ExtendedEntities struct {
+			Media []struct {
+				IDStr         string `json:"id_str"`
+				URL           string `json:"url"`
+				MediaURLHTTPS string `json:"media_url_https"`
+			} `json:"media"`
+		} `json:"extended_entities"`
+	} `json:"tweet"`
+}
+
+type accountEntry struct {
+	Account struct {
+		Username           string `json:"username"`
+		AccountID          string `json:"accountId"`
+		AccountDisplayName string `json:"accountDisplayName"`
+	} `json:"account"`
+}
+
+// Import reads a Twitter/X archive: the ZIP as downloaded, or its extracted
+// folder (the folder containing `data/`, or `data/` itself).
+func Import(ctx context.Context, st store.Store, sourcePath string, options Options) (Report, error) {
 	report := Report{DryRun: options.DryRun}
 	if strings.TrimSpace(options.CollectionID) == "" {
 		options.CollectionID = "default"
@@ -73,24 +132,71 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 		options.NotebookName = "Twitter"
 	}
 
-	dataDir, err := findDataDir(sourceDir)
+	archive, rejected, err := openArchive(sourcePath)
 	if err != nil {
 		return report, err
 	}
-	username, display, err := parseAccount(dataDir)
+	defer archive.Close()
+	report.SourceFormat = archive.Kind()
+	report.ArchiveEntriesRejected = rejected
+	if rejected > 0 {
+		report.Warnings = append(report.Warnings, fmt.Sprintf("%d archive entries were refused: a name escaping the archive, or not a regular file", rejected))
+	}
+
+	username, display, err := parseAccount(archive)
 	if err != nil {
 		report.Warnings = append(report.Warnings, err.Error())
 	}
 	report.AccountUsername = username
 	report.AccountDisplay = display
 
-	tweets, err := parseTweets(dataDir, username)
+	names, err := archive.List("")
 	if err != nil {
 		return report, err
 	}
+	collector := &tweetCollector{seen: map[string]bool{}}
+	for _, name := range tweetFiles(names) {
+		posts, err := decodePosts(archive, name, username, collector.add)
+		if err != nil {
+			return report, err
+		}
+		report.TweetFiles = append(report.TweetFiles, name)
+		report.PostsInTweetFiles += posts
+	}
+	if hasName(names, "community-tweet.js") {
+		posts, err := decodePosts(archive, "community-tweet.js", username, collector.add)
+		if err != nil {
+			return report, err
+		}
+		report.CommunityPostsSeen = posts
+	}
+	if hasName(names, "deleted-tweets.js") {
+		if report.DeletedPostsSkipped, err = countEntries(archive, "deleted-tweets.js"); err != nil {
+			return report, err
+		}
+	}
+	if hasName(names, "tweet-headers.js") {
+		if report.TweetHeaders, err = countEntries(archive, "tweet-headers.js"); err != nil {
+			return report, err
+		}
+		if report.TweetHeaders != report.PostsInTweetFiles {
+			report.Warnings = append(report.Warnings, fmt.Sprintf(
+				"tweet-headers.js lists %d posts, but the tweets files hold %d", report.TweetHeaders, report.PostsInTweetFiles))
+		}
+	}
+	tweets := collector.tweets
+	report.DuplicatePostsSkipped = collector.duplicates
 	report.TweetsSeen = len(tweets)
-	mediaDir := findMediaDir(dataDir)
-	attachMedia(tweets, mediaDir)
+
+	mediaDir := ""
+	for _, dir := range []string{"tweets_media", "tweet_media"} {
+		if media, err := archive.List(dir); err == nil && len(media) > 0 {
+			mediaDir = dir
+			report.MediaFilesInArchive = len(media)
+			report.MediaUnmatched = attachMedia(tweets, media)
+			break
+		}
+	}
 	report.ThreadsRecovered = recoverThreads(tweets)
 
 	if options.DryRun {
@@ -107,178 +213,136 @@ func Import(ctx context.Context, st store.Store, sourceDir string, options Optio
 	report.NotebookID = notebookID
 
 	for _, tw := range tweets {
-		if err := importTweet(ctx, st, tw, mediaDir, notebookID, options, &report, display, username); err != nil {
+		if err := importTweet(ctx, st, tw, archive, mediaDir, notebookID, options, &report, display, username); err != nil {
 			return report, err
 		}
 	}
 	return report, nil
 }
 
-func findDataDir(sourceDir string) (string, error) {
-	for _, candidate := range []string{filepath.Join(sourceDir, "data"), sourceDir} {
-		for _, name := range []string{"tweets.js", "tweet.js"} {
-			if _, err := os.Stat(filepath.Join(candidate, name)); err == nil {
-				return candidate, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("no tweets.js/tweet.js found under %q; expected an extracted Twitter/X archive", sourceDir)
+// tweetCollector keeps the first copy of each post. A post in more than one
+// file (a community post also in tweets.js, say) is imported once.
+type tweetCollector struct {
+	tweets     []*tweet
+	seen       map[string]bool
+	duplicates int
 }
 
-func findMediaDir(dataDir string) string {
-	for _, name := range []string{"tweets_media", "tweet_media"} {
-		dir := filepath.Join(dataDir, name)
-		if info, err := os.Stat(dir); err == nil && info.IsDir() {
-			return dir
-		}
+func (c *tweetCollector) add(tw *tweet) {
+	if c.seen[tw.ID] {
+		c.duplicates++
+		return
 	}
-	return ""
+	c.seen[tw.ID] = true
+	c.tweets = append(c.tweets, tw)
 }
 
-// stripYTDPrefix removes the `window.YTD.<name>.part0 = ` assignment wrapper.
-func stripYTDPrefix(data []byte) ([]byte, error) {
-	idx := strings.Index(string(data), "=")
-	if idx < 0 {
-		return nil, errors.New("missing window.YTD assignment")
-	}
-	return data[idx+1:], nil
-}
-
-func parseAccount(dataDir string) (username, display string, err error) {
-	raw, err := os.ReadFile(filepath.Join(dataDir, "account.js"))
+func parseAccount(archive archiveSource) (username, display string, err error) {
+	file, err := archive.Open("account.js", maxDataFileBytes)
 	if err != nil {
 		return "", "", fmt.Errorf("account.js not readable: %w", err)
 	}
-	payload, err := stripYTDPrefix(raw)
-	if err != nil {
-		return "", "", fmt.Errorf("account.js: %w", err)
+	defer file.Close()
+	var first *accountEntry
+	if _, err := decodeYTDArray(file, "account.js", func(entry accountEntry) error {
+		if first == nil {
+			first = &entry
+		}
+		return nil
+	}); err != nil {
+		return "", "", err
 	}
-	var entries []struct {
-		Account struct {
-			Username           string `json:"username"`
-			AccountID          string `json:"accountId"`
-			AccountDisplayName string `json:"accountDisplayName"`
-		} `json:"account"`
-	}
-	if err := json.Unmarshal(payload, &entries); err != nil {
-		return "", "", fmt.Errorf("account.js: %w", err)
-	}
-	if len(entries) == 0 {
+	if first == nil {
 		return "", "", errors.New("account.js: no account entry")
 	}
-	return entries[0].Account.Username, entries[0].Account.AccountDisplayName, nil
+	return first.Account.Username, first.Account.AccountDisplayName, nil
 }
 
-func parseTweets(dataDir, username string) ([]*tweet, error) {
-	var raw []byte
-	var err error
-	for _, name := range []string{"tweets.js", "tweet.js"} {
-		raw, err = os.ReadFile(filepath.Join(dataDir, name))
-		if err == nil {
-			break
+// decodePosts streams one post file, handing each post with an ID to add, and
+// returns how many there were.
+func decodePosts(archive archiveSource, name, username string, add func(*tweet)) (int, error) {
+	file, err := archive.Open(name, maxDataFileBytes)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	posts := 0
+	_, err = decodeYTDArray(file, name, func(entry tweetEntry) error {
+		if tw := newTweet(entry, username); tw != nil {
+			posts++
+			add(tw)
 		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	payload, err := stripYTDPrefix(raw)
-	if err != nil {
-		return nil, fmt.Errorf("tweets.js: %w", err)
-	}
-	var entries []struct {
-		Tweet struct {
-			IDStr                string `json:"id_str"`
-			FullText             string `json:"full_text"`
-			Text                 string `json:"text"`
-			CreatedAt            string `json:"created_at"`
-			InReplyToStatusIDStr string `json:"in_reply_to_status_id_str"`
-			Entities             struct {
-				Hashtags []struct {
-					Text string `json:"text"`
-				} `json:"hashtags"`
-				URLs []struct {
-					URL         string `json:"url"`
-					ExpandedURL string `json:"expanded_url"`
-				} `json:"urls"`
-			} `json:"entities"`
-			ExtendedEntities struct {
-				Media []struct {
-					IDStr         string `json:"id_str"`
-					URL           string `json:"url"`
-					MediaURLHTTPS string `json:"media_url_https"`
-				} `json:"media"`
-			} `json:"extended_entities"`
-		} `json:"tweet"`
-	}
-	if err := json.Unmarshal(payload, &entries); err != nil {
-		return nil, fmt.Errorf("tweets.js: %w", err)
-	}
+		return nil
+	})
+	return posts, err
+}
 
-	tweets := make([]*tweet, 0, len(entries))
-	for _, entry := range entries {
-		t := entry.Tweet
-		if strings.TrimSpace(t.IDStr) == "" {
-			continue
-		}
-		created, _ := time.Parse(time.RubyDate, t.CreatedAt)
-		tw := &tweet{
-			ID:         t.IDStr,
-			Text:       firstNonEmpty(t.FullText, t.Text),
-			CreatedAt:  created,
-			ReplyToID:  t.InReplyToStatusIDStr,
-			URLs:       map[string]string{},
-			MediaByTCO: map[string]string{},
-			ScreenName: username,
-		}
-		for _, tag := range t.Entities.Hashtags {
-			if strings.TrimSpace(tag.Text) != "" {
-				tw.Hashtags = append(tw.Hashtags, tag.Text)
-			}
-		}
-		for _, u := range t.Entities.URLs {
-			if u.URL != "" && u.ExpandedURL != "" {
-				tw.URLs[u.URL] = u.ExpandedURL
-			}
-		}
-		for _, m := range t.ExtendedEntities.Media {
-			if m.URL != "" && m.MediaURLHTTPS != "" {
-				tw.MediaByTCO[m.URL] = m.MediaURLHTTPS
-			}
-		}
-		handle := firstNonEmpty(username, "i")
-		tw.ExternalURL = "https://twitter.com/" + handle + "/status/" + tw.ID
-		tweets = append(tweets, tw)
+// countEntries streams a data file and counts its entries without keeping them.
+func countEntries(archive archiveSource, name string) (int, error) {
+	file, err := archive.Open(name, maxDataFileBytes)
+	if err != nil {
+		return 0, err
 	}
-	return tweets, nil
+	defer file.Close()
+	return decodeYTDArray(file, name, func(struct{}) error { return nil })
+}
+
+func newTweet(entry tweetEntry, username string) *tweet {
+	t := entry.Tweet
+	if strings.TrimSpace(t.IDStr) == "" {
+		return nil
+	}
+	created, _ := time.Parse(time.RubyDate, t.CreatedAt)
+	tw := &tweet{
+		ID:         t.IDStr,
+		Text:       firstNonEmpty(t.FullText, t.Text),
+		CreatedAt:  created,
+		ReplyToID:  t.InReplyToStatusIDStr,
+		URLs:       map[string]string{},
+		MediaByTCO: map[string]string{},
+		ScreenName: username,
+	}
+	for _, tag := range t.Entities.Hashtags {
+		if strings.TrimSpace(tag.Text) != "" {
+			tw.Hashtags = append(tw.Hashtags, tag.Text)
+		}
+	}
+	for _, u := range t.Entities.URLs {
+		if u.URL != "" && u.ExpandedURL != "" {
+			tw.URLs[u.URL] = u.ExpandedURL
+		}
+	}
+	for _, m := range t.ExtendedEntities.Media {
+		if m.URL != "" && m.MediaURLHTTPS != "" {
+			tw.MediaByTCO[m.URL] = m.MediaURLHTTPS
+		}
+	}
+	handle := firstNonEmpty(username, "i")
+	tw.ExternalURL = "https://twitter.com/" + handle + "/status/" + tw.ID
+	return tw
 }
 
 // attachMedia associates archive media files (named "<tweetid>-<media>.<ext>")
-// with their tweets.
-func attachMedia(tweets []*tweet, mediaDir string) {
-	if mediaDir == "" {
-		return
-	}
-	entries, err := os.ReadDir(mediaDir)
-	if err != nil {
-		return
-	}
+// with their tweets, and returns how many files matched no tweet.
+func attachMedia(tweets []*tweet, names []string) int {
 	byID := map[string]*tweet{}
 	for _, tw := range tweets {
 		byID[tw.ID] = tw
 	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
+	unmatched := 0
+	for _, name := range names {
 		idx := strings.Index(name, "-")
 		if idx <= 0 {
+			unmatched++
 			continue
 		}
 		if tw, ok := byID[name[:idx]]; ok {
 			tw.MediaFiles = append(tw.MediaFiles, name)
+		} else {
+			unmatched++
 		}
 	}
+	return unmatched
 }
 
 // recoverThreads assigns thread IDs by walking in-reply-to chains among the
@@ -346,9 +410,9 @@ func ensureNotebook(ctx context.Context, st store.Store, name string) (string, e
 
 var whitespaceRE = regexp.MustCompile(`\s+`)
 
-func importTweet(ctx context.Context, st store.Store, tw *tweet, mediaDir, notebookID string, options Options, report *Report, display, username string) error {
+func importTweet(ctx context.Context, st store.Store, tw *tweet, archive archiveSource, mediaDir, notebookID string, options Options, report *Report, display, username string) error {
 	docID := "doc_twitter_" + tw.ID
-	body, mediaResources, err := buildTweetBody(ctx, st, tw, mediaDir, options.CollectionID, report)
+	body, mediaResources, err := buildTweetBody(ctx, st, tw, archive, mediaDir, options.CollectionID, report)
 	if err != nil {
 		return err
 	}
@@ -434,7 +498,7 @@ func importTweet(ctx context.Context, st store.Store, tw *tweet, mediaDir, noteb
 
 // buildTweetBody renders the tweet as Markdown: expanded URLs, imported media
 // as resource:// images, and a footer link to the original post.
-func buildTweetBody(ctx context.Context, st store.Store, tw *tweet, mediaDir, collectionID string, report *Report) (string, []string, error) {
+func buildTweetBody(ctx context.Context, st store.Store, tw *tweet, archive archiveSource, mediaDir, collectionID string, report *Report) (string, []string, error) {
 	text := tw.Text
 	for tco, expanded := range tw.URLs {
 		text = strings.ReplaceAll(text, tco, expanded)
@@ -442,7 +506,7 @@ func buildTweetBody(ctx context.Context, st store.Store, tw *tweet, mediaDir, co
 	mediaResources := []string{}
 	mediaMarkdown := []string{}
 	for _, filename := range tw.MediaFiles {
-		resourceID, created, err := importMediaFile(ctx, st, filepath.Join(mediaDir, filename), filename, collectionID)
+		resourceID, created, err := importMediaFile(ctx, st, archive, mediaDir, filename, collectionID)
 		if err != nil {
 			report.MediaMissing++
 			report.Warnings = append(report.Warnings, fmt.Sprintf("media %s: %v", filename, err))
@@ -470,14 +534,16 @@ func buildTweetBody(ctx context.Context, st store.Store, tw *tweet, mediaDir, co
 	return b.String(), mediaResources, nil
 }
 
-func importMediaFile(ctx context.Context, st store.Store, path, filename, collectionID string) (string, bool, error) {
+// importMediaFile streams one media file from the archive into the asset
+// store. From a ZIP it is decompressed as it is read; nothing is extracted.
+func importMediaFile(ctx context.Context, st store.Store, archive archiveSource, mediaDir, filename, collectionID string) (string, bool, error) {
 	resourceID := "res_twitter_" + sanitizeID(filename)
 	if _, err := st.GetResource(ctx, resourceID); err == nil {
 		return resourceID, false, nil
 	} else if !errors.Is(err, store.ErrNotFound) {
 		return "", false, err
 	}
-	file, err := os.Open(path)
+	file, err := archive.Open(mediaDir+"/"+filename, maxMediaFileBytes)
 	if err != nil {
 		return "", false, err
 	}

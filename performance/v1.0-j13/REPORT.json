@@ -3,7 +3,7 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "cd24d3290ae3f9e295585b3379a0c9a027446228",
+  "content_commit": "bda75185e785eabcd04534174d2d8ca60053b955",
   "counts": {
     "examples": 169,
     "executed": 69,
@@ -146,7 +146,7 @@
   },
   "reason_contradicts_class": [],
   "configuration_page": {
-    "settable_keys": 53,
+    "settable_keys": 54,
     "examples": 5,
     "note": "J12 gave the page its prose and its generated key table and no examples at all, which is the gap J13-C closes."
   },
@@ -1191,9 +1191,9 @@
       "unrun_reason": ""
     },
     {
-      "id": "import-export-twitter-x-extracted-archive-example-1",
+      "id": "import-export-twitter-x-archive-example-1",
       "path": "docs/import-export.md",
-      "section": "twitter-x-extracted-archive",
+      "section": "twitter-x-archive",
       "state": "executed",
       "class": "recipe",
       "rule": "2 literal command line(s), nothing to substitute",

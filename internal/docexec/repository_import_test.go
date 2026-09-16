@@ -83,6 +83,9 @@ func checkDocumentationImportPostcondition(ctx context.Context, fixture *reposit
 // substitution in repositoryExamples.resolve.
 type DocumentationImportFixtures struct {
 	Joplin, Obsidian, Twitter, ChatGPT, Claude, ArchiveV1 string
+	// TwitterZip is the Twitter archive as a user downloads it: the same files
+	// as Twitter, zipped (J25).
+	TwitterZip string
 }
 
 // SeedDocumentationImportFixtures creates minimal valid exports beneath root.
@@ -111,6 +114,10 @@ func SeedDocumentationImportFixtures(root string) (DocumentationImportFixtures, 
 		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 			return f, err
 		}
+	}
+	f.TwitterZip = filepath.Join(root, "twitter-archive.zip")
+	if err := zipTwitterFixture(f.Twitter, f.TwitterZip); err != nil {
+		return f, err
 	}
 	return f, nil
 }

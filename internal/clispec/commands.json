@@ -230,8 +230,8 @@
         "twitter"
       ],
       "notes": [],
-      "purpose": "import an extracted Twitter/X archive",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>"
+      "purpose": "import a Twitter/X archive, as the downloaded ZIP or its extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <twitter-archive.zip | extracted-archive-dir>"
     },
     {
       "path": [

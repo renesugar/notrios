@@ -235,21 +235,27 @@ tags. Test first on a copy of a real vault and inspect warnings.
 
 ---
 
-## Twitter/X (extracted archive)
+## Twitter/X archive
 
-Request your archive from X (Settings → download your data), download the ZIP, and **extract it**. The importer wants the extracted directory (the one containing `data/`):
-
-```text
-twitter-archive/
-  data/
-    account.js          # window.YTD.account.part0 = [...]
-    tweets.js           # window.YTD.tweets.part0 = [...]  (older archives: tweet.js)
-    tweets_media/       # media files named <tweetid>-<name>.<ext>
-```
+Request your archive from X (Settings → download your data) and download the ZIP. **Give the importer the ZIP as it downloaded**: there is no need to extract it. The importer reads it in place and finds everything it needs itself. An archive you have already extracted works too: pass the folder containing `data/`.
 
 ```sh
-go run ./cmd/notriosctl import twitter --dry-run "/path/to/twitter-archive"
-go run ./cmd/notriosctl import twitter --notebook Twitter "/path/to/twitter-archive"
+go run ./cmd/notriosctl import twitter --dry-run "/path/to/twitter-archive.zip"
+go run ./cmd/notriosctl import twitter --notebook Twitter "/path/to/twitter-archive.zip"
+```
+
+What it reads, for reference:
+
+```text
+data/
+  account.js            # window.YTD.account.part0 = [...]
+  tweets.js             # window.YTD.tweets.part0 = [...]  (older archives: tweet.js)
+  tweets-part1.js       # a large archive continues its posts in part files,
+  tweets-part2.js       #   read in order after tweets.js
+  community-tweet.js    # posts to X Communities, imported like any post
+  deleted-tweets.js     # posts you deleted: counted, not imported
+  tweet-headers.js      # one line per post, used to check nothing was missed
+  tweets_media/         # media files named <tweetid>-<name>.<ext>
 ```
 
 Extra flag: `--notebook` (default `Twitter`) names the notebook the tweets are placed in; it is created with a 🐦 icon if missing (an existing notebook with the same name is reused).
@@ -259,7 +265,10 @@ Behavior:
 - **Conversation threads are recovered** by following in-reply-to chains among your archived tweets; thread queries return them in chronological order. Replies to other people's (unarchived) tweets keep the external `reply_to` ID.
 - `t.co` links are expanded to their real URLs; media becomes embedded resources; hashtags become **real sidebar tags**; each note ends with a link to the original post.
 - Provenance records your display name and `@handle` (searchable via `author:"..."` / `authorid:@...`), the tweet ID, thread ID, and posting time (`since:`/`until:` filters work).
-- Report: `tweets_seen`, `notes_*`, `threads_recovered`, `media_imported`/`media_missing`, `tags_applied`, `attachments_linked`, `warnings`.
+- **Every post is imported**, however many part files the archive splits them across. Posts you deleted on X are not brought back: they are counted in the report and left out.
+- **The count is checked.** When the archive has `tweet-headers.js`, the report compares the posts found with the number it lists, and warns if they differ.
+- **A hostile archive is refused, not trusted.** Entries whose names escape the archive are skipped and counted. A data file, a media file or an entry count over the import's limits stops that file or the import with a clear error, and nothing is extracted to disk.
+- Report: `source_format` (`zip` or `directory`), `tweet_files`, `posts_in_tweet_files`, `tweet_headers`, `tweets_seen`, `community_posts_seen`, `deleted_posts_skipped`, `duplicate_posts_skipped`, `archive_entries_rejected`, `notes_*`, `threads_recovered`, `media_files_in_archive`, `media_unmatched` (media files naming no imported post), `media_imported`/`media_missing`, `tags_applied`, `attachments_linked`, `warnings`.
 
 ---
 

@@ -611,17 +611,19 @@
     {
       "id": "J25",
       "title": "Import a Twitter/X archive as it is downloaded, completely, at its real size",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J25-A",
           "statement": "notriosctl import twitter reads the downloaded ZIP in place and every tweets part, imports community posts, skips and counts deleted posts, and checks the count against tweet-headers.js",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
         },
         {
           "id": "J25-B",
           "statement": "Post files are stream-decoded and media streamed, with entry-count, decompressed-size and media-size bounds tested against hostile archives",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
         },
         {
           "id": "J25-C",

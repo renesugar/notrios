@@ -25,7 +25,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl import claude [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
 - notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir> [--batch-size 100] [--preserve-source] [--write-config path] [--import-config path]
-- notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
+- notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <twitter-archive.zip | extracted-archive-dir>
 - notriosctl jobs cancel [--db ...] <job-id>
 - notriosctl jobs list [--db ...] [--kind k] [--state s] [--limit 50]
 - notriosctl jobs retry [--db ...] [--reset] <sync-job-id>
@@ -385,10 +385,10 @@ checkpoint, or source-bundle object.
 ### import twitter
 
 ```sh
-notriosctl import twitter [shared flags] [--notebook Twitter] [--dry-run] <extracted-archive-dir>
+notriosctl import twitter [shared flags] [--notebook Twitter] [--dry-run] <twitter-archive.zip | extracted-archive-dir>
 ```
 
-Positional argument: the **extracted** archive directory (the one containing `data/`). `--notebook` (default `Twitter`) names/creates the destination notebook.
+Positional argument: the archive **ZIP as downloaded**, read in place with nothing extracted, or an already extracted archive directory (the one containing `data/`). Posts are read from `tweets.js` and every `tweets-partN.js`, plus community posts; deleted posts are counted, not imported. `--notebook` (default `Twitter`) names/creates the destination notebook.
 
 ### import chatgpt / import claude
 

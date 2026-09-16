@@ -295,6 +295,7 @@ func (h *repositoryExamples) resolve(entry ManifestEntry, source string) (string
 		"import.joplin_dir":      fixture.imports.Joplin,
 		"import.obsidian_dir":    fixture.imports.Obsidian,
 		"import.twitter_dir":     fixture.imports.Twitter,
+		"import.twitter_zip":     fixture.imports.TwitterZip,
 		"import.chatgpt_dir":     fixture.imports.ChatGPT,
 		"import.chatgpt_file":    filepath.Join(fixture.imports.ChatGPT, "conversations.json"),
 		"import.claude_dir":      fixture.imports.Claude,
