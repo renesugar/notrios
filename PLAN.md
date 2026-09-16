@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**30 items: 20 complete, 1 in progress, 9 not started, 0 deferred.**
+**30 items: 21 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -68,7 +68,7 @@ this section is archived when the plan completes and the rules are not.
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
-| J8. Security review for remote media and MCP | in-progress | 2/3 | 1 |
+| J8. Security review for remote media and MCP | complete | 3/3 | — |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
@@ -92,15 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 
-### Started and not finished
-
-**J8. Security review for remote media and MCP**
-
-- `J8-C` Every finding carries a disposition: accepted with a reason, or deferred to a named new plan item; no product code changes in this item — *not-started*
-
-### Not started
-
-Written and not begun: J6, J9, J10, J11, J15, J27, J28, J29, J30. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -851,7 +843,7 @@ v0.9. J7-C can complete and be recorded first.
 - The REST break shown and documented
 - A 382,206-note library destroyed and restored with its content proven equal
 
-## J8. Security review for remote media and MCP — in progress
+## J8. Security review for remote media and MCP — complete
 
 **Goal.** The two surfaces that reach outward have been examined by someone
 looking for the failure rather than confirming the design.

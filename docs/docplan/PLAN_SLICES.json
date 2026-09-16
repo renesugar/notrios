@@ -189,7 +189,7 @@
     {
       "id": "J8",
       "title": "Security review for remote media and MCP",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J8-A",
@@ -206,7 +206,8 @@
         {
           "id": "J8-C",
           "statement": "Every finding carries a disposition: accepted with a reason, or deferred to a named new plan item; no product code changes in this item",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         }
       ]
     },

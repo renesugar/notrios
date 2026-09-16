@@ -171,6 +171,22 @@ These were attempted and refused, or checked and found sound.
   publication, tag rename, notebook deletion, document purge, graph report or
   export, or job start, cancel, import or export.
 
+## The archive
+
+Built from `0f0f956` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 70% remaining, identified as
+  `process ancestry: pid 1616574 is claude` (J24). An earlier attempt was
+  **paused by the owner** rather than overridden, when the five-hour window sat
+  one point under the 20% reserve; the build ran after the window reset.
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j8-0f0f956.zip`, 25,556,784 bytes, 2,640 entries.
+  `check_release_zip.py` accepts it.
+
+The probes run with the ordinary suite, and the whole Go suite through
+`scripts/check_temp_leaks.sh` left no `notrios-*` entry — which covers the
+loopback servers and quarantine directories these probes create.
+
 ## Dispositions
 
 | finding | disposition |
