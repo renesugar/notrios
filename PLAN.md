@@ -75,7 +75,7 @@ this section is archived when the plan completes and the rules are not.
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
-| J15. Migrate the remaining documents to the tracked example set | not-started | 0/3 | 3 |
+| J15. Migrate the remaining documents to the tracked example set | not-started | 0/4 | 4 |
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
@@ -1604,6 +1604,26 @@ So the honest target is not 164 of 164.
 - **J15-C.** No migrated page's fence can be hand-edited without a failure, and
   no migrated page's hash is moved by a human. `cmd/docexamples`' test already
   does this for one page; it should hold for every page it owns.
+- **J15-D.** The troubleshooting page's import rows describe the importers as
+  they are. Found 2026-09-16, while checking the documentation site after a
+  theme fix: `docs/troubleshooting.md`'s Importing table still quotes two errors
+  the importers no longer produce, and gives advice J25 and J26 made wrong.
+  - `no tweets.js/tweet.js found under ...` says to point `import twitter` at
+    the **extracted** folder, "not the ZIP". Since J25 the ZIP as downloaded is
+    the primary input, and the error now reads `no tweets.js, tweets-partN.js
+    or tweet.js found under …; expected a Twitter/X archive ZIP or its
+    extracted folder`.
+  - `read ChatGPT export: ... no such file` says to pass `conversations.json`
+    or its directory. Since J26 the ChatGPT, Privacy Portal and Claude export
+    ZIPs are read in place, and none of their errors has that form.
+
+  Each row is rewritten against the error text the importer actually returns,
+  and the rows gain a check that fails when a quoted error no longer appears in
+  the importer's source — the drift here went unnoticed because nothing tied
+  the quote to the code. This is prose, not an example fence, so it is not
+  counted in the measurement above and is not a migration; it is here because
+  it is the same failure J15 exists to end, a published statement nothing
+  keeps true.
 
 **Boundaries.** No page is migrated to raise a count. A synopsis stays a
 synopsis. Where the declaration would be longer and less clear than the fence,

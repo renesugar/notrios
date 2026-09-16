@@ -383,6 +383,11 @@
           "id": "J15-C",
           "statement": "No generated page's fence can be hand-edited, and no generated page's registry hash is moved by a human",
           "state": "not-started"
+        },
+        {
+          "id": "J15-D",
+          "statement": "The troubleshooting page's import rows quote the errors the importers return, and a check fails when a quoted error leaves the source",
+          "state": "not-started"
         }
       ]
     },
