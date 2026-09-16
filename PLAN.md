@@ -2870,29 +2870,27 @@ None of these changes a decision; each makes a decided behaviour visible.
   reads the block. Old binaries cannot be changed; this is a documentation
   duty, not a code one.
 
-### Open decisions
+### Owner decisions D8 and D9, 2026-09-16
 
-D7's answer did not restate two parts of its recommendation. J28-B and J28-C
-need both.
+D7's first answer did not restate two parts of its recommendation; the owner
+decided both as recommended.
 
-- **D8 — Whether an exception may re-permit loopback or "this host".**
-  Recommended: no. `permitted_address_ranges` cannot permit anything in
-  `127.0.0.0/8`, `::1/128`, `0.0.0.0/8` or `::/128`, including through the
-  embedded-IPv4 rule (`::ffff:127.0.0.1`). An entry overlapping them fails
-  loading, naming the entry. Reaching those addresses needs
-  `allow_private_networks: true`, the coarse switch D5 kept.
-  - The reason: a loopback exception makes the service fetch from its own
-    REST, MCP and sync endpoints on a URL a note supplied.
-  - The alternative, permitting them like any other range, is the reference's
-    model. It fits a multi-service deployment, not a single-user note app
-    whose own API listens on loopback.
-- **D9 — Whether an exception reaches embedded forms.** Recommended: yes. An
-  exception is matched with the same rule as the refused set, so permitting
-  `192.168.1.0/24` also permits `::ffff:192.168.1.5` and
-  `64:ff9b::c0a8:105`, which name the same IPv4 host. D8's guard applies to
-  those forms too. The alternative, matching exceptions against the literal
-  IPv6 form only, would make a permitted NAS unreachable on a NAT64 network,
-  which is the case D4 exists for.
+- **D8 — An exception may not re-permit loopback or "this host".**
+  `permitted_address_ranges` cannot permit anything in `127.0.0.0/8`,
+  `::1/128`, `0.0.0.0/8` or `::/128`. That includes the embedded-IPv4 forms
+  (`::ffff:127.0.0.1`, `64:ff9b::7f00:1`). An entry overlapping one of them
+  fails loading, and the error names the entry. Reaching those addresses needs
+  `allow_private_networks: true`, the coarse switch D5 kept. The reason: a
+  loopback exception would make the service fetch from its own REST, MCP and
+  sync endpoints on a URL a note supplied.
+- **D9 — An exception reaches embedded forms.** Exceptions are matched with the
+  same embedded-IPv4 rule as the refused set, so permitting `192.168.1.0/24`
+  also permits `::ffff:192.168.1.5` and `64:ff9b::c0a8:105`, which name the
+  same IPv4 host. D8's guard applies to those forms too. Without this, a
+  permitted NAS would be unreachable on a NAT64 network, the case D4 exists
+  for.
+
+**No decisions remain open.**
 
 **Scope.**
 
@@ -2903,7 +2901,7 @@ need both.
   - the ranges deliberately left out and why;
   - how embedded IPv4 is treated.
 
-  Owner decisions D1–D7 and, once made, D8–D9 are recorded there.
+  Owner decisions D1–D9 are recorded there.
 - **J28-B, one helper at both checks.** One function in `internal/media`
   applies the effective set, the exceptions and the embedded-IPv4 rule. Both
   the static literal check and `checkDialAddress` call it, and neither keeps
@@ -2954,8 +2952,8 @@ need both.
 - The default set is checked against the IANA registries once, when J28 is
   implemented, and dated. Notrios does not fetch the registries at run time.
 
-**Dependencies.** J8, which found it. D1–D7 are decided. D8 and D9 must be
-decided before J28-B and J28-C start; J28-A can start now.
+**Dependencies.** J8, which found it. All owner decisions, D1–D9, are made;
+every slice can start.
 
 **Working state.**
 - The policy names a dated default set, which the configuration can replace
