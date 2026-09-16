@@ -2924,6 +2924,53 @@ decided both as recommended.
 
 **No decisions remain open.**
 
+### Implementation design, 2026-09-16
+
+Read before starting; where it departs from the scope's wording, it says so.
+
+- **A leaf package, not a function in `internal/media`.** The configuration
+  loader must reject malformed entries (D3) and loopback exceptions (D8), and
+  `internal/media` imports `internal/config`. The default set, entry parsing,
+  the embedded-IPv4 rule and matching therefore live in a new
+  `internal/addressrange`, imported by both. `internal/media` holds no range
+  logic of its own, and both of its checks call the same `Rules.Check`. The
+  "one helper" requirement is met, one package down.
+- **Not stated means default.** `security.remote_media.refused_address_ranges`
+  is nil unless the file states it, and nil resolves to the default set. That
+  is also how `config show` and the REST view know the origin. `[]` is stated
+  and refuses nothing (D2).
+- **What counts as malformed** (D3). Each of these fails loading, naming the
+  key and the entry:
+  - an entry that is neither an address nor a CIDR prefix;
+  - a prefix with host bits set (`10.0.0.1/8`). A widened *exception* must not
+    pass silently, and the rule is the same for both lists;
+  - an IPv6 zone;
+  - a list key with no value and no items, which asks the owner to write `[]`
+    or remove the key;
+  - a list value that is not a bracketed flow list.
+
+  A bare address means its /32 or /128. Unknown keys under `security:` are
+  ignored, as everywhere else in the loader.
+- **D8 at load and at match.** An exception overlapping `127.0.0.0/8`,
+  `0.0.0.0/8`, `::1/128` or `::/128` fails loading. So does an IPv6 exception
+  overlapping those addresses' mapped, compatible or NAT64 forms. As defence
+  in depth, `Check` never lets an exception permit those addresses in any form.
+- **Wiring.** `media.NewPolicy`, `media.NewFetcher` and `localize.New` take an
+  optional `media.WithAddressRanges`, and every production call site passes
+  the loaded block. A caller that passes nothing gets the default set, so an
+  omission errs strict, and a test proves that the service path carries a
+  stated set. A policy built from ranges that fail to parse blocks every URL,
+  giving the error as the reason.
+- **Reasons.** A refusal names the range: `address 100.64.0.1 is in refused
+  range 100.64.0.0/10`. The J8 address probe classifies refusals by today's
+  wording (`private, loopback, or link-local`), so its classifier is updated to
+  recognise the new reason. That edit is recorded in J28's README, since the
+  probe is J8's evidence.
+- **The REST view.** `media_policy` in status and `GET` of the media policy
+  gain `refused_address_ranges`, `permitted_address_ranges`,
+  `address_ranges_origin` and `warnings`, in `internal/api` and
+  `api/openapi.yaml`.
+
 **Scope.**
 
 - **J28-A, the named default.** `SECURITY_AND_MEDIA_POLICY.md` replaces
