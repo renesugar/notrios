@@ -133,3 +133,14 @@ names added: `security`, `refused_address_ranges` and
 configuration without `security:` behaves as the default set, and
 `allow_private_networks` keeps its meaning (D5). The behaviour change is that
 more addresses are refused by default, which is the point of the item.
+
+## The archive
+
+Built from `2253560` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 28% of the five-hour window
+  remaining, above the 20% reserve, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+  The first attempt, at `3a472ed`, did not pass (above).
+- **ZIP:** `notrios-v1.0-j28-2253560.zip`, 25,603,517 bytes, 2,655 entries.
+  `check_release_zip.py` accepts it.

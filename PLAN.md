@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 22 complete, 0 in progress, 9 not started, 0 deferred.**
+**31 items: 23 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -88,7 +88,7 @@ this section is archived when the plan completes and the rules are not.
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
 | J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
 | J27. Normalise a host before matching it against the domain lists | complete | 1/1 | — |
-| J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | not-started | 0/4 | 4 |
+| J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | complete | 4/4 | — |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
@@ -2659,7 +2659,7 @@ question and are not in this item.
 **Working state.** A blocked domain stays blocked however the host is spelled,
 proven by a test that fails on today's code.
 
-## J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state
+## J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state — complete
 
 **Goal.** The address ranges remote-media localization refuses are one named
 set: written in `SECURITY_AND_MEDIA_POLICY.md`, stated explicitly in the
