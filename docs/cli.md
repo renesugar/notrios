@@ -21,8 +21,8 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl graph export [--db ...] [--collection id] [--overwrite] <out-dir>
 - notriosctl graph report [--db ...] [--collection id] [--limit N] [--write-note] [--quiet]
 - notriosctl import archive [--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir> [--collection id]
-- notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
-- notriosctl import claude [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>
+- notriosctl import chatgpt [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <export.zip|export-dir|conversations.json>
+- notriosctl import claude [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <export.zip|export-dir|conversations.json>
 - notriosctl import joplin-raw [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--batch-size 100] [--preserve-source] [--dry-run] [--write-config path] [--import-config path] [--localize-media] <raw-export-dir>
 - notriosctl import obsidian [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--dry-run] [--localize-media] <vault-dir> [--batch-size 100] [--preserve-source] [--write-config path] [--import-config path]
 - notriosctl import twitter [--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <twitter-archive.zip | extracted-archive-dir>
@@ -393,11 +393,11 @@ Positional argument: the archive **ZIP as downloaded**, read in place with nothi
 ### import chatgpt / import claude
 
 ```sh
-notriosctl import chatgpt [shared flags] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>
-notriosctl import claude  [shared flags] [--notebook Claude]  [--dry-run] <conversations.json|export-dir>
+notriosctl import chatgpt [shared flags] [--notebook ChatGPT] [--dry-run] <export.zip|export-dir|conversations.json>
+notriosctl import claude  [shared flags] [--notebook Claude]  [--dry-run] <export.zip|export-dir|conversations.json>
 ```
 
-Positional argument: the export's `conversations.json`, or a directory containing it. `--notebook` defaults to `ChatGPT` / `Claude`.
+Positional argument: the **export ZIP as you downloaded it** — from ChatGPT, from the OpenAI Privacy Portal (whose conversations and file library are nested ZIPs, read in place), or from Claude — or a folder holding a Claude export's `…-batch-0000.zip` files, an extracted export directory, or a `conversations.json`. Every `conversations*.json` shard is read. `--notebook` defaults to `ChatGPT` / `Claude`.
 
 ### import archive
 

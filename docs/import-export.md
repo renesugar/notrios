@@ -272,29 +272,54 @@ Behavior:
 
 ---
 
-## ChatGPT (data export)
+## ChatGPT (data export, and the OpenAI Privacy Portal export)
 
-Request your data export from ChatGPT's settings and extract the ZIP; the importer takes either the extracted directory or the `conversations.json` inside it:
+ChatGPT is exported in two shapes, and the importer takes either **as the ZIP you downloaded** — there is no need to unzip anything:
 
 ```sh
-go run ./cmd/notriosctl import chatgpt --dry-run "/path/to/export/conversations.json"
-go run ./cmd/notriosctl import chatgpt "/path/to/export-dir"
+go run ./cmd/notriosctl import chatgpt --dry-run "/path/to/chatgpt-export.zip"
+go run ./cmd/notriosctl import chatgpt "/path/to/OpenAI-export.zip"
 ```
+
+An extracted folder, or a path straight to a `conversations.json`, works too.
+
+| What you downloaded | What it holds |
+|---|---|
+| **from ChatGPT** (Settings → Data controls → Export) | `conversations.json` beside `chat.html` and the asset files, named `file-<id>-<name>.<ext>` or `file_<hash>-<name>.<ext>` |
+| **from the OpenAI Privacy Portal** | an outer ZIP whose `User Online Activity/` folder holds **ZIPs of its own**: `Conversations__….zip` (with `conversations-000.json`, `conversations-001.json`, … and assets stripped to `file-<id>.dat`) and `Files__….zip` (your ChatGPT file library) |
 
 Extra flag: `--notebook` (default `ChatGPT`, created with a 🤖 icon).
 
-Each conversation becomes **one Markdown note** with `## User — timestamp` / `## Assistant — timestamp` sections. Only the conversation's *current* branch is imported (abandoned edit/regeneration branches are excluded); system/tool and empty messages are skipped (`messages_skipped`). Unnamed conversations get dated titles. The conversation ID becomes the provenance thread ID.
+Behaviour:
+
+- **Every conversation becomes its own note**, and every `conversations*.json` shard is read, in order.
+- **Nested ZIPs are read in place.** Nothing is extracted; a large nested archive is spooled into the instance's own temp directory (`data.temp_dir`) and removed afterwards.
+- **`.dat` assets get their real names back**, from `conversation_asset_file_names.json`, then `library_files.json` (which also carries the MIME type), and otherwise from the file's own bytes. The report counts which source named how many. `chat.html` shows the `.dat` names in a Privacy Portal export; the importer reads the JSON instead, so notes name files properly.
+- **Attachments become resources** and are embedded in the note; file IDs match under either the `file-` or `file_` prefix.
+- **The file library is imported.** A file a conversation references is attached to that note; one nothing references gets a note of its own in a **ChatGPT Files** notebook, so it stays searchable.
+- **Code and output are rendered** as fenced code blocks, and browsing results as text. The model's thinking, reasoning recaps and tool plumbing are **not** imported; the report counts them.
+- Report: `source_format`, `archive_files`, `nested_archives`, `conversations_seen`, `notes_*`, `messages_*`, `code_blocks`, `machinery_skipped`, `assets_referenced`/`assets_imported`/`assets_missing`, `asset_names_from_map`/`asset_names_from_library`/`asset_names_sniffed`, `library_files_seen`/`library_files_imported`/`library_stub_notes`, `archive_entries_rejected`, `warnings`.
+
+---
 
 ## Claude (data export)
 
-Same shape as ChatGPT — point at the export's `conversations.json` or its directory:
+Give the importer the ZIP as you downloaded it. A large export arrives as several `...-batch-0000.zip`, `...-batch-0001.zip` files: point at the folder holding them and they import as one export.
 
 ```sh
-go run ./cmd/notriosctl import claude --dry-run "/path/to/conversations.json"
-go run ./cmd/notriosctl import claude "/path/to/export-dir"
+go run ./cmd/notriosctl import claude --dry-run "/path/to/claude-data-export.zip"
+go run ./cmd/notriosctl import claude "/path/to/export-folder"
 ```
 
-Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon). Messages come from each conversation's flat message list (text content blocks are used when the plain-text field is empty).
+Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon).
+
+Behaviour:
+
+- **Every conversation becomes its own note.** Messages come from each conversation's flat message list, using the text content blocks when the plain-text field is empty.
+- **Each project becomes a note too**, with its description, prompt template and each of its docs.
+- **Attachments keep their text.** A Claude export carries an attachment's extracted text rather than its bytes, so the note holds that text under the file's name. A file the export only names is shown as not in the archive.
+- **Thinking and tool blocks are not imported**, and are counted in the report.
+- Report: `source_format`, `archive_files`, `batch_archives`, `conversations_seen`, `notes_*`, `messages_*`, `code_blocks`, `attachments_seen`, `files_referenced`, `machinery_skipped`, `projects_seen`/`projects_imported`/`project_docs`, `archive_entries_rejected`, `warnings`.
 
 ---
 

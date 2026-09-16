@@ -15,6 +15,10 @@
   {{- if and (eq .Path "import-export.md") (eq $anchor "twitter-x-archive") -}}
     {{- $aliases = $aliases | append "twitter-x-extracted-archive" -}}
   {{- end -}}
+  {{- /* J26 renamed the section when the importer began taking the Privacy Portal export too; links to the old anchor still land on it. */ -}}
+  {{- if and (eq .Path "import-export.md") (eq $anchor "chatgpt-data-export-and-the-openai-privacy-portal-export") -}}
+    {{- $aliases = $aliases | append "chatgpt-data-export" -}}
+  {{- end -}}
   {{- if and (eq .Path "stable-links.md") (eq $anchor "linking-to-a-section-or-a-block") -}}
     {{- $aliases = $aliases | append "linking-to-a-block-not-just-a-note" -}}
   {{- end -}}

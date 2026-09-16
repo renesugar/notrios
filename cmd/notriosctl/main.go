@@ -751,7 +751,7 @@ func runImportConversations(args []string, kind string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintf(os.Stderr, "usage: notriosctl import %s [options] <conversations.json|export-dir>\n", kind)
+		fmt.Fprintf(os.Stderr, "usage: notriosctl import %s [options] <export.zip|export-dir|conversations.json>\n", kind)
 		fs.PrintDefaults()
 		os.Exit(2)
 	}

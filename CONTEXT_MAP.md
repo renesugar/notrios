@@ -268,6 +268,19 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).
+- `internal/importers/archivesource/` — one reader for a downloaded export
+  archive (J25, shared in J26). A Source reads an extracted folder or the ZIP
+  as downloaded, in place, and `Nested` reads a ZIP held inside a ZIP (the
+  OpenAI Privacy Portal's shape), spooling it into the instance temp space when
+  large. It bounds entry counts and file sizes, refuses names that escape the
+  archive, and streams JSON arrays with `DecodeArray` rather than reading a data
+  file whole. Each importer supplies a `Spec`: which files mark its data
+  directory, and its own wording when a file is not one of its archives.
+- `internal/importers/conversationnote/` — renders one exported conversation as
+  Markdown (J26). Code and execution output become fenced blocks and
+  attachments are named; thinking, reasoning recaps and tool plumbing are
+  counted rather than written, by owner decision, so what was left out is
+  visible in the import report.
 - `internal/tempspace/` — each instance's own temp directory (J22). Several
   Notrios instances can run on one machine, so temporary work goes in
   `data.temp_dir`, one flock-held `p-<id>` subdirectory per process, never in

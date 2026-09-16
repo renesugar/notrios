@@ -194,8 +194,8 @@
         "chatgpt"
       ],
       "notes": [],
-      "purpose": "import a ChatGPT conversation export",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>"
+      "purpose": "import a ChatGPT export: the downloaded ZIP, an OpenAI Privacy Portal ZIP, or an extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <export.zip|export-dir|conversations.json>"
     },
     {
       "path": [
@@ -203,8 +203,8 @@
         "claude"
       ],
       "notes": [],
-      "purpose": "import a Claude conversation export",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>"
+      "purpose": "import a Claude export: the downloaded ZIP, its batch ZIPs, or an extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <export.zip|export-dir|conversations.json>"
     },
     {
       "path": [

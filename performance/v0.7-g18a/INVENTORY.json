@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "d2f040a62ff929e654ff3c7d743fd53ccb87334f13f0681fe80a21f8cfad176f",
+      "sha256": "f8642de3aea136cee7d924394ce0f845ef76f394bfb89d30068692579d1f4e1f",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1761,7 +1761,7 @@
     },
     {
       "path": "docs/import-export.md",
-      "sha256": "788e062e92e906f4eb6395f6b164753af4bbf0223d95b4ef9adc4c483559466d",
+      "sha256": "c4f44b20b91d9bd1b4b09142add567602941ff57e53a0d4b2b98ddf5abfe9d84",
       "help_note": "doc_help_import_export",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
       "sections": [
@@ -1886,9 +1886,9 @@
           "grade": "unverified"
         },
         {
-          "id": "chatgpt-data-export",
+          "id": "chatgpt-data-export-and-the-openai-privacy-portal-export",
           "level": 2,
-          "title": "ChatGPT (data export)",
+          "title": "ChatGPT (data export, and the OpenAI Privacy Portal export)",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",

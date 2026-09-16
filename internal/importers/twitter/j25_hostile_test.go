@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/renesugar/notrios/internal/importers/archivesource"
 )
 
 // J25-B: an archive is untrusted input. These bound what an import reads and
@@ -49,22 +51,22 @@ func j25WriteZipEntries(t *testing.T, entries [][2]string) string {
 }
 
 func TestJ25RefusesAPostFileOverTheSizeLimit(t *testing.T) {
-	j25Lower(t, &maxDataFileBytes, 64<<10)
+	j25Lower(t, &archivesource.Limits.DataFileBytes, 64<<10)
 	// A megabyte of one repeated character compresses to almost nothing: the
 	// shape of a decompression bomb, at a size a test can afford.
 	bomb := j25File("tweets", "part0", j25Post("3001", strings.Repeat("a", 1<<20), ""))
 	files := map[string]string{"data/account.js": j25Archive()["data/account.js"], "data/tweets.js": bomb}
 	for name, source := range map[string]string{"zip": j25WriteZip(t, files), "folder": j25WriteDir(t, files)} {
-		if _, err := Import(context.Background(), newTestStore(t), source, Options{}); !errors.Is(err, errTooLarge) {
-			t.Errorf("%s: a post file over the limit must be refused with errTooLarge, got %v", name, err)
+		if _, err := Import(context.Background(), newTestStore(t), source, Options{}); !errors.Is(err, archivesource.ErrTooLarge) {
+			t.Errorf("%s: a post file over the limit must be refused with archivesource.ErrTooLarge, got %v", name, err)
 		}
 	}
 }
 
 func TestJ25StreamLimitCatchesAFileLargerThanItsRecordedSize(t *testing.T) {
-	j25Lower(t, &maxDataFileBytes, 64<<10)
+	j25Lower(t, &archivesource.Limits.DataFileBytes, 64<<10)
 	body := strings.NewReader(strings.Repeat("b", 1<<20))
-	limited := &limitedReadCloser{reader: body, closer: nil, limit: maxDataFileBytes, name: "tweets.js"}
+	limited := archivesource.NewLimitedReader(body, nil, archivesource.Limits.DataFileBytes, "tweets.js")
 	buffer := make([]byte, 32<<10)
 	total := 0
 	var err error
@@ -73,17 +75,17 @@ func TestJ25StreamLimitCatchesAFileLargerThanItsRecordedSize(t *testing.T) {
 		n, err = limited.Read(buffer)
 		total += n
 	}
-	if !errors.Is(err, errTooLarge) || int64(total) > maxDataFileBytes {
-		t.Fatalf("read %d bytes and stopped with %v; want errTooLarge at no more than %d bytes", total, err, maxDataFileBytes)
+	if !errors.Is(err, archivesource.ErrTooLarge) || int64(total) > archivesource.Limits.DataFileBytes {
+		t.Fatalf("read %d bytes and stopped with %v; want archivesource.ErrTooLarge at no more than %d bytes", total, err, archivesource.Limits.DataFileBytes)
 	}
 }
 
 func TestJ25RefusesAnArchiveWithTooManyEntries(t *testing.T) {
-	previous := maxArchiveEntries
-	maxArchiveEntries = 5
-	t.Cleanup(func() { maxArchiveEntries = previous })
+	previous := archivesource.Limits.Entries
+	archivesource.Limits.Entries = 5
+	t.Cleanup(func() { archivesource.Limits.Entries = previous })
 	_, err := Import(context.Background(), newTestStore(t), j25WriteZip(t, j25Archive()), Options{DryRun: true})
-	if !errors.Is(err, errTooLarge) || !strings.Contains(err.Error(), "entries") {
+	if !errors.Is(err, archivesource.ErrTooLarge) || !strings.Contains(err.Error(), "entries") {
 		t.Fatalf("an archive with more entries than the limit must be refused, got %v", err)
 	}
 }
@@ -147,7 +149,7 @@ func TestJ25DirectoryEntriesWithOddNamesAreNotRefusals(t *testing.T) {
 }
 
 func TestJ25SkipsAMediaFileOverTheSizeLimit(t *testing.T) {
-	j25Lower(t, &maxMediaFileBytes, 16)
+	j25Lower(t, &archivesource.Limits.MediaFileBytes, 16)
 	files := j25Archive()
 	files["data/tweets_media/3101-a.png"] = strings.Repeat("P", 64)
 	report, err := Import(context.Background(), newTestStore(t), j25WriteZip(t, files), Options{})
@@ -159,7 +161,7 @@ func TestJ25SkipsAMediaFileOverTheSizeLimit(t *testing.T) {
 	}
 	found := false
 	for _, warning := range report.Warnings {
-		found = found || strings.Contains(warning, errTooLarge.Error())
+		found = found || strings.Contains(warning, archivesource.ErrTooLarge.Error())
 	}
 	if !found {
 		t.Fatalf("the skipped media file must be reported with its reason, warnings: %v", report.Warnings)

@@ -1087,11 +1087,11 @@
       "path": "docs/cli.md",
       "section": "import-chatgpt-import-claude",
       "language": "sh",
-      "sha256": "b259d209397daad98f554562808f09a48914b68e085ed8b65a4bbac7891605fe",
+      "sha256": "e6a3bee6192db08e5a858a393f1fa0ea7a646b420e125304bcf921746a400af9",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <conversations.json|export-dir> is an input alternative/metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <export.zip|export-dir|conversations.json> is an input alternative/metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
       }
     },
     {
@@ -1924,11 +1924,11 @@
       }
     },
     {
-      "id": "import-export-chatgpt-data-export-example-1",
+      "id": "import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1",
       "path": "docs/import-export.md",
-      "section": "chatgpt-data-export",
+      "section": "chatgpt-data-export-and-the-openai-privacy-portal-export",
       "language": "sh",
-      "sha256": "61e09babcb9621c6ec92d7f3acf3b20f3d02e06d1fe61234134ffd3db2051a71",
+      "sha256": "3877c02afac7b03c245441c4ff8a1850def796e969633c7e67a73f0671102d6a",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -1941,12 +1941,12 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/export/conversations.json",
-            "source": "import.chatgpt_file"
+            "token": "/path/to/chatgpt-export.zip",
+            "source": "import.chatgpt_zip"
           },
           {
-            "token": "/path/to/export-dir",
-            "source": "import.chatgpt_dir"
+            "token": "/path/to/OpenAI-export.zip",
+            "source": "import.chatgpt_portal_zip"
           }
         ],
         "expected": {
@@ -1955,7 +1955,7 @@
         },
         "postcondition": {
           "kind": "cli-import-chatgpt",
-          "detail": "dry run and apply parse the same bounded conversation fixture and create one searchable note"
+          "detail": "dry run of the ChatGPT export ZIP and apply of the OpenAI Privacy Portal ZIP, whose conversations are a ZIP inside the ZIP, both read in place into one searchable note"
         }
       }
     },
@@ -1964,7 +1964,7 @@
       "path": "docs/import-export.md",
       "section": "claude-data-export",
       "language": "sh",
-      "sha256": "27618fcd32ef5de537bea210d3f34c403f2457147924150fd45f014da40ccecc",
+      "sha256": "aa44e614a66c8a7b8cdd4768d366e104a7777022d9ae071f57828a640ba9e584",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -1977,11 +1977,11 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/conversations.json",
-            "source": "import.claude_file"
+            "token": "/path/to/claude-data-export.zip",
+            "source": "import.claude_zip"
           },
           {
-            "token": "/path/to/export-dir",
+            "token": "/path/to/export-folder",
             "source": "import.claude_dir"
           }
         ],
@@ -1991,7 +1991,7 @@
         },
         "postcondition": {
           "kind": "cli-import-claude",
-          "detail": "dry run and apply parse the bounded Claude export and create one searchable note"
+          "detail": "dry run of the Claude export ZIP and apply of its extracted folder, both read in place into one searchable note"
         }
       }
     },

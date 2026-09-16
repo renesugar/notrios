@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/renesugar/notrios/internal/importers/archivesource"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -238,7 +239,7 @@ func (c *tweetCollector) add(tw *tweet) {
 }
 
 func parseAccount(archive archiveSource) (username, display string, err error) {
-	file, err := archive.Open("account.js", maxDataFileBytes)
+	file, err := archive.Open("account.js", archivesource.Limits.DataFileBytes)
 	if err != nil {
 		return "", "", fmt.Errorf("account.js not readable: %w", err)
 	}
@@ -261,7 +262,7 @@ func parseAccount(archive archiveSource) (username, display string, err error) {
 // decodePosts streams one post file, handing each post with an ID to add, and
 // returns how many there were.
 func decodePosts(archive archiveSource, name, username string, add func(*tweet)) (int, error) {
-	file, err := archive.Open(name, maxDataFileBytes)
+	file, err := archive.Open(name, archivesource.Limits.DataFileBytes)
 	if err != nil {
 		return 0, err
 	}
@@ -279,7 +280,7 @@ func decodePosts(archive archiveSource, name, username string, add func(*tweet))
 
 // countEntries streams a data file and counts its entries without keeping them.
 func countEntries(archive archiveSource, name string) (int, error) {
-	file, err := archive.Open(name, maxDataFileBytes)
+	file, err := archive.Open(name, archivesource.Limits.DataFileBytes)
 	if err != nil {
 		return 0, err
 	}
@@ -543,7 +544,7 @@ func importMediaFile(ctx context.Context, st store.Store, archive archiveSource,
 	} else if !errors.Is(err, store.ErrNotFound) {
 		return "", false, err
 	}
-	file, err := archive.Open(mediaDir+"/"+filename, maxMediaFileBytes)
+	file, err := archive.Open(mediaDir+"/"+filename, archivesource.Limits.MediaFileBytes)
 	if err != nil {
 		return "", false, err
 	}

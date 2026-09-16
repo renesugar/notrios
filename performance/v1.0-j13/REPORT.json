@@ -3,7 +3,7 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "bda75185e785eabcd04534174d2d8ca60053b955",
+  "content_commit": "bdba55507a99cccdffb15f8d86dc30b1be48dbd0",
   "counts": {
     "examples": 169,
     "executed": 69,
@@ -1119,9 +1119,9 @@
       "unrun_reason": ""
     },
     {
-      "id": "import-export-chatgpt-data-export-example-1",
+      "id": "import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1",
       "path": "docs/import-export.md",
-      "section": "chatgpt-data-export",
+      "section": "chatgpt-data-export-and-the-openai-privacy-portal-export",
       "state": "executed",
       "class": "recipe",
       "rule": "2 literal command line(s), nothing to substitute",

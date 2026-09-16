@@ -1,19 +1,22 @@
-// Package claude imports a Claude data-export conversations.json into the
-// canonical store (Notrios redesign task R11). Each conversation becomes one
-// Markdown note (messages in order) in a "Claude" notebook, with provenance
-// rows carrying the conversation UUID as the thread ID.
+// Package claude imports a Claude data export into the canonical store
+// (Notrios redesign task R11; J26 made it read the archive as downloaded).
+// Each conversation becomes one Markdown note (messages in order) in a "Claude"
+// notebook, with provenance rows carrying the conversation UUID as the thread
+// ID, and each project becomes a note of its own.
 package claude
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/renesugar/notrios/internal/importers/archivesource"
+	"github.com/renesugar/notrios/internal/importers/conversationnote"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -38,11 +41,32 @@ type Report struct {
 	DryRun            bool     `json:"dry_run,omitempty"`
 	NotebookID        string   `json:"notebook_id,omitempty"`
 	Warnings          []string `json:"warnings,omitempty"`
+
+	// SourceFormat is "zip" for the archive as downloaded, or "directory".
+	SourceFormat string `json:"source_format"`
+	// ArchiveFiles names the conversation files read, in shard order, and
+	// BatchArchives the batch ZIPs when a folder held several.
+	ArchiveFiles    []string `json:"archive_files"`
+	BatchArchives   []string `json:"batch_archives,omitempty"`
+	CodeBlocks      int      `json:"code_blocks"`
+	AttachmentsSeen int      `json:"attachments_seen"`
+	// FilesReferenced counts file references that name a file the archive does
+	// not carry: a Claude export holds no file bytes.
+	FilesReferenced int `json:"files_referenced"`
+	// MachinerySkipped counts thinking and tool blocks left out of notes by
+	// owner decision (J26-E).
+	MachinerySkipped int `json:"machinery_skipped"`
+	ProjectsSeen     int `json:"projects_seen"`
+	ProjectsImported int `json:"projects_imported"`
+	ProjectDocs      int `json:"project_docs"`
+	// ArchiveEntriesRejected counts ZIP entries refused as unsafe.
+	ArchiveEntriesRejected int `json:"archive_entries_rejected"`
 }
 
 type conversation struct {
 	UUID      string    `json:"uuid"`
 	Name      string    `json:"name"`
+	Summary   string    `json:"summary"`
 	CreatedAt string    `json:"created_at"`
 	Messages  []message `json:"chat_messages"`
 }
@@ -56,10 +80,33 @@ type message struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"content"`
+	Attachments []struct {
+		FileName         string `json:"file_name"`
+		FileSize         int64  `json:"file_size"`
+		FileType         string `json:"file_type"`
+		ExtractedContent string `json:"extracted_content"`
+	} `json:"attachments"`
+	Files []struct {
+		FileUUID string `json:"file_uuid"`
+		FileName string `json:"file_name"`
+	} `json:"files"`
 }
 
-// Import reads conversations.json (a path to the file, or to a directory
-// containing it).
+type project struct {
+	UUID           string `json:"uuid"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	PromptTemplate string `json:"prompt_template"`
+	CreatedAt      string `json:"created_at"`
+	Docs           []struct {
+		UUID     string `json:"uuid"`
+		Filename string `json:"filename"`
+		Content  string `json:"content"`
+	} `json:"docs"`
+}
+
+// Import reads a Claude export: the ZIP as downloaded, a folder holding the
+// batch ZIPs of one export, an extracted folder, or a conversations.json.
 func Import(ctx context.Context, st store.Store, source string, options Options) (Report, error) {
 	report := Report{DryRun: options.DryRun}
 	if strings.TrimSpace(options.CollectionID) == "" {
@@ -68,56 +115,105 @@ func Import(ctx context.Context, st store.Store, source string, options Options)
 	if strings.TrimSpace(options.NotebookName) == "" {
 		options.NotebookName = "Claude"
 	}
-	conversations, err := loadConversations(source)
-	if err != nil {
-		return report, err
-	}
-	report.ConversationsSeen = len(conversations)
-	if options.DryRun {
-		report.NotesImported = len(conversations)
-		return report, nil
-	}
-	notebookID, err := ensureNotebook(ctx, st, NotebookID, options.NotebookName, "✳️")
-	if err != nil {
-		return report, err
-	}
-	report.NotebookID = notebookID
 
-	for _, conv := range conversations {
-		if err := importConversation(ctx, st, conv, notebookID, options, &report); err != nil {
+	archives, err := openArchives(source, &report)
+	if err != nil {
+		return report, err
+	}
+	defer func() {
+		for _, archive := range archives {
+			archive.Close()
+		}
+	}()
+	report.SourceFormat = archives[0].Kind()
+
+	notebookID := ""
+	if !options.DryRun {
+		if notebookID, err = ensureNotebook(ctx, st, NotebookID, options.NotebookName, "✳️"); err != nil {
+			return report, err
+		}
+		report.NotebookID = notebookID
+	}
+
+	for _, archive := range archives {
+		names, err := archive.List("")
+		if err != nil {
+			return report, err
+		}
+		for _, name := range conversationFiles(names) {
+			report.ArchiveFiles = append(report.ArchiveFiles, name)
+			if err := eachEntry(archive, name, func(conv conversation) error {
+				report.ConversationsSeen++
+				if options.DryRun {
+					report.NotesImported++
+					return nil
+				}
+				return importConversation(ctx, st, conv, notebookID, options, &report)
+			}); err != nil {
+				return report, err
+			}
+		}
+		if err := importProjects(ctx, st, archive, notebookID, options, &report); err != nil {
 			return report, err
 		}
 	}
 	return report, nil
 }
 
-func loadConversations(source string) ([]conversation, error) {
-	path := source
+// openArchives opens the export: one archive, or the batch ZIPs of a split
+// export when a folder holds them.
+func openArchives(source string, report *Report) ([]archivesource.Source, error) {
 	if info, err := os.Stat(source); err == nil && info.IsDir() {
-		path = filepath.Join(source, "conversations.json")
+		entries, err := os.ReadDir(source)
+		if err != nil {
+			return nil, err
+		}
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			if entry.Type().IsRegular() {
+				names = append(names, entry.Name())
+			}
+		}
+		if batches := batchSiblings(names); len(batches) > 0 {
+			sources := make([]archivesource.Source, 0, len(batches))
+			for _, batch := range batches {
+				archive, rejected, err := archivesource.Open(filepath.Join(source, batch), archiveSpec())
+				if err != nil {
+					for _, opened := range sources {
+						opened.Close()
+					}
+					return nil, err
+				}
+				report.ArchiveEntriesRejected += rejected
+				report.BatchArchives = append(report.BatchArchives, batch)
+				sources = append(sources, archive)
+			}
+			return sources, nil
+		}
+	} else if err == nil && conversationsFileRE.MatchString(filepath.Base(source)) {
+		// A path straight to conversations.json: its directory is the export.
+		source = filepath.Dir(source)
 	}
-	raw, err := os.ReadFile(path)
+	archive, rejected, err := archivesource.Open(source, archiveSpec())
 	if err != nil {
-		return nil, fmt.Errorf("read Claude export: %w", err)
+		return nil, err
 	}
-	var conversations []conversation
-	if err := json.Unmarshal(raw, &conversations); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", filepath.Base(path), err)
+	report.ArchiveEntriesRejected += rejected
+	if rejected > 0 {
+		report.Warnings = append(report.Warnings, fmt.Sprintf("%d archive entries were refused: a name escaping the archive, or not a regular file", rejected))
 	}
-	return conversations, nil
+	return []archivesource.Source{archive}, nil
 }
 
-func (m message) text() string {
-	if strings.TrimSpace(m.Text) != "" {
-		return m.Text
+// eachEntry streams one conversations file, handing over each conversation.
+func eachEntry(archive archivesource.Source, name string, each func(conversation) error) error {
+	file, err := archive.Open(name, archivesource.Limits.DataFileBytes)
+	if err != nil {
+		return err
 	}
-	parts := []string{}
-	for _, block := range m.Content {
-		if block.Type == "text" && strings.TrimSpace(block.Text) != "" {
-			parts = append(parts, block.Text)
-		}
-	}
-	return strings.Join(parts, "\n\n")
+	defer file.Close()
+	_, err = archivesource.DecodeArray(file, name, each)
+	return err
 }
 
 func importConversation(ctx context.Context, st store.Store, conv conversation, notebookID string, options Options, report *Report) error {
@@ -126,37 +222,132 @@ func importConversation(ctx context.Context, st store.Store, conv conversation, 
 		return nil
 	}
 	docID := "doc_claude_" + sanitizeID(conv.UUID)
-	title := strings.TrimSpace(conv.Name)
 	created := parseISO(conv.CreatedAt)
+	title := strings.TrimSpace(conv.Name)
 	if title == "" {
 		title = "Claude conversation " + created.UTC().Format("2006-01-02")
 	}
 
-	var b strings.Builder
+	note := &conversationnote.Builder{}
 	for _, msg := range conv.Messages {
-		text := strings.TrimSpace(msg.text())
-		if text == "" {
-			report.MessagesSkipped++
+		text, machinery := msg.render()
+		note.Machinery(machinery)
+		if strings.TrimSpace(text) == "" && len(msg.Attachments) == 0 && len(msg.Files) == 0 {
+			note.Empty()
 			continue
 		}
-		heading := "Assistant"
-		if strings.EqualFold(msg.Sender, "human") {
-			heading = "User"
-		}
+		heading := conversationnote.Heading(msg.Sender, "")
+		when := ""
 		if ts := parseISO(msg.CreatedAt); !ts.IsZero() {
-			heading += " — " + ts.UTC().Format("2006-01-02 15:04 UTC")
+			when = ts.UTC().Format("2006-01-02 15:04 UTC")
 		}
-		b.WriteString("## " + heading + "\n\n" + text + "\n\n")
-		report.MessagesImported++
+		note.Section(heading, when)
+		note.Text(text)
+		for _, attachment := range msg.Attachments {
+			// A Claude export carries an attachment's extracted text, not its
+			// bytes, so the note keeps the text under the file's name.
+			note.Attachment(attachment.FileName, "")
+			note.Code("", "", attachment.ExtractedContent)
+		}
+		for _, file := range msg.Files {
+			note.Attachment(file.FileName, "")
+			report.FilesReferenced++
+		}
 	}
-	body := strings.TrimSpace(b.String()) + "\n"
+
+	counts := note.Counts()
+	report.MessagesImported += counts.Messages
+	report.MessagesSkipped += counts.Empty
+	report.CodeBlocks += counts.CodeBlocks
+	report.AttachmentsSeen += counts.Attachments
+	report.MachinerySkipped += counts.Machinery
 
 	return upsertConversationNote(ctx, st, upsertNote{
-		DocID: docID, Title: title, Body: body,
+		DocID: docID, Title: title, Body: note.Body(),
 		SourceSystem: "claude", ExternalID: conv.UUID,
 		NotebookID: notebookID, CollectionID: options.CollectionID,
 		PublishedAt: publishedString(created),
 	}, report)
+}
+
+// render returns a message's prose and how many machinery blocks it left out.
+func (m message) render() (string, int) {
+	if strings.TrimSpace(m.Text) != "" {
+		return m.Text, 0
+	}
+	parts := []string{}
+	machinery := 0
+	for _, block := range m.Content {
+		switch block.Type {
+		case "text":
+			if strings.TrimSpace(block.Text) != "" {
+				parts = append(parts, block.Text)
+			}
+		default:
+			// thinking, tool_use, tool_result, token_budget: counted, not kept.
+			machinery++
+		}
+	}
+	return strings.Join(parts, "\n\n"), machinery
+}
+
+// importProjects imports each project in the export as its own note: what it
+// was for, its prompt template, and each doc (owner decision, J26-D).
+func importProjects(ctx context.Context, st store.Store, archive archivesource.Source, notebookID string, options Options, report *Report) error {
+	names, err := archive.List("projects")
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	for _, name := range names {
+		if !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		file, err := archive.Open("projects/"+name, archivesource.Limits.DataFileBytes)
+		if err != nil {
+			return err
+		}
+		var p project
+		err = archivesource.DecodeObject(file, "projects/"+name, &p)
+		file.Close()
+		if err != nil {
+			return err
+		}
+		report.ProjectsSeen++
+		report.ProjectDocs += len(p.Docs)
+		if options.DryRun || strings.TrimSpace(p.UUID) == "" {
+			continue
+		}
+		note := &conversationnote.Builder{}
+		note.Section("Project", "")
+		note.Text(p.Description)
+		if strings.TrimSpace(p.PromptTemplate) != "" {
+			note.Code("Prompt template", "", p.PromptTemplate)
+		}
+		for _, doc := range p.Docs {
+			note.Section(doc.Filename, "")
+			note.Text(doc.Content)
+		}
+		title := strings.TrimSpace(p.Name)
+		if title == "" {
+			title = "Claude project"
+		}
+		before := report.NotesImported
+		if err := upsertConversationNote(ctx, st, upsertNote{
+			DocID: "doc_claude_project_" + sanitizeID(p.UUID), Title: title, Body: note.Body(),
+			SourceSystem: "claude", ExternalID: "project:" + p.UUID,
+			NotebookID: notebookID, CollectionID: options.CollectionID,
+			PublishedAt: publishedString(parseISO(p.CreatedAt)),
+		}, report); err != nil {
+			return err
+		}
+		if report.NotesImported > before {
+			report.ProjectsImported++
+		}
+	}
+	return nil
 }
 
 // upsertNote carries the shared conversation-note upsert parameters.
