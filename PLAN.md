@@ -2611,12 +2611,44 @@ string literally, so the trailing-dot form matches no pattern and falls through
 to the policy default. The allowed list fails the safe way round; the blocked
 list fails open.
 
+**Measured before starting, 2026-09-16.** How Go's `net/url` reads the forms
+this item concerns:
+
+- `https://blocked.example.org./a` has host `blocked.example.org.`, and
+  `BLOCKED.Example.ORG.:8443` keeps its case and dot. Both need normalising.
+- `127.0.0.1.` and `localhost.` are **not** recognised by the static private
+  check either: `net.ParseIP("127.0.0.1.")` is nil and the `localhost`
+  comparison is literal. The connect-time check still refuses what they
+  resolve to, but the static verdict is `review` instead of `block`. That is
+  the same gap in the same function, so it is in this item.
+- `blocked.example.org..` parses, with an empty final label. DNS does not treat
+  it as the same name, and Go's resolver refuses it (`no such host`).
+- `%2E` in a host is a parse error, so a percent-encoded dot cannot disguise a
+  host.
+- `https://./a` parses with host `.`.
+- A full-width dot (`U+FF0E`) survives parsing as a different host. Unicode and
+  IDNA mapping are outside this item (boundary below).
+
 **Scope.**
 
-- **J27-A, one normalised form.** The host is lowercased and its trailing dot
-  removed once, before the blocked, allowed and review patterns are matched,
-  and the wildcard rule keeps its current meaning. Cases cover the dotted form
-  against every list, and the apex-versus-wildcard behaviour stays as it is.
+- **J27-A, one normalised form.** One function lowercases the host and removes
+  **one** trailing dot, the form DNS treats as the same name. `Evaluate` applies
+  it once, before the private-address check and before the blocked, allowed and
+  review patterns are matched.
+  - Configured patterns get the same normalisation, so `example.org.` in a list
+    means `example.org`. The wildcard rule keeps its current meaning.
+  - A host that is empty after normalisation, or still has an empty label
+    (`..`, a leading dot, a second trailing dot), is **blocked as malformed**,
+    not left to the default action. No resolver treats it as a real name, and
+    a malformed host must not reach review by accident.
+  - Cases cover the dotted form against every list and the dotted forms of
+    `localhost` and an address literal. They also cover the malformed forms, a
+    dotted pattern, and the unchanged apex-versus-wildcard behaviour.
+  - The test fails on today's code.
+- **The record.** `performance/v1.0-j27/README.md` states what was measured and
+  what changed. `docs/service.md`'s domain-pattern row says how hosts are
+  matched. J8's probe is J8's archived evidence and is not edited: its J8-F1
+  cases now log "as expected", and the regression guard is J27's test.
 
 **Boundaries.** No change to what the patterns mean, only to the form of the
 host they are matched against. Punycode and Unicode host forms are a separate
