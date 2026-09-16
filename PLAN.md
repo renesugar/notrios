@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**30 items: 21 complete, 0 in progress, 9 not started, 0 deferred.**
+**31 items: 21 complete, 0 in progress, 10 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -91,6 +91,7 @@ this section is archived when the plan completes and the rules are not.
 | J28. Decide which reserved address ranges remote media refuses, and apply the same set at both checks | not-started | 0/1 | 1 |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
+| J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -2713,3 +2714,76 @@ localizable media beyond this rule.
 
 **Working state.** SVG still works, a text payload claiming to be an image is
 refused, and both are proven by tests that fail on today's code.
+
+## J31. Bring the vendored Ledger theme up to its Bluge result-URL fix
+
+**Goal.** The documentation site's copy of `hugo-theme-ledger` is the upstream
+commit that carries the Bluge result-URL fix, and the checks that pin the copy
+say which commit it is instead of refusing any change to it.
+
+**What changed upstream** (2026-09-16). `hugo-theme-ledger` commit `85ac1b0`,
+merged to `main` as `cf68886`, resolves Bluge search results under a site
+subpath: stored site-root-relative URLs are prefixed with the configured
+`siteRoot`, Hugo's already-prefixed `.RelPermalink` values are left alone, and
+absolute destinations pass through. From `f9d28ea` — the commit Notrios vendors
+— to `cf68886` it changes two files: `assets/js/search/backends/bluge.js` and
+its test. Only `bluge.js` is in the vendored 44-file runtime snapshot; the
+snapshot carries no tests.
+
+**Measured before planning.** The site as committed builds and passes
+`make g18g-validate`. With the new `bluge.js` swapped into a scratch worktree
+it also builds, the G18g unit tests pass, Pagefind search returns results in a
+browser with no console errors or warnings, and the theme's own 16 JavaScript
+tests pass. The only refusal is the evidence validator's: `production theme
+differs from frozen snapshot file or hash`.
+
+**What this does and does not change for Notrios.** Notrios searches with
+Pagefind (`backend = "pagefind"`), so no reader of today's site sees a
+different result. The bundled `ledger-search` script does change, because every
+backend is bundled. The reason to take it is that the vendored copy should be
+an upstream commit that carries its known fixes, not a commit that predates
+one, and a site that later enables Bluge under a subpath would otherwise ship
+the bug.
+
+**Why this is its own item.** The pin is not one number. `validate_evidence.py`
+for G18g requires the production copy to be byte-identical to the frozen G18b
+prototype snapshot and requires the upstream commit `f9d28ea` both in
+`docs-site/THEME_PROVENANCE.json` and in G18g's evidence bundle. G18b's
+snapshot and G18g's bundle are v0.7 evidence of what was reviewed then; editing
+them to admit a new commit would rewrite that record. So the check has to be
+split before the copy can move.
+
+**Scope.**
+
+- **J31-A, the pin split.** The frozen G18b snapshot and G18g's evidence bundle
+  keep validating exactly as they do today, unchanged. The production copy
+  under `docs-site/` is validated against its own
+  `docs-site/THEME_PROVENANCE.json` — upstream commit, file list, byte count
+  and manifest hash — rather than against the frozen snapshot. A test proves the
+  split both ways: a production file that differs from its provenance fails,
+  and a frozen-snapshot file that differs still fails.
+- **J31-B, the refresh.** The copy is taken from a fresh clone of
+  `https://github.com/renesugar/hugo-theme-ledger` at `cf68886` (or whatever
+  `main` holds when the item starts, recorded exactly), not from a local
+  working copy. Only the snapshot's existing file list is copied; a file
+  upstream added to the runtime tree is reported, not silently vendored.
+  `docs-site/THEME_PROVENANCE.json` records the new commit, counts and
+  manifest, and names the upstream commits between the two pins.
+  `DOCS_SITE.md` and `docs-site/README.md` name the new commit; records that
+  describe v0.7 as it was (`CODING_CLIENT_HANDOFF.md`'s G18b account,
+  `agent/PLAN_STATUS.md`) are left as history.
+- **J31-C, the site still works.** `make g18g-validate` passes on the refreshed
+  copy, G18g's browser smoke passes, search returns results with no console
+  errors, and the theme's own tests are run from the pinned clone — they are
+  not vendored — with the count recorded in the item's README.
+
+**Boundaries.** No other theme change, no Notrios layout override added or
+removed, Hugo, Node and Pagefind pins unchanged, and no search backend change:
+Notrios stays on Pagefind. Nothing is pushed to the theme repository. v0.7
+evidence stays byte-identical.
+
+**Dependencies.** G18b and G18g, whose pins this splits.
+
+**Working state.** `docs-site/themes/hugo-theme-ledger` is the recorded upstream
+commit with the Bluge fix, its provenance says so, the frozen v0.7 snapshot is
+untouched, and every docs-site check passes.

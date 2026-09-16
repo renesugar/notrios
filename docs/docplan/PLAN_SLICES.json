@@ -731,6 +731,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J31",
+      "title": "Bring the vendored Ledger theme up to its Bluge result-URL fix",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J31-A",
+          "statement": "The production theme copy is validated against its own provenance while the frozen G18b snapshot and G18g evidence validate unchanged",
+          "state": "not-started"
+        },
+        {
+          "id": "J31-B",
+          "statement": "docs-site/themes/hugo-theme-ledger is refreshed from a GitHub clone at the upstream commit carrying the Bluge fix, with provenance recording the commit, counts and manifest",
+          "state": "not-started"
+        },
+        {
+          "id": "J31-C",
+          "statement": "The docs site builds, validates and searches on the refreshed copy, and the theme's own tests pass at the pinned commit",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
