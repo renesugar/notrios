@@ -848,14 +848,61 @@ looking for the failure rather than confirming the design.
 MIME sniffing, size limits, SSRF protection — and the MCP surface, its tool
 scopes and what a client can reach through it.
 
-**Boundaries.** A review records what it examined and what it did not. Nothing
-here becomes a claim that the surfaces are secure; the output is findings and
-their disposition.
+**What this item produces, by owner decision (2026-09-16).** J8 **records
+findings and changes no product code.** A finding that needs a code fix becomes
+its own plan item, named in the record and left for the owner to approve. This
+keeps a security fix from being written by the same pass that found it, in the
+same hurry, and keeps the review's output honest: what was tried, what happened,
+and what is owed.
+
+- **J8-A, remote media: attempt the failures, record what happens.** Each
+  attempt below is run against the shipped pipeline and recorded as refused,
+  admitted, or not covered:
+  - **Addresses the private-range check may miss.** `ip.IsPrivate()` does not
+    cover carrier-grade NAT (`100.64.0.0/10`), IPv6 unique-local (`fc00::/7`),
+    or IPv4-mapped IPv6 forms of loopback and private addresses
+    (`::ffff:127.0.0.1`), at the static check and at the connect-time check.
+  - **DNS rebinding**: a name that resolves to a public address for the policy
+    check and a private one at connect time.
+  - **Redirect chains**: a hop whose own verdict is block or review, a hop to a
+    private address, and more hops than the configured limit.
+  - **Host forms**: userinfo (`https://allowed.example@evil.test/`), a trailing
+    dot, uppercase, and an IPv6 literal in brackets.
+  - **Lying servers**: an `image/*` header over HTML bytes, a sniff-inconclusive
+    type, a `Content-Length` smaller than the body, and a body that exceeds the
+    class cap only after the first chunk.
+  - **Quarantine**: where bytes land, under what permissions, what names them,
+    and whether anything reaches the resource store without admission.
+  - **Provenance**: whether original URL, final URL, content type, hashes and
+    the policy decision are recorded for both refusals and admissions.
+- **J8-B, MCP: what a client can actually reach.**
+  - Every registered tool is classified, and the scope is enforced on **every**
+    dispatch path, not only the ones with a test today.
+  - A tool outside the active scope is absent from `tools/list` and from the
+    info endpoint, as well as refused when called.
+  - The sync scope is orthogonal: a wide MCP scope does not grant sync control.
+  - What the **default** scope reaches is written down, tool by tool.
+  - The standing constraints hold: no raw SQL, no credential surface, and the
+    destructive whole-library operations are unreachable over MCP.
+- **J8-C, dispositions.** Every finding carries one:
+  - **accepted**, with the reason it is acceptable, or
+  - **deferred**, to a named new plan item for the owner to approve.
+
+  No finding is left without one, and none is fixed here.
+
+**Boundaries.**
+- **No package under `internal/` or `cmd/` changes in this item.** The review's
+  probes live under `performance/v1.0-j8/`.
+- Probes reach the network only over loopback, against a local test server.
+- A review records what it examined and what it did not. Nothing here becomes a
+  claim that the surfaces are secure.
+- No finding is written up with an exploit recipe; each names the gap and what
+  it would take to close it.
 
 **Dependencies.** J4, so the MCP surface being reviewed is the one 1.0 ships.
 
-**Working state.** Recorded findings, each fixed or explicitly accepted with a
-reason.
+**Working state.** Recorded findings, each accepted with a reason or deferred to
+a named plan item, and the probes that produced them.
 
 ## J9. Publish the release documentation for the supported matrix
 

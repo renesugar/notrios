@@ -193,17 +193,17 @@
       "slices": [
         {
           "id": "J8-A",
-          "statement": "Remote-media localization is reviewed: domain policy, quarantine, hashing, MIME sniffing, size limits and SSRF",
+          "statement": "Remote-media localization is attacked and recorded: reserved ranges the private check may miss, DNS rebinding, redirect chains, host forms, lying servers, quarantine handling and provenance",
           "state": "not-started"
         },
         {
           "id": "J8-B",
-          "statement": "The MCP surface and its tool scopes are reviewed for what a client can reach",
+          "statement": "The MCP surface is reviewed for what a client can reach: every tool classified and enforced on every dispatch path, out-of-scope tools absent as well as refused, the sync scope orthogonal, and the default scope written down",
           "state": "not-started"
         },
         {
           "id": "J8-C",
-          "statement": "Every finding is fixed or explicitly accepted with a reason",
+          "statement": "Every finding carries a disposition: accepted with a reason, or deferred to a named new plan item; no product code changes in this item",
           "state": "not-started"
         }
       ]
