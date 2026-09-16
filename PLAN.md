@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**26 items: 20 complete, 0 in progress, 6 not started, 0 deferred.**
+**30 items: 20 complete, 1 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -68,7 +68,7 @@ this section is archived when the plan completes and the rules are not.
 | J5. Prove the library at scale | complete | 3/3 | — |
 | J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
-| J8. Security review for remote media and MCP | not-started | 0/3 | 3 |
+| J8. Security review for remote media and MCP | in-progress | 2/3 | 1 |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
@@ -87,8 +87,20 @@ this section is archived when the plan completes and the rules are not.
 | J24. Check the running agent's own usage, not every agent's | complete | 3/3 | — |
 | J25. Import a Twitter/X archive as it is downloaded, completely, at its real size | complete | 3/3 | — |
 | J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
+| J27. Normalise a host before matching it against the domain lists | not-started | 0/1 | 1 |
+| J28. Decide which reserved address ranges remote media refuses, and apply the same set at both checks | not-started | 0/1 | 1 |
+| J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
+| J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J8. Security review for remote media and MCP**
+
+- `J8-C` Every finding carries a disposition: accepted with a reason, or deferred to a named new plan item; no product code changes in this item — *not-started*
+
+### Not started
+
+Written and not begun: J6, J9, J10, J11, J15, J27, J28, J29, J30. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -839,7 +851,7 @@ v0.9. J7-C can complete and be recorded first.
 - The REST break shown and documented
 - A 382,206-note library destroyed and restored with its content proven equal
 
-## J8. Security review for remote media and MCP
+## J8. Security review for remote media and MCP — in progress
 
 **Goal.** The two surfaces that reach outward have been examined by someone
 looking for the failure rather than confirming the design.
@@ -2573,3 +2585,119 @@ instance temp directory.
 <privacy-portal>.zip` and `import claude <download>.zip` each import every
 conversation in the owner's archives as its own note, with code blocks and
 attachments, measured and recorded, and refuse a hostile archive clearly.
+
+## J27. Normalise a host before matching it against the domain lists
+
+**Goal.** A host written in any of the forms DNS treats as the same name
+matches the same domain rules.
+
+**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F1).
+`https://blocked.example.org./a.png` is evaluated as `review` while
+`https://blocked.example.org/a.png` is blocked: `matchDomain` compares the host
+string literally, so the trailing-dot form matches no pattern and falls through
+to the policy default. The allowed list fails the safe way round; the blocked
+list fails open.
+
+**Scope.**
+
+- **J27-A, one normalised form.** The host is lowercased and its trailing dot
+  removed once, before the blocked, allowed and review patterns are matched,
+  and the wildcard rule keeps its current meaning. Cases cover the dotted form
+  against every list, and the apex-versus-wildcard behaviour stays as it is.
+
+**Boundaries.** No change to what the patterns mean, only to the form of the
+host they are matched against. Punycode and Unicode host forms are a separate
+question and are not in this item.
+
+**Dependencies.** J8, which found it.
+
+**Working state.** A blocked domain stays blocked however the host is spelled,
+proven by a test that fails on today's code.
+
+## J28. Decide which reserved address ranges remote media refuses
+
+**Goal.** The ranges remote-media localization refuses are written down, and
+the same set is applied everywhere it is checked.
+
+**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F2). Loopback,
+RFC 1918, link-local, IPv6 unique-local, IPv4-mapped IPv6 forms, the
+unspecified address, `localhost` and multicast are refused. Carrier-grade NAT
+(`100.64.0.0/10`), benchmarking (`198.18.0.0/15`), IETF assignments
+(`192.0.0.0/24`), reserved (`240.0.0.0/4`), "this network" (`0.0.0.0/8`), the
+IPv4 broadcast address, the NAT64 well-known prefix (`64:ff9b::/96`) and
+deprecated IPv6 site-local are not. The NAT64 prefix is the sharpest: it maps
+to loopback on a host configured for it.
+
+The written policy names "private network and link-local", so this is a finding
+about the policy's reach as much as the code's.
+
+**Scope.**
+
+- **J28-A, one list, named and shared.** `SECURITY_AND_MEDIA_POLICY.md` names
+  the reserved ranges that are refused and why. One helper applies that set at
+  the static URL check and at the connect-time address check, which today share
+  neither a list nor a helper. Cases cover every named range at both checks.
+
+**Boundaries.** The decision about which ranges belong in the set is the
+owner's; this item implements what the policy comes to say.
+
+**Dependencies.** J8, which found it.
+
+**Working state.** A named list in the policy, one helper applying it at both
+checks, and a case per range.
+
+## J29. Decide which HTML reference forms the remote-media scanner covers
+
+**Goal.** What the scanner is responsible for finding is stated, and it finds
+it.
+
+**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F3). `ScanBody`
+finds Markdown embeds and links and quoted HTML `<img src="…">`, including
+across newlines and in either case. It does not find an unquoted
+`<img src=https://…>` or a `<video src="…">`. A reference the scan never
+returns is never evaluated by any later stage.
+
+**Scope.**
+
+- **J29-A, the covered forms.** The policy states which HTML forms the scanner
+  covers, the scanner finds them, and the policy records plainly what a regular
+  expression over HTML cannot promise, so a later reader does not mistake the
+  scan for a parser.
+
+**Boundaries.** Whether `<video>` and other media elements belong in scope is
+the owner's decision. Replacing the scan with an HTML parser is not assumed;
+if it is the answer, this item says so rather than doing it quietly.
+
+**Dependencies.** J8, which found it.
+
+**Working state.** A stated list of covered forms, a scanner that finds them,
+and a policy that says what is not promised.
+
+## J30. Stop a lying header deciding the type of an inconclusive payload
+
+**Goal.** A resource's recorded type describes its bytes.
+
+**What J8 found** (`performance/v1.0-j8/README.md`, finding J8-F4). Bytes that
+sniff as `text/plain` and are served with `Content-Type: image/jpeg` are
+quarantined as an image, with that type recorded and a `.jpg` extension on the
+quarantine file. The fallback exists for a real case — SVG sniffs as
+`text/xml` — and applies whenever the sniff is inconclusive, so any text
+payload can be labelled an image. A positive sniff still beats the header.
+
+The blast radius is bounded: bytes are stored content-addressed under their
+hash, nothing executes them, and admission still applies exact-hash rules.
+
+**Scope.**
+
+- **J30-A, a narrow fallback.** The header is consulted only for the named
+  cases it was added for, or the claimed type is validated against the payload
+  before it is accepted. A payload whose bytes contradict a claimed media type
+  is refused, and SVG still localizes.
+
+**Boundaries.** No change to the sniffing library or to what counts as
+localizable media beyond this rule.
+
+**Dependencies.** J8, which found it.
+
+**Working state.** SVG still works, a text payload claiming to be an image is
+refused, and both are proven by tests that fail on today's code.

@@ -189,17 +189,19 @@
     {
       "id": "J8",
       "title": "Security review for remote media and MCP",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J8-A",
           "statement": "Remote-media localization is attacked and recorded: reserved ranges the private check may miss, DNS rebinding, redirect chains, host forms, lying servers, quarantine handling and provenance",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         },
         {
           "id": "J8-B",
           "statement": "The MCP surface is reviewed for what a client can reach: every tool classified and enforced on every dispatch path, out-of-scope tools absent as well as refused, the sync scope orthogonal, and the default scope written down",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         },
         {
           "id": "J8-C",
@@ -673,6 +675,54 @@
           "statement": "The owner's ChatGPT, Privacy Portal and Claude archives are each dry-run, imported and re-imported with timings, peak RSS, and every conversation and asset accounted for",
           "state": "done",
           "evidence": "file:performance/v1.0-j26/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J27",
+      "title": "Normalise a host before matching it against the domain lists",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J27-A",
+          "statement": "A trailing-dot host matches the same blocked, allowed and review patterns as its undotted form, proven by cases for every list (J8 finding J8-F1)",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J28",
+      "title": "Decide which reserved address ranges remote media refuses, and apply the same set at both checks",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J28-A",
+          "statement": "SECURITY_AND_MEDIA_POLICY.md names the reserved ranges that are refused, and one shared helper applies that set at the static check and at the connect-time check (J8 finding J8-F2)",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J29",
+      "title": "Decide which HTML reference forms the remote-media scanner is responsible for",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J29-A",
+          "statement": "The scanner finds the reference forms the policy says it covers, including unquoted HTML img sources, and the policy records what a regular expression over HTML cannot promise (J8 finding J8-F3)",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J30",
+      "title": "Stop a lying Content-Type header deciding the type of an inconclusive payload",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J30-A",
+          "statement": "The header fallback applies only to the named cases it was added for, and a payload whose bytes contradict a claimed media type is refused (J8 finding J8-F4)",
+          "state": "not-started"
         }
       ]
     }
