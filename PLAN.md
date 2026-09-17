@@ -3512,6 +3512,58 @@ enforce.
 
 The first step is to establish both, with a rendered note.
 
+**Measured before starting, 2026-09-17.** The two open questions were settled
+on the real UI by `performance/v1.0-j34/run_preview_probe.sh`.
+
+- **How it ran.** The script built the web UI and started `notriosd` on an
+  in-memory library with isolated roots. A second local server, on another
+  port, stood in for "remote" and logged what it received. The script created
+  a note using every J29-covered form plus two inline images, and opened it in
+  headless Chromium and WebKit (the engine of the desktop webview) through
+  Playwright.
+- **Findings** (`performance/v1.0-j34/BEFORE.json`):
+  - **The renderer passes raw HTML to the sanitizer**, which renders it.
+  - **In both engines the stand-in server received `/video-poster.png` and
+    `/svg-image.png`.**
+  - CSP blocked `video` and `audio` `src` as `media-src` violations, through
+    the `default-src` fallback.
+  - `track` was not requested (no track was enabled).
+  - `embed`, `object` and `source` are already removed by the sanitizer.
+  - Markdown and HTML `img` became inert placeholders.
+  - Both inline `data:image/png;base64` images rendered.
+- **Not driven:** the desktop app's own WebKitGTK webview. WebKit enforcing
+  the CSP is the closest evidence available.
+
+**Design, 2026-09-17.**
+
+- **One classification in the sanitizer**, applied to every URL attribute it
+  keeps, the one `img` already uses:
+  - a `resource://` source is resolved to its content URL;
+  - an inline `data:image/…` source is kept, by owner direction;
+  - an `http:` or `https:` source is moved to a `data-remote-…` attribute and
+    removed, leaving the element inert;
+  - anything else is removed.
+- **What it covers:**
+  - `video` and `audio` `src`, and `video` `poster`;
+  - `track` `src`;
+  - `href` and `xlink:href` on every SVG element except `a`: J29's `image`,
+    and also `feImage` and `use`, which load the same way. Link navigation
+    keeps its own rule.
+  - `embed`, `object` and `source` stay removed.
+- **Inline SVG markup keeps rendering**, by owner direction.
+- **The CSP gains an explicit `media-src 'self'`**, so the refusal no longer
+  depends on the `default-src` fallback.
+- **Proof, in two parts:**
+  - Vitest unit tests of `normalizePreviewHTML` for every form, which fail on
+    today's code.
+  - The rendered-note probe rerun after the change, which must show no request
+    reaching the stand-in server, no CSP violation left to rely on, and inline
+    images still rendering.
+
+  The probe is not part of `go test` or the web test run: like G18g's browser
+  smoke, it needs a Playwright module and a browser this repository does not
+  depend on. Its script and before/after reports are committed as evidence.
+
 **Scope.**
 
 - **J34-A, one rule for every media reference.** The sanitizer treats every

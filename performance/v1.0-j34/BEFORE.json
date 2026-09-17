@@ -1,0 +1,120 @@
+{
+  "chromium": {
+    "remote_requests": [
+      "http://127.0.0.1:18741/svg-image.png",
+      "http://127.0.0.1:18741/video-poster.png"
+    ],
+    "csp_violations": [
+      "media-src http://127.0.0.1:18741/video-src.mp4",
+      "media-src http://127.0.0.1:18741/audio-src.mp3",
+      "media-src http://127.0.0.1:18741/video-src.mp4",
+      "media-src http://127.0.0.1:18741/audio-src.mp3",
+      "media-src http://127.0.0.1:18741/video-src.mp4",
+      "media-src http://127.0.0.1:18741/audio-src.mp3",
+      "media-src http://127.0.0.1:18741/video-src.mp4",
+      "media-src http://127.0.0.1:18741/audio-src.mp3"
+    ],
+    "elements": [
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/markdown.png"
+      },
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/img-src.png"
+      },
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/picture-img.png"
+      },
+      {
+        "tag": "video",
+        "src": "http://127.0.0.1:18741/video-src.mp4",
+        "poster": "http://127.0.0.1:18741/video-poster.png"
+      },
+      {
+        "tag": "track",
+        "src": "http://127.0.0.1:18741/track.vtt"
+      },
+      {
+        "tag": "audio",
+        "src": "http://127.0.0.1:18741/audio-src.mp3"
+      },
+      {
+        "tag": "svg"
+      },
+      {
+        "tag": "image",
+        "href": "http://127.0.0.1:18741/svg-image.png"
+      },
+      {
+        "tag": "img",
+        "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42m"
+      },
+      {
+        "tag": "img",
+        "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42m"
+      }
+    ],
+    "inline_images_loaded": [
+      true,
+      true
+    ]
+  },
+  "webkit": {
+    "remote_requests": [
+      "http://127.0.0.1:18741/svg-image.png",
+      "http://127.0.0.1:18741/video-poster.png"
+    ],
+    "csp_violations": [
+      "media-src http://127.0.0.1:18741/video-src.mp4",
+      "media-src http://127.0.0.1:18741/audio-src.mp3"
+    ],
+    "elements": [
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/markdown.png"
+      },
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/img-src.png"
+      },
+      {
+        "tag": "img",
+        "data-remote-src": "http://127.0.0.1:18741/picture-img.png"
+      },
+      {
+        "tag": "video",
+        "src": "http://127.0.0.1:18741/video-src.mp4",
+        "poster": "http://127.0.0.1:18741/video-poster.png"
+      },
+      {
+        "tag": "track",
+        "src": "http://127.0.0.1:18741/track.vtt"
+      },
+      {
+        "tag": "audio",
+        "src": "http://127.0.0.1:18741/audio-src.mp3"
+      },
+      {
+        "tag": "svg"
+      },
+      {
+        "tag": "image",
+        "href": "http://127.0.0.1:18741/svg-image.png"
+      },
+      {
+        "tag": "img",
+        "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42m"
+      },
+      {
+        "tag": "img",
+        "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42m"
+      }
+    ],
+    "inline_images_loaded": [
+      true,
+      true
+    ]
+  }
+}
