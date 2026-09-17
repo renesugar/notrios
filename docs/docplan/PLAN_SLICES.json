@@ -855,7 +855,7 @@
       "slices": [
         {
           "id": "J33-A",
-          "statement": "Ogg and comment-led SVG either localize with a test that fails on today's code, or SECURITY_AND_MEDIA_POLICY.md says why they are refused",
+          "statement": "Ogg localizes as audio/video with a .ogg quarantine name, .ogv and .opus are media extensions, an SVG that opens with a comment stays refused because its bytes sniff as text/html, and the policy records both decisions",
           "state": "not-started"
         }
       ]

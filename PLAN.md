@@ -3460,19 +3460,33 @@ localize, or the policy says plainly why they do not.
   beats the header is what refuses it, and that rule exists to stop HTML
   claiming to be an image.
 
+**Owner decisions, 2026-09-17.** Both as recommended.
+- **Ogg localizes**, as the audio and video class. The sniff positively
+  identifies a media container, and Ogg carries only audio and video.
+- **An SVG that opens with a comment stays refused.** The rule that a positive
+  sniff beats the header is what stops HTML claiming to be an image, and it
+  stays absolute.
+
+**Measured, 2026-09-17.**
+- `application/ogg` has the extension `.ogx` by default, so the quarantine
+  file would be named `.ogx`. `.ogg` is preferred instead, as J30 already
+  prefers `.jpg` over the alphabetical first.
+- An Opus file (`OggS` … `OpusHead`) also sniffs as `application/ogg`.
+- `.ogv` and `.opus` are **not** in the media extension list, although both are
+  Ogg media, so a plain link to one is not scanned as media today.
+
 **Scope.**
 
-- **J33-A, a decision and its test.** The owner decides, for each case, whether
-  it should localize.
-  - **Recommended for Ogg:** accept `application/ogg` as the audio and video
-    class. The sniff is a positive identification of a media container, and
-    Ogg carries only audio and video.
-  - **Recommended for comment-led SVG:** keep refusing it unless the bytes
-    after the comment are proven to be an SVG root and not HTML. Otherwise
-    weakening the positive-sniff rule would let HTML through behind a comment.
-
-  Whatever is decided is implemented with a test that fails on today's code,
-  and written into `SECURITY_AND_MEDIA_POLICY.md`.
+- **J33-A, Ogg localizes and comment-led SVG does not.**
+  - `application/ogg` is classified as the audio and video class, with `.ogg`
+    as its quarantine extension.
+  - `.ogv` and `.opus` join the media extensions, so a link to either is
+    scanned like `.ogg`, with the same size cap.
+  - A payload whose bytes sniff as `text/html` is refused whatever it claims,
+    including an SVG that opens with a comment. A test states that plainly, so
+    a later reader sees it was decided rather than missed.
+  - `SECURITY_AND_MEDIA_POLICY.md` records both decisions.
+  - The Ogg tests fail on today's code.
 
 **Boundaries.** No change to the positive-sniff rule for HTML, and no new media
 class.
