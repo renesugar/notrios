@@ -263,7 +263,7 @@
         {
           "id": "J11-A",
           "state": "not-started",
-          "statement": "A report lists every directory holding Notrios files or data, and every file by absolute path"
+          "statement": "`notriosctl paths report` lists every directory holding Notrios files or data and every file by absolute path, marking what is outside the owned roots, as a report, as JSON and as one path per line"
         },
         {
           "id": "J11-B",
@@ -273,7 +273,7 @@
         {
           "id": "J11-C",
           "state": "not-started",
-          "statement": "A shell check reads a pre-purge manifest and confirms every path is gone, and fails when one is left"
+          "statement": "scripts/check_purged.sh reads a pre-purge path manifest with nothing but a shell, requires every owned path gone and every external library still present, and fails when one owned file is left"
         }
       ]
     },

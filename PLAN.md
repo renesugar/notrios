@@ -1042,11 +1042,43 @@ thing v0.9 I3's container matrix asserted piecemeal and never captured whole.
 After a purge, the same report taken beforehand becomes the oracle for whether
 the deletion was complete.
 
+**Design, 2026-09-18.** Written before the code.
+
+- **The command is `notriosctl paths report`.** `paths` is already the answer to
+  "where is this instance keeping things?", and this is the same question asked
+  exhaustively. It reuses `paths.ForProcess` for the roots, the profile registry
+  for every library including the external ones, and the installer's
+  `MANIFEST.json` for the program files when it is present.
+- **Three output shapes**, because the report has three readers:
+  - the default report, for a person, redacted to `~`;
+  - `--json`, for a script, with the same content structured;
+  - `--paths`, one absolute path per line, which is what the post-purge check
+    reads. It is unredacted by definition — a check compares real paths — so it
+    refuses to be combined with redaction rather than emitting `~`.
+- **What the manifest lists.** Every directory that holds Notrios files or
+  data, and every file under those directories, by absolute path. A large
+  library makes a large manifest; that is what an oracle for "is it all gone"
+  costs, and the report says how many entries it holds.
+- **Every entry says whether Notrios owns it.** A registered profile whose
+  database or asset store lives outside the owned roots is listed and marked
+  external, because a purge deliberately keeps it. The post-purge check must
+  therefore require the owned entries to be gone and the external ones to still
+  be there — if an external library disappeared, that is a failure too, and the
+  check says so.
+- **The check is `scripts/check_purged.sh`**, reading a `--paths` manifest
+  taken beforehand. It needs nothing but a shell, because everything Notrios
+  installed is gone by the time it runs, including anything that could parse
+  JSON on its behalf.
+- **Adding a command moves the frozen CLI surface** (I8, 92 members), which is
+  additive, and `internal/clispec/commands.json`, the generated
+  `docs/cli.md` and the help output come with it.
+
 **Boundaries.** The report names paths; it does not print note content, and it
 redacts the home directory to `~` by default like `paths`, `config show` and —
 since v0.9 I7 — `doctor`, with `--no-redact` for the literal form. A manifest is
 a list of where things are, and that is exactly what somebody pastes into an
-issue.
+issue. `--paths` is the exception, and only because its one reader is a script
+comparing real paths.
 
 **Dependencies.** J3, so the purge it verifies is the one a packaged user can
 run.
