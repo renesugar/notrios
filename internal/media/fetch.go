@@ -252,12 +252,18 @@ func (f *Fetcher) fetchOne(ctx context.Context, rawURL, action string, allowRevi
 	contentType := strings.TrimSpace(strings.SplitN(http.DetectContentType(head), ";", 2)[0])
 	class := classFromMIME(contentType)
 	if class == "other" && sniffInconclusive(contentType) {
-		// Formats sniffing doesn't know (e.g. SVG → text/xml) may fall back
-		// to the header — but only when the sniff was inconclusive. A
-		// positive detection (like text/html) always wins over a lying
-		// image/* header.
+		// Formats sniffing doesn't know (SVG, TIFF, AVIF, HEIC, MOV,
+		// frame-led MP3, FLAC) may take the header's type, but only when the
+		// sniff was inconclusive, the type is one claimedTypes names, and the
+		// bytes carry that format's signature (J30). A positive detection
+		// (like text/html) always wins over the header.
 		if headerType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type")); err == nil {
 			if headerClass := classFromMIME(headerType); headerClass != "other" {
+				if !claimMatchesPayload(headerType, contentType, head) {
+					result := refuse(rawURL, action, fmt.Sprintf("payload sniffed as %q does not match the claimed content type %q", contentType, headerType))
+					result.FinalURL = finalURL
+					return result
+				}
 				contentType, class = headerType, headerClass
 			}
 		}

@@ -50,6 +50,32 @@ rewrite note and record provenance
 - Use perceptual hashes for moderation signals and near-duplicate suggestions; do not silently collapse perceptual matches.
 - Store provenance: original URL, final URL, retrieved timestamp, content type, hashes, and policy decision.
 
+## Content type
+
+The type recorded for a fetched resource comes from its bytes. The first 512
+bytes are sniffed, and a positive identification always wins over the
+server's `Content-Type` header. When the sniff is inconclusive (plain text,
+generic XML, or unrecognised binary), the header is followed **only** for the
+types below, and only when the bytes carry that format's signature (J30). Any
+other claimed media type, or a payload without the signature, is refused as
+`payload sniffed as … does not match the claimed content type …`, and nothing
+is left in quarantine.
+
+| claimed type | inconclusive sniff it may follow | signature |
+|---|---|---|
+| `image/svg+xml` | `text/xml`, `text/plain` | the first element, after an optional BOM, whitespace, XML declaration, processing instructions, comments and doctype, is `<svg` |
+| `image/tiff` | `application/octet-stream` | `II*\0` or `MM\0*` |
+| `image/avif` | `application/octet-stream` | an `ftyp` brand `avif` or `avis` |
+| `image/heic`, `image/heif` | `application/octet-stream` | an `ftyp` brand in `heic heix heim heis hevc hevx mif1 msf1` |
+| `video/quicktime` | `application/octet-stream` | an `ftyp` brand `qt  `, or a `moov`, `mdat` or `wide` atom first |
+| `audio/mpeg` | `application/octet-stream` | an MPEG audio frame header (for files without an ID3 tag, which sniffs positively) |
+| `audio/flac`, `audio/x-flac` | `application/octet-stream` | `fLaC` |
+
+These are the localizable formats Go's content sniffer does not recognise,
+measured on Go 1.27 (`PLAN.md` J30). A signature proves the start of a file,
+not the whole file; the bytes are stored under their hash, never executed, and
+served with `nosniff`.
+
 ## Reserved address ranges
 
 Remote media refuses the ranges below unless
