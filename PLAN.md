@@ -3060,11 +3060,17 @@ returns is never evaluated by any later stage.
 - Inline images are not remote. A `data:` URI such as
   `data:image/png;base64,…`, which Joplin renders, and inline SVG are fine.
 
-  So the scanner does not report a `data:` URI in any form, Markdown or HTML.
-  Today it deliberately reports a Markdown `data:` embed as blocked, and that
-  changes. `file:` references are still reported and blocked, and the explicit
-  URL check (`EvaluateURLs`) still refuses a `data:` URL, since nothing fetches
-  one. The lint check for unlocalized remote media already counts only
+  The owner then named the form:
+  `!\[.*?\]\(data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+\)`.
+  So the scanner does not report a base64 `data:` URI of a PNG, JPEG, GIF, WebP
+  or SVG image, whether in Markdown or in an HTML attribute. Today it
+  deliberately reports such a Markdown embed as blocked, and that changes.
+  - Any other `data:` URI, such as `data:text/html` or a non-base64
+    `data:image/svg+xml,`, is still reported and blocked, the conservative
+    reading of the named form.
+  - `file:` references are still reported and blocked.
+  - The explicit URL check (`EvaluateURLs`) still refuses a `data:` URL, since
+    nothing fetches one. The lint check for unlocalized remote media already counts only
   `http:` and `https:`, so it does not change.
 
 **Design, 2026-09-17.** Written before the code.

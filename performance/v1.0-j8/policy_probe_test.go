@@ -182,7 +182,9 @@ func TestJ8ScanBodyFindsWhatAPreviewWouldFetch(t *testing.T) {
 		"https://images.example.org/a.png",
 		"https://images.example.org/b.png",
 		"https://images.example.org/e.png",
-		"data:image/png;base64,AAAA",
+		// J29 (owner direction, 2026-09-17): a base64 inline image is not
+		// remote, so the scanner no longer reports data:image/png;base64,AAAA.
+		// J8 required it; this is the one requirement J29 reversed.
 		"file:///etc/passwd",
 	} {
 		if !found[required] {

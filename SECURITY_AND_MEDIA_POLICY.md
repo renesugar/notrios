@@ -50,6 +50,50 @@ rewrite note and record provenance
 - Use perceptual hashes for moderation signals and near-duplicate suggestions; do not silently collapse perceptual matches.
 - Store provenance: original URL, final URL, retrieved timestamp, content type, hashes, and policy decision.
 
+## What the scan covers
+
+The static scan (`ScanBody`) finds the references a note can make a renderer
+load, so that every one is evaluated before anything is fetched:
+
+- Markdown embeds, and Markdown links whose extension is media;
+- these HTML elements and attributes, in any case, with double-quoted,
+  single-quoted or unquoted values, across lines, and with entities decoded
+  (J29):
+
+| element | attributes |
+|---|---|
+| `img` | `src`, `srcset` |
+| `source` | `src`, `srcset` |
+| `video` | `src`, `poster` |
+| `audio` | `src` |
+| `track` | `src` |
+| `embed` | `src` |
+| `object` | `data` |
+| `image` (SVG) | `href`, `xlink:href` |
+
+Each `srcset` candidate is a separate reference. `document://` and
+`resource://` URIs are internal and not reported. **An inline image is not
+remote** (owner direction, J29): a base64 `data:` URI of a PNG, JPEG, GIF, WebP
+or SVG image — `data:image/(png|jpeg|jpg|gif|webp|svg+xml);base64,…` — is not
+reported, and inline `<svg>` markup is not a reference. Any other `data:` URI,
+and any `file:` URI, is reported and blocked.
+
+**What the scan does not promise.** It is a pattern that finds covered start
+tags and a small reader for their attributes, not an HTML parser, so:
+
+- it does not follow CSS (`style` attributes, `<style>`, `url()`), documents
+  (`iframe`, `frame`, `srcdoc`), `link` preloads and icons, `meta` refresh,
+  `input type=image`, or sources a script or renderer extension builds;
+- HTML a renderer would read differently from the text, such as a tag split by
+  a comment, may be missed;
+- HTML inside a code span or fence is reported although it does not render,
+  which errs towards reporting;
+- a URL written with entities is evaluated decoded, but localization rewrites
+  only literal occurrences, so it is reported and not rewritten.
+
+Keeping remote references from loading in the preview is the preview's job,
+not the scan's (J34).
+
 ## Content type
 
 The type recorded for a fetched resource comes from its bytes. The first 512

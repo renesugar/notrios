@@ -12,7 +12,6 @@ import (
 	"net/netip"
 	"net/url"
 	"path"
-	"regexp"
 	"strings"
 
 	"github.com/renesugar/notrios/internal/addressrange"
@@ -263,11 +262,13 @@ func (p *Policy) EvaluateURLs(urls []string) []Decision {
 
 // ScanBody extracts remote-media URLs from a Markdown body and evaluates
 // each against the policy, without downloading anything. Included are:
-// embeds/images with any URI scheme (so file:/data: images are flagged as
-// blocked instead of silently ignored), plain links whose extension maps to
-// a media class, and raw HTML <img src="..."> tags. document:// and
-// resource:// URIs are internal and never included. Duplicate URLs are
-// reported once, at their first occurrence.
+// embeds/images with any URI scheme other than an inline image (so file: and
+// other data: images are flagged as blocked instead of silently ignored),
+// plain links whose extension maps to a media class, and the HTML media
+// elements and attributes J29 names (htmlMediaAttributes). document:// and
+// resource:// URIs are internal, and base64 inline images are not remote
+// (owner direction, J29), so none of them is included. Duplicate URLs are reported once, at their first
+// occurrence.
 func (p *Policy) ScanBody(body string) []Decision {
 	decisions := []Decision{}
 	seen := map[string]bool{}
@@ -280,6 +281,9 @@ func (p *Policy) ScanBody(body string) []Decision {
 		lower := strings.ToLower(raw)
 		if strings.HasPrefix(lower, "document://") || strings.HasPrefix(lower, "resource://") {
 			return
+		}
+		if isInlineImage(raw) {
+			return // an inline image, which no fetch is made for
 		}
 		hasScheme := strings.Contains(raw, "://") || strings.HasPrefix(lower, "data:") || strings.HasPrefix(lower, "mailto:")
 		if !hasScheme {
@@ -299,14 +303,11 @@ func (p *Policy) ScanBody(body string) []Decision {
 	for _, candidate := range markdownlinks.Extract(body) {
 		appendURL(candidate.RawTarget, candidate.RelationType == "embed", candidate.Line)
 	}
-	for _, match := range htmlImgRE.FindAllStringSubmatchIndex(body, -1) {
-		src := body[match[2]:match[3]]
-		appendURL(src, true, lineOf(body, match[0]))
+	for _, reference := range htmlMediaReferences(body) {
+		appendURL(reference.url, true, lineOf(body, reference.offset))
 	}
 	return decisions
 }
-
-var htmlImgRE = regexp.MustCompile(`(?i)<img[^>]+src\s*=\s*["']([^"']+)["']`)
 
 func lineOf(body string, offset int) int {
 	if offset > len(body) {
