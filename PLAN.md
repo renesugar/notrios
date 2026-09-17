@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**32 items: 23 complete, 0 in progress, 9 not started, 0 deferred.**
+**33 items: 23 complete, 0 in progress, 10 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -93,6 +93,7 @@ this section is archived when the plan completes and the rules are not.
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
+| J33. Decide whether Ogg media and comment-led SVG are localizable | not-started | 0/1 | 1 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3083,12 +3084,52 @@ payload can be labelled an image. A positive sniff still beats the header.
 The blast radius is bounded: bytes are stored content-addressed under their
 hash, nothing executes them, and admission still applies exact-hash rules.
 
+**Measured before starting, 2026-09-17.** Go 1.27's `http.DetectContentType`
+was run on a real header of every extension the policy treats as media.
+
+- **Sniffed positively, so they need no fallback:** PNG, JPEG, GIF, WebP, BMP,
+  ICO, MP4, M4V, M4A, WebM, MKV, AVI, WAV, MP3 with an ID3 tag, and PDF.
+- **Sniffed as inconclusive, so today they localize only through the header:**
+  - SVG with an XML declaration (`text/xml`) or without one (`text/plain`);
+  - TIFF, AVIF, HEIC, QuickTime MOV, FLAC, and an MP3 that starts with a frame
+    rather than an ID3 tag (all `application/octet-stream`).
+
+  Narrowing the fallback must keep every one of these working, or it changes
+  what counts as localizable media, which the boundary rules out.
+
 **Scope.**
 
-- **J30-A, a narrow fallback.** The header is consulted only for the named
-  cases it was added for, or the claimed type is validated against the payload
-  before it is accepted. A payload whose bytes contradict a claimed media type
-  is refused, and SVG still localizes.
+- **J30-A, a fallback that checks the bytes.** When the sniff is inconclusive,
+  the header is consulted only for the named types in the table below, and
+  only when the payload carries that format's own signature. Any other claimed
+  media type, or a payload without the signature, is refused with a reason
+  naming both the sniffed and the claimed type. A positive sniff still wins, as
+  today.
+
+  | claimed type | sniff it may follow | signature required in the first 512 bytes |
+  |---|---|---|
+  | `image/svg+xml` | `text/xml`, `text/plain` | after an optional BOM, whitespace, XML declaration, processing instructions, comments and doctype, the first element is `<svg` |
+  | `image/tiff` | `application/octet-stream` | `II*\0` or `MM\0*` |
+  | `image/avif` | `application/octet-stream` | an `ftyp` box whose major or compatible brand is `avif` or `avis` |
+  | `image/heic`, `image/heif` | `application/octet-stream` | an `ftyp` box with a brand in `heic heix heim heis hevc hevx mif1 msf1` |
+  | `video/quicktime` | `application/octet-stream` | an `ftyp` box with brand `qt  `, or a `moov`, `mdat` or `wide` atom at offset 4 |
+  | `audio/mpeg` | `application/octet-stream` | an MPEG audio frame header: sync bits, a valid version and layer, and a bitrate index that is not 15 |
+  | `audio/flac`, `audio/x-flac` | `application/octet-stream` | `fLaC` |
+
+  Tests prove each of these still localizes with a real signature. They also
+  prove that text claiming `image/jpeg`, text claiming SVG without an `<svg`
+  root, and arbitrary bytes claiming each named type are all refused, and that
+  nothing is left in quarantine. The refusal tests fail on today's code.
+
+  J8's probe (`TestJ8AServerThatLiesAboutItsContent`) needs no edit: its J8-F4
+  case then passes as expected.
+
+**Found while measuring, and deferred to J33 rather than fixed here:**
+- `.ogg` sniffs as `application/ogg`, which is positive and not a media type
+  the policy accepts, so Ogg files are refused today although the policy lists
+  `.ogg` as media;
+- an SVG that opens with a comment sniffs as `text/html`, which is positive
+  and wins, so it is refused.
 
 **Boundaries.** No change to the sniffing library or to what counts as
 localizable media beyond this rule.
@@ -3332,3 +3373,43 @@ does not block J9 or J10.
   measurement or a stated reason.
 - Only changes whose benchmark showed an improvement beyond noise, with every
   correctness gate passing, remain in the code.
+
+## J33. Decide whether Ogg media and comment-led SVG are localizable
+
+**Goal.** Two kinds of file the remote-media policy lists as media either
+localize, or the policy says plainly why they do not.
+
+**What J30 found while measuring, 2026-09-17.**
+- **Ogg.** Go's `http.DetectContentType` sniffs an
+  Ogg file (`OggS`) as `application/ogg`. That is a positive sniff, so the
+  header is never consulted, and `classFromMIME` does not accept
+  `application/*` other than PDF. `.ogg` and `.oga` are in the policy's media
+  extensions, so a note linking an Ogg file is scanned as media and then
+  refused at fetch with "content type application/ogg is not localizable
+  media".
+- **SVG that opens with a comment.** An SVG whose first bytes are `<!-- … -->`
+  sniffs as `text/html`, which is also positive. The rule that a positive sniff
+  beats the header is what refuses it, and that rule exists to stop HTML
+  claiming to be an image.
+
+**Scope.**
+
+- **J33-A, a decision and its test.** The owner decides, for each case, whether
+  it should localize.
+  - **Recommended for Ogg:** accept `application/ogg` as the audio and video
+    class. The sniff is a positive identification of a media container, and
+    Ogg carries only audio and video.
+  - **Recommended for comment-led SVG:** keep refusing it unless the bytes
+    after the comment are proven to be an SVG root and not HTML. Otherwise
+    weakening the positive-sniff rule would let HTML through behind a comment.
+
+  Whatever is decided is implemented with a test that fails on today's code,
+  and written into `SECURITY_AND_MEDIA_POLICY.md`.
+
+**Boundaries.** No change to the positive-sniff rule for HTML, and no new media
+class.
+
+**Dependencies.** J30, which measured both.
+
+**Working state.** Each case either localizes with a test proving it, or is
+refused with the policy saying why.

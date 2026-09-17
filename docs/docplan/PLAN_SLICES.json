@@ -747,7 +747,7 @@
       "slices": [
         {
           "id": "J30-A",
-          "statement": "The header fallback applies only to the named cases it was added for, and a payload whose bytes contradict a claimed media type is refused (J8 finding J8-F4)",
+          "statement": "With an inconclusive sniff the header is followed only for named media types whose signature is in the payload; a payload that contradicts its claimed type is refused, and SVG, TIFF, AVIF, HEIC, MOV, frame-led MP3 and FLAC still localize (J8 finding J8-F4)",
           "state": "not-started"
         }
       ]
@@ -842,6 +842,18 @@
         {
           "id": "J32-M",
           "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J33",
+      "title": "Decide whether Ogg media and comment-led SVG are localizable",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J33-A",
+          "statement": "Ogg and comment-led SVG either localize with a test that fails on today's code, or SECURITY_AND_MEDIA_POLICY.md says why they are refused",
           "state": "not-started"
         }
       ]
