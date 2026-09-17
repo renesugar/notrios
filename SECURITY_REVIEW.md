@@ -59,9 +59,12 @@ was loading remote *executable JavaScript* unchecked, and a CDN compromise would
 have had script execution in the note editor. Those libraries are bundled or
 disabled now, and `handleWebApp` serves a Content-Security-Policy
 (`script-src 'self'`, `object-src 'none'`, `connect-src 'self'`,
-`form-action 'none'`). `img-src` still admits remote images because the preview
-is permitted to display them; localizing one remains a server operation under
-the media policy. `scripts/run_offline_assets_check.sh` fails if any remote
+`form-action 'none'`, and since J34 `media-src 'self'`). `img-src` still admits
+remote images; the preview sanitizer makes every remote media reference in a
+note inert (`img`, `video` and `audio` sources and posters, `track`, SVG
+`href`), which J34 verified with a rendered note in Chromium and WebKit that
+reached a stand-in remote server zero times. Localizing one remains a server
+operation under the media policy. `scripts/run_offline_assets_check.sh` fails if any remote
 asset returns.
 
 The `notrios://` OS handler is implemented (v0.4 P5) under those constraints.

@@ -50,26 +50,25 @@ export function normalizePreviewHTML(html: string): string {
     // A responsive-image candidate can load without src, so never retain a
     // note-controlled srcset even when the ordinary source is local.
     image.removeAttribute('srcset');
-    const src = image.getAttribute('src') || '';
-    if (src.startsWith('resource://')) {
-      image.setAttribute('data-app-uri', src);
-      const resourceID = parseResourceIDFromURI(src);
-      if (resourceID) image.setAttribute('src', resourceContentURL(resourceID, false));
-      return;
-    }
-    // Remote note content is untrusted and must never make the browser fetch
-    // around the server-side domain/SSRF/quarantine policy. Keep the source as
-    // inert metadata for inspection; localization later rewrites admitted
-    // bytes to a loadable resource:// URI.
-    if (src.startsWith('http://') || src.startsWith('https://')) {
-      image.setAttribute('data-remote-src', src);
-      image.removeAttribute('src');
+    if (neutralizeMediaURL(image, 'src') === 'remote') {
       image.classList.add('remote-media-placeholder');
       image.setAttribute('title', 'Remote image blocked until it is localized');
-      return;
     }
-    if (src.startsWith('data:image/')) return;
-    image.removeAttribute('src');
+  });
+
+  // J34: every other element that loads media follows the same rule as img, so
+  // a note cannot fetch through a video poster, an audio or track source, or an
+  // SVG reference (image, feImage, use) the img rule never saw. embed, object
+  // and source are removed above.
+  doc.querySelectorAll('video, audio').forEach((element) => {
+    neutralizeMediaURL(element, 'src');
+    neutralizeMediaURL(element, 'poster');
+  });
+  doc.querySelectorAll('track').forEach((element) => neutralizeMediaURL(element, 'src'));
+  doc.querySelectorAll('svg *').forEach((element) => {
+    if (element.localName === 'a') return; // navigation keeps the link rule above
+    neutralizeMediaURL(element, 'href');
+    neutralizeMediaURL(element, 'xlink:href');
   });
 
   // A fenced ```note-query becomes a placeholder the preview fills in after the
@@ -98,6 +97,42 @@ export function normalizePreviewHTML(html: string): string {
   });
 
   return doc.body.innerHTML;
+}
+
+/**
+ * neutralizeMediaURL applies the preview's one rule for a URL that would load
+ * media. Remote note content is untrusted and must never make the browser fetch
+ * around the server-side domain/SSRF/quarantine policy, so:
+ *
+ * - `resource://` is resolved to the local content URL;
+ * - an inline `data:image/…` source is kept (inline images are not remote);
+ * - `http:` and `https:` move to an inert `data-remote-<attribute>`, for
+ *   inspection, until localization rewrites them to `resource://`;
+ * - anything else is removed.
+ *
+ * It returns what the value was, so a caller can mark a remote placeholder.
+ */
+function neutralizeMediaURL(element: Element, attribute: string): 'none' | 'resource' | 'inline' | 'remote' | 'removed' {
+  const value = element.getAttribute(attribute);
+  if (value === null) return 'none';
+  const url = value.trim();
+  if (url.startsWith('resource://')) {
+    const resourceID = parseResourceIDFromURI(url);
+    if (resourceID) {
+      element.setAttribute('data-app-uri', url);
+      element.setAttribute(attribute, resourceContentURL(resourceID, false));
+      return 'resource';
+    }
+    element.removeAttribute(attribute);
+    return 'removed';
+  }
+  if (url.startsWith('data:image/')) return 'inline';
+  element.removeAttribute(attribute);
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    element.setAttribute(`data-remote-${attribute.replace(':', '-')}`, url);
+    return 'remote';
+  }
+  return 'removed';
 }
 
 export function parseDocumentIDFromURI(uri: string): string | null {

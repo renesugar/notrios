@@ -214,6 +214,23 @@ are not reserved against the internet: PCP and TURN anycast (`192.0.0.9`,
 
 Preview components may detect remote images and offer actions, but the server performs localization. Browser image loading must not be treated as a safe content source.
 
+The GUI preview never lets a note's HTML fetch remote media (J34). Every URL
+that would load media — `img` `src`, `video` and `audio` `src` and `poster`,
+`track` `src`, and `href`/`xlink:href` on SVG elements other than links — is
+handled one way:
+- a `resource://` source is resolved to its local content URL;
+- an inline `data:image/…` source is kept, because inline images are not
+  remote;
+- an `http:` or `https:` source is moved to an inert `data-remote-…`
+  attribute until localization rewrites it;
+- anything else is removed.
+
+`img` `srcset`, `source`, `embed` and `object` are removed. Inline SVG markup
+renders. The UI's Content-Security-Policy also states `media-src 'self'`, so a
+remote audio or video source is refused by the browser even if the sanitizer
+missed one. `img-src` still admits remote origins; the sanitizer is what keeps
+a note from using that.
+
 ## Stop lists and hash checks
 
 Remote-media localization must support:

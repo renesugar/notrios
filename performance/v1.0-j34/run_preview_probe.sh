@@ -6,6 +6,7 @@
 #
 #   PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs bash performance/v1.0-j34/run_preview_probe.sh
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/notrios-j34.XXXXXX")
 cleanup() { kill "${app_pid:-}" "${remote_pid:-}" 2>/dev/null || true; rm -rf "$work"; }

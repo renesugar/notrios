@@ -29,7 +29,7 @@ for (const engine of (process.env.J34_ENGINES || 'chromium,webkit').split(',')) 
       const out = [];
       pane.querySelectorAll('img, video, audio, source, track, embed, object, image, svg').forEach((el) => {
         const attrs = {};
-        for (const a of el.attributes) if (/^(src|srcset|poster|data|href|xlink:href|data-remote-src)$/.test(a.name)) attrs[a.name] = a.value.slice(0, 80);
+        for (const a of el.attributes) if (/^(src|srcset|poster|data|href|xlink:href|data-remote-[a-z-]+)$/.test(a.name)) attrs[a.name] = a.value.slice(0, 80);
         out.push({ tag: el.tagName.toLowerCase(), ...attrs });
       });
       const inlineImages = [...pane.querySelectorAll('img')].filter((img) => (img.getAttribute('src') || '').startsWith('data:image/'));

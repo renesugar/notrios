@@ -301,12 +301,18 @@ func (s *Server) routes() {
 //     is required because the bundler inlines the smallest font files as data
 //     URIs — those bytes ship in our own assets, so allowing them is not a
 //     remote-loading exemption.
+//   - `media-src 'self'` is stated rather than left to the `default-src`
+//     fallback (J34): audio, video and track sources come only from this
+//     service, which means a localized `resource://`. The preview sanitizer
+//     already makes remote media inert; this is the browser's own refusal if
+//     it ever does not.
 //   - `connect-src 'self'` keeps the UI talking only to its own service.
 const webAppCSP = "default-src 'self'; " +
 	"script-src 'self'; " +
 	"style-src 'self' 'unsafe-inline'; " +
 	"img-src 'self' data: blob: https: http:; " +
 	"font-src 'self' data:; " +
+	"media-src 'self'; " +
 	"connect-src 'self'; " +
 	"object-src 'none'; " +
 	"frame-src 'none'; " +

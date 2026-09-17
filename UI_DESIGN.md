@@ -210,6 +210,7 @@ the application does.
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
 - Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.
+- Remote media in preview never loads: `img`, `video`/`audio` sources and posters, `track` and SVG references stay inert until localized; inline `data:image/…` images and inline SVG render (J34).
 - The bounded v0.6 F1 batch API implements move, duplicate, trash, tag/untag,
   and stable-link copy semantics, but the current GUI does not yet expose
   multi-select organizer controls. A future client surface must display the
