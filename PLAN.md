@@ -95,7 +95,7 @@ this section is archived when the plan completes and the rules are not.
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
-| J35. Make G18g's browser smoke runnable again | not-started | 0/2 | 2 |
+| J35. Make G18g's browser smoke runnable again | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3340,14 +3340,36 @@ J31 proved search on the refreshed theme with its own probe
   apex, so no document should claim a single build serves both, and none should
   imply the subpath is live.
 
+- **J35-C, a check that catches the next drift.** The owner's point is worth
+  more than the four corrections: a local build cannot exercise the
+  `notrios.com` deployment, so a statement about the served address drifts with
+  nothing to catch it. A check reads the served address from the one place that
+  decides it — `docs-site/hugo.toml`'s `baseURL` — and fails when a tracked
+  file names a base address that contradicts it.
+  - It covers repository documents, the G18g evidence scripts and their README,
+    and the build and smoke scripts' own defaults.
+  - A historical mention is allowed, but only when it is listed with its
+    reason, the way other pinned evidence is listed: `ROADMAP.md`'s record of
+    the I10 move and the Pages redirect are history, not claims about today.
+    An unlisted mention fails, and the failure names the file, the line and the
+    address the build actually serves.
+  - It runs with the checks that need no browser, so it fails in `make
+    validate` rather than only at packaging time.
+  - A test proves it both ways: a document naming the subpath as current
+    fails, and the same document naming it as history, listed, passes.
+
 **Boundaries.** No change to what the site publishes, and no relaxing of the
 smoke's checks to make it pass. If a check cannot run here, it says so rather
-than being deleted.
+than being deleted. The check reads the address from the build's own
+configuration; it never reaches the network, so it cannot confirm what
+`notrios.com` serves — only that the repository agrees with itself.
 
 **Dependencies.** J31, which found it.
 
 **Working state.** The documented command runs to completion and reports its
-measurements, or G18g's README says exactly what cannot run and why.
+measurements, or G18g's README says exactly what cannot run and why; every
+statement about the served address agrees with the build's `baseURL`, and a
+check fails when one stops agreeing.
 
 ## J32. Investigate the import performance review's findings, and keep only what measurement shows is faster
 

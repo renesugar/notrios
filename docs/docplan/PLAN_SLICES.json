@@ -891,6 +891,11 @@
           "id": "J35-B",
           "statement": "The smoke, G18g's README, DOCS_SITE.md and FEATURE_MATRIX.md name the apex address the site is served at instead of the GitHub Pages subpath, which is recorded as the historical fallback",
           "state": "not-started"
+        },
+        {
+          "id": "J35-C",
+          "statement": "A check run with make validate fails when a tracked file names a base address contradicting docs-site/hugo.toml's baseURL, with historical mentions listed and a test proving it both ways",
+          "state": "not-started"
         }
       ]
     }
