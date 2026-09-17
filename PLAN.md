@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**34 items: 24 complete, 0 in progress, 10 not started, 0 deferred.**
+**34 items: 25 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -89,7 +89,7 @@ this section is archived when the plan completes and the rules are not.
 | J26. Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded | complete | 6/6 | — |
 | J27. Normalise a host before matching it against the domain lists | complete | 1/1 | — |
 | J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | complete | 4/4 | — |
-| J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
+| J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
@@ -3044,7 +3044,7 @@ every slice can start.
 - Every default range has a case at both checks.
 - The documentation shows how to state the set.
 
-## J29. Decide which HTML reference forms the remote-media scanner covers
+## J29. Decide which HTML reference forms the remote-media scanner covers — complete
 
 **Goal.** What the scanner is responsible for finding is stated, and it finds
 it.

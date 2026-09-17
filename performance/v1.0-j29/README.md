@@ -93,3 +93,13 @@ because the sanitizer is not the scanner. Following the owner, inline
 **Validation.** The whole Go suite passes through `scripts/check_temp_leaks.sh`,
 which left no `notrios-*` entry. `validate-scaffold.sh` and
 `make g18g-validate` pass.
+
+## The archive
+
+Built from `dc866c1` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 73% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j29-dc866c1.zip`, 25,647,494 bytes, 2,664 entries.
+  `check_release_zip.py` accepts it.
