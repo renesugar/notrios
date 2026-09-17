@@ -92,3 +92,13 @@ probe is narrower than the smoke and is what proves search.
 **Validation.** The whole Go suite passes through `scripts/check_temp_leaks.sh`,
 which left no `notrios-*` entry. `validate-scaffold.sh`, G18b's and G18a's
 evidence validators and `make g18g-validate` pass.
+
+## The archive
+
+Built from `d8c67d4` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 27% of the five-hour window
+  remaining, above the 20% reserve, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j31-d8c67d4.zip`, 25,673,818 bytes, 2,680 entries.
+  `check_release_zip.py` accepts it.

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 27 complete, 0 in progress, 8 not started, 0 deferred.**
+**35 items: 28 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -91,7 +91,7 @@ this section is archived when the plan completes and the rules are not.
 | J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | complete | 4/4 | — |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
-| J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
+| J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
@@ -3208,7 +3208,7 @@ localizable media beyond this rule.
 **Working state.** SVG still works, a text payload claiming to be an image is
 refused, and both are proven by tests that fail on today's code.
 
-## J31. Bring the vendored Ledger theme up to its Bluge result-URL fix
+## J31. Bring the vendored Ledger theme up to its Bluge result-URL fix — complete
 
 **Goal.** The documentation site's copy of `hugo-theme-ledger` is the upstream
 commit that carries the Bluge result-URL fix, and the checks that pin the copy
