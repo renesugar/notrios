@@ -880,22 +880,25 @@
     {
       "id": "J35",
       "title": "Make G18g's browser smoke runnable again",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J35-A",
           "statement": "The documented browser smoke command completes, with the reason the theme control was not clickable recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
         },
         {
           "id": "J35-B",
           "statement": "The smoke, G18g's README, DOCS_SITE.md and FEATURE_MATRIX.md name the apex address the site is served at instead of the GitHub Pages subpath, which is recorded as the historical fallback",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
         },
         {
           "id": "J35-C",
           "statement": "A check run with make validate fails when a tracked file names a base address contradicting docs-site/hugo.toml's baseURL, with historical mentions listed and a test proving it both ways",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
         }
       ]
     }

@@ -87,3 +87,14 @@ of their time and are listed.
 **Validation.** The whole Go suite passes through `scripts/check_temp_leaks.sh`,
 which left no `notrios-*` entry. `validate-scaffold.sh` — which now runs the new
 check — and `make g18g-validate` pass.
+
+## The archive
+
+Built from `f3d0cdf` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 72% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh` with the new address check, `make g18g-validate` and
+  every evidence validator.
+- **ZIP:** `notrios-v1.0-j35-f3d0cdf.zip`, 25,684,782 bytes, 2,685 entries.
+  `check_release_zip.py` accepts it.

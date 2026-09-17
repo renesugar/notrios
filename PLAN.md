@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 28 complete, 0 in progress, 7 not started, 0 deferred.**
+**35 items: 29 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -95,7 +95,7 @@ this section is archived when the plan completes and the rules are not.
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
-| J35. Make G18g's browser smoke runnable again | not-started | 0/3 | 3 |
+| J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3281,7 +3281,7 @@ evidence stays byte-identical.
 commit with the Bluge fix, its provenance says so, the frozen v0.7 snapshot is
 untouched, and every docs-site check passes.
 
-## J35. Make G18g's browser smoke runnable again
+## J35. Make G18g's browser smoke runnable again — complete
 
 **Goal.** The documentation site's browser evidence can be produced by running
 the documented command.
