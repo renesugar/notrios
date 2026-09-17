@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**31 items: 23 complete, 0 in progress, 8 not started, 0 deferred.**
+**32 items: 23 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -92,6 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3169,3 +3170,165 @@ evidence stays byte-identical.
 **Working state.** `docs-site/themes/hugo-theme-ledger` is the recorded upstream
 commit with the Bluge fix, its provenance says so, the frozen v0.7 snapshot is
 untouched, and every docs-site check passes.
+
+## J32. Investigate the import performance review's findings, and keep only what measurement shows is faster
+
+**Goal.** Every finding in `performance-code-review.md` is investigated. A change
+ships only if a benchmark, written before the change, shows it improves import
+performance and every correctness gate still passes. Every finding ends with a
+recorded disposition, and a finding whose measurement shows no gain is
+reverted, not kept.
+
+**Why.** The review (2026-09-17, a static snapshot by another agent) found
+candidates in the Joplin RAW and Obsidian importers, their shared SQLite write
+path, and the Markdown parsers. It ran no benchmark: its numbers come from J17,
+J19 and J20, and it says so. Its key citations were checked against the code
+before this item was written:
+- `execPreparedLocked` prepares and finalizes on every call;
+- `PropertyOrder` is built whether or not source is preserved;
+- `appendUnique` scans linearly;
+- `lineColumn` rescans the body from the start for every link;
+- Obsidian splices replacements into the body one at a time.
+
+J17's history is the reason for the rule. Its first batching result (1.46×) was
+contaminated by concurrent work, and the corrected figure (2.2×) differed. J19
+measured three plausible ideas as no-ops.
+
+**What "shows it improved" means, fixed before any candidate is measured.**
+- **Runs.** Baseline and candidate alternate on the same machine, the same
+  disk, the same binary build flags and the same generated corpus. There are at
+  least five measured runs of each after a warm-up, and nothing else runs:
+  no tests, builds, reviews or other imports.
+- **The metric** is declared in the slice before the change: wall time,
+  notes/s, peak RSS, live heap after GC, allocations, or prepared-statement
+  count.
+- **Improved** means the candidate's median beats the baseline's median by
+  more than the baseline's own range (maximum minus minimum) on the declared
+  metric. A 1% median win inside 5% run-to-run spread is not an improvement.
+- **No regression elsewhere.** The other recorded metrics of the matrix cases
+  do not get worse by more than the baseline range. A memory gain that costs
+  wall time beyond noise is a trade-off for the owner, not a ship.
+- **Scaling findings** may be proven on the input shape they target, such as a
+  link-dense note or a collision-heavy namespace, but must be neutral within
+  noise on the ordinary corpus.
+- **Correctness first.** A candidate that fails a correctness gate is not
+  measured further.
+
+**Correctness gates** (the review's §6, applied to every candidate):
+- **Content:** identical canonical bodies, titles, notebook placement,
+  provenance, tags, attachment references, source-bundle bytes and hashes, and
+  property order.
+- **Links:** identical byte spans, rune columns, contexts, anchors and
+  resolution.
+- **Blocks:** identical IDs, occurrence numbers, hashes, slugs and offsets.
+- **Resume:** identical inventory fingerprints and checkpoint positions, and
+  resume works after an interruption at each phase.
+- **No-op reimport** creates no revisions or projection jobs.
+- **Search:** results are visible immediately after each committed batch.
+- `performance/v1.0-j17/j17_compare.py` shows no unexplained difference between
+  independently imported libraries.
+- The full `go test ./...` passes through `scripts/check_temp_leaks.sh`.
+
+**Scope.** Each candidate slice records its hypothesis, declared metric,
+baseline, candidate result and disposition. It is independent of the others,
+and a candidate is measured against the baseline in force when it is tested,
+so an earlier kept change is part of that baseline.
+
+- **J32-A, the harness and the baseline.** A reproducible synthetic matrix,
+  generated and never private:
+  - Joplin RAW and Obsidian corpora at 10k notes from the existing profile
+    scripts, fresh import and no-op reimport;
+  - a link-dense corpus (notes of about 1 MiB with many links, including long
+    single-line notes);
+  - a collision-heavy namespace (many files named `index.md` in different
+    folders, and repeated aliases);
+  - notes near the 64 MiB limit.
+
+  A prepared-statement counter is added, test-only or behind the existing
+  `ImportMetrics`, so F1 can be measured by count as well as by time. The
+  baseline is recorded with dispersion before any candidate. The larger
+  scales (100k, 382,206-equivalent) are run only for candidates that pass at
+  10k, because each full run takes over an hour.
+- **J32-B, F1: reuse prepared statements** for the repeated block and link
+  inserts, batch-scoped, reset and rebound as `import_manifest.go` already
+  does, and finalized on every exit. Metrics: prepared-statement count and
+  import wall time.
+- **J32-C, §3.1B: build `PropertyOrder` only when source is preserved.**
+  Metrics: live heap and peak RSS on a property-rich vault. Preserve-source
+  output must stay byte-identical.
+- **J32-D, §3.1A: assemble rewritten Obsidian bodies in one pass.** First pin
+  the current behaviour for overlapping and mixed Markdown and wiki matches in
+  a test, then change only the assembly. Metrics: allocations and wall time on
+  the link-dense corpus.
+- **J32-E, F8: one-pass link coordinates** in `markdownlinks`, keeping byte
+  offsets, rune columns and result order. Metric: parse time on the
+  link-dense corpus, including long single-line notes.
+- **J32-F, F9: collision-heavy namespace construction.** Metrics: namespace
+  build time on the collision corpus, and memory on the ordinary corpus, where
+  sets can cost more.
+- **J32-G, §3.1C: hash Markdown from the bytes already read** in the Obsidian
+  inventory, with a bounded read. Metric: inventory wall time on warm and on
+  explicitly dropped caches.
+- **J32-H, F3: existence-only reads** where only presence is needed, through a
+  typed store method that keeps deleted-note filtering. The notes-phase body
+  comparison is not touched. Metrics: allocations and wall time.
+- **J32-I, F2: reuse blocks in the final link pass** when they describe the
+  current revision. This is an investigation first: the invariant that blocks
+  and links describe the same body under cancellation and resume is proven
+  before anything is measured. Metric: wall time on fresh imports.
+- **J32-J, §3.1D: Obsidian checkpoint consolidation and stable-note skips**,
+  with failures injected between commit and progress publication, and a
+  provenance-repair case. Metrics: commit count and wall time on no-op and 1%
+  changed reimports.
+- **J32-K, F5: byte-bounded batches** and bounded rereads. Metric: peak RSS on
+  the near-limit corpus. A single legitimate large note still imports.
+- **J32-L, the smaller candidates.** Each is measured and dispositioned
+  separately:
+  - F7, Joplin's duplicate ID map;
+  - F10, title splitting and the list-prefix match;
+  - §3.2B, cached Joplin notebook paths, on a deep hierarchy;
+  - §3.2A, compact Joplin resource representations, on a resource-heavy
+    corpus;
+  - benchmark-only experiments on disposable databases: `cache_size`,
+    `temp_store`, and building the disposable manifest's indexes after
+    inserts. `synchronous` is never relaxed on a canonical library.
+- **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
+  finding: implemented with its measurement, rejected with its measurement and
+  the revert, or not investigated with the reason. It also records any
+  correctness defect found along the way. Such a defect is not fixed here; it
+  becomes its own plan item, as J8 established. `performance-code-review.md`
+  stays a dated snapshot; the record supersedes it by reference and does not
+  edit it.
+
+**Not in this item, unless an earlier slice's measurement makes the case
+first:**
+- the resource and source-bundle staging API (F4, F6), because it is a new
+  store API;
+- a disk-backed Obsidian namespace (§3.1E);
+- a parallel parse pipeline (§4.4).
+
+The review ranks each of these after the smaller changes. If a slice's results
+make the case for one, it is proposed as its own item with that evidence.
+
+**Boundaries.**
+- No change ships on a projected, estimated or single-run result.
+- No durability is relaxed on a user's library: WAL, `foreign_keys`, and
+  inline FTS stay, the last by J19's owner decision.
+- J19's measured no-ops (hash-buffer pooling, streamed fingerprint
+  concatenation, comparison-conversion changes) are not re-proposed without new
+  evidence.
+- No parser grammar changes: a performance change keeps what is recognised.
+- No private archive or vault content enters the repository or evidence;
+  profiles come from synthetic corpora.
+- Long timed runs check agent usage first and run detached with isolated
+  scratch data, as J25 and J26 did.
+
+**Dependencies.** J17, J19 and J20 for the measured history, and J22 for
+per-instance temp isolation in the harness. Nothing depends on this item: it
+does not block J9 or J10.
+
+**Working state.**
+- Every finding in the review has a recorded disposition backed by a
+  measurement or a stated reason.
+- Only changes whose benchmark showed an improvement beyond noise, with every
+  correctness gate passing, remain in the code.

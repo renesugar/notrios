@@ -773,6 +773,78 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J32",
+      "title": "Investigate the import performance review's findings, and keep only what measurement shows is faster",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J32-A",
+          "statement": "A synthetic benchmark matrix, a prepared-statement counter and a baseline with dispersion exist before any candidate is measured",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-B",
+          "statement": "F1, reusing prepared block and link insert statements, is kept or reverted on its measured prepare count and wall time",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-C",
+          "statement": "Building PropertyOrder only when source is preserved is kept or reverted on its measured heap and peak RSS",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-D",
+          "statement": "Single-pass Obsidian replacement assembly is kept or reverted on the link-dense corpus, after overlapping-match behaviour is pinned",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-E",
+          "statement": "F8, one-pass link coordinates, is kept or reverted on the link-dense corpus with offsets, columns and order unchanged",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-F",
+          "statement": "F9, collision-heavy namespace construction, is kept or reverted on the collision corpus without costing memory on the ordinary corpus",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-G",
+          "statement": "Hashing Obsidian Markdown from bytes already read is kept or reverted on warm and dropped-cache inventory time",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-H",
+          "statement": "F3, existence-only store reads, is kept or reverted on measured allocations and wall time with deleted-note filtering unchanged",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-I",
+          "statement": "F2, reusing current blocks in the final link pass, is kept or reverted after its revision invariant is proven",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-J",
+          "statement": "Obsidian checkpoint consolidation and stable-note skips are kept or reverted on commit count and reimport time, with injected-failure resume",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-K",
+          "statement": "F5, byte-bounded batches, is kept or reverted on peak RSS with near-limit notes, and a single large note still imports",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-L",
+          "statement": "F7, F10, cached Joplin notebook paths, compact Joplin resources and the disposable-database PRAGMA and index experiments each have a measured disposition",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-M",
+          "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
