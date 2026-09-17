@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**34 items: 27 complete, 0 in progress, 7 not started, 0 deferred.**
+**35 items: 27 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -95,6 +95,7 @@ this section is archived when the plan completes and the rules are not.
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
+| J35. Make G18g's browser smoke runnable again | not-started | 0/2 | 2 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3279,6 +3280,47 @@ evidence stays byte-identical.
 **Working state.** `docs-site/themes/hugo-theme-ledger` is the recorded upstream
 commit with the Bluge fix, its provenance says so, the frozen v0.7 snapshot is
 untouched, and every docs-site check passes.
+
+## J35. Make G18g's browser smoke runnable again
+
+**Goal.** The documentation site's browser evidence can be produced by running
+the documented command.
+
+**What J31 found, 2026-09-17.** `performance/v0.7-g18g/browser_smoke.mjs` does
+not finish in this environment, on the vendored theme **before or after** J31's
+refresh, so the failure is not the refresh's:
+
+- It stops at the theme menu, clicking `[data-theme-value="light"]`, which
+  Playwright reports as "element is not visible" until it times out.
+- Its documented base URL is a `/notrios/` subpath, but the site is built with
+  `baseURL = "https://notrios.com/"` and `scripts/build_docs_site.sh` takes no
+  base-URL argument, so the built pages reference absolute root paths. Served
+  under a subpath, Pagefind's assets 404 and the search page returns nothing.
+  A probe that loads the search page under `/notrios/` finds no results for
+  that reason, and the same probe at the root finds them.
+
+J31 proved search on the refreshed theme with its own probe
+(`performance/v1.0-j31/search_probe.mjs`), which is narrower than the smoke.
+
+**Scope.**
+
+- **J35-A, a smoke that runs.** Establish why the theme control is not visible
+  to a click (a menu that must be opened first, a viewport or animation
+  assumption, or a genuine regression), and fix the script or the theme so the
+  documented command completes. Record which it was.
+- **J35-B, the base URL it is run at.** Either the build takes a base URL, so
+  the smoke's documented `/notrios/` run is reproducible, or the smoke and
+  G18g's README say the site is served at the root and drop the subpath. The
+  choice is recorded with the reason.
+
+**Boundaries.** No change to what the site publishes, and no relaxing of the
+smoke's checks to make it pass. If a check cannot run here, it says so rather
+than being deleted.
+
+**Dependencies.** J31, which found it.
+
+**Working state.** The documented command runs to completion and reports its
+measurements, or G18g's README says exactly what cannot run and why.
 
 ## J32. Investigate the import performance review's findings, and keep only what measurement shows is faster
 

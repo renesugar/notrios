@@ -46,6 +46,16 @@ dependency. G18g materialized that exact snapshot under `docs-site/`, wired it
 into production/CI/release packaging, and added strict evidence under
 `performance/v0.7-g18g/`.
 
+**What ships today** is upstream commit
+`cf68886beb31ec0bbe7e2f05e538a20fec722e5a`, 44 files and 174,456 bytes, which
+carries the Bluge result-URL fix (v1.0 J31). The G18b figures above are v0.7's
+record of what it reviewed and do not move. The vendored copy is described by
+`docs-site/THEME_PROVENANCE.json`, which G18g's validator checks it against;
+the frozen snapshot is checked separately, exactly as before. Refresh it with
+`performance/v1.0-j31/refresh_vendored_theme.sh`, which clones upstream, copies
+only the files the snapshot already has, reports any the snapshot does not
+take, and rewrites the provenance from the bytes on disk.
+
 G18c adds `make docaudit`. The repository-only audit resolves the frozen Go and
 TypeScript declaration anchors, checks the typed claim/test registry, binds
 source fragments to the Markdown template, and accounts for every

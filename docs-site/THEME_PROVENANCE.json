@@ -1,13 +1,30 @@
 {
   "schema": "notrios.g18g.theme-provenance.v1",
-  "as_of": "2026-08-30",
-  "source": "performance/v0.7-g18b/prototype/themes/hugo-theme-ledger",
+  "as_of": "2026-09-17",
+  "source": "clone of the upstream repository at upstream_commit, by performance/v1.0-j31/refresh_vendored_theme.sh",
   "upstream_repository": "https://github.com/renesugar/hugo-theme-ledger",
-  "upstream_commit": "f9d28ea297427890ecffa31fa74caa9ee385d9f5",
+  "upstream_commit": "cf68886beb31ec0bbe7e2f05e538a20fec722e5a",
+  "previous_upstream_commit": "f9d28ea297427890ecffa31fa74caa9ee385d9f5",
+  "upstream_commits_since_previous": [
+    "cf68886 Merge pull request #5 from renesugar/develop",
+    "306438f Merge pull request #4 from renesugar/main",
+    "fc6adf8 Merge pull request #3 from renesugar/develop",
+    "85ac1b0 fix: resolve Bluge results under the site subpath",
+    "2b7bbc0 Merge pull request #2 from renesugar/develop",
+    "41b6f41 Merge pull request #1 from renesugar/develop"
+  ],
+  "changed_files_since_previous": [
+    "assets/js/search/backends/bluge.js"
+  ],
+  "not_vendored_upstream_files": [
+    "assets/js/search/backends/bluge.test.js",
+    "assets/js/search/query.test.js"
+  ],
   "file_count": 44,
-  "byte_count": 173947,
+  "byte_count": 174456,
   "manifest_algorithm": "SHA-256 over sorted '<file-sha256>  <relative-path>\\n' records",
-  "manifest_sha256": "2897566a3861c1a92f6f83d2606d8605c085d4b63d3f67adbef4954c55880025",
+  "manifest_sha256": "64607692c75a0f376808249fbaaa7110163e2e6344efac0a19db6a339232b2d6",
   "license": "Apache-2.0",
-  "materialization": "Exact byte copies of the reviewed G18b minimal runtime snapshot"
+  "materialization": "Exact byte copies of the upstream runtime files the G18b snapshot selected; upstream tests are not vendored",
+  "frozen_review_snapshot": "performance/v0.7-g18b/prototype/themes/hugo-theme-ledger records what v0.7 reviewed, at previous_upstream_commit, and is unchanged"
 }

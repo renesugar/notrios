@@ -873,6 +873,23 @@
           "evidence": "file:performance/v1.0-j34/README.md"
         }
       ]
+    },
+    {
+      "id": "J35",
+      "title": "Make G18g's browser smoke runnable again",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J35-A",
+          "statement": "The documented browser smoke command completes, with the reason the theme control was not clickable recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "J35-B",
+          "statement": "The base URL the smoke runs at is reproducible: either the build takes one or the documented run uses the root, with the reason recorded",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
