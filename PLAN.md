@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**33 items: 24 complete, 0 in progress, 9 not started, 0 deferred.**
+**34 items: 24 complete, 0 in progress, 10 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -94,6 +94,7 @@ this section is archived when the plan completes and the rules are not.
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | not-started | 0/1 | 1 |
+| J34. Stop the preview loading remote images through media elements | not-started | 0/1 | 1 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3054,16 +3055,67 @@ across newlines and in either case. It does not find an unquoted
 `<img src=https://…>` or a `<video src="…">`. A reference the scan never
 returns is never evaluated by any later stage.
 
+**Owner decision, 2026-09-17.** `<video>` and the other media elements are in
+the scanner's scope.
+
+**Design, 2026-09-17.** Written before the code.
+
+- **Covered forms.** An HTML element in a note body, any case, whose attribute
+  names a URL a renderer loads as media:
+
+  | element | attributes |
+  |---|---|
+  | `img` | `src`, `srcset` |
+  | `source` (in `picture`, `video` or `audio`) | `src`, `srcset` |
+  | `video` | `src`, `poster` |
+  | `audio` | `src` |
+  | `track` | `src` |
+  | `embed` | `src` |
+  | `object` | `data` |
+  | `image` (SVG) | `href`, `xlink:href` |
+
+- **How it reads them.** Not an HTML parser, and no new dependency.
+  - A pattern finds where each covered element's start tag begins.
+  - A small attribute reader then follows HTML's rules for that one tag:
+    double-quoted, single-quoted and unquoted values; values spanning lines;
+    a `>` inside quotes; entities decoded with the standard `html` package.
+  - `srcset` is split into its candidate URLs and descriptors.
+  - Each URL is reported as embedded media, at the line its tag starts, and
+    deduplicated as today.
+- **What it does not promise**, written into `SECURITY_AND_MEDIA_POLICY.md`:
+  - CSS: `style` attributes, `<style>` and `url()`;
+  - documents: `iframe`, `frame`, `srcdoc`;
+  - `link` preloads and icons, `meta` refresh, `input type=image`;
+  - sources a script or a renderer extension builds;
+  - HTML the renderer would treat differently from the text, such as a tag
+    split by a comment.
+  - HTML inside a code span or fence is reported although it does not render,
+    which errs towards reporting.
+  - A URL written with entities is evaluated decoded, but localization rewrites
+    only literal occurrences of it, so such a reference is reported and not
+    rewritten.
+- **Proof.** Tests fail on today's code for an unquoted `img`, `srcset`, and
+  every element and attribute above. They also cover quoting, case, line
+  numbers, entities, `srcset` descriptors and a `>` inside a quoted value, and
+  the existing Markdown and quoted-`img` results stay unchanged.
+
+**Found while designing, and deferred to J34 rather than fixed here.** The GUI
+preview's sanitizer (`web/src/preview-utils.tsx`) neutralises remote `img`
+sources but keeps remote `video` and `audio` `src`, `video` `poster`, `track`
+`src` and SVG `image` `href`, as a probe of the function itself showed. The
+served UI's Content-Security-Policy has no `media-src`, so remote audio and
+video fall back to `default-src 'self'` and are blocked. `poster` and SVG
+`image` are image loads, though, and `img-src` allows remote `http:` and
+`https:`.
+
 **Scope.**
 
-- **J29-A, the covered forms.** The policy states which HTML forms the scanner
-  covers, the scanner finds them, and the policy records plainly what a regular
-  expression over HTML cannot promise, so a later reader does not mistake the
-  scan for a parser.
+- **J29-A, the covered forms.** The policy states the covered forms and what
+  the scan does not promise, the scanner finds every covered form, and the
+  tests above pass.
 
-**Boundaries.** Whether `<video>` and other media elements belong in scope is
-the owner's decision. Replacing the scan with an HTML parser is not assumed;
-if it is the answer, this item says so rather than doing it quietly.
+**Boundaries.** The scan is not replaced with an HTML parser; the reason is
+recorded above. The preview sanitizer is J34's, not this item's.
 
 **Dependencies.** J8, which found it.
 
@@ -3413,3 +3465,50 @@ class.
 
 **Working state.** Each case either localizes with a test proving it, or is
 refused with the policy saying why.
+
+## J34. Stop the preview loading remote images through media elements
+
+**Goal.** A note's remote media never loads in the preview until it is
+localized, whichever element names it.
+
+**What J29 found while designing, 2026-09-17.** Run on the real
+`normalizePreviewHTML`, these inputs come back unchanged:
+- `<video src="https://…" poster="https://…">`;
+- `<audio src="https://…">`;
+- `<video><track src="https://…"></video>`;
+- `<svg><image href="https://…"/></svg>`.
+
+An unquoted remote `<img src=…>` comes back as the inert placeholder, as
+intended.
+
+The UI's Content-Security-Policy has no `media-src`, so remote audio, video and
+track loads fall back to `default-src 'self'` and are blocked. `img-src`
+allows remote `http:` and `https:`, because a remote `img` is neutralised
+before it reaches the page, and neither `poster` nor SVG `image` is
+neutralised. So a `poster` or an SVG `image` in a note can make the preview
+fetch a remote image, bypassing the media policy the placeholder exists to
+enforce.
+
+**Not examined yet:**
+- whether the Markdown renderer passes such HTML through to the sanitizer
+  unescaped;
+- whether the desktop webview enforces the policy header it is served.
+
+The first step is to establish both, with a rendered note.
+
+**Scope.**
+
+- **J34-A, one rule for every media reference.** The sanitizer treats every
+  covered element and attribute in J29's table as it treats `img`: remote
+  sources become inert metadata, `resource://` sources are resolved, and
+  `srcset` is dropped. The CSP states `media-src` explicitly rather than
+  relying on the fallback. A rendered-note test proves that no remote request
+  is made for any form, and it fails on today's code.
+
+**Boundaries.** No change to what localization accepts, and no relaxing of any
+CSP directive.
+
+**Dependencies.** J29, whose table names the forms.
+
+**Working state.** No covered form loads a remote resource in the preview, and
+the CSP says so explicitly.

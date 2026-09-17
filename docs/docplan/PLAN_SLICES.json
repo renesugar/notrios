@@ -735,7 +735,7 @@
       "slices": [
         {
           "id": "J29-A",
-          "statement": "The scanner finds the reference forms the policy says it covers, including unquoted HTML img sources, and the policy records what a regular expression over HTML cannot promise (J8 finding J8-F3)",
+          "statement": "The scanner finds every covered media element and attribute (img, source, video, audio, track, embed, object, SVG image; src, srcset, poster, data, href) quoted or unquoted, and the policy records what the scan does not promise (J8 finding J8-F3)",
           "state": "not-started"
         }
       ]
@@ -855,6 +855,18 @@
         {
           "id": "J33-A",
           "statement": "Ogg and comment-led SVG either localize with a test that fails on today's code, or SECURITY_AND_MEDIA_POLICY.md says why they are refused",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J34",
+      "title": "Stop the preview loading remote images through media elements",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J34-A",
+          "statement": "The preview sanitizer neutralises every J29-covered remote media reference as it does img, the CSP states media-src, and a rendered-note test proves no remote request is made",
           "state": "not-started"
         }
       ]
