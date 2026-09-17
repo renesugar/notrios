@@ -67,7 +67,11 @@ class G18aEvidenceTests(unittest.TestCase):
         # sections: where configuration comes from, the storage roots and what a
         # purge does with each, serving, search, sync, remote media, retention,
         # profiles, and the generated key table.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 286)
+        # 286 -> 287 in v1.0 J11: docs/installation.md gained "Checking that a
+        # purge removed everything", where `paths --report` and
+        # scripts/check_purged.sh are, for a reader who has just been told how
+        # to purge and has no way to tell whether it worked.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 287)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

@@ -80,8 +80,11 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 169 -> 170 in v1.0 J28-D: docs/configuration.md's remote-media section
     # shows the security block stating a refused set and an exception. It is
     # executed, checked against both lists `config show` reports.
-    assert len(examples) == report["entries"] == 170
-    assert len({item["id"] for item in examples}) == 170
+    # 170 -> 172 in v1.0 J11: docs/installation.md's section on checking that a
+    # purge removed everything. Executed is unchanged; both bodies delete this
+    # user's installation and are drilled in performance/v1.0-j11 instead.
+    assert len(examples) == report["entries"] == 172
+    assert len({item["id"] for item in examples}) == 172
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -120,7 +123,11 @@ def validate_registry(registry: dict, report: dict) -> None:
     # summarises 20 of the 53 keys and those two are not among them, and
     # `notriosctl search` takes --db and not --config, so the page says where
     # the effect is visible instead of showing a command that cannot check it.
-    assert len(unverified) == report["unverified"] == 100
+    # 100 -> 102 in v1.0 J11: the two examples in docs/installation.md's new
+    # section on checking a purge. Both report on and then delete this user's
+    # installation, so both carry the shared-user-state reason and are drilled
+    # against a disposable HOME in performance/v1.0-j11.
+    assert len(unverified) == report["unverified"] == 102
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }

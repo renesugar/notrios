@@ -195,6 +195,11 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/importers/chatgpt/` — ChatGPT `conversations.json` importer (mapping tree, current-node main path, system/tool skip).
 - `internal/importers/claude/` — Claude `conversations.json` importer (flat chat_messages, content blocks).
 - `internal/importers/joplinraw` and `internal/importers/obsidian` record provenance rows on every import run (re-running an import backfills existing notes).
+- `internal/installreport/` — what an installation occupies: every directory and
+  file under the resolved roots, every registered profile including the
+  libraries kept outside those roots, and the program files the installer
+  recorded. It records paths and opens nothing. Taken before a purge, its
+  `--paths` form is the manifest `scripts/check_purged.sh` reads afterwards.
 - `internal/importers/joplinraw/` — hardened Joplin RAW importer: canonical
   first-line titles, CR/LF-only physical parsing (including OCR controls), one
   ordered future/duplicate-property parse, deterministic inventory, nested

@@ -50,7 +50,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl notes restore [--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]
 - notriosctl notes show --document <id> [--json] [--output <file>] [--db ...]
 - notriosctl open [--profile name] [--registry path] [--db path] [--launch] <notrios-uri>
-- notriosctl paths [--json] [--no-redact]
+- notriosctl paths [--json] [--no-redact] [--report [--paths] [--registry path] [--install-manifest path]]
 - notriosctl profile create --name <profile> [--listen 127.0.0.1:8080] [--db ...] [--sync-target none|directory|rest] [--data-dir path] [--public-url url] [--registry path] [--credential-ref ref] [--sync-directory dir] [--sync-rest-url url] [--copied-database-as adopt|fork]
 - notriosctl profile forget --name <profile> [--registry path]
 - notriosctl profile list [--registry path]

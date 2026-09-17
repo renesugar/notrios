@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "f8642de3aea136cee7d924394ce0f845ef76f394bfb89d30068692579d1f4e1f",
+      "sha256": "939bbf79f18c02086410429467183db55cdce4205d186c6343648b5b2b880cc8",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -2017,7 +2017,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "7fb43ce3ede9e48a7b8c102a78fb89ede1fb9ca52d3499a219e24cae573bd600",
+      "sha256": "39d6b4a5522846c57347f9bbf6c018dd455fc72d387b76cf0a9772503fd78d9e",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -2215,6 +2215,16 @@
           "id": "removing-your-data-as-well",
           "level": 3,
           "title": "Removing your data as well",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "checking-that-a-purge-removed-everything",
+          "level": 3,
+          "title": "Checking that a purge removed everything",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -3021,14 +3031,14 @@
       "id": "published_markdown",
       "count": 19,
       "unit": "pages",
-      "sections": 286,
+      "sections": 287,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 19,
       "unit": "mirrored notes",
-      "sections": 286,
+      "sections": 287,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -3125,9 +3135,9 @@
       "executed": 0,
       "generated": 30,
       "claimed": 0,
-      "unverified": 256
+      "unverified": 257
     },
-    "denominator": 286,
+    "denominator": 287,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

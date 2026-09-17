@@ -485,6 +485,33 @@ hanging.
 and `purge` never touch the checkout. They are separate concerns with separate
 targets.
 
+### Checking that a purge removed everything
+
+`notriosctl paths --report` lists every directory and file this installation
+occupies, every registered profile — including one whose library lives outside
+these roots — and the program files the installer recorded. It is worth keeping
+before a purge, because afterwards it is the only record of what was there:
+
+```sh
+notriosctl paths --report                      # for reading
+notriosctl paths --report --json               # for a script
+notriosctl paths --report --paths > ~/notrios-before-purge.txt
+```
+
+Save that last one somewhere the purge does not reach. Afterwards:
+
+```sh
+bash scripts/check_purged.sh ~/notrios-before-purge.txt
+```
+
+It needs nothing but a shell, because by then the program that would have read
+a manifest is gone. It reports two different failures: a path that should have
+been deleted and is still there, and a library outside the roots that a purge
+was supposed to keep and that is missing.
+
+The first two forms redact your home directory to `~`, like `paths` and
+`config show`. `--paths` does not, because a checker compares real paths.
+
 ## Ways to consume Notrios
 
 - **Run from source** (`go run ./cmd/...`) — best for development; nothing to install, always current.

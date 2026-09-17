@@ -1,0 +1,14 @@
+{
+  "schema": "notrios.j11.purge-check/1",
+  "what_this_is": "One run of capture_clean_install.sh: a clean install into a disposable HOME, the structure-and-manifest report taken before a purge, the purge, and the check that reads that manifest afterwards. The manifest's paths are this run's scratch directory, so only counts and verdicts are recorded; the reports beside this file are redacted.",
+  "owned_paths_before_purge": 446,
+  "external_paths_before_purge": 0,
+  "after_purge": {
+    "status": "verified",
+    "said": "purge verified: 446 owned path(s) gone, 0 external path(s) still present"
+  },
+  "with_one_file_left_behind": {
+    "status": "caught",
+    "said": "the purge left 2 of 446 path(s) behind:"
+  }
+}

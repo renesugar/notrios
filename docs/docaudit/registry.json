@@ -2266,6 +2266,30 @@
       }
     },
     {
+      "id": "installation-checking-that-a-purge-removed-everything-example-1",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
+      "language": "sh",
+      "sha256": "0b7820f6a6129b9bc0daacb2ca256a39473a0f4a697e2b621f450adbc4c643e6",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Reports on, and then deletes, this user's own installation. Covered by executed runs in performance/v1.0-j11/capture_clean_install.sh, which installs into a disposable HOME, takes the manifest, purges, and runs the check both ways."
+      }
+    },
+    {
+      "id": "installation-checking-that-a-purge-removed-everything-example-2",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
+      "language": "sh",
+      "sha256": "7a39ddde5a626a432428c064b341a2277e2af3a9cfff3b3ab0ff04a9d77502ff",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Reports on, and then deletes, this user's own installation. Covered by executed runs in performance/v1.0-j11/capture_clean_install.sh, which installs into a disposable HOME, takes the manifest, purges, and runs the check both ways."
+      }
+    },
+    {
       "id": "installation-clone-example-1",
       "path": "docs/installation.md",
       "section": "clone",

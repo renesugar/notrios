@@ -133,8 +133,15 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// stating a refused set and an exception, and it is executed. Executed
 	// 77 -> 78 and the denominator 485 -> 486; unverified is unchanged, because
 	// the new prose sits in a section already counted.
-	if report.ManualSections != 286 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 170 || report.Journeys != 9 {
+	// 286 -> 287 sections and 170 -> 172 executables in v1.0 J11:
+	// docs/installation.md gains "Checking that a purge removed everything",
+	// which is where `paths --report` and `scripts/check_purged.sh` are for a
+	// reader who has just been told how to purge. Unverified 357 -> 360 and the
+	// denominator 486 -> 489 with them; the two examples report on and then
+	// delete this user's own installation, so they are drilled against a
+	// disposable HOME in performance/v1.0-j11 rather than executed here.
+	if report.ManualSections != 287 || report.Fragments != 21 || report.Claims != 4 ||
+		report.Executables != 172 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
@@ -194,8 +201,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 357 ||
-		report.Denominator != 486 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 360 ||
+		report.Denominator != 489 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

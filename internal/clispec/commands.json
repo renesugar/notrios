@@ -476,9 +476,13 @@
       "path": [
         "paths"
       ],
-      "notes": [],
-      "purpose": "resolved mode and roots (config, data, state, cache, runtime, assets)",
-      "usage": "[--json] [--no-redact]"
+      "notes": [
+        "`--report` lists every directory and file this installation occupies, every registered profile, and the installed program files",
+        "taken before `purge`, `--report --paths` is the oracle `scripts/check_purged.sh` reads afterwards",
+        "a profile whose library lives outside these roots is listed and marked external, because a purge keeps it"
+      ],
+      "purpose": "resolved mode and roots (config, data, state, cache, runtime, assets), and with --report everything the installation occupies",
+      "usage": "[--json] [--no-redact] [--report [--paths] [--registry path] [--install-manifest path]]"
     },
     {
       "path": [

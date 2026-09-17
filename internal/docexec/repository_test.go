@@ -194,7 +194,13 @@ func TestRepositoryExamples(t *testing.T) {
 	// and an exception. `config show` reports both lists, so the check compares
 	// their members, which is why heredocLeafKeys now reads list values and one
 	// more level of nesting.
-	if report.Executed != 70 || report.Entries != 170 || len(report.Topics) != 16 {
+	//
+	// 170 -> 172 entries in v1.0 J11, executed unchanged at 70:
+	// docs/installation.md's new section shows `paths --report` and
+	// `scripts/check_purged.sh`. Both bodies report on and then delete this
+	// user's own installation, so they carry a reviewed unrun reason and are
+	// drilled against a disposable HOME in performance/v1.0-j11 instead.
+	if report.Executed != 70 || report.Entries != 172 || len(report.Topics) != 16 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

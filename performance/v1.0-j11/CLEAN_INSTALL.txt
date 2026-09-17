@@ -1,0 +1,24 @@
+mode: installed
+
+structure:
+  cache           ~/.cache/notrios
+  config          ~/.config/notrios
+  data            ~/.local/share/notrios
+  program_assets  ~/.local/share/notrios
+  runtime         ~/.local/state/notrios/runtime
+  state           ~/.local/state/notrios
+
+  22 directories, 424 files, 21.5 MiB
+
+program files: 433 recorded by ~/.local/share/notrios/MANIFEST.json (version 0.8.0)
+
+profiles: 0 registered; none keeps a library outside these roots
+
+notes:
+  the config root ~/.config/notrios does not exist yet
+  the program_assets root is the data root (~/.local/share/notrios); its contents are listed once
+  no profile is registered, so no library is kept outside these roots
+
+The full manifest is --json, or --paths for one path per line.
+Taken before `notriosctl purge`, a --paths manifest is what
+scripts/check_purged.sh reads afterwards to confirm the deletion.

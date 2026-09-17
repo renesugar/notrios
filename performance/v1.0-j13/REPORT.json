@@ -3,13 +3,13 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
+  "content_commit": "8c45cadad81ad748c8d9a8249df3b735ab15f8e1",
   "counts": {
-    "examples": 170,
+    "examples": 172,
     "executed": 70,
     "by_class": {
       "fragment": 3,
-      "recipe": 120,
+      "recipe": 122,
       "synopsis": 46,
       "transcript": 1
     },
@@ -17,7 +17,7 @@
       "fragment/executed": 2,
       "fragment/unverified": 1,
       "recipe/executed": 67,
-      "recipe/unverified": 53,
+      "recipe/unverified": 55,
       "synopsis/unverified": 46,
       "transcript/executed": 1
     }
@@ -48,6 +48,8 @@
     "index-getting-started-example-1",
     "installation-backing-up-and-getting-your-notes-back-example-1",
     "installation-backing-up-and-getting-your-notes-back-example-2",
+    "installation-checking-that-a-purge-removed-everything-example-1",
+    "installation-checking-that-a-purge-removed-everything-example-2",
     "installation-clone-example-1",
     "installation-going-back-to-an-earlier-version-example-1",
     "installation-installing-from-a-package-example-1",
@@ -187,7 +189,7 @@
     },
     "docs/installation.md": {
       "recipe/executed": 1,
-      "recipe/unverified": 23
+      "recipe/unverified": 25
     },
     "docs/operations.md": {
       "fragment/executed": 1,
@@ -1239,6 +1241,24 @@
       "id": "installation-backing-up-and-getting-your-notes-back-example-2",
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-checking-that-a-purge-removed-everything-example-1",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-checking-that-a-purge-removed-everything-example-2",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
       "state": "unverified",
       "class": "recipe",
       "rule": "1 literal command line(s), nothing to substitute",
