@@ -258,22 +258,25 @@
     {
       "id": "J11",
       "title": "Report the installation's structure and manifest, and verify a purge against it",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J11-A",
-          "state": "not-started",
-          "statement": "`notriosctl paths report` lists every directory holding Notrios files or data and every file by absolute path, marking what is outside the owned roots, as a report, as JSON and as one path per line"
+          "state": "done",
+          "statement": "`notriosctl paths report` lists every directory holding Notrios files or data and every file by absolute path, marking what is outside the owned roots, as a report, as JSON and as one path per line",
+          "evidence": "file:performance/v1.0-j11/README.md"
         },
         {
           "id": "J11-B",
-          "state": "not-started",
-          "statement": "A clean install's structure and manifest are captured as a record"
+          "state": "done",
+          "statement": "A clean install's structure and manifest are captured as a record",
+          "evidence": "file:performance/v1.0-j11/README.md"
         },
         {
           "id": "J11-C",
-          "state": "not-started",
-          "statement": "scripts/check_purged.sh reads a pre-purge path manifest with nothing but a shell, requires every owned path gone and every external library still present, and fails when one owned file is left"
+          "state": "done",
+          "statement": "scripts/check_purged.sh reads a pre-purge path manifest with nothing but a shell, requires every owned path gone and every external library still present, and fails when one owned file is left",
+          "evidence": "file:performance/v1.0-j11/README.md"
         }
       ]
     },

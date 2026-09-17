@@ -92,3 +92,13 @@ Scaffold validation caught two things on the way: a `notriosctl` binary left in
 the repository root by a `go build` without `-o`, which is the class of mistake
 that check exists for, and the G18a baseline and G18f document hash that the new
 documentation section moved.
+
+## The archive
+
+Built from `42bf484` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 28% of the five-hour window
+  remaining, above the 20% reserve, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j11-42bf484.zip`, 25,718,914 bytes, 2,698 entries.
+  `check_release_zip.py` accepts it.

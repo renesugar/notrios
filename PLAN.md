@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 29 complete, 0 in progress, 6 not started, 0 deferred.**
+**35 items: 30 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -71,7 +71,7 @@ this section is archived when the plan completes and the rules are not.
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
-| J11. Report the installation's structure and manifest, and verify a purge against it | not-started | 0/3 | 3 |
+| J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
@@ -998,7 +998,7 @@ reported into proven, and it is the one thing still owed here.
 **Working state.** A published, verified release, and a reserve volume sealed
 before it.
 
-## J11. Report the installation's structure and manifest, and verify a purge against it
+## J11. Report the installation's structure and manifest, and verify a purge against it — complete
 
 **Goal.** A user, or a script, can ask where every Notrios file and directory
 is — and after a purge, confirm that they are gone.
