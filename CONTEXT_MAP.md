@@ -52,6 +52,7 @@ keeping it current, are in `AGENTS.md`.
 - `PROJECT_DECISIONS.md` — decisions that have been accepted, and the reason each was accepted
 - `PROMPT.md` — the cold-start prompt handed to an agent that has no history
 - `SECURITY_REVIEW.md` — what the security posture was at a named release, and what was still open
+- `performance-code-review.md` — the dated 2026-09-17 Joplin and Obsidian import performance review and its evidence limits
 
 Feature contracts, which describe one capability rather than the project:
 

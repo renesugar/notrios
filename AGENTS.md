@@ -315,7 +315,7 @@ So the inventory below is data, in `docs/docrules/DOCUMENTS.json`, and:
   cannot drift document by document.
 
 <!-- notrios:generated:agents:documents:begin -->
-**25 root documents have a home here, 23 of them carrying a pointer back; 9 more are exempt.**
+**26 root documents have a home here, 24 of them carrying a pointer back; 9 more are exempt.**
 
 | Document | The home for | Not here |
 |---|---|---|
@@ -344,6 +344,7 @@ So the inventory below is data, in `docs/docrules/DOCUMENTS.json`, and:
 | `PROJECT_DECISIONS.md` | decisions that have been accepted, and the reason each was accepted | a rewritten decision; a decision that changed is superseded in place, with both visible |
 | `PROMPT.md` | the cold-start prompt handed to an agent that has no history | the reading list and constraints themselves; it points at AGENTS.md, which has them |
 | `SECURITY_REVIEW.md` | what the security posture was at a named release, and what was still open | edits that quietly make an old review describe a newer product; date it and supersede it |
+| `performance-code-review.md` | the dated 2026-09-17 Joplin and Obsidian import performance review and its evidence limits | live performance guarantees or implementation status; supersede the snapshot and track approved work in PLAN.md |
 
 Exempt, because each is the contract for one feature rather than for the project:
 
