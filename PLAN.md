@@ -3055,8 +3055,17 @@ across newlines and in either case. It does not find an unquoted
 `<img src=https://…>` or a `<video src="…">`. A reference the scan never
 returns is never evaluated by any later stage.
 
-**Owner decision, 2026-09-17.** `<video>` and the other media elements are in
-the scanner's scope.
+**Owner decisions, 2026-09-17.**
+- `<video>` and the other media elements are in the scanner's scope.
+- Inline images are not remote. A `data:` URI such as
+  `data:image/png;base64,…`, which Joplin renders, and inline SVG are fine.
+
+  So the scanner does not report a `data:` URI in any form, Markdown or HTML.
+  Today it deliberately reports a Markdown `data:` embed as blocked, and that
+  changes. `file:` references are still reported and blocked, and the explicit
+  URL check (`EvaluateURLs`) still refuses a `data:` URL, since nothing fetches
+  one. The lint check for unlocalized remote media already counts only
+  `http:` and `https:`, so it does not change.
 
 **Design, 2026-09-17.** Written before the code.
 
@@ -3094,8 +3103,9 @@ the scanner's scope.
   - A URL written with entities is evaluated decoded, but localization rewrites
     only literal occurrences of it, so such a reference is reported and not
     rewritten.
-- **Proof.** Tests fail on today's code for an unquoted `img`, `srcset`, and
-  every element and attribute above. They also cover quoting, case, line
+- **Proof.** Tests fail on today's code for an unquoted `img`, `srcset`, every
+  element and attribute above, and a Markdown `data:` embed that is no longer
+  reported. They also cover quoting, case, line
   numbers, entities, `srcset` descriptors and a `>` inside a quoted value, and
   the existing Markdown and quoted-`img` results stay unchanged.
 
@@ -3501,7 +3511,10 @@ The first step is to establish both, with a rendered note.
 - **J34-A, one rule for every media reference.** The sanitizer treats every
   covered element and attribute in J29's table as it treats `img`: remote
   sources become inert metadata, `resource://` sources are resolved, and
-  `srcset` is dropped. The CSP states `media-src` explicitly rather than
+  `srcset` is dropped. Inline images keep rendering, by owner direction
+  (2026-09-17): `data:image/…` sources, which Joplin renders, and inline
+  `<svg>`. Only a remote reference inside them, such as an SVG `<image
+  href="https://…">`, is neutralised. The CSP states `media-src` explicitly rather than
   relying on the fallback. A rendered-note test proves that no remote request
   is made for any form, and it fails on today's code.
 

@@ -735,7 +735,7 @@
       "slices": [
         {
           "id": "J29-A",
-          "statement": "The scanner finds every covered media element and attribute (img, source, video, audio, track, embed, object, SVG image; src, srcset, poster, data, href) quoted or unquoted, and the policy records what the scan does not promise (J8 finding J8-F3)",
+          "statement": "The scanner finds every covered media element and attribute (img, source, video, audio, track, embed, object, SVG image; src, srcset, poster, data, href) quoted or unquoted, does not report inline data: URIs, and the policy records what the scan does not promise (J8 finding J8-F3)",
           "state": "not-started"
         }
       ]
