@@ -889,7 +889,7 @@
         },
         {
           "id": "J35-B",
-          "statement": "The base URL the smoke runs at is reproducible: either the build takes one or the documented run uses the root, with the reason recorded",
+          "statement": "The smoke, G18g's README, DOCS_SITE.md and FEATURE_MATRIX.md name the apex address the site is served at instead of the GitHub Pages subpath, which is recorded as the historical fallback",
           "state": "not-started"
         }
       ]

@@ -3293,11 +3293,36 @@ refresh, so the failure is not the refresh's:
 - It stops at the theme menu, clicking `[data-theme-value="light"]`, which
   Playwright reports as "element is not visible" until it times out.
 - Its documented base URL is a `/notrios/` subpath, but the site is built with
-  `baseURL = "https://notrios.com/"` and `scripts/build_docs_site.sh` takes no
-  base-URL argument, so the built pages reference absolute root paths. Served
-  under a subpath, Pagefind's assets 404 and the search page returns nothing.
-  A probe that loads the search page under `/notrios/` finds no results for
-  that reason, and the same probe at the root finds them.
+  `baseURL = "https://notrios.com/"`, so the built pages reference absolute
+  root paths. Served under a subpath, Pagefind's assets 404 and the search page
+  returns nothing. A probe that loads the search page under `/notrios/` finds
+  no results for that reason, and the same probe at the root finds them.
+
+**Owner explanation, 2026-09-17.** The `/notrios/` subpath is a leftover from
+GitHub Pages. The site is served at `notrios.com` once changes reach `main`, so
+the apex build served at the root is the real thing, and the smoke's subpath
+default is simply out of date. The comments lag because a local build cannot
+test the `notrios.com` deployment. `ROADMAP.md` already records the apex move
+(v0.9 I10) and that a build is correct only for the `baseURL` it was built
+with.
+
+**Measured, 2026-09-17.** `https://renesugar.github.io/notrios/` answers
+**301 Moved Permanently** to `https://notrios.com/`. Nothing is served at the
+subpath at all, so a subpath build has no address today. The Pages address
+would serve pages again only if the custom domain were given up, and that
+would need its own `baseURL` build — which is why no document should promise
+one build serves both.
+
+So J35-B is not a choice between two options: the smoke is corrected to the
+root, and the leftovers say so. They are:
+- `performance/v0.7-g18g/browser_smoke.mjs`'s default
+  `http://127.0.0.1:18618/notrios/`;
+- `performance/v0.7-g18g/README.md`'s instructions;
+- `DOCS_SITE.md` (two mentions of preserving `/notrios/` URLs);
+- `FEATURE_MATRIX.md`'s "preserve `/notrios/` links".
+
+A Pages-shaped fallback build needs its own `baseURL`, which `ROADMAP.md`
+already explains, so nothing here promises one build serves both addresses.
 
 J31 proved search on the refreshed theme with its own probe
 (`performance/v1.0-j31/search_probe.mjs`), which is narrower than the smoke.
@@ -3308,10 +3333,12 @@ J31 proved search on the refreshed theme with its own probe
   to a click (a menu that must be opened first, a viewport or animation
   assumption, or a genuine regression), and fix the script or the theme so the
   documented command completes. Record which it was.
-- **J35-B, the base URL it is run at.** Either the build takes a base URL, so
-  the smoke's documented `/notrios/` run is reproducible, or the smoke and
-  G18g's README say the site is served at the root and drop the subpath. The
-  choice is recorded with the reason.
+- **J35-B, the base URL it is run at.** The smoke, G18g's README,
+  `DOCS_SITE.md` and `FEATURE_MATRIX.md` describe the address the site is
+  actually served at: the apex, at the root. The Pages subpath is named as the
+  historical address rather than as what a run expects: it 301-redirects to the
+  apex, so no document should claim a single build serves both, and none should
+  imply the subpath is live.
 
 **Boundaries.** No change to what the site publishes, and no relaxing of the
 smoke's checks to make it pass. If a check cannot run here, it says so rather
