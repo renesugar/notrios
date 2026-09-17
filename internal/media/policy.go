@@ -220,7 +220,8 @@ var imageExtensions = map[string]bool{
 
 var videoExtensions = map[string]bool{
 	".mp4": true, ".webm": true, ".mov": true, ".mkv": true, ".avi": true, ".m4v": true,
-	".mp3": true, ".ogg": true, ".oga": true, ".wav": true, ".m4a": true, ".flac": true,
+	".mp3": true, ".ogg": true, ".oga": true, ".ogv": true, ".opus": true,
+	".wav": true, ".m4a": true, ".flac": true,
 }
 
 // MediaClass maps a URL to the policy size-cap classes (image/video/pdf) or

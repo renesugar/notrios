@@ -391,6 +391,10 @@ func classFromMIME(mimeType string) string {
 		return "video"
 	case mimeType == "application/pdf":
 		return "pdf"
+	case mimeType == "application/ogg":
+		// Ogg is a media container carrying audio or video, and the sniffer
+		// names it positively (owner decision, J33).
+		return "video"
 	}
 	return "other"
 }
@@ -401,7 +405,7 @@ func extensionForMIME(mimeType string) string {
 		return ".bin"
 	}
 	// Prefer common spellings over the first alphabetical match.
-	preferred := map[string]string{"image/jpeg": ".jpg", "image/png": ".png", "application/pdf": ".pdf"}
+	preferred := map[string]string{"image/jpeg": ".jpg", "image/png": ".png", "application/pdf": ".pdf", "application/ogg": ".ogg"}
 	if ext, ok := preferred[strings.ToLower(mimeType)]; ok {
 		return ext
 	}

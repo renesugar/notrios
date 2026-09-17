@@ -115,6 +115,17 @@ is left in quarantine.
 | `audio/mpeg` | `application/octet-stream` | an MPEG audio frame header (for files without an ID3 tag, which sniffs positively) |
 | `audio/flac`, `audio/x-flac` | `application/octet-stream` | `fLaC` |
 
+**Ogg** is accepted from its own bytes: the sniffer names `application/ogg`
+positively, and an Ogg page carries audio or video, so it is the audio and
+video class (owner decision, J33). `.ogg`, `.oga`, `.ogv` and `.opus` are media
+extensions. A header *claiming* `application/ogg` over an inconclusive sniff is
+not in the table above, so it is refused like any other unproven claim.
+
+**A payload whose bytes sniff as `text/html` is refused whatever it claims**,
+including an SVG that opens with a comment, which sniffs as HTML. The owner
+decided (J33) to keep that refusal rather than make an exception: the rule is
+what stops HTML claiming to be an image.
+
 These are the localizable formats Go's content sniffer does not recognise,
 measured on Go 1.27 (`PLAN.md` J30). A signature proves the start of a file,
 not the whole file; the bytes are stored under their hash, never executed, and
