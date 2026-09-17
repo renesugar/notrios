@@ -174,7 +174,7 @@ drifts. The rules for keeping the reference documents current are in
 [`AGENTS.md`](AGENTS.md).
 
 <!-- notrios:generated:readme:status:begin -->
-**Current milestone: v1.0.** 33 items: 23 complete, 0 in progress, 10 not started, 0 deferred. Item by item, with what each one proved and what it left owed, in [`PLAN.md`](PLAN.md).
+**Current milestone: v1.0.** 33 items: 24 complete, 0 in progress, 9 not started, 0 deferred. Item by item, with what each one proved and what it left owed, in [`PLAN.md`](PLAN.md).
 
 **Product version: 0.8.0**, which is what every binary reports and what a release is tagged with. It is not the milestone number: the version is bumped when the release is cut, which is the last item in the plan.
 

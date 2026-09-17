@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**33 items: 23 complete, 0 in progress, 10 not started, 0 deferred.**
+**33 items: 24 complete, 0 in progress, 9 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -90,7 +90,7 @@ this section is archived when the plan completes and the rules are not.
 | J27. Normalise a host before matching it against the domain lists | complete | 1/1 | — |
 | J28. Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state | complete | 4/4 | — |
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | not-started | 0/1 | 1 |
-| J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | not-started | 0/1 | 1 |
+| J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | not-started | 0/1 | 1 |
@@ -3070,7 +3070,7 @@ if it is the answer, this item says so rather than doing it quietly.
 **Working state.** A stated list of covered forms, a scanner that finds them,
 and a policy that says what is not promised.
 
-## J30. Stop a lying header deciding the type of an inconclusive payload
+## J30. Stop a lying header deciding the type of an inconclusive payload — complete
 
 **Goal.** A resource's recorded type describes its bytes.
 

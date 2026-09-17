@@ -74,3 +74,13 @@ executed, and served with `nosniff`.
 which left no `notrios-*` entry. `validate-scaffold.sh` and
 `make g18g-validate` pass. G18a's inventory was regenerated for the
 troubleshooting row.
+
+## The archive
+
+Built from `0b47dd5` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 84% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j30-0b47dd5.zip`, 25,636,599 bytes, 2,660 entries.
+  `check_release_zip.py` accepts it.
