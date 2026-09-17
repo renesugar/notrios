@@ -851,12 +851,13 @@
     {
       "id": "J33",
       "title": "Decide whether Ogg media and comment-led SVG are localizable",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J33-A",
           "statement": "Ogg localizes as audio/video with a .ogg quarantine name, .ogv and .opus are media extensions, an SVG that opens with a comment stays refused because its bytes sniff as text/html, and the policy records both decisions",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j33/README.md"
         }
       ]
     },

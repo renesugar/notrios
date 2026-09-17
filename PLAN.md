@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**34 items: 26 complete, 0 in progress, 8 not started, 0 deferred.**
+**34 items: 27 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -93,7 +93,7 @@ this section is archived when the plan completes and the rules are not.
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
-| J33. Decide whether Ogg media and comment-led SVG are localizable | not-started | 0/1 | 1 |
+| J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 
 Nothing is half-finished.
@@ -3442,7 +3442,7 @@ does not block J9 or J10.
 - Only changes whose benchmark showed an improvement beyond noise, with every
   correctness gate passing, remain in the code.
 
-## J33. Decide whether Ogg media and comment-led SVG are localizable
+## J33. Decide whether Ogg media and comment-led SVG are localizable — complete
 
 **Goal.** Two kinds of file the remote-media policy lists as media either
 localize, or the policy says plainly why they do not.

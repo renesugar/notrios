@@ -52,3 +52,13 @@ to keep refusing is a decision and not a regression.
 **Validation.** The whole Go suite passes through `scripts/check_temp_leaks.sh`,
 which left no `notrios-*` entry. `validate-scaffold.sh` and
 `make g18g-validate` pass.
+
+## The archive
+
+Built from `f8749e6` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 40% of the five-hour window
+  remaining, above the 20% reserve, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j33-f8749e6.zip`, 25,663,410 bytes, 2,674 entries.
+  `check_release_zip.py` accepts it.
