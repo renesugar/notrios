@@ -411,8 +411,8 @@ Feature contracts, which describe one capability rather than the project:
 - `.github/workflows/docs.yml` — GitHub Pages deployment for the docs site.
 - `docs-site/`, `scripts/build_docs_site.sh`, and `.github/workflows/docs.yml` —
   G18g's production Hugo/Ledger source, exact Apache-2.0 theme provenance,
-  pinned local Pagefind dependency, temporary raw-doc staging, `/notrios/`
-  route adapters, offline policy, and Pages build.
+  pinned local Pagefind dependency, temporary raw-doc staging, route adapters
+  for the configured `baseURL`, offline policy, and Pages build.
 - `docs-site/` + `scripts/build_docs_site.sh` — pinned Hugo/Ledger source and
   temporary raw-Markdown staging followed by a local Pagefind static index.
 - `docs/` — user documentation (published to GitHub Pages and seeded into the Help notebook).

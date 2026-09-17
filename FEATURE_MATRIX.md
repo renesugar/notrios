@@ -93,7 +93,7 @@ This matrix keeps the long conversation compressed into implementation-sized fea
 | One user-documentation source for site and Help | Implemented | docs/help seeder | The 15 Markdown pages under `docs/` build the GitHub Pages site and seed deterministic protected Help notes. |
 | Source-adjacent documentation anchors and truth grades | Implemented v0.7 G18a/G18c/G18f | documentation tooling | `docaudit` resolves Go and TS/TSX declarations, typed claims, Markdown slots, executable fences, and GUI owners. Deterministic graph/report freshness and generated-doc parity gate CI; the calibrated local-model blind review is advisory, fully dispositioned, and cannot edit prose. |
 | Executed documentation examples and GUI journeys | Implemented v0.7 G18d/G18e | CLI/API/UI tests | CLI/config/REST/MCP examples assert semantic postconditions. Thirty-two GUI procedures execute as 44 desktop/narrow results; five unsupported procedures remain explicit. Action metrics are review evidence, not an automatic usability score. |
-| Hugo/Ledger documentation site | Implemented v0.7 G18b/G18g | docs site | The pinned Apache-2.0 Ledger snapshot, Hugo Extended, and Pagefind preserve `/notrios/` links, 15 raw Help sources, offline assets, accessibility checks, and clean release-ZIP builds. No Bluge service is used for the small docs corpus. |
+| Hugo/Ledger documentation site | Implemented v0.7 G18b/G18g | docs site | The pinned Apache-2.0 Ledger snapshot, Hugo Extended, and Pagefind preserve the site's links, 15 raw Help sources, offline assets, accessibility checks, and clean release-ZIP builds. No Bluge service is used for the small docs corpus. |
 
 ## Remote media, safety, and dedupe
 

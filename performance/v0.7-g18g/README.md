@@ -25,6 +25,13 @@ python3 performance/v0.7-g18g/validate_evidence.py --site /tmp/notrios-g18g-site
 The Browser plugin was absent for this evidence slice. `browser_smoke.mjs` is
 the documented Playwright fallback. Set `G18G_BASE_URL`, `PLAYWRIGHT_MODULE`,
 and optionally `G18G_SCREENSHOT_DIR` to a caller-owned `/tmp` directory;
+
+`G18G_BASE_URL` defaults to `http://127.0.0.1:18618/`, the root, because the
+site is built for the apex `notrios.com`. It was a `/notrios/` subpath until
+v1.0 J35: that address was GitHub Pages', which now redirects to the apex, and
+serving an apex build under it 404s every asset — which is why the theme menu
+appeared broken and the smoke could not finish. A project-path build, if one is
+ever made again, has its own `baseURL`, and passing that base here checks it.
 screenshots are never written to the repository. The script covers desktop
 1440x960 and mobile 390x844 routes, landmarks, labels, keyboard focus, theme,
 Pagefind `Argon2id`, drawer/Escape/44px/no-overflow, console/page/CSP errors,

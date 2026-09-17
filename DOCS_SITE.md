@@ -32,7 +32,7 @@ the integrity pipeline shared by the site and Help content:
   truth oracle—and generate actionable commands/config/API/GUI attempts from
   prose for human review;
 - migrate the site to a pinned, Apache-2.0 `hugo-theme-ledger` snapshot with
-  Hugo Extended and static Pagefind, preserving `/notrios/` URLs/fragments,
+  Hugo Extended and static Pagefind, preserving the site's URLs and fragments,
   `googleFonts=false`, zero third-party runtime requests, clean release-ZIP
   builds, and the raw Markdown Help source.
 
@@ -92,8 +92,12 @@ docs/
 ```
 
 The site navigation in `docs-site/layouts/` lists every user page. The build
-uses the GitHub Pages project base path (`/notrios/`) and indexes only elements
-marked `data-pagefind-body`, excluding generated API/search furniture.
+uses the `baseURL` in `docs-site/hugo.toml` — `https://notrios.com/` since v0.9
+I10, so pages are served at the root — and indexes only elements marked
+`data-pagefind-body`, excluding generated API/search furniture. It was built
+for the GitHub Pages project path until then; that address now redirects to the
+apex, and `scripts/check_site_base_url.py` fails when a tracked file says
+otherwise.
 
 ## Rules
 

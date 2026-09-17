@@ -78,6 +78,12 @@ python3 scripts/check_required_files.py
 # commit over one would be switched off inside a week.
 python3 scripts/check_python_hygiene.py --sources
 python3 scripts/check_sqlite_provenance.py
+# The documentation site is built for one address, and nothing local can test
+# the deployment, so a sentence naming the other address survives every other
+# gate: v1.0 J31 found four, including the browser smoke's own default, which is
+# why that smoke had stopped working. This compares what tracked files say
+# against docs-site/hugo.toml's baseURL.
+python3 scripts/check_site_base_url.py
 python3 performance/v0.8-h2a/validate_evidence.py
 bash -n scripts/mvp_smoke.sh
 bash -n scripts/run_performance_smoke.sh

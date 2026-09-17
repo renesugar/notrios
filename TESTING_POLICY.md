@@ -1287,7 +1287,7 @@ byte-for-byte bodies, and a no-change reseed. Rendered acceptance uses the
 Browser plugin when available; because it was absent at completion, the
 recorded Playwright fallback drove Chrome at 1440×960 and 390×844. It checks
 all routes, keyboard focus, the theme modes and contrast samples, `Argon2id`
-Pagefind results under `/notrios/`, mobile drawer/Escape/44-pixel target/no
+Pagefind results under the base it is run at, mobile drawer/Escape/44-pixel target/no
 overflow, overlays, console/page/HTTP failures, CSP violations, and external
 requests. Screenshot inspection is transient and never a committed assertion.
 

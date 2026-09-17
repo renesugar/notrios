@@ -1,0 +1,21 @@
+{
+  "routes": 15,
+  "title": "Search · Notrios documentation",
+  "known_query": "Argon2id",
+  "theme_contrast_ratios": {
+    "light": 15,
+    "dark": 15.07,
+    "contrast": 21
+  },
+  "mobile_target": {
+    "x": 8,
+    "y": 3.5,
+    "width": 44,
+    "height": 44
+  },
+  "mobile_overflow_px": 0,
+  "external_requests": [],
+  "csp_violations": 0,
+  "problems": 0,
+  "screenshots": null
+}
