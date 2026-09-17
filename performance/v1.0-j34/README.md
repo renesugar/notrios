@@ -110,3 +110,13 @@ violations") pass.
 Scaffold validation first refused `run_preview_probe.sh` for running Python
 without `PYTHONDONTWRITEBYTECODE`. The export was added, and the probe re-run
 afterwards produced a report byte-identical to `AFTER.json`.
+
+## The archive
+
+Built from `dbae64d` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 60% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j34-dbae64d.zip`, 25,659,206 bytes, 2,671 entries.
+  `check_release_zip.py` accepts it.

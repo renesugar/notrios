@@ -863,12 +863,13 @@
     {
       "id": "J34",
       "title": "Stop the preview loading remote images through media elements",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J34-A",
           "statement": "The preview sanitizer neutralises every J29-covered remote media reference as it does img, the CSP states media-src, and a rendered-note test proves no remote request is made",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j34/README.md"
         }
       ]
     }

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**34 items: 25 complete, 0 in progress, 9 not started, 0 deferred.**
+**34 items: 26 complete, 0 in progress, 8 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -94,7 +94,7 @@ this section is archived when the plan completes and the rules are not.
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | not-started | 0/3 | 3 |
 | J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | not-started | 0/1 | 1 |
-| J34. Stop the preview loading remote images through media elements | not-started | 0/1 | 1 |
+| J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3482,7 +3482,7 @@ class.
 **Working state.** Each case either localizes with a test proving it, or is
 refused with the policy saying why.
 
-## J34. Stop the preview loading remote images through media elements
+## J34. Stop the preview loading remote images through media elements — complete
 
 **Goal.** A note's remote media never loads in the preview until it is
 localized, whichever element names it.
