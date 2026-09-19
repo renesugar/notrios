@@ -1668,16 +1668,50 @@ item exists to make rather than assume:
 
 So the honest target is not 164 of 164.
 
+**Measured again, 2026-09-19.** 172 published examples across 16 documents,
+and one measurement changes the design this item sketched:
+
+| document | examples |
+|---|---|
+| `docs/cli.md` | 56 |
+| `docs/api/rest.md` | 26 |
+| `docs/installation.md` | 26 |
+| `docs/operations.md` | 20 |
+| `docs/import-export.md` | 12 |
+| eleven others | 32 |
+
+**Not one of `docs/api/rest.md`'s 26 examples is a single request.** Every one
+is a shell recipe: a variable captured from a previous response, a pipeline
+into `jq`, a comment explaining which status to expect, often several requests
+that only make sense in order. A "REST request" kind modelling a method, a path
+and a body would reproduce none of them, and rewriting the page into that shape
+would be migrating a page to raise a count, which the boundaries forbid.
+
+So the second kind is a **recipe**, and what makes it earn its keep is not
+re-typing the commands in JSON. It is the declaration beside them: which CLI
+commands and which REST routes this recipe uses. Those are checked against the
+frozen surfaces — `internal/clispec` and the routes the server registers — so a
+documented command that stops existing fails the build, which no fence can do
+for itself. The commands themselves are still written once.
+
 **Scope.**
 
-- **J15-A.** The example kinds the other documents need — at least a shell
-  recipe and a REST request — added to the tracked schema and each proven on one
+- **J15-A.** A `recipe` kind added to the tracked schema and proven on one
   page, with the same discipline J13 used: the check derived from the
-  declaration, and the generator moving the registry hash.
+  declaration, and the generator moving the registry hash. A recipe declares
+  the CLI commands and REST routes it uses; the generator refuses a command
+  that is not in the CLI spec, a route the server does not register, and a
+  declaration that names something its own steps never run.
 - **J15-B.** Migrate document by document, in the order the measurement above
-  suggests, and **record per document why it was migrated or why it was left**.
-  A document left alone with a reason is a finished decision; a document left
-  alone silently is the thing this item is fixing.
+  suggests, and **record per document why it was migrated or why it was left**,
+  in a tracked record rather than in a commit message. A document left alone
+  with a reason is a finished decision; a document left alone silently is the
+  thing this item is fixing.
+  - **Migration must not change a published byte.** A page is migrated by
+    declaring what is already there, and the proof is that the generator
+    rewrites the page to exactly what it said before. A migration that
+    improves the wording at the same time cannot be checked that way, so it is
+    not done at the same time.
 - **J15-C.** No migrated page's fence can be hand-edited without a failure, and
   no migrated page's hash is moved by a human. `cmd/docexamples`' test already
   does this for one page; it should hold for every page it owns.

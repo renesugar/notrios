@@ -377,12 +377,12 @@
       "slices": [
         {
           "id": "J15-A",
-          "statement": "The tracked schema covers a shell recipe and a REST request, each proven on one page",
+          "statement": "A recipe kind is added to the tracked schema and proven on one page: it declares the CLI commands and REST routes it uses, checked against the frozen surfaces, and the generator moves the registry hash",
           "state": "not-started"
         },
         {
           "id": "J15-B",
-          "statement": "Every document is either generated from its tracked set or carries a recorded reason it is not",
+          "statement": "Every document is either generated from its tracked set or carries a recorded reason it is not, in a tracked record, and a migration changes no published byte",
           "state": "not-started"
         },
         {
