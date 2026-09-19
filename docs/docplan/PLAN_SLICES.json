@@ -146,17 +146,17 @@
       "slices": [
         {
           "id": "J6-A",
-          "statement": "Versioned library and header artifacts are published for the supported matrix",
+          "statement": "A versioned tarball carries libnotrios.so.1, the header, licence, readme and SHA256SUMS, built and attested by the release workflow for the I7-supported platform",
           "state": "not-started"
         },
         {
           "id": "J6-B",
-          "statement": "Lifecycle, ownership, threading, error, stream and compatibility examples compile against them",
+          "statement": "Six C examples -- lifecycle, ownership, threading, errors, streams, compatibility -- compile and run against the extracted artifact rather than the source tree",
           "state": "not-started"
         },
         {
           "id": "J6-C",
-          "statement": "The ABI baseline is unchanged or re-recorded with a reason",
+          "statement": "The I8 ABI baseline is re-derived and unchanged, or the move is recorded with its reason",
           "state": "not-started"
         }
       ]

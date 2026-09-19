@@ -740,9 +740,49 @@ corpus produced each number, and an honest statement of what degraded.
 matrix, with lifecycle, ownership, threading, error, stream and compatibility
 examples.
 
+**What exists already.** `cmd/notrioslib` builds the version-1 ABI with
+`-buildmode=c-shared`, and `run_host_test.sh` proves the exported set is exactly
+the frozen twelve symbols, that no SQLite symbol escapes, that there is no
+dynamic SQLite dependency, and that a C host driving only `notrios_abi.h`
+works. What is missing is the artifact: a third party has to clone this
+repository and run that script.
+
+**Design, 2026-09-19.** Written before the code.
+
+- **The artifact** is one tarball per supported platform,
+  `notrios-c-abi-<version>-<os>-<arch>.tar.gz`, holding:
+  - `lib/libnotrios.so.1` with `libnotrios.so` beside it as a link;
+  - `include/notrios_abi.h`;
+  - `LICENSE`, and a `README.md` saying what the ABI promises, what it does
+    not, and which platform this artifact was built and tested on;
+  - `SHA256SUMS` over the files, so a downloader can check them without this
+    repository.
+- **Two versions, both stated.** The tarball carries the product version; the
+  library carries ABI major 1 in its soname (`libnotrios.so.1`), which is what
+  a linker records and what a later incompatible ABI would change. The header
+  asserts the pair, so a header and a library from different builds cannot be
+  mixed silently.
+- **Built by the workflow that attests it** (J1). The release workflow builds
+  the tarball beside the `.deb`, attests it with the same action, and uploads
+  it as a run artifact. **It publishes nothing**: publication is J10's, under
+  the owner's authorization.
+- **The examples are the acceptance test.** Six programs under
+  `examples/c/`, each one thing a caller must get right: lifecycle, handle
+  ownership, threading, errors, streams, and compatibility (an older header
+  against a newer library). They compile against the **extracted artifact**,
+  not the source tree, because compiling against the repository would prove
+  the one thing a third party cannot do.
+- **The supported matrix is I7's**, so the artifact is built and tested for
+  Ubuntu 24.04 amd64 and nothing else is claimed. A second platform appears
+  when a machine runs it, not because a cross-build succeeded.
+- **The baseline** (`performance/v0.9-i8`) is re-derived, not edited. A soname
+  is a link-time record, not an exported symbol, so the twelve members should
+  be unchanged; if the freeze moves, J6-C records what moved and why.
+
 **Boundaries.** The matrix is v0.9 I7's, which claims only what ran: Ubuntu
 24.04 amd64. An Android-emulator result is not physical Android support and is
-not labelled as such; no iOS artifact is implied.
+not labelled as such; no iOS artifact is implied. Nothing is published or
+uploaded to a release: J6 builds and proves the artifact, J10 publishes it.
 
 **Dependencies.** J1, for the workflow that builds and attests artifacts.
 
