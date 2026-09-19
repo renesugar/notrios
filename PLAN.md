@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 31 complete, 0 in progress, 4 not started, 0 deferred.**
+**35 items: 32 complete, 0 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -75,7 +75,7 @@ this section is archived when the plan completes and the rules are not.
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
 | J14. Stop leaving bytecode behind, and derive the evidence index | complete | 3/3 | — |
-| J15. Migrate the remaining documents to the tracked example set | not-started | 0/4 | 4 |
+| J15. Migrate the remaining documents to the tracked example set | complete | 4/4 | — |
 | J16. Give the carrier write its own path shape | complete | 3/3 | — |
 | J17. Batch the per-item work J5 found in import and export | complete | 3/3 | — |
 | J18. Stop scanning the full-text index on every document write | complete | 3/3 | — |
@@ -1617,7 +1617,7 @@ Gated, and confirmed by editing both a milestone count and the total.
 targets to 36), re-recorded deliberately: a reporting target is compatible,
 nothing renamed or removed.
 
-## J15. Migrate the remaining documents to the tracked example set
+## J15. Migrate the remaining documents to the tracked example set — complete
 
 **Goal.** A published command line is generated from a tracked declaration
 wherever generating it earns its keep, and where it does not, the plan says so

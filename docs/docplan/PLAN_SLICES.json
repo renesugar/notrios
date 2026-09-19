@@ -373,27 +373,31 @@
     {
       "id": "J15",
       "title": "Migrate the remaining documents to the tracked example set",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J15-A",
           "statement": "A recipe kind is added to the tracked schema and proven on one page: it declares the CLI commands and REST routes it uses, checked against the frozen surfaces, and the generator moves the registry hash",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
         },
         {
           "id": "J15-B",
           "statement": "Every document is either generated from its tracked set or carries a recorded reason it is not, in a tracked record, and a migration changes no published byte",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
         },
         {
           "id": "J15-C",
           "statement": "No generated page's fence can be hand-edited, and no generated page's registry hash is moved by a human",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
         },
         {
           "id": "J15-D",
           "statement": "The troubleshooting page's import rows quote the errors the importers return, and a check fails when a quoted error leaves the source",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
         }
       ]
     },

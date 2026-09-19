@@ -120,3 +120,13 @@ for the four documents whose markers changed. One G18f **test** changed: it
 mutated "the first generated marker" on a page to prove a marker mismatch is
 caught, and since a page can now also carry example markers, it targets the
 slot's own marker instead.
+
+## The archive
+
+Built from `5a2efdb` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 23% of the five-hour window
+  remaining, above the 20% reserve, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j15-5a2efdb.zip`, 25,778,888 bytes, 2,734 entries.
+  `check_release_zip.py` accepts it.
