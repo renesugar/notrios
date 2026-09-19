@@ -90,3 +90,13 @@ physical Android support.
 `make abi` (the existing host test) passes. The whole Go suite passes through
 `scripts/check_temp_leaks.sh`, which left no `notrios-*` entry, and
 `validate-scaffold.sh` passes.
+
+## The archive
+
+Built from `7a7d688` with the usage guard on and no override:
+- **Usage guard:** it checked only Claude, 59% of the five-hour window
+  remaining, identified by process ancestry (J24).
+- **Package:** `package_release.sh` passed, including `go test ./...`,
+  `validate-scaffold.sh`, `make g18g-validate` and every evidence validator.
+- **ZIP:** `notrios-v1.0-j6-7a7d688.zip`, 25,738,953 bytes, 2,712 entries.
+  `check_release_zip.py` accepts it.

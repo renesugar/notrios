@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 30 complete, 0 in progress, 5 not started, 0 deferred.**
+**35 items: 31 complete, 0 in progress, 4 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -66,7 +66,7 @@ this section is archived when the plan completes and the rules are not.
 | J3. Give a packaged installation a supported way to delete its data | complete | 5/5 | — |
 | J4. Stabilise the REST and MCP surfaces for 1.0 | complete | 3/3 | — |
 | J5. Prove the library at scale | complete | 3/3 | — |
-| J6. Ship the versioned no-GUI library and header artifacts | not-started | 0/3 | 3 |
+| J6. Ship the versioned no-GUI library and header artifacts | complete | 3/3 | — |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
 | J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
@@ -732,7 +732,7 @@ constant to see it.
 **Working state.** Recorded timings and resource use at the target size, which
 corpus produced each number, and an honest statement of what degraded.
 
-## J6. Ship the versioned no-GUI library and header artifacts
+## J6. Ship the versioned no-GUI library and header artifacts — complete
 
 **Goal.** A third party can build against the C ABI without this repository.
 
