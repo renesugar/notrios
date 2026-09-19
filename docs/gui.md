@@ -49,10 +49,12 @@ fresh database always bootstraps protected **All notes**, **Notes**,
 
 ## Verifying the embedded service
 
+<!-- notrios:generated:example:gui-verifying-the-embedded-service-example-1:begin -->
 ```sh
 curl http://127.0.0.1:8080/healthz            # -> ok
 curl http://127.0.0.1:8080/api/v1/status | jq  # storage, schema, Recoll backlog/reconciliation
 ```
+<!-- notrios:generated:example:gui-verifying-the-embedded-service-example-1:end -->
 
 If the window opens but shows a JSON error, the build predates v0.5 E11; current
 builds refuse to start and print the directories they searched. Run `make web`
@@ -271,9 +273,11 @@ notes, your orphans, and the totals, with the time it was generated.
 It is regenerated when you ask and not before — it reads every note, so nothing
 does it on a timer or on save:
 
+<!-- notrios:generated:example:gui-the-graph-report-example-1:begin -->
 ```sh
 notriosctl graph report --write-note
 ```
+<!-- notrios:generated:example:gui-the-graph-report-example-1:end -->
 
 The note is read-only and overwritten in place, so a link to it keeps working
 and it cannot silently drift from the truth. Nothing in Reports or Help is
@@ -282,9 +286,11 @@ notebook travels in a publication.
 
 To hand the graph to software built for graph analysis:
 
+<!-- notrios:generated:example:gui-the-graph-report-example-2:begin -->
 ```sh
 notriosctl graph export ~/graph      # nodes.csv and edges.csv
 ```
+<!-- notrios:generated:example:gui-the-graph-report-example-2:end -->
 
 Gephi, Cytoscape, NetworkX, and igraph all read those. Notrios does not try to
 do centrality or community detection itself.
@@ -376,10 +382,12 @@ Two details worth knowing:
 
 To move a note from the command line:
 
+<!-- notrios:generated:example:gui-choosing-which-notebook-a-note-goes-in-example-1:begin -->
 ```sh
 notriosctl notes move --document doc_01H... --notebook nb_01H...
 notriosctl notes move --document doc_01H... --notebook Work
 ```
+<!-- notrios:generated:example:gui-choosing-which-notebook-a-note-goes-in-example-1:end -->
 
 A notebook name is accepted when it identifies one notebook. Names are unique
 only among siblings, so if you have both `Contacts/Work` and `Personal/Work` the

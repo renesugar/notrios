@@ -239,10 +239,12 @@ Start the service (`make build && ./bin/notriosd`, or `go run ./cmd/notriosd ...
 
 **The examples below all use `http://127.0.0.1:8080`.** Substitute your own base URL if you are running from a checkout or have set `server.listen_addr` yourself.
 
+<!-- notrios:generated:example:api-rest-getting-started-example-1:begin -->
 ```sh
 curl http://127.0.0.1:8080/healthz              # -> ok
 curl http://127.0.0.1:8080/api/v1/status | jq   # active profile, paths, schema, capabilities
 ```
+<!-- notrios:generated:example:api-rest-getting-started-example-1:end -->
 
 All request/response bodies are JSON except resource content streams. Errors use a stable envelope:
 
@@ -254,24 +256,29 @@ Common codes: `validation_failed`/`cursor_invalid` (400), `not_found` (404), `pr
 
 ## Notes: create, read, edit
 
+<!-- notrios:generated:example:api-rest-notes-create-read-edit-example-1:begin -->
 ```sh
 # Create (notebook_id optional; defaults to the "Notes" notebook)
 curl -s -X POST http://127.0.0.1:8080/api/v1/documents \
   -H 'Content-Type: application/json' \
   -d '{"title":"Meeting notes","body":"# Agenda\n\n- apples\n"}' | jq
 ```
+<!-- notrios:generated:example:api-rest-notes-create-read-edit-example-1:end -->
 
 The response carries `id`, `uri`, `notebook_id`, and — critically — `current_revision_id`. Reads return the same document plus an `ETag` header equal to the current revision:
 
+<!-- notrios:generated:example:api-rest-notes-create-read-edit-example-2:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/body     # raw Markdown
 ```
+<!-- notrios:generated:example:api-rest-notes-create-read-edit-example-2:end -->
 
 ### Optimistic concurrency
 
 Every mutation (`PUT`, `PATCH`, `DELETE`, revision restore) requires the revision you based your change on, either as `base_revision_id` in the body or an `If-Match` header. A stale revision gets `409 revision_conflict`; omitting it gets `428 precondition_required`.
 
+<!-- notrios:generated:example:api-rest-optimistic-concurrency-example-1:begin -->
 ```sh
 REV=$(curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq -r .current_revision_id)
 
@@ -284,9 +291,11 @@ REV=$(curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq -r .current_revis
 curl -s -X DELETE http://127.0.0.1:8080/api/v1/documents/$DOC \
   -H "If-Match: \"$REV\""            # 204: moved to Trash
 ```
+<!-- notrios:generated:example:api-rest-optimistic-concurrency-example-1:end -->
 
 ### Surgical edits and note operations
 
+<!-- notrios:generated:example:api-rest-surgical-edits-and-note-operations-example-1:begin -->
 ```sh
 # String-replace edit; ambiguous matches fail unless replace_all; dry_run previews
 curl -s -X PATCH http://127.0.0.1:8080/api/v1/documents/$DOC \
@@ -297,16 +306,19 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/append \
   -H 'Content-Type: application/json' -d '{"text":"- follow-up item"}' | jq
 # also: /prepend, GET /lines?start=1&end=20, GET /search-in?pattern=agenda, GET /outline
 ```
+<!-- notrios:generated:example:api-rest-surgical-edits-and-note-operations-example-1:end -->
 
 `append`/`prepend` work without a precondition (the server applies them to the current revision and retries once on a concurrent write); pass `If-Match` for strict behavior.
 
 ## Search and pagination
 
+<!-- notrios:generated:example:api-rest-search-and-pagination-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/search \
   -H 'Content-Type: application/json' \
   -d '{"query":"(category:\"Work\" OR tag:todo) -tag:private","limit":25}' | jq
 ```
+<!-- notrios:generated:example:api-rest-search-and-pagination-example-1:end -->
 
 The `query` string accepts the full [query language](../query-language.md):
 implicit AND, uppercase OR, prefix negation, grouping, phrases, typed fields,
@@ -326,6 +338,7 @@ simple query/collection shape.
 
 ## Notebooks, tags, search notebooks, trash
 
+<!-- notrios:generated:example:api-rest-notebooks-tags-search-notebooks-trash-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/notebooks/tree | jq        # nested sidebar tree
 curl -s -X POST http://127.0.0.1:8080/api/v1/notebooks \
@@ -349,6 +362,7 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/trash/$DOC/restore | jq
 curl -s -X DELETE http://127.0.0.1:8080/api/v1/trash/$DOC \
   -H "X-Notrios-Confirmation: purge-document:$DOC"            # permanent; local notes only
 ```
+<!-- notrios:generated:example:api-rest-notebooks-tags-search-notebooks-trash-example-1:end -->
 
 A trashed note stays readable through `GET /api/v1/documents/{id}`, which
 returns it with `deleted_at` set and `editable: false`. It has to be readable to
@@ -363,9 +377,11 @@ Deleting a notebook does not delete its notes: they move to the Trash and are
 re-homed to the default notebook so a later restore has a destination. Ask what
 would happen first:
 
+<!-- notrios:generated:example:api-rest-previewing-a-notebook-deletion-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq
 ```
+<!-- notrios:generated:example:api-rest-previewing-a-notebook-deletion-example-1:end -->
 
 ```json
 {"notebook_id":"nb_...","name":"Work","notebooks":3,
@@ -378,11 +394,13 @@ The route is read-only. A protected notebook answers `200` with
 
 ### Renaming a tag hierarchy
 
+<!-- notrios:generated:example:api-rest-renaming-a-tag-hierarchy-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/tags/rename \
   -H 'Content-Type: application/json' \
   -d '{"from":"project","to":"work","include_children":true}' | jq
 ```
+<!-- notrios:generated:example:api-rest-renaming-a-tag-hierarchy-example-1:end -->
 
 **`dry_run` defaults to `true`.** The request above changes nothing; only
 `"dry_run": false` writes. The report is not a prediction — the service runs the
@@ -420,6 +438,7 @@ requireConfirmation refuses destructive resource and purge requests unless
 the caller repeats the exact object-specific confirmation value.
 <!-- notrios:generated:user:resources-attachments:end -->
 
+<!-- notrios:generated:example:api-rest-resources-attachments-example-1:begin -->
 ```sh
 # Upload raw bytes; filename via query parameter (or Content-Disposition)
 curl -s -X POST 'http://127.0.0.1:8080/api/v1/resources?filename=chart.png' \
@@ -443,15 +462,18 @@ curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq
 # Retention-aware GC plan (always read-only over REST)
 curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
+<!-- notrios:generated:example:api-rest-resources-attachments-example-1:end -->
 
 Bytes are stored content-addressed (identical uploads share storage). Reference the resource in Markdown as `![chart](resource://default/resources/$RES)` — the UI renders and downloads through the same endpoints. Deleting a resource that notes still reference is refused. Perceptual report entries are suggestions only; no perceptual algorithm ships by default.
 
 Immediate deletion of one unreferenced resource requires:
 
+<!-- notrios:generated:example:api-rest-resources-attachments-example-2:begin -->
 ```sh
 curl -s -X DELETE http://127.0.0.1:8080/api/v1/resources/$RES \
   -H "X-Notrios-Confirmation: delete-resource:$RES"
 ```
+<!-- notrios:generated:example:api-rest-resources-attachments-example-2:end -->
 
 Permanent purge of a local note in Trash similarly requires
 `X-Notrios-Confirmation: purge-document:$DOC`. Missing or incorrect
@@ -460,6 +482,7 @@ only (`notriosctl gc --apply`).
 
 ## Links, graph, revisions
 
+<!-- notrios:generated:example:api-rest-links-graph-revisions-example-1:begin -->
 ```sh
 curl -s "http://127.0.0.1:8080/api/v1/documents/$DOC/links?direction=both" | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/graph \
@@ -467,6 +490,7 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/graph \
   -d "{\"roots\":[\"$DOC\"],\"direction\":\"both\",\"depth\":2,\"max_nodes\":200,\"max_edges\":400}" | jq
 curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq
 ```
+<!-- notrios:generated:example:api-rest-links-graph-revisions-example-1:end -->
 
 `depth` is how many link hops to follow (maximum 5; the default is 1). Every
 node comes back with its hop distance from the nearest root. The ceilings are
@@ -489,11 +513,13 @@ report itself still shows what it names. Trashed notes are never neighbours.
 
 ### Shortest path between two notes
 
+<!-- notrios:generated:example:api-rest-shortest-path-between-two-notes-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/graph/path \
   -H 'Content-Type: application/json' \
   -d "{\"from\":\"$DOC\",\"to\":\"$OTHER\",\"direction\":\"both\"}" | jq
 ```
+<!-- notrios:generated:example:api-rest-shortest-path-between-two-notes-example-1:end -->
 
 `direction: "both"` ignores which way each link points, which is usually what
 "how are these two notes related" means; `"outgoing"` follows links as written.
@@ -511,9 +537,11 @@ gave up, and raising `max_depth` or `max_visits` may change the answer.
 
 ### Link autocomplete while typing
 
+<!-- notrios:generated:example:api-rest-link-autocomplete-while-typing-example-1:begin -->
 ```sh
 curl -s "http://127.0.0.1:8080/api/v1/links/suggest?q=kit&limit=10" | jq
 ```
+<!-- notrios:generated:example:api-rest-link-autocomplete-while-typing-example-1:end -->
 
 Title-prefix matches come first, in title order; then interior-word matches, so
 `plan` also finds "Kitchen Plan". Each suggestion carries a stable ID, the
@@ -523,11 +551,13 @@ the note being edited so it is not offered as its own target.
 
 ### Checking the links in an unsaved note
 
+<!-- notrios:generated:example:api-rest-checking-the-links-in-an-unsaved-note-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/links/check \
   -H 'Content-Type: application/json' \
   -d "{\"document_id\":\"$DOC\",\"body\":\"[a](Kitchen)\n\n[b](document://default/documents/gone)\n\"}" | jq
 ```
+<!-- notrios:generated:example:api-rest-checking-the-links-in-an-unsaved-note-example-1:end -->
 
 This is the call an editor makes to mark broken links before anything is saved.
 It stores nothing and writes no revision.
@@ -548,9 +578,11 @@ against the last saved version, so a heading you just typed resolves immediately
 
 ### Orphan, isolate, and hub report
 
+<!-- notrios:generated:example:api-rest-orphan-isolate-and-hub-report-example-1:begin -->
 ```sh
 curl -s "http://127.0.0.1:8080/api/v1/graph/report?limit=20" | jq
 ```
+<!-- notrios:generated:example:api-rest-orphan-isolate-and-hub-report-example-1:end -->
 
 Read-only, and one pass over the collection. `orphan_count` is notes nothing
 links to; `isolated_count` is the subset that also links to nothing. `hubs`
@@ -575,9 +607,11 @@ note linked only from the Trash was never reported as an orphan.
 
 ### Writing the report into the library
 
+<!-- notrios:generated:example:api-rest-writing-the-report-into-the-library-example-1:begin -->
 ```sh
 curl -s -X POST "http://127.0.0.1:8080/api/v1/graph/report/note" | jq .document.uri
 ```
+<!-- notrios:generated:example:api-rest-writing-the-report-into-the-library-example-1:end -->
 
 Renders the report as a Markdown note in the builtin **Reports** notebook, with
 a stable ID, overwritten in place, carrying the time it was generated. The
@@ -599,11 +633,13 @@ is why the note can live in the library it measures without changing the answer.
 archives, subset transfers, and publication handoffs. It accepts typed
 notebook/tag/query/explicit-ID selectors and policy overrides; no SQL or paths.
 
+<!-- notrios:generated:example:api-rest-selection-and-privacy-dry-runs-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/selection/plan \
   -H 'Content-Type: application/json' \
   -d '{"target":"publication_handoff","selection":{"tags":["publish"]}}' | jq
 ```
+<!-- notrios:generated:example:api-rest-selection-and-privacy-dry-runs-example-1:end -->
 
 The response contains stable content-free IDs/hashes, counts, link/privacy and
 metadata decisions, exclusions, warnings, and `manifest_sha256`. Detail arrays
@@ -612,9 +648,11 @@ partial. See [selection planning](../selection-planning.md).
 
 ## Workspace lint report
 
+<!-- notrios:generated:example:api-rest-workspace-lint-report-example-1:begin -->
 ```sh
 curl -s 'http://127.0.0.1:8080/api/v1/admin/lint/report?detail_limit=20' | jq
 ```
+<!-- notrios:generated:example:api-rest-workspace-lint-report-example-1:end -->
 
 Read-only, like the garbage-collection report, and with no apply endpoint.
 Returns per-check complete counts, capped examples, and `report_sha256` over
@@ -624,9 +662,11 @@ See [maintenance](../operations.md#finding-what-has-rotted-workspace-lint).
 
 ## Listing a note's blocks
 
+<!-- notrios:generated:example:api-rest-listing-a-note-s-blocks-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/documents/doc_01H.../blocks | jq
 ```
+<!-- notrios:generated:example:api-rest-listing-a-note-s-blocks-example-1:end -->
 
 Returns each addressable block in document order with its ID, kind, heading
 level, author-written marker if any, content hash, byte range, and how many
@@ -651,12 +691,14 @@ Owner: {{owner}}
 Started: {{date}} in {{notebook}}
 ````
 
+<!-- notrios:generated:example:api-rest-templates-and-tasks-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/templates | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/templates/$DOC/create \
   -H 'Content-Type: application/json' \
   -d '{"title":"Apollo kickoff","values":{"project":"Apollo","owner":"Rene"}}' | jq
 ```
+<!-- notrios:generated:example:api-rest-templates-and-tasks-example-1:end -->
 
 **Substitution is replacement, never evaluation.** A placeholder is `{{name}}`,
 and a name is either a declared `prompt:` or one of a **closed** automatic
@@ -676,10 +718,12 @@ containing `{{date}}` stays literal text. Everything a caller supplies is data.
 
 ### Tasks
 
+<!-- notrios:generated:example:api-rest-tasks-example-1:begin -->
 ```sh
 curl -s 'http://127.0.0.1:8080/api/v1/tasks?state=open' | jq
 curl -s "http://127.0.0.1:8080/api/v1/tasks?document_id=$DOC" | jq
 ```
+<!-- notrios:generated:example:api-rest-tasks-example-1:end -->
 
 A task is a checkbox list item — `- [ ] thing` or `- [x] thing` — **computed on
 read** rather than stored. Each one carries a block-derived identity and an
@@ -701,6 +745,7 @@ one.
 
 One bounded transaction over an explicit list of notes:
 
+<!-- notrios:generated:example:api-rest-batch-organizer-operations-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/batch \
   -H 'Content-Type: application/json' -d '{
@@ -711,6 +756,7 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/batch \
     "items": [{"document_id": "doc_a"}, {"document_id": "doc_b"}]
   }' | jq
 ```
+<!-- notrios:generated:example:api-rest-batch-organizer-operations-example-1:end -->
 
 Operations are `move`, `add_tags`, `remove_tags`, `trash`, `restore`, and
 `duplicate` — each one the single-note surfaces already expose. A batch is a way
@@ -781,11 +827,13 @@ happened to it.
 A fenced ```` ```note-query ```` block in a note is evaluated by the service, not
 by the client:
 
+<!-- notrios:generated:example:api-rest-running-a-note-s-query-block-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/note-queries/run \
   -H 'Content-Type: application/json' \
   -d '{"block":"query: tag:todo -tag:done\nfields: notebook, updated\nsort: updated\nlimit: 20"}' | jq
 ```
+<!-- notrios:generated:example:api-rest-running-a-note-s-query-block-example-1:end -->
 
 ```json
 {"spec":{"query":"tag:todo -tag:done","fields":["title","notebook","updated"],
@@ -806,11 +854,13 @@ Reserve failures for real transport or storage faults.
 
 ## Resolving a stable link
 
+<!-- notrios:generated:example:api-rest-resolving-a-stable-link-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/links/resolve \
   -H 'Content-Type: application/json' \
   -d '{"uri":"notrios://databases/db_qz.../documents/doc_01H..."}' | jq
 ```
+<!-- notrios:generated:example:api-rest-resolving-a-stable-link-example-1:end -->
 
 Answers which note the link names in the database this service has open. The
 request takes a URI and nothing else — no path, no profile, no database
@@ -826,11 +876,13 @@ links itself. See [stable links](../stable-links.md).
 A long import or export records a job you can watch from anywhere — another
 shell, the GUI, an MCP client — without holding the connection that started it.
 
+<!-- notrios:generated:example:api-rest-long-running-jobs-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/jobs | jq
 curl -s http://127.0.0.1:8080/api/v1/jobs/$JOB | jq
 curl -s -X POST http://127.0.0.1:8080/api/v1/jobs/$JOB/cancel | jq
 ```
+<!-- notrios:generated:example:api-rest-long-running-jobs-example-1:end -->
 
 **These routes watch and stop; they do not start.** Every job kind names a
 filesystem path, and no REST or MCP surface accepts one — putting a job record

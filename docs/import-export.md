@@ -10,10 +10,12 @@
 
 Both command forms work identically — from source or a built binary:
 
+<!-- notrios:generated:example:import-export-import-and-export-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/export dir"
 ./bin/notriosctl   import joplin-raw --dry-run "/path/to/export dir"
 ```
+<!-- notrios:generated:example:import-export-import-and-export-example-1:end -->
 
 Quote any path containing spaces.
 
@@ -63,9 +65,11 @@ Common mistakes:
 
 ### 2. Dry run
 
+<!-- notrios:generated:example:import-export-2-dry-run-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/joplin-export"
 ```
+<!-- notrios:generated:example:import-export-2-dry-run-example-1:end -->
 
 The dry run uses the same deterministic inventory and action planner as the
 real import. It reports per-type inventory totals, malformed/unsupported items,
@@ -79,6 +83,7 @@ existed).
 
 ### 3. Import
 
+<!-- notrios:generated:example:import-export-3-import-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
@@ -87,6 +92,7 @@ go run ./cmd/notriosctl import joplin-raw \
   --import-config "/path/to/joplin-export/import-config.json" \
   "/path/to/joplin-export"
 ```
+<!-- notrios:generated:example:import-export-3-import-example-1:end -->
 
 The import runs in bounded batches (1–500, default 100). A durable checkpoint
 records the inventory fingerprint, phase, next item, cumulative report, and
@@ -198,12 +204,14 @@ is merged deliberately and reported as such.
 
 Point the importer at your vault directory (the folder containing your `.md` files; no export step is needed in Obsidian):
 
+<!-- notrios:generated:example:import-export-obsidian-vault-directory-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import obsidian --dry-run \
   --write-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 go run ./cmd/notriosctl import obsidian --preserve-source \
   --import-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 ```
+<!-- notrios:generated:example:import-export-obsidian-vault-directory-example-1:end -->
 
 Behavior:
 
@@ -239,10 +247,12 @@ tags. Test first on a copy of a real vault and inspect warnings.
 
 Request your archive from X (Settings → download your data) and download the ZIP. **Give the importer the ZIP as it downloaded**: there is no need to extract it. The importer reads it in place and finds everything it needs itself. An archive you have already extracted works too: pass the folder containing `data/`.
 
+<!-- notrios:generated:example:import-export-twitter-x-archive-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import twitter --dry-run "/path/to/twitter-archive.zip"
 go run ./cmd/notriosctl import twitter --notebook Twitter "/path/to/twitter-archive.zip"
 ```
+<!-- notrios:generated:example:import-export-twitter-x-archive-example-1:end -->
 
 What it reads, for reference:
 
@@ -276,10 +286,12 @@ Behavior:
 
 ChatGPT is exported in two shapes, and the importer takes either **as the ZIP you downloaded** — there is no need to unzip anything:
 
+<!-- notrios:generated:example:import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import chatgpt --dry-run "/path/to/chatgpt-export.zip"
 go run ./cmd/notriosctl import chatgpt "/path/to/OpenAI-export.zip"
 ```
+<!-- notrios:generated:example:import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1:end -->
 
 An extracted folder, or a path straight to a `conversations.json`, works too.
 
@@ -306,10 +318,12 @@ Behaviour:
 
 Give the importer the ZIP as you downloaded it. A large export arrives as several `...-batch-0000.zip`, `...-batch-0001.zip` files: point at the folder holding them and they import as one export.
 
+<!-- notrios:generated:example:import-export-claude-data-export-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import claude --dry-run "/path/to/claude-data-export.zip"
 go run ./cmd/notriosctl import claude "/path/to/export-folder"
 ```
+<!-- notrios:generated:example:import-export-claude-data-export-example-1:end -->
 
 Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon).
 
@@ -325,10 +339,12 @@ Behaviour:
 
 ## Exporting a Notrios archive
 
+<!-- notrios:generated:example:import-export-exporting-a-notrios-archive-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl export archive ./my-archive                      # everything
 go run ./cmd/notriosctl export archive --query 'tag:todo' ./todo-archive # query-scoped
 ```
+<!-- notrios:generated:example:import-export-exporting-a-notrios-archive-example-1:end -->
 
 `--query` accepts the full [query language](query-language.md), so you can export a notebook (`--query 'notebook:"Work"'`), a tag, or any search-notebook query instead of the whole database. Notes in the Trash are excluded.
 
@@ -348,6 +364,7 @@ revision, or all provenance.
 
 ## Exporting a native archive v2 snapshot
 
+<!-- notrios:generated:example:import-export-exporting-a-native-archive-v2-snapshot-example-1:begin -->
 ```sh
 # Complete database backup.
 go run ./cmd/notriosctl export archive-v2 ./notrios-backup
@@ -356,6 +373,7 @@ go run ./cmd/notriosctl export archive-v2 ./notrios-backup
 go run ./cmd/notriosctl export archive-v2 --target subset_transfer \
   --notebooks nb_research --tags shared ./research-transfer
 ```
+<!-- notrios:generated:example:import-export-exporting-a-native-archive-v2-snapshot-example-1:end -->
 
 Archive **v2** is the lossless format: every saved revision, trashed notes,
 notebooks and tags, links, provenance, resources, exact source bundles, and
@@ -371,6 +389,7 @@ matched afterwards.
 
 ## Verifying and restoring an archive v2 snapshot
 
+<!-- notrios:generated:example:import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1:begin -->
 ```sh
 # Read-only integrity/contents check.
 go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
@@ -379,6 +398,7 @@ go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
 go run ./cmd/notriosctl restore archive-v2 --intent adopt \
   --db ./restored/notes.sqlite ./notrios-backup
 ```
+<!-- notrios:generated:example:import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1:end -->
 
 `adopt` restores into an empty database and keeps the archive's logical database
 ID; `replace` restores over an existing one; `merge` imports records into an
@@ -393,6 +413,7 @@ For a complete local library on the current schema, the frozen G14c-G14e path
 provides the physical snapshot representation selected and accepted against the
 full corpora:
 
+<!-- notrios:generated:example:import-export-fast-same-schema-whole-library-snapshots-example-1:begin -->
 ```bash
 go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \
   --asset-store data/assets ./notrios-physical-snapshot
@@ -401,6 +422,7 @@ go run ./cmd/notriosctl snapshot restore --intent replace \
   --db data/notes.sqlite --asset-store data/assets \
   ./notrios-physical-snapshot
 ```
+<!-- notrios:generated:example:import-export-fast-same-schema-whole-library-snapshots-example-1:end -->
 
 This is not a subset export and cannot be merged. It binds one consistent
 SQLite Online Backup image to deterministic bounded packs of every
@@ -414,6 +436,7 @@ fallback when schema compatibility is not exact.
 
 ## Importing a Notrios archive
 
+<!-- notrios:generated:example:import-export-importing-a-notrios-archive-example-1:begin -->
 ```sh
 # 1. Analyze; writes my-archive/import-config.json (or --write-config <path>)
 go run ./cmd/notriosctl import archive --dry-run ./my-archive
@@ -421,6 +444,7 @@ go run ./cmd/notriosctl import archive --dry-run ./my-archive
 # 2. Review/edit the renames in import-config.json, then import
 go run ./cmd/notriosctl import archive --import-config ./my-archive/import-config.json ./my-archive
 ```
+<!-- notrios:generated:example:import-export-importing-a-notrios-archive-example-1:end -->
 
 The dry run classifies each top-level archive notebook name (case-insensitively):
 

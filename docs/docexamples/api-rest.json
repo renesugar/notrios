@@ -1,0 +1,707 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/api/rest.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "getting-started",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /healthz",
+          "GET /api/v1/status"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl http://127.0.0.1:8080/healthz              # -> ok"
+        },
+        {
+          "run": "curl http://127.0.0.1:8080/api/v1/status | jq   # active profile, paths, schema, capabilities"
+        }
+      ]
+    },
+    {
+      "section": "notes-create-read-edit",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/documents"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Create (notebook_id optional; defaults to the \"Notes\" notebook)"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/documents \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"title\":\"Meeting notes\",\"body\":\"# Agenda\\n\\n- apples\\n\"}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "notes-create-read-edit",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/documents/{document_id}",
+          "GET /api/v1/documents/{document_id}/body"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/body     # raw Markdown"
+        }
+      ]
+    },
+    {
+      "section": "optimistic-concurrency",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/documents/{document_id}",
+          "PUT /api/v1/documents/{document_id}",
+          "DELETE /api/v1/documents/{document_id}"
+        ]
+      },
+      "steps": [
+        {
+          "run": "REV=$(curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq -r .current_revision_id)"
+        },
+        {},
+        {
+          "run": "curl -s -X PUT http://127.0.0.1:8080/api/v1/documents/$DOC \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d \"{\\\"title\\\":\\\"Meeting notes v2\\\",\\\"body\\\":\\\"updated\\\",\\\"base_revision_id\\\":\\\"$REV\\\"}\" | jq"
+        },
+        {},
+        {
+          "comment": "# Or with If-Match (read the current revision after any preceding write):"
+        },
+        {
+          "run": "REV=$(curl -s http://127.0.0.1:8080/api/v1/documents/$DOC | jq -r .current_revision_id)"
+        },
+        {
+          "run": "curl -s -X DELETE http://127.0.0.1:8080/api/v1/documents/$DOC \\"
+        },
+        {
+          "run": "  -H \"If-Match: \\\"$REV\\\"\"            # 204: moved to Trash"
+        }
+      ]
+    },
+    {
+      "section": "surgical-edits-and-note-operations",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "PATCH /api/v1/documents/{document_id}",
+          "POST /api/v1/documents/{document_id}/append"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# String-replace edit; ambiguous matches fail unless replace_all; dry_run previews"
+        },
+        {
+          "run": "curl -s -X PATCH http://127.0.0.1:8080/api/v1/documents/$DOC \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d \"{\\\"base_revision_id\\\":\\\"$REV\\\",\\\"edits\\\":[{\\\"search\\\":\\\"apples\\\",\\\"replace\\\":\\\"oranges\\\"}],\\\"dry_run\\\":true}\" | jq"
+        },
+        {},
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/append \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' -d '{\"text\":\"- follow-up item\"}' | jq"
+        },
+        {
+          "comment": "# also: /prepend, GET /lines?start=1&end=20, GET /search-in?pattern=agenda, GET /outline"
+        }
+      ]
+    },
+    {
+      "section": "search-and-pagination",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/search"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/search \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"query\":\"(category:\\\"Work\\\" OR tag:todo) -tag:private\",\"limit\":25}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "notebooks-tags-search-notebooks-trash",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/notebooks/tree",
+          "POST /api/v1/notebooks",
+          "POST /api/v1/documents/{document_id}/notebook",
+          "GET /api/v1/tags",
+          "POST /api/v1/documents/{document_id}/tags/{tag}",
+          "DELETE /api/v1/documents/{document_id}/tags/{tag}",
+          "GET /api/v1/search-notebooks",
+          "POST /api/v1/search-notebooks",
+          "GET /api/v1/trash",
+          "POST /api/v1/trash/{document_id}/restore",
+          "DELETE /api/v1/trash/{document_id}"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/notebooks/tree | jq        # nested sidebar tree"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/notebooks \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"name\":\"Work\",\"icon_emoji\":\"\ud83d\udcbc\"}' | jq"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/notebook \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' -d \"{\\\"notebook_id\\\":\\\"$NB\\\"}\" | jq"
+        },
+        {
+          "comment": "# POST /api/v1/documents also accepts notebook_id; omitted, the note is filed"
+        },
+        {
+          "comment": "# in the default \"Notes\" notebook."
+        },
+        {},
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/tags | jq                  # with note counts"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/tags/todo | jq"
+        },
+        {
+          "run": "curl -s -X DELETE http://127.0.0.1:8080/api/v1/documents/$DOC/tags/todo   # 204"
+        },
+        {},
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/search-notebooks | jq      # \"All notes\" first, \"Trash\" last"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/search-notebooks \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' -d '{\"name\":\"TODO\",\"query\":\"tag:todo\",\"icon_emoji\":\"\u2705\"}' | jq"
+        },
+        {},
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/trash | jq"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/trash/$DOC/restore | jq"
+        },
+        {
+          "run": "curl -s -X DELETE http://127.0.0.1:8080/api/v1/trash/$DOC \\"
+        },
+        {
+          "run": "  -H \"X-Notrios-Confirmation: purge-document:$DOC\"            # permanent; local notes only"
+        }
+      ]
+    },
+    {
+      "section": "previewing-a-notebook-deletion",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/notebooks/{notebook_id}/deletion-preview"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq"
+        }
+      ]
+    },
+    {
+      "section": "renaming-a-tag-hierarchy",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/tags/rename"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/tags/rename \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"from\":\"project\",\"to\":\"work\",\"include_children\":true}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "resources-attachments",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/resources",
+          "POST /api/v1/documents/{document_id}/resources/{resource_id}",
+          "GET /api/v1/documents/{document_id}/resources",
+          "GET /api/v1/resources/{resource_id}/content",
+          "GET /api/v1/resources/reports/reference",
+          "GET /api/v1/admin/gc/report"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Upload raw bytes; filename via query parameter (or Content-Disposition)"
+        },
+        {
+          "run": "curl -s -X POST 'http://127.0.0.1:8080/api/v1/resources?filename=chart.png' \\"
+        },
+        {
+          "run": "  -H 'Content-Type: image/png' --data-binary @chart.png | jq    # -> id, uri, sha256"
+        },
+        {},
+        {
+          "comment": "# Attach to a note, list, download"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/documents/$DOC/resources/$RES \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' -d '{\"relation_type\":\"embedded\"}' | jq"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/resources | jq"
+        },
+        {
+          "run": "curl -s 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content?download=1' \\"
+        },
+        {
+          "run": "  -o downloaded-chart.png"
+        },
+        {},
+        {
+          "comment": "# Partial reads (v0.6 F3): 206 with Content-Range, or 416 naming the real size"
+        },
+        {
+          "comment": "# when the range cannot be satisfied. Composes with ?download=1 for a resume."
+        },
+        {
+          "run": "curl -s -H 'Range: bytes=0-1023' 'http://127.0.0.1:8080/api/v1/resources/'$RES'/content'"
+        },
+        {},
+        {
+          "comment": "# Read-only exact duplicate, unreferenced blob, notebook usage, and optional"
+        },
+        {
+          "comment": "# perceptual review report"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq"
+        },
+        {},
+        {
+          "comment": "# Retention-aware GC plan (always read-only over REST)"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq"
+        }
+      ]
+    },
+    {
+      "section": "resources-attachments",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "DELETE /api/v1/resources/{resource_id}"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X DELETE http://127.0.0.1:8080/api/v1/resources/$RES \\"
+        },
+        {
+          "run": "  -H \"X-Notrios-Confirmation: delete-resource:$RES\""
+        }
+      ]
+    },
+    {
+      "section": "links-graph-revisions",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/documents/{document_id}/links",
+          "POST /api/v1/graph",
+          "GET /api/v1/documents/{document_id}/revisions"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s \"http://127.0.0.1:8080/api/v1/documents/$DOC/links?direction=both\" | jq"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/graph \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d \"{\\\"roots\\\":[\\\"$DOC\\\"],\\\"direction\\\":\\\"both\\\",\\\"depth\\\":2,\\\"max_nodes\\\":200,\\\"max_edges\\\":400}\" | jq"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/documents/$DOC/revisions | jq"
+        }
+      ]
+    },
+    {
+      "section": "shortest-path-between-two-notes",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/graph/path"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/graph/path \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d \"{\\\"from\\\":\\\"$DOC\\\",\\\"to\\\":\\\"$OTHER\\\",\\\"direction\\\":\\\"both\\\"}\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "link-autocomplete-while-typing",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/links/suggest"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s \"http://127.0.0.1:8080/api/v1/links/suggest?q=kit&limit=10\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "checking-the-links-in-an-unsaved-note",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/links/check"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/links/check \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d \"{\\\"document_id\\\":\\\"$DOC\\\",\\\"body\\\":\\\"[a](Kitchen)\\n\\n[b](document://default/documents/gone)\\n\\\"}\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "orphan-isolate-and-hub-report",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/graph/report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s \"http://127.0.0.1:8080/api/v1/graph/report?limit=20\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "writing-the-report-into-the-library",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/graph/report/note"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST \"http://127.0.0.1:8080/api/v1/graph/report/note\" | jq .document.uri"
+        }
+      ]
+    },
+    {
+      "section": "selection-and-privacy-dry-runs",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/selection/plan"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/selection/plan \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"target\":\"publication_handoff\",\"selection\":{\"tags\":[\"publish\"]}}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "workspace-lint-report",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/admin/lint/report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s 'http://127.0.0.1:8080/api/v1/admin/lint/report?detail_limit=20' | jq"
+        }
+      ]
+    },
+    {
+      "section": "listing-a-note-s-blocks",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/documents/{document_id}/blocks"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/documents/doc_01H.../blocks | jq"
+        }
+      ]
+    },
+    {
+      "section": "templates-and-tasks",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/templates",
+          "POST /api/v1/templates/{document_id}/create"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/templates | jq"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/templates/$DOC/create \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"title\":\"Apollo kickoff\",\"values\":{\"project\":\"Apollo\",\"owner\":\"Rene\"}}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "tasks",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/tasks"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s 'http://127.0.0.1:8080/api/v1/tasks?state=open' | jq"
+        },
+        {
+          "run": "curl -s \"http://127.0.0.1:8080/api/v1/tasks?document_id=$DOC\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "batch-organizer-operations",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/batch"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/batch \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' -d '{"
+        },
+        {
+          "run": "    \"request_key\": \"move-inbox-2026-08-07\","
+        },
+        {
+          "run": "    \"operation\": \"move\","
+        },
+        {
+          "run": "    \"mode\": \"best_effort\","
+        },
+        {
+          "run": "    \"notebook_id\": \"'\"$NB\"'\","
+        },
+        {
+          "run": "    \"items\": [{\"document_id\": \"doc_a\"}, {\"document_id\": \"doc_b\"}]"
+        },
+        {
+          "run": "  }' | jq"
+        }
+      ]
+    },
+    {
+      "section": "running-a-note-s-query-block",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/note-queries/run"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/note-queries/run \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"block\":\"query: tag:todo -tag:done\\nfields: notebook, updated\\nsort: updated\\nlimit: 20\"}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "resolving-a-stable-link",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /api/v1/links/resolve"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/links/resolve \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"uri\":\"notrios://databases/db_qz.../documents/doc_01H...\"}' | jq"
+        }
+      ]
+    },
+    {
+      "section": "long-running-jobs",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/jobs",
+          "GET /api/v1/jobs/{job_id}",
+          "POST /api/v1/jobs/{job_id}/cancel"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/jobs | jq"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/jobs/$JOB | jq"
+        },
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/api/v1/jobs/$JOB/cancel | jq"
+        }
+      ]
+    }
+  ]
+}

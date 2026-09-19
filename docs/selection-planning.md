@@ -4,6 +4,7 @@ Notrios can dry-run the exact note/resource boundary for a future backup,
 subset transfer, or publication handoff without writing files or changing the
 database.
 
+<!-- notrios:generated:example:selection-planning-selection-and-privacy-planning-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/api/v1/selection/plan \
   -H 'Content-Type: application/json' \
@@ -19,6 +20,7 @@ curl -s -X POST http://127.0.0.1:8080/api/v1/selection/plan \
     "detail_limit":100
   }' | jq
 ```
+<!-- notrios:generated:example:selection-planning-selection-and-privacy-planning-example-1:end -->
 
 The three targets have different defaults:
 

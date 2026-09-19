@@ -31,9 +31,11 @@ starts on its own.
 
 Check the installation before trusting it:
 
+<!-- notrios:generated:example:installation-installing-from-the-package-example-2:begin -->
 ```sh
 notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-installing-from-the-package-example-2:end -->
 
 `doctor` reports each check and exits non-zero if a required one failed. On a
 machine with no keyring — a server, a container — it will tell you that no
@@ -83,15 +85,19 @@ predates a schema migration, see [upgrading from before 0.8](#upgrading-from-bef
 
 Export writes a portable archive you can copy anywhere:
 
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-1:begin -->
 ```sh
 notriosctl export archive ~/notrios-backup
 ```
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-1:end -->
 
 To restore into an empty or replacement library:
 
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-2:begin -->
 ```sh
 notriosctl import archive ~/notrios-backup
 ```
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-2:end -->
 
 That is the recovery path for a lost library, and it is the one to rehearse
 before you need it. `purge` also writes a verified backup before it deletes
@@ -120,17 +126,21 @@ material from the backup — lives in the repository, and the package does not
 ship it. With only the package installed, deleting your library is something you
 do yourself. Find out where it is first:
 
+<!-- notrios:generated:example:installation-removing-notrios-when-you-installed-the-package-example-2:begin -->
 ```sh
 notriosctl paths --no-redact
 ```
+<!-- notrios:generated:example:installation-removing-notrios-when-you-installed-the-package-example-2:end -->
 
 Delete the `data`, `config`, `state` and `cache` roots it prints, and understand
 that nothing takes a backup for you when you do it that way. Export first if the
 notes matter:
 
+<!-- notrios:generated:example:installation-removing-notrios-when-you-installed-the-package-example-3:begin -->
 ```sh
 notriosctl export archive ~/notrios-backup
 ```
+<!-- notrios:generated:example:installation-removing-notrios-when-you-installed-the-package-example-3:end -->
 
 ## What is supported
 
@@ -225,6 +235,7 @@ dependencies gone too.
 
 From the repository root:
 
+<!-- notrios:generated:example:installation-run-example-1:begin -->
 ```sh
 # Headless service (REST + MCP + web UI at http://127.0.0.1:8099)
 ./bin/notriosd -config config/config.example.yaml
@@ -235,13 +246,16 @@ From the repository root:
 # CLI
 ./bin/notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-run-example-1:end -->
 
 You can also run everything from source without building binaries:
 
+<!-- notrios:generated:example:installation-run-example-2:begin -->
 ```sh
 go run ./cmd/notriosd -config config/config.example.yaml
 go run ./cmd/notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-run-example-2:end -->
 
 ### The two ways to open the interface
 
@@ -320,10 +334,12 @@ are not gone — they are still in that directory.
 `notriosctl paths` notices a pre-0.8 library in the directory you are standing
 in and names it. Moving it is a single explicit command:
 
+<!-- notrios:generated:example:installation-upgrading-from-before-08-example-1:begin -->
 ```sh
 notriosctl migrate --dry-run   # show what would move
 notriosctl migrate             # copy, verify, and retire the old directory
 ```
+<!-- notrios:generated:example:installation-upgrading-from-before-08-example-1:end -->
 
 Nothing is moved for you, the original is copied rather than moved, every file
 is verified with SHA-256, and the old directory is renamed rather than deleted.
@@ -419,11 +435,13 @@ There are two ways in, and they do the same deleting.
 `notriosctl purge` deletes this user's Notrios data. It ships with the program,
 so it is the one to use if you installed a package:
 
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-1:begin -->
 ```sh
 notriosctl purge --dry-run   # print the whole plan and stop; asks nothing
 notriosctl purge             # shows the plan, then asks
 notriosctl purge --confirm   # skip the question, for headless automation
 ```
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-1:end -->
 
 `make purge` is that **plus** removing what `make install` recorded installing,
 and needs a checkout:
@@ -465,10 +483,12 @@ line, and leaves only that outer directory alone.
 `FORCE=1` skips the confirmation, never the backup. If you genuinely want
 neither:
 
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-3:begin -->
 ```sh
 NO_BACKUP=1 make purge       # still asks, and warns in detail first
 notriosctl purge --no-backup # the same, for a packaged install
 ```
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-3:end -->
 
 `NO_BACKUP=1` prints exactly what is about to be destroyed with no copy — your
 notes database, attachments, configuration, profile registry, sync key material,
@@ -492,11 +512,13 @@ occupies, every registered profile — including one whose library lives outside
 these roots — and the program files the installer recorded. It is worth keeping
 before a purge, because afterwards it is the only record of what was there:
 
+<!-- notrios:generated:example:installation-checking-that-a-purge-removed-everything-example-1:begin -->
 ```sh
 notriosctl paths --report                      # for reading
 notriosctl paths --report --json               # for a script
 notriosctl paths --report --paths > ~/notrios-before-purge.txt
 ```
+<!-- notrios:generated:example:installation-checking-that-a-purge-removed-everything-example-1:end -->
 
 Save that last one somewhere the purge does not reach. Afterwards:
 

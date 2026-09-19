@@ -47,8 +47,15 @@ class EvidenceValidatorTests(unittest.TestCase):
                     target = root / source.relative_to(v.ROOT)
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text(text, encoding="utf-8")
-            page = root / self.slots[0][2]
-            page.write_text(page.read_text(encoding="utf-8").replace("<!-- notrios:generated:", "<!-- mutated:", 1), encoding="utf-8")
+            # The marker this slot's page is validated by, not simply the first
+            # generated marker on it: since v1.0 J15 a page can also carry
+            # example markers, which this test is not about.
+            ident, audience, path, slug = self.slots[0]
+            page = root / path
+            marker = f"<!-- notrios:generated:{audience}:{slug}:begin -->"
+            text = page.read_text(encoding="utf-8")
+            self.assertIn(marker, text, "the slot's own marker should be on its page")
+            page.write_text(text.replace(marker, "<!-- mutated:begin -->", 1), encoding="utf-8")
             with self.assertRaisesRegex(v.EvidenceError, "marker mismatch"):
                 v.validate_generated(self.template, self.slots, root)
 

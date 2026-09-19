@@ -2,19 +2,19 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "6c0daf1268710c5e280b0f438dd24fc391516d11c5193ed47b28055fab6032a0"
+      "sha256": "0cc5ab51d0daf537c703ffaa68b5eb71e884aa4aabad3f590de48d94f83d6283"
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "4dbe187e1a3e5f77d3cc804fc033b2526e782ceff25651ec418edb67ab2605ba"
+      "sha256": "a7fe95a55fd2d31fca976ae81580fdffa85bbac9a5c2d388e02bc71edd46b9aa"
     },
     {
       "path": "docs/cli.md",
-      "sha256": "939bbf79f18c02086410429467183db55cdce4205d186c6343648b5b2b880cc8"
+      "sha256": "9b04f4f47020fc6c212a0142257d6ef59a4d22490edff86c3e2ac402b76c2bdc"
     },
     {
       "path": "docs/gui.md",
-      "sha256": "6dffb0a3b66c121d1455f2d14296f6924f6a1da6f3976e38668c2e9682aae3d3"
+      "sha256": "12e245766c1beb41a7a74220f20ef1e7cfd8d328af49795300b3d89d5eecdfb5"
     },
     {
       "path": "docs/service.md",

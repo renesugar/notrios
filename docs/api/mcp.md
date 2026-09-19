@@ -4,6 +4,7 @@ Notrios mounts an MCP (Model Context Protocol) endpoint at `/mcp` so LLM tools c
 
 ## Trying it with curl
 
+<!-- notrios:generated:example:api-mcp-trying-it-with-curl-example-1:begin -->
 ```sh
 curl -s -X POST http://127.0.0.1:8080/mcp \
   -H 'Content-Type: application/json' \
@@ -13,6 +14,7 @@ curl -s -X POST http://127.0.0.1:8080/mcp \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_documents","arguments":{"query":"(tag:todo OR category:Work) -tag:private","limit":5}}}' | jq
 ```
+<!-- notrios:generated:example:api-mcp-trying-it-with-curl-example-1:end -->
 
 ## Connecting an MCP client
 

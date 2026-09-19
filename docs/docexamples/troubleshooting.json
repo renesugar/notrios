@@ -1,0 +1,23 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/troubleshooting.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "if-you-installed-the-package",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "doctor"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl doctor"
+        }
+      ]
+    }
+  ]
+}

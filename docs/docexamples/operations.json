@@ -1,0 +1,394 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/operations.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "finding-what-has-rotted-workspace-lint",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "lint"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl lint                       # JSON report; exit 1 if anything was found"
+        },
+        {
+          "run": "notriosctl lint --quiet               # exit code only, for a script or a hook"
+        },
+        {
+          "run": "notriosctl lint --checks broken_document_link,unreferenced_resource"
+        },
+        {
+          "run": "notriosctl lint --list-checks"
+        }
+      ]
+    },
+    {
+      "section": "fixing-what-can-be-fixed-mechanically",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "fix"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl fix --list-kinds       # what can be repaired, and what is opt-in"
+        },
+        {
+          "run": "notriosctl fix                    # dry run: prints the exact edits, changes nothing"
+        },
+        {
+          "run": "notriosctl fix --apply            # writes them, one note at a time"
+        },
+        {
+          "run": "notriosctl fix --kinds missing_alt_text --apply"
+        },
+        {
+          "run": "notriosctl fix --kinds unlocalized_remote_media --apply"
+        }
+      ]
+    },
+    {
+      "section": "watching-a-long-import-or-export",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "jobs list",
+          "jobs status",
+          "jobs cancel"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl jobs list"
+        },
+        {
+          "run": "notriosctl jobs status --wait <job-id>     # exits with the job's code"
+        },
+        {
+          "run": "notriosctl jobs cancel <job-id>"
+        }
+      ]
+    },
+    {
+      "section": "seeing-the-shape-of-the-link-graph",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/graph/report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s \"http://127.0.0.1:8080/api/v1/graph/report?limit=20\" | jq"
+        }
+      ]
+    },
+    {
+      "section": "seeing-the-shape-of-the-link-graph",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "graph report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl graph report --write-note"
+        }
+      ]
+    },
+    {
+      "section": "renaming-a-tag-hierarchy",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "tags rename"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl tags rename --from project --to work                     # dry run"
+        },
+        {
+          "run": "notriosctl tags rename --from project --to work --include-children  # dry run"
+        },
+        {
+          "run": "notriosctl tags rename --from project --to work --include-children --apply"
+        }
+      ]
+    },
+    {
+      "section": "deleting-a-notebook-without-surprises",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/notebooks/{notebook_id}/deletion-preview"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq"
+        }
+      ]
+    },
+    {
+      "section": "localizing-remote-media",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "localize"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Report decisions only; no network request and no write"
+        },
+        {
+          "run": "notriosctl localize --dry-run <document-id>"
+        },
+        {},
+        {
+          "comment": "# Localize policy-allowed URLs"
+        },
+        {
+          "run": "notriosctl localize <document-id>"
+        },
+        {},
+        {
+          "comment": "# Also opt in URLs classified as review; blocked URLs remain blocked"
+        },
+        {
+          "run": "notriosctl localize --allow-review <document-id>"
+        }
+      ]
+    },
+    {
+      "section": "inspecting-resource-references",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "resources report"
+        ],
+        "rest": [
+          "GET /api/v1/resources/reports/reference"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl resources report"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq"
+        }
+      ]
+    },
+    {
+      "section": "garbage-collection",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "gc"
+        ],
+        "rest": [
+          "GET /api/v1/admin/gc/report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl gc                 # same as --dry-run for an unsynchronized library"
+        },
+        {
+          "run": "notriosctl gc --snapshot <snapshot-dir> --dry-run  # sync-enrolled library"
+        },
+        {
+          "run": "notriosctl gc --snapshot <snapshot-dir> --apply    # explicit destructive step"
+        },
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq"
+        }
+      ]
+    },
+    {
+      "section": "garbage-collection",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync retention"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync retention --snapshot <snapshot-dir>"
+        },
+        {
+          "run": "notriosctl sync retention --snapshot <snapshot-dir> --apply --confirm-digest <reviewed-digest>"
+        }
+      ]
+    },
+    {
+      "section": "planning-and-resuming-imports",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import joplin-raw",
+          "import obsidian"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl import joplin-raw --dry-run --write-config /tmp/joplin-plan.json /path/to/raw"
+        },
+        {
+          "run": "notriosctl import obsidian --dry-run --write-config /tmp/obsidian-plan.json /path/to/vault"
+        }
+      ]
+    },
+    {
+      "section": "planning-and-resuming-imports",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import joplin-raw",
+          "import obsidian"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl import joplin-raw --batch-size 100 --preserve-source \\"
+        },
+        {
+          "run": "  --import-config /tmp/joplin-plan.json /path/to/raw"
+        },
+        {
+          "run": "notriosctl import obsidian --batch-size 100 --preserve-source \\"
+        },
+        {
+          "run": "  --import-config /tmp/obsidian-plan.json /path/to/vault"
+        }
+      ]
+    },
+    {
+      "section": "commands-that-are-safe-against-a-carrier",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync once",
+          "sync discover"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# One exchange. Run it by hand, from cron, or after an import."
+        },
+        {
+          "run": "notriosctl sync once --carrier ~/Drive/notrios"
+        },
+        {},
+        {
+          "comment": "# Look before you trust: reports who is publishing, changes nothing."
+        },
+        {
+          "run": "notriosctl sync discover --carrier ~/Drive/notrios"
+        },
+        {},
+        {
+          "comment": "# Copy a carrier onto a drive, or off one, without altering it."
+        },
+        {
+          "run": "rclone copy --immutable <source> <destination>"
+        },
+        {
+          "run": "rclone copy --immutable --no-traverse <source> <destination>   # small set into a large folder"
+        },
+        {
+          "run": "rclone lsf <path>                                              # look at what is there"
+        }
+      ]
+    },
+    {
+      "section": "watching-it",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/sync/status"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8443/api/v1/sync/status | jq ."
+        }
+      ]
+    },
+    {
+      "section": "if-a-device-is-lost",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync peers",
+          "sync revoke"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync peers"
+        },
+        {
+          "run": "notriosctl sync revoke --key <signer-key-id> --reason \"lost laptop\" --advance-epoch"
+        }
+      ]
+    },
+    {
+      "section": "monitoring-the-recoll-sidecar",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /api/v1/status"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s http://127.0.0.1:8080/api/v1/status | jq .search_sidecar"
+        }
+      ]
+    }
+  ]
+}

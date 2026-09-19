@@ -1,0 +1,221 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/installation.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "installing-from-the-package",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "doctor"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl doctor"
+        }
+      ]
+    },
+    {
+      "section": "backing-up-and-getting-your-notes-back",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl export archive ~/notrios-backup"
+        }
+      ]
+    },
+    {
+      "section": "backing-up-and-getting-your-notes-back",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import archive"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl import archive ~/notrios-backup"
+        }
+      ]
+    },
+    {
+      "section": "removing-notrios-when-you-installed-the-package",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "paths"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl paths --no-redact"
+        }
+      ]
+    },
+    {
+      "section": "removing-notrios-when-you-installed-the-package",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl export archive ~/notrios-backup"
+        }
+      ]
+    },
+    {
+      "section": "run",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "doctor"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Headless service (REST + MCP + web UI at http://127.0.0.1:8099)"
+        },
+        {
+          "run": "./bin/notriosd -config config/config.example.yaml"
+        },
+        {},
+        {
+          "comment": "# Desktop GUI (contains the service; see the GUI guide for -no-gui / -gui-only)"
+        },
+        {
+          "run": "./bin/notrios"
+        },
+        {},
+        {
+          "comment": "# CLI"
+        },
+        {
+          "run": "./bin/notriosctl doctor"
+        }
+      ]
+    },
+    {
+      "section": "run",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "doctor"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosd -config config/config.example.yaml"
+        },
+        {
+          "run": "go run ./cmd/notriosctl doctor"
+        }
+      ]
+    },
+    {
+      "section": "upgrading-from-before-08",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "migrate"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl migrate --dry-run   # show what would move"
+        },
+        {
+          "run": "notriosctl migrate             # copy, verify, and retire the old directory"
+        }
+      ]
+    },
+    {
+      "section": "removing-your-data-as-well",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "purge"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl purge --dry-run   # print the whole plan and stop; asks nothing"
+        },
+        {
+          "run": "notriosctl purge             # shows the plan, then asks"
+        },
+        {
+          "run": "notriosctl purge --confirm   # skip the question, for headless automation"
+        }
+      ]
+    },
+    {
+      "section": "removing-your-data-as-well",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "purge"
+        ]
+      },
+      "steps": [
+        {
+          "run": "NO_BACKUP=1 make purge       # still asks, and warns in detail first"
+        },
+        {
+          "run": "notriosctl purge --no-backup # the same, for a packaged install"
+        }
+      ]
+    },
+    {
+      "section": "checking-that-a-purge-removed-everything",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "paths"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl paths --report                      # for reading"
+        },
+        {
+          "run": "notriosctl paths --report --json               # for a script"
+        },
+        {
+          "run": "notriosctl paths --report --paths > ~/notrios-before-purge.txt"
+        }
+      ]
+    }
+  ]
+}

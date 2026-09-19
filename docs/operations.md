@@ -16,12 +16,14 @@ in the [service guide](service.md#backup-and-restore).
 
 ## Finding what has rotted (workspace lint)
 
+<!-- notrios:generated:example:operations-finding-what-has-rotted-workspace-lint-example-1:begin -->
 ```sh
 notriosctl lint                       # JSON report; exit 1 if anything was found
 notriosctl lint --quiet               # exit code only, for a script or a hook
 notriosctl lint --checks broken_document_link,unreferenced_resource
 notriosctl lint --list-checks
 ```
+<!-- notrios:generated:example:operations-finding-what-has-rotted-workspace-lint-example-1:end -->
 
 Lint reads and never writes, so it is safe to run on a library you have not
 backed up — which is usually when you want to know what is broken. Fixing is a
@@ -57,6 +59,7 @@ garbage-collection report, there is deliberately no apply endpoint.
 
 ## Fixing what can be fixed mechanically
 
+<!-- notrios:generated:example:operations-fixing-what-can-be-fixed-mechanically-example-1:begin -->
 ```sh
 notriosctl fix --list-kinds       # what can be repaired, and what is opt-in
 notriosctl fix                    # dry run: prints the exact edits, changes nothing
@@ -64,6 +67,7 @@ notriosctl fix --apply            # writes them, one note at a time
 notriosctl fix --kinds missing_alt_text --apply
 notriosctl fix --kinds unlocalized_remote_media --apply
 ```
+<!-- notrios:generated:example:operations-fixing-what-can-be-fixed-mechanically-example-1:end -->
 
 Most of what lint reports cannot be repaired without deciding what you meant —
 a broken link needs a target, an ambiguous wikilink needs a choice. Those stay
@@ -111,11 +115,13 @@ another shell or over REST without holding the terminal that started it. The
 current GUI's Sync Center deliberately lists sync jobs only; it does not yet
 show or cancel import/export jobs:
 
+<!-- notrios:generated:example:operations-watching-a-long-import-or-export-example-1:begin -->
 ```sh
 notriosctl jobs list
 notriosctl jobs status --wait <job-id>     # exits with the job's code
 notriosctl jobs cancel <job-id>
 ```
+<!-- notrios:generated:example:operations-watching-a-long-import-or-export-example-1:end -->
 
 Cancelling is cooperative: the work stops after its next committed, checkpointed
 batch, so everything it finished is kept. Rerun the same command and it
@@ -136,9 +142,11 @@ an interruption usually just needs the command run again.
 `GET /api/v1/graph/report` reads the whole collection once and reports what the
 links look like from above:
 
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-1:begin -->
 ```sh
 curl -s "http://127.0.0.1:8080/api/v1/graph/report?limit=20" | jq
 ```
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-1:end -->
 
 - `orphan_count` — notes nothing links to;
 - `isolated_count` — the subset that also links to nothing;
@@ -163,9 +171,11 @@ and a note linked only from the Trash was never reported as an orphan.
 
 To keep the report where you can read it:
 
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-2:begin -->
 ```sh
 notriosctl graph report --write-note
 ```
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-2:end -->
 
 That renders it as a read-only note in the builtin **Reports** notebook, with a
 stable ID, overwritten in place. It happens when you ask and never on a timer,
@@ -189,11 +199,13 @@ the search covered everything reachable. See the
 Tags nest with `/`: `project/alpha` is a child of `project`. Renaming the parent
 can carry the children with it.
 
+<!-- notrios:generated:example:operations-renaming-a-tag-hierarchy-example-1:begin -->
 ```sh
 notriosctl tags rename --from project --to work                     # dry run
 notriosctl tags rename --from project --to work --include-children  # dry run
 notriosctl tags rename --from project --to work --include-children --apply
 ```
+<!-- notrios:generated:example:operations-renaming-a-tag-hierarchy-example-1:end -->
 
 The dry run is the default, and it is not a guess. Notrios performs the rename
 inside a transaction and rolls it back, so what the dry run prints is what an
@@ -239,9 +251,11 @@ Deleting a notebook does not delete the notes in it. They move to the Trash —
 and they are re-homed to the default notebook on the way, so restoring one later
 has somewhere to land. Ask before you do it:
 
+<!-- notrios:generated:example:operations-deleting-a-notebook-without-surprises-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq
 ```
+<!-- notrios:generated:example:operations-deleting-a-notebook-without-surprises-example-1:end -->
 
 ```json
 {
@@ -276,6 +290,7 @@ the shared quarantine pipeline:
 
 The equivalent CLI workflow is:
 
+<!-- notrios:generated:example:operations-localizing-remote-media-example-1:begin -->
 ```sh
 # Report decisions only; no network request and no write
 notriosctl localize --dry-run <document-id>
@@ -286,6 +301,7 @@ notriosctl localize <document-id>
 # Also opt in URLs classified as review; blocked URLs remain blocked
 notriosctl localize --allow-review <document-id>
 ```
+<!-- notrios:generated:example:operations-localizing-remote-media-example-1:end -->
 
 Joplin RAW and Obsidian imports can run the same engine after import with
 `--localize-media`. Notrios never treats a browser preview cache as an admitted
@@ -296,10 +312,12 @@ note and the result explains why.
 
 Run the read-only reference report before removing anything:
 
+<!-- notrios:generated:example:operations-inspecting-resource-references-example-1:begin -->
 ```sh
 notriosctl resources report
 curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq
 ```
+<!-- notrios:generated:example:operations-inspecting-resource-references-example-1:end -->
 
 The report distinguishes:
 
@@ -316,12 +334,14 @@ installed hook can suggest review only—it never merges or deletes resources.
 
 Garbage collection is retention-aware and dry-run first:
 
+<!-- notrios:generated:example:operations-garbage-collection-example-1:begin -->
 ```sh
 notriosctl gc                 # same as --dry-run for an unsynchronized library
 notriosctl gc --snapshot <snapshot-dir> --dry-run  # sync-enrolled library
 notriosctl gc --snapshot <snapshot-dir> --apply    # explicit destructive step
 curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
+<!-- notrios:generated:example:operations-garbage-collection-example-1:end -->
 
 The REST route is always read-only. The plan separates `eligible` and
 `retained` resources and includes the reason and eligibility time. Apply
@@ -338,10 +358,12 @@ gate; only explicit signed retirement does.
 
 Operation/tombstone retention has a separate exact-digest review:
 
+<!-- notrios:generated:example:operations-garbage-collection-example-2:begin -->
 ```sh
 notriosctl sync retention --snapshot <snapshot-dir>
 notriosctl sync retention --snapshot <snapshot-dir> --apply --confirm-digest <reviewed-digest>
 ```
+<!-- notrios:generated:example:operations-garbage-collection-example-2:end -->
 
 The Sync Center shows the same horizon, blockers, and repair source without a
 filesystem path or apply endpoint. A below-floor peer must use verified
@@ -355,22 +377,26 @@ requires the object-specific `X-Notrios-Confirmation` header documented in the
 
 Use a dry run first for Joplin RAW and Obsidian:
 
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-1:begin -->
 ```sh
 notriosctl import joplin-raw --dry-run --write-config /tmp/joplin-plan.json /path/to/raw
 notriosctl import obsidian --dry-run --write-config /tmp/obsidian-plan.json /path/to/vault
 ```
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-1:end -->
 
 The dry run uses the real deterministic inventory and action classifiers, but
 creates no canonical notes, resources, checkpoints, or source bundles. Review
 the create/update/unchanged counts and any conflict renames, then pass the
 configuration to the real import:
 
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-2:begin -->
 ```sh
 notriosctl import joplin-raw --batch-size 100 --preserve-source \
   --import-config /tmp/joplin-plan.json /path/to/raw
 notriosctl import obsidian --batch-size 100 --preserve-source \
   --import-config /tmp/obsidian-plan.json /path/to/vault
 ```
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-2:end -->
 
 Both importers commit bounded batches and persist the source fingerprint,
 phase, next item, and applied item fingerprints. Re-run the same command after
@@ -405,6 +431,7 @@ section is about running it against a real provider.
 
 ### Commands that are safe against a carrier
 
+<!-- notrios:generated:example:operations-commands-that-are-safe-against-a-carrier-example-1:begin -->
 ```sh
 # One exchange. Run it by hand, from cron, or after an import.
 notriosctl sync once --carrier ~/Drive/notrios
@@ -417,6 +444,7 @@ rclone copy --immutable <source> <destination>
 rclone copy --immutable --no-traverse <source> <destination>   # small set into a large folder
 rclone lsf <path>                                              # look at what is there
 ```
+<!-- notrios:generated:example:operations-commands-that-are-safe-against-a-carrier-example-1:end -->
 
 ### Commands that must never touch protocol state
 
@@ -535,9 +563,11 @@ any request carrying `Origin`, `Cookie`, or `Referer`.
 
 ### Watching it
 
+<!-- notrios:generated:example:operations-watching-it-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8443/api/v1/sync/status | jq .
 ```
+<!-- notrios:generated:example:operations-watching-it-example-1:end -->
 
 Loopback only, and redacted: enrolled key ids and their status, the transport
 policy and limits, how many invitations are open, and the recent authentication
@@ -553,10 +583,12 @@ failed is in your log, not in their answer.
 
 ### If a device is lost
 
+<!-- notrios:generated:example:operations-if-a-device-is-lost-example-1:begin -->
 ```sh
 notriosctl sync peers
 notriosctl sync revoke --key <signer-key-id> --reason "lost laptop" --advance-epoch
 ```
+<!-- notrios:generated:example:operations-if-a-device-is-lost-example-1:end -->
 
 Revoking ends that key immediately; every request signed with it is refused and
 audited from that moment. `--advance-epoch` additionally mints a new group key,
@@ -570,9 +602,11 @@ SQLite/FTS5 remains the always-on search engine. When Recoll is enabled, the
 desktop header shows `off`, `unavailable`, `active`, or `degraded`, plus
 pending work and the last projection sync. The complete report is:
 
+<!-- notrios:generated:example:operations-monitoring-the-recoll-sidecar-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/status | jq .search_sidecar
 ```
+<!-- notrios:generated:example:operations-monitoring-the-recoll-sidecar-example-1:end -->
 
 Useful fields include pending/retrying/failed jobs, last sync/index/
 reconciliation timestamps, the most recent missing/stale/orphaned/repaired

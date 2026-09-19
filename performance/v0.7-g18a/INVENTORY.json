@@ -5,7 +5,7 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "6c0daf1268710c5e280b0f438dd24fc391516d11c5193ed47b28055fab6032a0",
+      "sha256": "0cc5ab51d0daf537c703ffaa68b5eb71e884aa4aabad3f590de48d94f83d6283",
       "help_note": "doc_help_api_mcp",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools",
       "sections": [
@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "4dbe187e1a3e5f77d3cc804fc033b2526e782ceff25651ec418edb67ab2605ba",
+      "sha256": "a7fe95a55fd2d31fca976ae81580fdffa85bbac9a5c2d388e02bc71edd46b9aa",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
@@ -431,7 +431,7 @@
     },
     {
       "path": "docs/archive-v2.md",
-      "sha256": "713aee006231be7bf7d1937e59966ae707d4050d6efa5742d5956c13993116f3",
+      "sha256": "98cdbd76e4457e8dd3b5a6e92a3134dfe170258d402c5cfd3a4559289b7d59ef",
       "help_note": "doc_help_archive_v2",
       "owner": "go:github.com/renesugar/notrios/internal/archivev2#Export",
       "sections": [
@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "939bbf79f18c02086410429467183db55cdce4205d186c6343648b5b2b880cc8",
+      "sha256": "9b04f4f47020fc6c212a0142257d6ef59a4d22490edff86c3e2ac402b76c2bdc",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1523,7 +1523,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "6dffb0a3b66c121d1455f2d14296f6924f6a1da6f3976e38668c2e9682aae3d3",
+      "sha256": "12e245766c1beb41a7a74220f20ef1e7cfd8d328af49795300b3d89d5eecdfb5",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1761,7 +1761,7 @@
     },
     {
       "path": "docs/import-export.md",
-      "sha256": "c4f44b20b91d9bd1b4b09142add567602941ff57e53a0d4b2b98ddf5abfe9d84",
+      "sha256": "da579ad676bdebe0604bd40fb82190f8ea9ce2b22acd7e6165144a7f691c7b6c",
       "help_note": "doc_help_import_export",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
       "sections": [
@@ -2017,7 +2017,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "39d6b4a5522846c57347f9bbf6c018dd455fc72d387b76cf0a9772503fd78d9e",
+      "sha256": "75dfa74bc735694a95e94f684bf1ce8322bdd6eb8c1628909fdb3da29f231035",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -2361,7 +2361,7 @@
     },
     {
       "path": "docs/operations.md",
-      "sha256": "220977d71c7afddc28e6a07128f434c4dee1b67f2ecc5a7f17319d0dca0fd136",
+      "sha256": "f80fd154c072f9b76822fbb5cc24f0c1798f973d7fb104e1b54649c81e850a81",
       "help_note": "doc_help_operations",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
       "sections": [
@@ -2579,7 +2579,7 @@
     },
     {
       "path": "docs/publishing.md",
-      "sha256": "ca18c737e54bf3751ac33eefe51d87df2701551f45b84512bbb93d54a40ec24d",
+      "sha256": "870c2da99dd3ee959300a6fc90b932ad158b38f3f4ead77f43cb571fa83eea64",
       "help_note": "doc_help_publishing",
       "owner": "go:github.com/renesugar/notrios/internal/publish#(Profile).PlanRequest",
       "sections": [
@@ -2657,7 +2657,7 @@
     },
     {
       "path": "docs/query-language.md",
-      "sha256": "1dd464622d2e325dc92a7b7d81d87723df17861f3cc00e77e3b2a46750b2c4ec",
+      "sha256": "419dcf0e49347cfdb1c21094a2f77adcff5286065fd890f3b282abfdf30e57a5",
       "help_note": "doc_help_query_language",
       "owner": "go:github.com/renesugar/notrios/internal/query#Parse",
       "sections": [
@@ -2685,7 +2685,7 @@
     },
     {
       "path": "docs/selection-planning.md",
-      "sha256": "2da853ab77b1955c834887e1f9a5e229b2d5c22198c56eba8222a210df6ce186",
+      "sha256": "e993488e24080f5fea13672f74287d91040a74eff05adb1aad05f75b1547955a",
       "help_note": "doc_help_selection_planning",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).PlanSelection",
       "sections": [
@@ -2811,7 +2811,7 @@
     },
     {
       "path": "docs/stable-links.md",
-      "sha256": "5ccd1250b7a31c5b1cc67d294343f554dd6b48172a8b4f45364a90ff1fc14f07",
+      "sha256": "48a54446d7e7e58ee5338ce3429f3bddb4b7f5491807cd13d8a26456ab0da8b9",
       "help_note": "doc_help_stable_links",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).ResolveStableLink",
       "sections": [
@@ -2919,7 +2919,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "5f913445537191c1ea55fb39a8d587113a6465c79f154b9b81e4f445dc2cfae2",
+      "sha256": "fa1be263002565a8c1f52efb6f54d9ff4aa2e7c1c1ded15d11fd915207ceb28c",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [

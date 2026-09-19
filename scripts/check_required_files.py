@@ -49,6 +49,7 @@ required = [
     'scripts/check_site_base_url.py',
     'scripts/check_purged.sh',
     'scripts/build_abi_artifact.sh',
+    'scripts/check_documented_errors.py',
     'web/src/desktop.ts',
     'web/src/mermaid-render.ts',
     'performance/v0.8-h2/README.md',

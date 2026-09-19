@@ -1,0 +1,66 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/archive-v2.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "writing-an-archive",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "bash",
+      "uses": {
+        "cli": [
+          "export archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Complete database backup, verified before the command reports success."
+        },
+        {
+          "run": "notriosctl export archive-v2 /backups/notrios-2026-08-04"
+        },
+        {},
+        {
+          "comment": "# Explicitly scoped subset transfer."
+        },
+        {
+          "run": "notriosctl export archive-v2 --target subset_transfer \\"
+        },
+        {
+          "run": "  --notebooks nb_research --tags shared /transfer/research"
+        }
+      ]
+    },
+    {
+      "section": "reading-an-archive-back",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "bash",
+      "uses": {
+        "cli": [
+          "verify archive-v2",
+          "restore archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Read-only: report what the archive contains and prove it is intact."
+        },
+        {
+          "run": "notriosctl verify archive-v2 /backups/notrios-2026-08-05"
+        },
+        {},
+        {
+          "comment": "# Restore into a database. The intent is required."
+        },
+        {
+          "run": "notriosctl restore archive-v2 --intent adopt --db ./restored/notes.sqlite \\"
+        },
+        {
+          "run": "  /backups/notrios-2026-08-05"
+        }
+      ]
+    }
+  ]
+}

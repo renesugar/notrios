@@ -77,9 +77,11 @@ you want a backup.
 
 ## Reviewing before publishing
 
+<!-- notrios:generated:example:publishing-reviewing-before-publishing-example-1:begin -->
 ```sh
 notriosctl publish plan --profile public-site
 ```
+<!-- notrios:generated:example:publishing-reviewing-before-publishing-example-1:end -->
 
 This writes nothing. It reports the notes it would publish, the resources they
 reach, every link decision, the metadata it would strip, warnings, and a
@@ -88,11 +90,13 @@ step.
 
 ## Publishing
 
+<!-- notrios:generated:example:publishing-publishing-example-1:begin -->
 ```sh
 notriosctl publish run --profile public-site \
   --reviewed-plan <manifest_sha256 from the plan> \
   /transfers/public-site
 ```
+<!-- notrios:generated:example:publishing-publishing-example-1:end -->
 
 The digest is required. Notrios re-plans at publication time and refuses if the
 result differs from what you reviewed:

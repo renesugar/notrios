@@ -1,0 +1,292 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/import-export.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "import-and-export",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import joplin-raw"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import joplin-raw --dry-run \"/path/to/export dir\""
+        },
+        {
+          "run": "./bin/notriosctl   import joplin-raw --dry-run \"/path/to/export dir\""
+        }
+      ]
+    },
+    {
+      "section": "2-dry-run",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import joplin-raw"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import joplin-raw --dry-run \"/path/to/joplin-export\""
+        }
+      ]
+    },
+    {
+      "section": "3-import",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import joplin-raw"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import joplin-raw \\"
+        },
+        {
+          "run": "  --db ./data/notes.sqlite \\"
+        },
+        {
+          "run": "  --asset-store ./data/assets \\"
+        },
+        {
+          "run": "  --batch-size 100 \\"
+        },
+        {
+          "run": "  --import-config \"/path/to/joplin-export/import-config.json\" \\"
+        },
+        {
+          "run": "  \"/path/to/joplin-export\""
+        }
+      ]
+    },
+    {
+      "section": "obsidian-vault-directory",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import obsidian"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import obsidian --dry-run \\"
+        },
+        {
+          "run": "  --write-config \"/path/to/vault/.notrios/import-config.json\" \"/path/to/vault\""
+        },
+        {
+          "run": "go run ./cmd/notriosctl import obsidian --preserve-source \\"
+        },
+        {
+          "run": "  --import-config \"/path/to/vault/.notrios/import-config.json\" \"/path/to/vault\""
+        }
+      ]
+    },
+    {
+      "section": "twitter-x-archive",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import twitter"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import twitter --dry-run \"/path/to/twitter-archive.zip\""
+        },
+        {
+          "run": "go run ./cmd/notriosctl import twitter --notebook Twitter \"/path/to/twitter-archive.zip\""
+        }
+      ]
+    },
+    {
+      "section": "chatgpt-data-export-and-the-openai-privacy-portal-export",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import chatgpt"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import chatgpt --dry-run \"/path/to/chatgpt-export.zip\""
+        },
+        {
+          "run": "go run ./cmd/notriosctl import chatgpt \"/path/to/OpenAI-export.zip\""
+        }
+      ]
+    },
+    {
+      "section": "claude-data-export",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import claude"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl import claude --dry-run \"/path/to/claude-data-export.zip\""
+        },
+        {
+          "run": "go run ./cmd/notriosctl import claude \"/path/to/export-folder\""
+        }
+      ]
+    },
+    {
+      "section": "exporting-a-notrios-archive",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl export archive ./my-archive                      # everything"
+        },
+        {
+          "run": "go run ./cmd/notriosctl export archive --query 'tag:todo' ./todo-archive # query-scoped"
+        }
+      ]
+    },
+    {
+      "section": "exporting-a-native-archive-v2-snapshot",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Complete database backup."
+        },
+        {
+          "run": "go run ./cmd/notriosctl export archive-v2 ./notrios-backup"
+        },
+        {},
+        {
+          "comment": "# Explicitly scoped subset transfer."
+        },
+        {
+          "run": "go run ./cmd/notriosctl export archive-v2 --target subset_transfer \\"
+        },
+        {
+          "run": "  --notebooks nb_research --tags shared ./research-transfer"
+        }
+      ]
+    },
+    {
+      "section": "verifying-and-restoring-an-archive-v2-snapshot",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "verify archive-v2",
+          "restore archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# Read-only integrity/contents check."
+        },
+        {
+          "run": "go run ./cmd/notriosctl verify archive-v2 ./notrios-backup"
+        },
+        {},
+        {
+          "comment": "# Restore into a fresh database. The intent is mandatory."
+        },
+        {
+          "run": "go run ./cmd/notriosctl restore archive-v2 --intent adopt \\"
+        },
+        {
+          "run": "  --db ./restored/notes.sqlite ./notrios-backup"
+        }
+      ]
+    },
+    {
+      "section": "fast-same-schema-whole-library-snapshots",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "bash",
+      "uses": {
+        "cli": [
+          "snapshot create",
+          "snapshot verify",
+          "snapshot restore"
+        ]
+      },
+      "steps": [
+        {
+          "run": "go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \\"
+        },
+        {
+          "run": "  --asset-store data/assets ./notrios-physical-snapshot"
+        },
+        {
+          "run": "go run ./cmd/notriosctl snapshot verify ./notrios-physical-snapshot"
+        },
+        {
+          "run": "go run ./cmd/notriosctl snapshot restore --intent replace \\"
+        },
+        {
+          "run": "  --db data/notes.sqlite --asset-store data/assets \\"
+        },
+        {
+          "run": "  ./notrios-physical-snapshot"
+        }
+      ]
+    },
+    {
+      "section": "importing-a-notrios-archive",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "import archive"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# 1. Analyze; writes my-archive/import-config.json (or --write-config <path>)"
+        },
+        {
+          "run": "go run ./cmd/notriosctl import archive --dry-run ./my-archive"
+        },
+        {},
+        {
+          "comment": "# 2. Review/edit the renames in import-config.json, then import"
+        },
+        {
+          "run": "go run ./cmd/notriosctl import archive --import-config ./my-archive/import-config.json ./my-archive"
+        }
+      ]
+    }
+  ]
+}

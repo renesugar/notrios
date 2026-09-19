@@ -84,6 +84,15 @@ python3 scripts/check_sqlite_provenance.py
 # why that smoke had stopped working. This compares what tracked files say
 # against docs-site/hugo.toml's baseURL.
 python3 scripts/check_site_base_url.py
+# Documentation that quotes an error message is only useful while the program
+# still produces it. v1.0 J15-D found two rows quoting errors the importers had
+# stopped producing, each with advice a later item had made wrong, and both had
+# passed every gate for weeks.
+python3 scripts/check_documented_errors.py
+# Every published example is generated from a tracked set or recorded as left
+# with a reason (v1.0 J15-B). cmd/docexamples refuses one that is neither; this
+# keeps the record itself current, so the reasons describe today's pages.
+python3 performance/v1.0-j15/record_decisions.py --check
 python3 performance/v0.8-h2a/validate_evidence.py
 bash -n scripts/mvp_smoke.sh
 bash -n scripts/run_performance_smoke.sh

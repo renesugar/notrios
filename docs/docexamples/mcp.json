@@ -1,0 +1,39 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/api/mcp.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "trying-it-with-curl",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "POST /mcp"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/mcp \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}' | jq '.result.tools[].name'"
+        },
+        {},
+        {
+          "run": "curl -s -X POST http://127.0.0.1:8080/mcp \\"
+        },
+        {
+          "run": "  -H 'Content-Type: application/json' \\"
+        },
+        {
+          "run": "  -d '{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"search_documents\",\"arguments\":{\"query\":\"(tag:todo OR category:Work) -tag:private\",\"limit\":5}}}' | jq"
+        }
+      ]
+    }
+  ]
+}

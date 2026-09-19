@@ -48,7 +48,22 @@ const Schema = "notrios.docexamples.v1"
 // Sets is every tracked example set, in the order they are rendered. One file
 // per document rather than one file for all of them: a single file every page
 // depends on is a merge conflict with a schedule, and J13's plan says so.
-var Sets = []string{"docs/docexamples/configuration.json"}
+var Sets = []string{
+	"docs/docexamples/configuration.json",
+	"docs/docexamples/api-rest.json",
+	"docs/docexamples/import-export.json",
+	"docs/docexamples/operations.json",
+	"docs/docexamples/stable-links.json",
+	"docs/docexamples/archive-v2.json",
+	"docs/docexamples/publishing.json",
+	"docs/docexamples/cli.json",
+	"docs/docexamples/gui.json",
+	"docs/docexamples/query-language.json",
+	"docs/docexamples/selection-planning.json",
+	"docs/docexamples/installation.json",
+	"docs/docexamples/troubleshooting.json",
+	"docs/docexamples/mcp.json",
+}
 
 // Setting is one configuration key an example sets.
 //
@@ -62,20 +77,87 @@ type Setting struct {
 	List  []string `json:"list,omitempty"`
 }
 
-// Example is one use case: what somebody is trying to do, the keys it takes,
-// and the command that shows it worked.
+// Kinds of example. A configuration example names the keys that must be set
+// together; a recipe names the commands and routes it drives (v1.0 J15).
+const (
+	KindConfiguration = "configuration"
+	KindRecipe        = "recipe"
+)
+
+// Uses is what a recipe drives: the CLI commands and the REST routes. These are
+// the declaration's whole point. The steps below are written once and rendered
+// verbatim, so restating them in JSON would buy nothing; what a fence cannot do
+// for itself is fail when a command it documents stops existing, and that is
+// what these are checked against -- internal/clispec for commands, the routes
+// the server registers for routes.
+type Uses struct {
+	CLI  []string `json:"cli,omitempty"`
+	REST []string `json:"rest,omitempty"`
+}
+
+// Step is one line of a recipe: a command, a comment, or a command with a
+// trailing comment. A blank Run and a blank Comment is a blank line, which
+// recipes use to separate stages.
+type Step struct {
+	Run     string `json:"run,omitempty"`
+	Comment string `json:"comment,omitempty"`
+}
+
+// Example is one use case: what somebody is trying to do, the keys it takes or
+// the commands it runs, and the command that shows it worked.
 type Example struct {
-	Section  string    `json:"section"`
-	Ordinal  int       `json:"ordinal"`
-	UseCase  string    `json:"use_case"`
+	Section string `json:"section"`
+	Ordinal int    `json:"ordinal"`
+	// Kind is "configuration" when empty, which is what J13's examples are.
+	Kind     string    `json:"kind,omitempty"`
+	UseCase  string    `json:"use_case,omitempty"`
 	File     string    `json:"file,omitempty"`
-	Settings []Setting `json:"settings"`
+	Settings []Setting `json:"settings,omitempty"`
+	// Language is the fence's language for a recipe: "sh" or "bash".
+	Language string `json:"language,omitempty"`
+	Uses     Uses   `json:"uses,omitempty"`
+	Steps    []Step `json:"steps,omitempty"`
 	// Verify is the command that proves the settings took effect. Empty means
 	// no command can, and Unverifiable must then say why -- a published example
 	// with no check and no explanation is the defect this item removes.
 	Verify        string `json:"verify"`
 	Postcondition string `json:"postcondition,omitempty"`
 	Unverifiable  string `json:"unverifiable,omitempty"`
+}
+
+func (e Example) kind() string {
+	if strings.TrimSpace(e.Kind) == "" {
+		return KindConfiguration
+	}
+	return e.Kind
+}
+
+// renderRecipe writes a recipe's steps back exactly as they were declared. The
+// text is the text; what the tracked set adds is the Uses beside it.
+func (e Example) renderRecipe() (string, error) {
+	if len(e.Steps) == 0 {
+		return "", fmt.Errorf("%s: a recipe with no steps", e.UseCase)
+	}
+	language := strings.TrimSpace(e.Language)
+	if language == "" {
+		language = "sh"
+	}
+	var out strings.Builder
+	out.WriteString("```" + language + "\n")
+	for _, step := range e.Steps {
+		switch {
+		case step.Run != "" && step.Comment != "":
+			out.WriteString(step.Run + step.Comment + "\n")
+		case step.Run != "":
+			out.WriteString(step.Run + "\n")
+		case step.Comment != "":
+			out.WriteString(step.Comment + "\n")
+		default:
+			out.WriteString("\n")
+		}
+	}
+	out.WriteString("```")
+	return out.String(), nil
 }
 
 // ID is the identifier internal/docaudit gives this example's fence, derived
@@ -101,6 +183,9 @@ type Set struct {
 // example with no command renders as a bare yaml fragment, since a bash fence
 // with nothing to run would be a lie about what the reader can do.
 func (e Example) Render() (string, error) {
+	if e.kind() == KindRecipe {
+		return e.renderRecipe()
+	}
 	settings, err := e.renderSettings()
 	if err != nil {
 		return "", err
@@ -189,6 +274,15 @@ func load(root, path string) (Set, error) {
 			return set, fmt.Errorf("%s: two examples claim %s", path, id)
 		}
 		seen[id] = true
+		if example.kind() == KindRecipe {
+			if len(example.Settings) > 0 {
+				return set, fmt.Errorf("%s: %s is a recipe and also sets configuration keys", path, id)
+			}
+			if len(example.Uses.CLI) == 0 && len(example.Uses.REST) == 0 {
+				return set, fmt.Errorf("%s: %s declares no command or route, so tracking it asserts nothing", path, id)
+			}
+			continue
+		}
 		if example.Verify == "" && example.Unverifiable == "" {
 			return set, fmt.Errorf("%s: %s has no verification command and does not say why",
 				path, id)
@@ -293,11 +387,31 @@ func main() {
 
 	total := 0
 	hashes := map[string]string{}
+	loaded := []Set{}
+	// The surfaces a recipe's declaration is checked against, read once.
+	known, err := loadSurfaces(*root)
+	if err != nil {
+		fail(err)
+	}
 	for _, source := range Sets {
 		set, err := load(*root, source)
 		if err != nil {
 			fail(err)
 		}
+		problems := []error{}
+		for _, example := range set.Examples {
+			if example.kind() != KindRecipe {
+				continue
+			}
+			problems = append(problems, known.checkUses(example.ID(set.Document), example)...)
+		}
+		if len(problems) > 0 {
+			for _, problem := range problems {
+				fmt.Fprintf(os.Stderr, "docexamples: %v\n", problem)
+			}
+			os.Exit(1)
+		}
+		loaded = append(loaded, set)
 		body, documentHashes, err := renderDocument(*root, set)
 		if err != nil {
 			fail(err)
@@ -349,12 +463,24 @@ func main() {
 		}
 	}
 
+	// Every published example is generated or recorded as left, with a reason
+	// (J15-B). An example in neither list is the silence this item ends.
+	tracked := trackedIDs(loaded)
+	if problems := checkDecisions(*root, tracked); len(problems) > 0 {
+		for _, problem := range problems {
+			fmt.Fprintf(os.Stderr, "docexamples: %v\n", problem)
+		}
+		os.Exit(1)
+	}
+	split := summariseDecisions(tracked, *root)
+
 	if *write {
-		fmt.Printf("generated %d examples across %d document(s), registry hashes updated\n",
-			total, len(Sets))
+		fmt.Printf("generated %d examples across %d document(s), registry hashes updated; %s\n",
+			total, len(Sets), split)
 		return
 	}
-	fmt.Printf("%d examples across %d document(s) match their tracked set\n", total, len(Sets))
+	fmt.Printf("%d examples across %d document(s) match their tracked set; %s\n",
+		total, len(Sets), split)
 }
 
 func fail(err error) {

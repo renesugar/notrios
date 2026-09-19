@@ -123,9 +123,11 @@ General behavior:
 Version is the product version reported by Notrios binaries.
 <!-- notrios:generated:user:version:end -->
 
+<!-- notrios:generated:example:cli-version-example-1:begin -->
 ```sh
 notriosctl version
 ```
+<!-- notrios:generated:example:cli-version-example-1:end -->
 
 Prints the version string and exits 0. No flags. The number is not repeated here: a document that restates the version can only ever be right until the next release, and this one was wrong within a day of it.
 
@@ -276,9 +278,11 @@ pre-0.8 layout:
 
 Always look before you move:
 
+<!-- notrios:generated:example:cli-migrate-example-2:begin -->
 ```sh
 notriosctl migrate --dry-run
 ```
+<!-- notrios:generated:example:cli-migrate-example-2:end -->
 
 ```text
 Plan for ~/notes/data (nothing was copied):
@@ -681,11 +685,13 @@ notriosctl tags show --tag <name> [--db ...]
 One tag, its live note count, and its children. **It exits 1 when no such tag
 exists**, so a script can test for a tag without parsing anything:
 
+<!-- notrios:generated:example:cli-tags-show-example-2:begin -->
 ```sh
 if notriosctl tags show --tag todo >/dev/null 2>&1; then
   echo "the tag exists"
 fi
 ```
+<!-- notrios:generated:example:cli-tags-show-example-2:end -->
 
 Tags nest with `/`, and a branch reports what is under it:
 
@@ -736,6 +742,7 @@ the same way.
 
 An aligned table from a listing:
 
+<!-- notrios:generated:example:cli-reading-json-output-example-1:begin -->
 ```sh
 notriosctl collections list --json |
   gomplate -d 'c=stdin:?type=application/json' \
@@ -743,6 +750,7 @@ notriosctl collections list --json |
 {{ range (ds "c").collections }}{{ printf "%-14s %5v  %s" .collection_id .notes .name }}
 {{ end }}'
 ```
+<!-- notrios:generated:example:cli-reading-json-output-example-1:end -->
 
 ```text
 COLLECTION     NOTES  NAME
@@ -755,21 +763,25 @@ the decoder made of it, and `%v` prints it either way.
 
 One field, for a shell variable:
 
+<!-- notrios:generated:example:cli-reading-json-output-example-2:begin -->
 ```sh
 notriosctl notebooks list --json |
   gomplate -d 'nb=stdin:?type=application/json' \
     -i '{{ (index (ds "nb").notebooks 0).notebook_id }}'
 ```
+<!-- notrios:generated:example:cli-reading-json-output-example-2:end -->
 
 A filter -- here, the notebooks that are really saved searches, with the query
 each one runs:
 
+<!-- notrios:generated:example:cli-reading-json-output-example-3:begin -->
 ```sh
 notriosctl notebooks list --json |
   gomplate -d 'nb=stdin:?type=application/json' \
     -i '{{ range (ds "nb").query_notebooks }}{{ .search_notebook_id }} -> {{ .query }}
 {{ end }}'
 ```
+<!-- notrios:generated:example:cli-reading-json-output-example-3:end -->
 
 For a one-off, `jq` and a short Python script do the same job; the point is that
 the rendering lives with the person who wants it rather than in every command.
@@ -1136,10 +1148,12 @@ artifacts your current group key decrypts — so a library that switched stores
 automatically and then could not find its keys would be indistinguishable from
 one that never had any. Move them deliberately:
 
+<!-- notrios:generated:example:cli-where-the-key-material-is-kept-example-1:begin -->
 ```sh
 notriosctl sync migrate-credentials --to native --dry-run
 notriosctl sync migrate-credentials --to native --confirm
 ```
+<!-- notrios:generated:example:cli-where-the-key-material-is-kept-example-1:end -->
 
 The dry run reports the plan and writes nothing. The real run writes the new
 copy, reopens it, checks that the signing key and the group key came through
@@ -1156,10 +1170,12 @@ Two libraries created separately are two *databases*, and sync refuses to join
 them — that check is the reason a stray copy cannot quietly merge into your
 notes. A second replica is made from the first:
 
+<!-- notrios:generated:example:cli-making-the-second-replica-example-1:begin -->
 ```sh
 notriosctl export archive-v2 --db first/notes.sqlite /tmp/snapshot
 notriosctl restore archive-v2 --intent adopt --db second/notes.sqlite /tmp/snapshot
 ```
+<!-- notrios:generated:example:cli-making-the-second-replica-example-1:end -->
 
 `adopt` keeps the database identity and mints a new replica identity, which is
 exactly what a second device is.
@@ -1174,6 +1190,7 @@ text.
 
 Over a network:
 
+<!-- notrios:generated:example:cli-pairing-example-1:begin -->
 ```sh
 # on the replica that is already set up
 notriosctl sync invite --ttl 5m --label "the laptop"
@@ -1182,11 +1199,13 @@ notriosctl sync invite --ttl 5m --label "the laptop"
 # on the joining replica
 notriosctl sync join --url https://desktop.local:8443 --code ABCD-EFGH-IJKL-…
 ```
+<!-- notrios:generated:example:cli-pairing-example-1:end -->
 
 For a replica that has no network path to its peer — one that will only ever
 meet it through a folder or a USB stick — the same ceremony splits into a file
 and a code that travel **separately**:
 
+<!-- notrios:generated:example:cli-pairing-example-2:begin -->
 ```sh
 # on the inviting replica: writes the file, reads out the code
 notriosctl sync invite --offline --out /tmp/invite.json --ttl 1h
@@ -1197,6 +1216,7 @@ notriosctl sync accept --invite /tmp/invite.json --code ABCD-… --out /tmp/acce
 # back on the inviting replica: enrols what came back
 notriosctl sync enroll --acceptance /tmp/accept.json --code ABCD-…
 ```
+<!-- notrios:generated:example:cli-pairing-example-2:end -->
 
 **Send the file and the code by different means.** The file alone cannot be
 opened, and the code alone is useless once it is spent or expired; together they
@@ -1205,9 +1225,11 @@ a password you might reuse.
 
 To check that pairing worked:
 
+<!-- notrios:generated:example:cli-pairing-example-3:begin -->
 ```sh
 notriosctl sync handshake --url https://desktop.local:8443
 ```
+<!-- notrios:generated:example:cli-pairing-example-3:end -->
 
 That signs a request with this replica's key and asks the peer who it is. A
 success means the peer authenticated you as an enrolled replica of the same
@@ -1236,10 +1258,12 @@ Credential revocation is deliberately not peer retirement: it stops trust but
 keeps that replica holding the history watermark open. To end the replica and
 permit future collection, preview first and then repeat the exact confirmation:
 
+<!-- notrios:generated:example:cli-seeing-and-ending-trust-example-2:begin -->
 ```sh
 notriosctl sync retire --peer replica_abc
 notriosctl sync retire --peer replica_abc --reason "device recycled" --confirm retire-peer:replica_abc
 ```
+<!-- notrios:generated:example:cli-seeing-and-ending-trust-example-2:end -->
 
 The signed decision travels in the ordinary operation log without requiring
 every peer online. Old credentials cannot re-enroll; that device must reset and
@@ -1266,9 +1290,11 @@ is never automatic.
 If the other replica runs a service you can reach, you can exchange with it
 without a folder in between:
 
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-1:begin -->
 ```sh
 notriosctl sync exchange --url https://desktop.local:8443
 ```
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-1:end -->
 
 This is the same exchange, over a different courier. The peer moves artifacts;
 your replica merges them, exactly as it does through a folder. Attachments are
@@ -1276,9 +1302,11 @@ fetched afterwards, bounded by `--materialize`.
 
 To fetch a whole library — a new device, or one being rebuilt:
 
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-2:begin -->
 ```sh
 notriosctl sync fetch-backup --url https://desktop.local:8443 --out /tmp/restore
 ```
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-2:end -->
 
 The peer must have explicitly permitted your replica to receive a snapshot;
 being enrolled is not enough, because a snapshot is a complete copy of the
@@ -1289,10 +1317,12 @@ it continues from where it stopped.
 Without an install intent it stops at a verified snapshot and prints the command that would
 restore it:
 
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-3:begin -->
 ```sh
 notriosctl snapshot restore --intent adopt --db second/notes.sqlite \
   --asset-store second/assets /tmp/restore/snapshot
 ```
+<!-- notrios:generated:example:cli-exchanging-with-a-peer-directly-example-3:end -->
 
 What a restore does to a library is a decision with an intent, not something a
 download should make for you.
@@ -1311,9 +1341,11 @@ vector replay.
 
 ### Exchanging through a folder
 
+<!-- notrios:generated:example:cli-exchanging-through-a-folder-example-1:begin -->
 ```sh
 notriosctl sync once --carrier /home/you/Drive/notrios --db first/notes.sqlite
 ```
+<!-- notrios:generated:example:cli-exchanging-through-a-folder-example-1:end -->
 
 One round publishes what your peers are missing, reads what they published,
 and then materializes up to `--materialize` attachments whose bytes have
@@ -1332,9 +1364,11 @@ it never touches another peer's files.
 
 ### Seeing who is there
 
+<!-- notrios:generated:example:cli-seeing-who-is-there-example-1:begin -->
 ```sh
 notriosctl sync discover --carrier /home/you/Drive/notrios
 ```
+<!-- notrios:generated:example:cli-seeing-who-is-there-example-1:end -->
 
 Reports the replicas publishing into the folder without publishing, admitting,
 or trusting anything. A peer whose signing key you have not paired with shows up
