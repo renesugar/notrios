@@ -1,5 +1,5 @@
 {
-  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
+  "content_commit": "225e1c3896d9d9f852d767a33ba9cc9e04323505",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -229,8 +229,10 @@
       "sha256": "c4d25bf1834e9c2e7bda6c3f706376e647bff1ace3d6053294340a6d5c3bebf3"
     },
     "make_lifecycle": {
-      "count": 37,
+      "count": 39,
       "members": [
+        "abi-artifact",
+        "abi-examples",
         "build",
         "build-cli",
         "build-service",
@@ -269,7 +271,7 @@
         "validate",
         "web"
       ],
-      "sha256": "b6c72cb47f7f19d9725d16ff219d3ea752d4c94b7d9231dda2aa23925dd2f597"
+      "sha256": "2b9041be856e22a214baf2477dfb69be9fbad59e3b17bbce9bbe0f4a3a2f35c3"
     },
     "mcp": {
       "count": 45,

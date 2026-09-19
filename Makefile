@@ -70,6 +70,12 @@ gui: web ## Build the desktop GUI binary bin/notrios (needs libgtk-3-dev + libwe
 abi:
 	sh cmd/notrioslib/run_host_test.sh
 
+abi-artifact: ## Build the versioned C ABI artifact (library, header, licence, checksums) into dist/abi
+	bash scripts/build_abi_artifact.sh
+
+abi-examples: ## Compile and run the C examples against the built artifact, not the source tree
+	bash examples/c/run_examples.sh
+
 docs: docs-site/node_modules ## Build the pinned offline Hugo/Ledger site into _site/
 	bash scripts/build_docs_site.sh
 

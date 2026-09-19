@@ -111,6 +111,37 @@ jobs:
         with:
           subject-path: dist/deb/notrios_*_amd64.deb
 
+      # The C ABI artifact is built here for the same reason the package is:
+      # an attestation can only cover what this workflow built, and a third
+      # party linking against a shared library has more reason than most to
+      # want one (v1.0 J6). The build refuses to produce an artifact whose
+      # exported symbols differ from the header, that exports or dynamically
+      # links SQLite, or that lacks its soname.
+      - name: Build the C ABI artifact
+        run: make abi-artifact
+
+      # Compiled and run against the extracted tarball, never the source tree:
+      # that is the one thing a third party cannot do, so proving it here is
+      # the point. It also verifies the artifact's own SHA256SUMS first, the
+      # way a downloader would.
+      - name: Check the C examples build against the artifact
+        run: bash examples/c/run_examples.sh "$(ls dist/abi/notrios-c-abi-*.tar.gz)"
+
+      - name: Attest the C ABI artifact
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: dist/abi/notrios-c-abi-*.tar.gz
+
+      # A run artifact, not a release asset. Publishing is v1.0 J10's, under
+      # the owner's authorization.
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: notrios-c-abi
+          path: |
+            dist/abi/notrios-c-abi-*.tar.gz
+            dist/abi/notrios-c-abi-*.tar.gz.sha256
+          if-no-files-found: error
+
       - name: Assemble the release set
         run: python3 performance/v0.9-i6/build_release_set.py --signed
 

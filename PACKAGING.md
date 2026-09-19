@@ -60,6 +60,37 @@ v0.9 hardens release candidates; v1.0 creates user-authorized installable
 GitHub releases. The Flutter client and physical mobile artifacts follow after
 1.0.
 
+## The C ABI artifact
+
+A third party linking against the versioned C ABI needs a library and a header,
+not this repository (v1.0 J6):
+
+```bash
+make abi-artifact    # dist/abi/notrios-c-abi-<version>-<os>-<arch>.tar.gz
+make abi-examples    # compile and run the C examples against that tarball
+```
+
+The tarball carries `lib/libnotrios.so.1` with `lib/libnotrios.so` beside it,
+`include/notrios_abi.h`, the licence, a readme, and `SHA256SUMS` so a downloader
+can check the files without this repository. Two versions are stated: the
+product version names the tarball, and the ABI major is in the soname, which is
+what a linker records and what an incompatible ABI would change.
+
+The build refuses to produce an artifact whose exported symbols differ from the
+header, that exports SQLite, that links SQLite dynamically, or that is missing
+its soname. `.github/workflows/release.yml` builds it beside the package,
+attests it with the same action, and uploads it as a run artifact; publishing a
+release asset is v1.0 J10's, under the owner's authorization.
+
+`examples/c/` holds six programs — lifecycle, handle ownership, threading,
+errors, streams, and compatibility — compiled against the extracted tarball
+rather than the source tree, because compiling against the repository would
+prove the one thing a third party cannot do.
+
+**One platform per artifact.** The supported matrix is v0.9 I7's, so what is
+built and tested here is Ubuntu 24.04 amd64. Another platform appears when a
+machine runs it, not because a cross-build succeeded.
+
 ## Tagging a release
 
 Validate first (`RELEASE_CHECKLIST.md` has the current checklist and push/tag sequence):

@@ -1,0 +1,55 @@
+{
+  "schema": "notrios.j6.abi-artifact/1",
+  "what_this_is": "One build of the C ABI artifact and one run of the C examples against it. The tarball's hash is deliberately absent: a Go build is not bit-reproducible here, so it would change every run and prove nothing. What is recorded is what a third party gets.",
+  "artifact": "notrios-c-abi-0.8.0-linux-amd64.tar.gz",
+  "artifact_bytes": 7453911,
+  "contents": [
+    "LICENSE",
+    "README.md",
+    "SHA256SUMS",
+    "include/notrios_abi.h",
+    "lib/libnotrios.so",
+    "lib/libnotrios.so.1"
+  ],
+  "library": {
+    "name": "libnotrios.so.1",
+    "soname": "libnotrios.so.1",
+    "bytes": 12171904,
+    "exported_symbols": [
+      "notrios_abi_version",
+      "notrios_buffer_release",
+      "notrios_call_cancel",
+      "notrios_call_poll",
+      "notrios_call_start",
+      "notrios_capabilities",
+      "notrios_event_poll",
+      "notrios_instance_close",
+      "notrios_instance_open",
+      "notrios_stream_close",
+      "notrios_stream_open",
+      "notrios_stream_read"
+    ],
+    "exports_sqlite": false,
+    "dynamic_dependencies": [
+      "libc.so.6",
+      "libm.so.6"
+    ]
+  },
+  "header": {
+    "name": "include/notrios_abi.h",
+    "sha256": "00c22729bce0b0f4cf988c91684a137d6f3d58e871c866edf1373b2b68d01c16"
+  },
+  "checksums_verify": true,
+  "examples": {
+    "built_against": "the extracted tarball, with -I and -L inside it and no repository path",
+    "result": "pass",
+    "ran": [
+      "01_lifecycle",
+      "02_ownership",
+      "03_threading",
+      "04_errors",
+      "05_streams",
+      "06_compatibility"
+    ]
+  }
+}
