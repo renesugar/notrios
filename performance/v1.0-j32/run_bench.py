@@ -229,7 +229,9 @@ def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], run
         },
     }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+    # The work directory's absolute path names the machine and the account it
+    # ran under; the record keeps only its place.
+    out.write_text(json.dumps(record, indent=2).replace(str(work), "<work>") + "\n", encoding="utf-8")
     print(f"wrote {out}", file=sys.stderr)
     return 0
 

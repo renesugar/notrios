@@ -13,7 +13,7 @@ The shapes (default: all of them):
 
   joplin-10k     the shape TestJoplinImporterProfile generates, at 10,000 notes
   obsidian-10k   the shape TestObsidianImporterProfile generates, at 10,000 notes
-  link-dense     Obsidian notes of about 1 MiB carrying thousands of links each,
+  link-dense     four Obsidian notes of about 1 MiB carrying thousands of links each,
                  half of them a single line with no newline at all
   collision      Obsidian notes that share names -- thousands of index.md in
                  different folders -- and repeated aliases, linked by those names
@@ -85,7 +85,7 @@ WORDS = ("alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo li
          "november oscar papa quebec romeo sierra tango uniform victor whiskey xray").split()
 
 
-def link_dense(root: pathlib.Path, notes: int = 20, target_bytes: int = 1 << 20) -> None:
+def link_dense(root: pathlib.Path, notes: int = 4, target_bytes: int = 1 << 20) -> None:
     """Notes of about 1 MiB with a link every few hundred bytes.
 
     The shape F8 (link coordinates rescanned from the start of the body for
@@ -94,6 +94,11 @@ def link_dense(root: pathlib.Path, notes: int = 20, target_bytes: int = 1 << 20)
     newline and a note with none is the worst case for that. Links mix wiki
     links, embeds, headings, block references and Markdown links, and include
     multi-byte text so a rune column differs from a byte offset.
+
+    Four notes, not more: the cost this shape exposes grows within a note, so
+    more notes add time and no information. The first version had twenty, and
+    one unmeasured import of them took 1,300 s (J32-A, 2026-09-22), which would
+    have made every candidate's comparison several hours long.
     """
     rng = random.Random(SEED)
     names = [f"Dense-{index:03d}" for index in range(notes)]
@@ -176,7 +181,7 @@ SHAPES = {
     "near-limit-obsidian": ("obsidian", near_limit_obsidian),
     "near-limit-joplin": ("joplin-raw", near_limit_joplin),
 }
-GENERATOR_VERSION = 1
+GENERATOR_VERSION = 2
 
 
 def manifest_of(root: pathlib.Path) -> dict:
