@@ -3619,6 +3619,28 @@ so an earlier kept change is part of that baseline.
 - **J32-C, §3.1B: build `PropertyOrder` only when source is preserved.**
   Metrics: live heap and peak RSS on a property-rich vault. Preserve-source
   output must stay byte-identical.
+
+  Checked before the change, 2026-09-22:
+  - **Only Obsidian is unconditional.** Joplin's scan already drops
+    `PropertyOrder` unless `retainBundleInventory` is set
+    (`internal/importers/joplinraw/scalable.go`). Obsidian's `readInventory`
+    parses and clones it for every note, and the only reader is
+    `processSourceBundle`, which runs under `options.PreserveSource`. So the
+    gate is the `retainFiles` parameter `readInventory` already takes, which
+    J20 added for the same reason.
+  - **Resume is not affected.** The inventory fingerprint is built from each
+    file's item key and content hash, not from its parsed properties, so a
+    gated field cannot change a fingerprint or a checkpoint position.
+  - **A property-rich corpus** is added to the matrix: 10,000 notes with about
+    25 frontmatter properties each, which is what makes the retained slices
+    worth measuring. The declared metrics are live heap and peak RSS on
+    `property-rich/fresh` with preserve-source off, which is the CLI default
+    and the case the gate is meant to help.
+  - **Preserve-source is the correctness gate,** not a metric: the same vault
+    imported with `--preserve-source` by the baseline binary and by the
+    candidate must produce libraries that `j17_compare.py` finds identical
+    apart from volatile identifier columns, so the recorded property order is
+    unchanged where it is kept.
 - **J32-D, §3.1A: assemble rewritten Obsidian bodies in one pass.** First pin
   the current behaviour for overlapping and mixed Markdown and wiki matches in
   a test, then change only the assembly. Metrics: allocations and wall time on
