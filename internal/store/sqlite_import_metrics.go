@@ -5,7 +5,20 @@ package store
 */
 import "C"
 
-import "context"
+import (
+	"context"
+	"sync/atomic"
+)
+
+// preparedStatements counts every statement this process has asked SQLite to
+// prepare, across every store it opened (v1.0 J32). prepareLocked is the only
+// sqlite3_prepare_v2 call site, so the count is complete; it is how a change
+// that reuses statements is measured by count as well as by time.
+var preparedStatements atomic.Int64
+
+// PreparedStatements is the number of statements this process has prepared.
+// It is a process-wide count, not a per-store one, and it is content-free.
+func PreparedStatements() int64 { return preparedStatements.Load() }
 
 // SQLiteImportMetrics is aggregate, content-free evidence for importer
 // performance and canonical consistency checks.

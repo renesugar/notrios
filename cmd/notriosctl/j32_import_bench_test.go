@@ -1,0 +1,81 @@
+package main
+
+import (
+	"encoding/json"
+	"os"
+	"runtime"
+	"testing"
+	"time"
+
+	"github.com/renesugar/notrios/internal/store"
+)
+
+// TestJ32ImportBench is one measured import for the v1.0 J32 harness
+// (performance/v1.0-j32). It is skipped unless the harness runs it.
+//
+// It runs the CLI's own import command in this process, so what is measured is
+// the command a user runs, and reports what only the process can see: wall time
+// around the command, what the Go runtime allocated, the live heap after a
+// forced collection, and how many statements SQLite was asked to prepare. Peak
+// RSS and CPU come from /usr/bin/time around the whole process, which is why
+// the harness runs one import per process.
+//
+// Arguments arrive through this test binary's environment rather than through a
+// flag or variable in the shipped CLI:
+//
+//	NOTRIOS_J32_BENCH_ARGS    JSON array: the arguments after "notriosctl"
+//	NOTRIOS_J32_BENCH_STDOUT  where the command's own output goes
+//	NOTRIOS_J32_BENCH_REPORT  where this measurement is written, as JSON
+func TestJ32ImportBench(t *testing.T) {
+	report := os.Getenv("NOTRIOS_J32_BENCH_REPORT")
+	if report == "" {
+		t.Skip("run by performance/v1.0-j32/run_bench.py")
+	}
+	var args []string
+	if err := json.Unmarshal([]byte(os.Getenv("NOTRIOS_J32_BENCH_ARGS")), &args); err != nil || len(args) < 2 || args[0] != "import" {
+		t.Fatalf("NOTRIOS_J32_BENCH_ARGS must be a JSON array starting with \"import\": %v", err)
+	}
+	output, err := os.Create(os.Getenv("NOTRIOS_J32_BENCH_STDOUT"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer output.Close()
+
+	stdout := os.Stdout
+	os.Stdout = output
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	statementsBefore := store.PreparedStatements()
+	started := time.Now()
+	runImport(args[1:])
+	wall := time.Since(started)
+	statements := store.PreparedStatements() - statementsBefore
+	runtime.ReadMemStats(&after)
+	os.Stdout = stdout
+
+	// Live heap is read after a forced collection, and after the command has
+	// returned, so it is what the command left behind rather than what it held
+	// at its peak; peak RSS is the measure of that.
+	var settled runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&settled)
+
+	body, err := json.MarshalIndent(map[string]any{
+		"wall_seconds":        wall.Seconds(),
+		"total_alloc_bytes":   after.TotalAlloc - before.TotalAlloc,
+		"mallocs":             after.Mallocs - before.Mallocs,
+		"gc_cycles":           after.NumGC - before.NumGC,
+		"heap_sys_bytes":      after.HeapSys,
+		"live_heap_bytes":     settled.HeapAlloc,
+		"prepared_statements": statements,
+		"go_version":          runtime.Version(),
+		"gomaxprocs":          runtime.GOMAXPROCS(0),
+	}, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(report, append(body, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}

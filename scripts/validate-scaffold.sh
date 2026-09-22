@@ -202,6 +202,8 @@ python3 performance/v1.0-j5/validate_evidence.py
 # re-derived here, but an eleventh call site addressing it by document_id can
 # be, and that is the defect coming back.
 python3 performance/v1.0-j18/validate_evidence.py
+# J32: the rule that decides whether a measured change ships.
+python3 -m unittest discover -s performance/v1.0-j32 -p 'test_*.py'
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

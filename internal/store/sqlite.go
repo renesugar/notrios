@@ -2774,6 +2774,7 @@ func (s *SQLiteStore) prepareLocked(sql string) (*C.sqlite3_stmt, error) {
 	csql := C.CString(sql)
 	defer C.free(unsafe.Pointer(csql))
 	var stmt *C.sqlite3_stmt
+	preparedStatements.Add(1)
 	if rc := C.sqlite3_prepare_v2(s.db, csql, -1, &stmt, nil); rc != C.SQLITE_OK {
 		return nil, fmt.Errorf("sqlite prepare: %s", C.GoString(C.sqlite3_errmsg(s.db)))
 	}
