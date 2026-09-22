@@ -217,6 +217,51 @@ passes with no temp entry left. The property-rich vault imported with
 `source_bundle_items` table — the 10,000 rows that carry the recorded property
 order — is identical; only the volatile identifier columns differ.
 
+## J32-D — §3.1A, assemble a rewritten body in one pass: **kept**
+
+`rewriteObsidianLinks` spliced each replacement into the body on its own
+(`body[:start] + text + body[end:]`), so a note with thousands of links copied
+itself thousands of times. `applyReplacements` now walks the body once into a
+builder sized in advance.
+
+Overlapping replacements keep the old splices. Two can overlap only when a
+Markdown match encloses a wiki link *and* both resolve, which needs a vault
+file whose name is itself a wiki link (`[[Target]].md`); a one-pass assembly
+cannot reproduce what descending splices did to those bytes, and this slice
+changes assembly, not meaning. The one case the old loop never decided —
+two replacements starting at the same byte, which its sort ordered arbitrarily
+— is now decided (widest first) and a test says so.
+
+Pinned first, in `j32d_rewrite_test.go`: ten bodies byte for byte against the
+old code (nested, adjacent, repeated, both ends, multi-byte, anchors, display
+text, unresolved), a 400-link body, and `applyReplacements` held to the splice
+loop itself across eight replacement sets.
+
+Declared before the change: allocations and wall time on `link-dense/fresh`.
+Baseline `100e3f8` (which includes J32-B and J32-C), candidate `bf33641`, five
+runs each, alternating. Records in `j32d/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| link-dense/fresh | allocated bytes | 11.55 G | 270.4 M | 157 K | −97.7% | better |
+| link-dense/fresh | wall s | 184.14 | 180.94 | 2.62 | −1.7% | better |
+| link-dense/fresh | system s | 12.54 | 10.24 | 0.92 | −18.3% | better |
+| link-dense/fresh | peak RSS KiB | 76,940 | 75,112 | 12,304 | −2.4% | within noise |
+| obsidian-10k/fresh | allocated bytes | 384.4 M | 379.1 M | 507 K | −1.4% | better |
+| obsidian-10k/fresh | wall s | 79.84 | 80.01 | 1.21 | +0.2% | within noise |
+
+**11.55 GB becomes 270 MB**: the copying was 98% of everything the import
+allocated on this corpus. Wall time falls only 1.7%, because the remaining cost
+on these notes is elsewhere — the per-link coordinate rescans J32-E measures.
+The ordinary corpus, where notes hold three links each, gains 1.4% of
+allocations and nothing measurable in time, and regresses nowhere.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `documents`, `document_blocks` and `document_links` — 40,000 blocks
+and 30,000 links on the ordinary corpus, 12,677 links on the link-dense one —
+with only volatile identifier columns differing.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
