@@ -175,6 +175,48 @@ baseline above (84.3 s against 88.1 s on `obsidian-10k/fresh`), because the
 machine was in a different state hours later. That is why a candidate is
 compared only with a baseline measured beside it, run by run.
 
+## J32-C — §3.1B, build `PropertyOrder` only when source is preserved: **kept**
+
+`readInventory` parsed each note's frontmatter property order and kept a slice
+of it for the whole import, although the only reader is the source-bundle
+phase, which runs only under `--preserve-source`. Joplin's scan already gated
+the same field. It is now behind the `retainFiles` parameter `readInventory`
+already takes, and a test pins both directions and that the inventory
+fingerprint does not change either way.
+
+Declared before the change: live heap and peak RSS on a property-rich vault.
+Baseline `7e272f3` (which includes J32-B), candidate `4464a75`, five runs each,
+alternating. `property-rich` is 10,000 notes with about 25 frontmatter
+properties each; it was added for this slice, so it has no row in the J32-A
+table. Records in `j32c/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| property-rich/fresh | peak RSS KiB | 59,248 | 40,924 | 1,204 | −30.9% | better |
+| property-rich/fresh | allocations | 3,717,540 | 3,408,890 | 183 | −8.3% | better |
+| property-rich/fresh | allocated bytes | 515.9 M | 493.1 M | 380 K | −4.4% | better |
+| property-rich/fresh | live heap bytes | 645,080 | 643,632 | 117,360 | −0.2% | within noise |
+| property-rich/fresh | wall s | 68.00 | 68.50 | 0.99 | +0.7% | within noise |
+| obsidian-10k/fresh | peak RSS KiB | 44,540 | 43,184 | 1,196 | −3.0% | better |
+| obsidian-10k/fresh | wall s | 80.50 | 80.50 | 0.62 | 0.0% | within noise |
+
+**Of the two declared metrics, one was the wrong one.** Peak RSS improved by
+31% on the property-rich vault, far beyond its noise, and by 3% on the ordinary
+corpus. Live heap did not move, and could not have: it is read after the
+command returns, when the inventory has already been released. What this change
+removes is held *during* the import, which is what peak RSS measures and live
+heap cannot. The slice is kept on peak RSS; live heap is recorded as unchanged
+with that reason rather than treated as a failure to improve.
+
+Wall time is unchanged on both cases, within noise. Parsing that no longer
+happens is a small part of an import dominated by other work.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. The property-rich vault imported with
+`--preserve-source` by each binary produces libraries whose
+`source_bundle_items` table — the 10,000 rows that carry the recorded property
+order — is identical; only the volatile identifier columns differ.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
