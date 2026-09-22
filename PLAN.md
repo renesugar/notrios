@@ -3595,6 +3595,27 @@ so an earlier kept change is part of that baseline.
   inserts, batch-scoped, reset and rebound as `import_manifest.go` already
   does, and finalized on every exit. Metrics: prepared-statement count and
   import wall time.
+
+  Decided before the change, 2026-09-22:
+  - **The two loops, and only those.** `rebuildDocumentBlocksLocked` and
+    `rebuildDocumentLinksLocked` call `execPreparedLocked` once per block and
+    once per link, and `execPreparedLocked` prepares and finalizes on every
+    call. Each gains one statement prepared before its loop, reset and
+    rebound per row, finalized on every exit including an error. The other
+    236 `execPreparedLocked` call sites are not touched: they are not in a
+    loop, and a change that helps nothing is a change to revert.
+  - **Not a statement cache.** A cache living across transactions would
+    outlive a schema migration and a restore, which is a correctness risk for
+    a gain this slice has not yet shown. If the measurement makes the case for
+    one, it is proposed as its own item with that evidence.
+  - **The declared metrics** are the prepared-statement count and wall time on
+    `obsidian-10k/fresh`, the ordinary corpus. `link-dense/fresh`, where a
+    note holds thousands of links, is measured as the scaling case and must
+    not regress; the baseline's own range is the bar in both.
+  - **Correctness before measurement:** the full `go test` through
+    `scripts/check_temp_leaks.sh`, and `j17_compare.py` between a library the
+    baseline binary imported and one the candidate imported, which must differ
+    in nothing but volatile columns.
 - **J32-C, §3.1B: build `PropertyOrder` only when source is preserved.**
   Metrics: live heap and peak RSS on a property-rich vault. Preserve-source
   output must stay byte-identical.
