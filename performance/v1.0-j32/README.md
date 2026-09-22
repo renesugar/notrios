@@ -138,6 +138,43 @@ minimum), which is the noise a candidate has to beat. The records are in
     statements per note on a fresh import, and 21 on a no-op reimport. J32-B
     (F1) is measured by this count and by wall time.
 
+## J32-B — F1, reuse the block and link insert statements: **kept**
+
+`rebuildDocumentBlocksLocked` and `rebuildDocumentLinksLocked` called
+`execPreparedLocked` once per block and once per link, and that prepares and
+finalizes a statement every call. Each now prepares one statement before its
+loop and rebinds it per row (`repeatedStatement` in `internal/store/sqlite.go`),
+finalized on every exit. Nothing is cached across a transaction, so no
+statement outlives a migration or a restore.
+
+Declared before the change: prepared-statement count and wall time on
+`obsidian-10k/fresh`, with `link-dense/fresh` as the scaling case that must not
+regress. Baseline `bfcb372`, candidate `c1a7cc5`, five runs each, alternating.
+Records in `j32b/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | prepared statements | 381,522 | 281,520 | 2 | −26.2% | better |
+| obsidian-10k/fresh | wall s | 84.32 | 80.01 | 3.17 | −5.1% | better |
+| obsidian-10k/fresh | allocations | 4,791,440 | 4,731,560 | 348 | −1.3% | better |
+| link-dense/fresh | prepared statements | 56,022 | 30,576 | 0 | −45.4% | better |
+| link-dense/fresh | wall s | 185.44 | 183.71 | 0.33 | −0.9% | better |
+
+Nothing regressed beyond noise on either case: peak RSS, bytes allocated, live
+heap and system time all stayed within the baseline's range.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. `j17_compare.py` between a library the baseline
+binary imported and one the candidate imported reports every table identical,
+including all 40,000 block rows and 30,000 link rows; the four differing tables
+differ only in volatile identifier columns (`database_id`, `replica_id`,
+revision `id`, `current_revision_id`, job `id`), which are random per import.
+
+The baseline's own medians in this comparison differ from the recorded
+baseline above (84.3 s against 88.1 s on `obsidian-10k/fresh`), because the
+machine was in a different state hours later. That is why a candidate is
+compared only with a baseline measured beside it, run by run.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
