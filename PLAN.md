@@ -3670,6 +3670,28 @@ so an earlier kept change is part of that baseline.
 - **J32-E, F8: one-pass link coordinates** in `markdownlinks`, keeping byte
   offsets, rune columns and result order. Metric: parse time on the
   link-dense corpus, including long single-line notes.
+
+  Checked before the change, 2026-09-22:
+  - **What it does now.** `decorateCandidate` calls `lineColumn`, which
+    decodes the body from byte zero for every candidate. A note with
+    thousands of links decodes itself thousands of times, and a note that is
+    one long line is the worst case, because a column is counted in runes
+    since the last newline.
+  - **The change.** `Extract` finds Markdown matches and then wiki matches,
+    each ascending by offset, so each pass can carry a cursor forward instead
+    of restarting: line, column and offset advance from the previous
+    candidate to the next. A cursor asked for an offset behind it recomputes
+    from the start, so the result cannot depend on the order it is asked.
+  - **Unchanged:** what is recognised, the order `Extract` returns, byte
+    offsets, rune columns, line numbers and contexts. A test compares the
+    cursor with today's `lineColumn` at every candidate offset and at random
+    offsets, on bodies with multi-byte text, CRLF, no trailing newline and no
+    newline at all.
+  - **The declared metric** is wall time on `link-dense/fresh`, whose corpus
+    holds both multi-line and single-line notes of about 1 MiB.
+    `obsidian-10k/fresh` must not regress, and both corpora must produce
+    identical `document_links` rows, which is where offsets, columns and
+    contexts are stored.
 - **J32-F, F9: collision-heavy namespace construction.** Metrics: namespace
   build time on the collision corpus, and memory on the ordinary corpus, where
   sets can cost more.
