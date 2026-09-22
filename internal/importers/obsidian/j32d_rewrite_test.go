@@ -2,6 +2,7 @@ package obsidian
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -90,5 +91,58 @@ func TestRewriteObsidianLinksManyLinks(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("line %d reads %q", index, want)
 		}
+	}
+}
+
+// TestApplyReplacementsSameStartIsDecided covers the one case the splice loop
+// did not decide: two replacements starting at the same byte were ordered
+// arbitrarily by its sort, so there is nothing to reproduce. The widest is
+// applied first, and this says so (v1.0 J32-D).
+func TestApplyReplacementsSameStartIsDecided(t *testing.T) {
+	body := "zero [[One]] two ![[Three]] four"
+	got := applyReplacements(body, []replacement{{5, 12, "<inner>"}, {5, 27, "<outer>"}})
+	if want := "zero <inner> four"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+// spliceReplacements is what applyReplacements replaced: the descending splice
+// loop, kept here so the one-pass assembly can be held to it.
+func spliceReplacements(body string, replacements []replacement) string {
+	sorted := append([]replacement(nil), replacements...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].start > sorted[j].start })
+	for _, change := range sorted {
+		body = body[:change.start] + change.text + body[change.end:]
+	}
+	return body
+}
+
+// TestApplyReplacementsMatchesTheSpliceLoop holds the one-pass assembly to the
+// loop it replaced, including the overlapping case it deliberately hands back
+// to that loop (v1.0 J32-D).
+func TestApplyReplacementsMatchesTheSpliceLoop(t *testing.T) {
+	body := "zero [[One]] two ![[Three]] four [five](six.md) seven ελληνικά [[Eight]] nine"
+	cases := []struct {
+		name         string
+		replacements []replacement
+	}{
+		{"none", nil},
+		{"one", []replacement{{5, 12, "<1>"}}},
+		{"several, given out of order", []replacement{
+			{33, 47, "<md>"}, {5, 12, "<1>"}, {62, 71, "<8>"}, {17, 27, "<3>"},
+		}},
+		{"adjacent", []replacement{{5, 12, "<1>"}, {12, 17, "<gap>"}}},
+		{"whole body", []replacement{{0, len(body), "<all>"}}},
+		{"empty text", []replacement{{5, 12, ""}}},
+		{"overlapping", []replacement{{5, 27, "<outer>"}, {17, 27, "<inner>"}}},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			want := spliceReplacements(body, testCase.replacements)
+			got := applyReplacements(body, append([]replacement(nil), testCase.replacements...))
+			if got != want {
+				t.Errorf("one pass wrote %q, the splice loop writes %q", got, want)
+			}
+		})
 	}
 }

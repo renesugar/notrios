@@ -1058,12 +1058,15 @@ func (run *importRun) canonicalBody(note vaultFile, raw []byte) (string, []attac
 	return augmentFrontmatter(rewritten, note.RelPath), attachments, count, warnings
 }
 
+// replacement is one link's rewritten text and the bytes of the body it
+// stands for.
+type replacement struct {
+	start int
+	end   int
+	text  string
+}
+
 func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace) (string, []attachmentRef, int, []string) {
-	type replacement struct {
-		start int
-		end   int
-		text  string
-	}
 	replacements := []replacement{}
 	attachmentByID := map[string]attachmentRef{}
 	warnings := []string{}
@@ -1120,16 +1123,74 @@ func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace)
 		}
 		replacements = append(replacements, replacement{start: candidate.StartByte, end: candidate.EndByte, text: replacementText})
 	}
-	sort.Slice(replacements, func(i, j int) bool { return replacements[i].start > replacements[j].start })
-	for _, change := range replacements {
-		body = body[:change.start] + change.text + body[change.end:]
-	}
+	body = applyReplacements(body, replacements)
 	attachments := make([]attachmentRef, 0, len(attachmentByID))
 	for _, attachment := range attachmentByID {
 		attachments = append(attachments, attachment)
 	}
 	sort.Slice(attachments, func(i, j int) bool { return attachments[i].ResourceID < attachments[j].ResourceID })
 	return body, attachments, len(replacements), warnings
+}
+
+// applyReplacements writes a note's rewritten body (v1.0 J32-D).
+//
+// It used to splice each replacement into the body in descending order:
+// body[:start] + text + body[end:], once per link. Every splice copies the
+// whole note, so a note with thousands of links copied itself thousands of
+// times -- 11 GB allocated to import four 1 MiB notes (J32-A). This walks the
+// body once instead, and the pinned cases in j32d_rewrite_test.go say the
+// result is the same.
+//
+// Two replacements overlap only if a vault holds a file whose name is itself
+// a wiki link, such as `[[Target]].md`, because then the Markdown match around
+// a nested wiki link resolves too. A one-pass assembly cannot reproduce what
+// the descending splices did to those bytes, so that case keeps the splices:
+// this change is about how a body is assembled, not about what it says.
+func applyReplacements(body string, replacements []replacement) string {
+	if len(replacements) == 0 {
+		return body
+	}
+	sort.Slice(replacements, func(i, j int) bool {
+		if replacements[i].start != replacements[j].start {
+			return replacements[i].start < replacements[j].start
+		}
+		return replacements[i].end < replacements[j].end
+	})
+	size := len(body)
+	overlapping := false
+	for index, change := range replacements {
+		if index > 0 && change.start < replacements[index-1].end {
+			overlapping = true
+			break
+		}
+		size += len(change.text) - (change.end - change.start)
+	}
+	if overlapping {
+		// Descending, as the splice loop ran. Its sort compared starts alone,
+		// so two replacements starting at the same byte were ordered
+		// arbitrarily; the widest is applied first here, which is the only
+		// part of this path that is decided rather than reproduced.
+		sort.Slice(replacements, func(i, j int) bool {
+			if replacements[i].start != replacements[j].start {
+				return replacements[i].start > replacements[j].start
+			}
+			return replacements[i].end > replacements[j].end
+		})
+		for _, change := range replacements {
+			body = body[:change.start] + change.text + body[change.end:]
+		}
+		return body
+	}
+	var out strings.Builder
+	out.Grow(size)
+	cursor := 0
+	for _, change := range replacements {
+		out.WriteString(body[cursor:change.start])
+		out.WriteString(change.text)
+		cursor = change.end
+	}
+	out.WriteString(body[cursor:])
+	return out.String()
 }
 
 func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
