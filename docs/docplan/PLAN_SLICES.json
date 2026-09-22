@@ -911,6 +911,28 @@
           "evidence": "file:performance/v1.0-j35/README.md"
         }
       ]
+    },
+    {
+      "id": "J36",
+      "title": "Resolve Obsidian partial-path links the way Obsidian does",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J36-A",
+          "statement": "Tests pin how a partial-path link resolves, confirmed against Obsidian's behaviour, and fail on today's code",
+          "state": "not-started"
+        },
+        {
+          "id": "J36-B",
+          "statement": "Note and attachment links naming exactly one file by partial path resolve to it, with ambiguous ones still warned and unresolved",
+          "state": "not-started"
+        },
+        {
+          "id": "J36-C",
+          "statement": "What reimporting a vault imported before the fix revises is recorded, and a no-op reimport of an unaffected vault still creates no revisions",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

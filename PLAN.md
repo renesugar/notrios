@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**35 items: 32 complete, 0 in progress, 3 not started, 0 deferred.**
+**36 items: 32 complete, 0 in progress, 4 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -96,6 +96,7 @@ this section is archived when the plan completes and the rules are not.
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
+| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3829,3 +3830,61 @@ CSP directive.
 
 **Working state.** No covered form loads a remote resource in the preview, and
 the CSP says so explicitly.
+
+## J36. Resolve Obsidian partial-path links the way Obsidian does
+
+**Goal.** A vault link that names a note or attachment by a partial path, such
+as `[[topic-00001/index]]`, resolves to the file it names when exactly one file
+ends with that path, instead of being reported as ambiguous and left
+unresolved.
+
+**What J32-A found, 2026-09-22.** J32's collision corpus holds 5,000 notes
+named `index.md`, each in its own folder under one of 50 area folders
+(`area-01/topic-00001/index.md`), and links them as `[[topic-00001/index]]`.
+The import reports every one of those links as
+`ambiguous Obsidian link "topic-00001/index"` although only one file ends with
+`topic-00001/index.md`.
+
+The cause is `resolveNoteID` in `internal/importers/obsidian/obsidian.go`. It
+tries two exact paths, one relative to the linking note's folder and one from
+the vault root. If neither matches, it falls back to the base name alone
+(`index`), which 5,000 notes share. No step matches a path by suffix, so a
+partial path is either an exact relative or root path, or it is treated as a
+bare name. `resolveAssetID` has the same shape for attachments
+(`[[attachments/img.png]]` from another folder). No existing test covers a
+partial path, which is why every gate passed.
+
+Found while building a benchmark, so under the J8 rule it is recorded here and
+not fixed in J32.
+
+**Scope.**
+
+- **J36-A, pin the rule and Obsidian's behaviour.** Confirm against Obsidian's
+  own documented behaviour how a partial path resolves, including when several
+  files end with it. Then write the rule down as tests that fail on today's
+  code:
+  - a partial path matching exactly one note resolves to it;
+  - one matching several notes stays ambiguous, with the warning;
+  - the match falls on folder boundaries, so `pic-00001/index` matches nothing;
+  - the existing relative, root, base-name and alias resolution is unchanged.
+- **J36-B, notes and attachments.** `resolveNoteID` and `resolveAssetID` gain
+  the suffix step between the exact paths and the base-name fallback. The
+  namespace gains whatever index makes that step cheap: a suffix scan per link
+  over 5,000 same-named notes is the kind of cost J32-F measures.
+- **J36-C, libraries imported before the fix.** Record what a reimport of an
+  already-imported vault does:
+  - which notes it revises, which should be only those whose rewritten body
+    changes because a link now resolves;
+  - whether a no-op reimport of an unaffected vault still creates no revisions.
+
+**Boundaries.**
+- No parser grammar change: `markdownlinks` recognises the same links.
+- An ambiguous link stays unresolved with a warning. The importer never guesses
+  between candidates.
+
+**Dependencies.** None blocking. J32's collision corpus exercises this code.
+Whichever lands second is measured against a baseline that includes the
+other, as J32's scope already requires.
+
+**Working state.** A partial-path link that names one file resolves to it, and
+the tests say so.
