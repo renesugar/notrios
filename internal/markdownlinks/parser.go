@@ -34,6 +34,9 @@ var (
 func Extract(body string) []Candidate {
 	matches := []Candidate{}
 	seen := map[string]bool{}
+	// One cursor per pass: each regexp reports its matches in ascending order,
+	// and the second pass starts again at the beginning of the body.
+	cursor := newLineCursor(body)
 	for _, loc := range markdownLinkRE.FindAllStringSubmatchIndex(body, -1) {
 		if len(loc) < 8 {
 			continue
@@ -48,11 +51,12 @@ func Extract(body string) []Candidate {
 			StartByte:    loc[0],
 			EndByte:      loc[1],
 		}
-		decorateCandidate(body, &candidate)
+		decorateCandidate(body, cursor, &candidate)
 		key := candidateKey(candidate)
 		seen[key] = true
 		matches = append(matches, candidate)
 	}
+	cursor = newLineCursor(body)
 	for _, loc := range wikiLinkRE.FindAllStringSubmatchIndex(body, -1) {
 		if len(loc) < 6 {
 			continue
@@ -71,7 +75,7 @@ func Extract(body string) []Candidate {
 			StartByte:    loc[0],
 			EndByte:      loc[1],
 		}
-		decorateCandidate(body, &candidate)
+		decorateCandidate(body, cursor, &candidate)
 		matches = append(matches, candidate)
 	}
 	return matches
@@ -104,8 +108,8 @@ func splitWikiTarget(inner string) (string, string) {
 	return rawTarget, display
 }
 
-func decorateCandidate(body string, candidate *Candidate) {
-	candidate.Line, candidate.Column = lineColumn(body, candidate.StartByte)
+func decorateCandidate(body string, cursor *lineCursor, candidate *Candidate) {
+	candidate.Line, candidate.Column = cursor.at(candidate.StartByte)
 	candidate.Context = contextAround(body, candidate.StartByte, candidate.EndByte, 80)
 	base, anchorType, anchorValue := splitAnchor(candidate.RawTarget)
 	candidate.RawTarget = base
@@ -129,6 +133,8 @@ func splitAnchor(raw string) (base string, anchorType string, anchorValue string
 	return base, "", ""
 }
 
+// lineColumn is what lineCursor must agree with: the straightforward reading,
+// kept as the reference the tests compare against.
 func lineColumn(body string, offset int) (line int, column int) {
 	line = 1
 	column = 1
@@ -144,6 +150,49 @@ func lineColumn(body string, offset int) (line int, column int) {
 		column++
 	}
 	return line, column
+}
+
+// lineCursor answers the same question as lineColumn, walking forward instead
+// of restarting (v1.0 J32-E).
+//
+// Extract asks for coordinates in ascending order within each pass, so the
+// bytes between one candidate and the next are all that a cursor has to read.
+// Restarting at byte zero every time made a note with thousands of links
+// decode itself thousands of times, and a note that is one long line is the
+// worst case, because a column counts runes since the last newline.
+//
+// Asked for an offset behind it, it starts over, so an answer never depends on
+// what was asked before it.
+type lineCursor struct {
+	body   string
+	offset int
+	line   int
+	column int
+}
+
+func newLineCursor(body string) *lineCursor {
+	return &lineCursor{body: body, line: 1, column: 1}
+}
+
+func (c *lineCursor) at(offset int) (int, int) {
+	if offset < c.offset {
+		c.offset, c.line, c.column = 0, 1, 1
+	}
+	for index, r := range c.body[c.offset:] {
+		absolute := c.offset + index
+		if absolute >= offset {
+			c.offset = absolute
+			return c.line, c.column
+		}
+		if r == '\n' {
+			c.line++
+			c.column = 1
+			continue
+		}
+		c.column++
+	}
+	c.offset = len(c.body)
+	return c.line, c.column
 }
 
 func contextAround(body string, start, end, radius int) string {
