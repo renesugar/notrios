@@ -2341,13 +2341,22 @@ func (s *SQLiteStore) rebuildDocumentLinksLocked(documentID, collectionID, body 
 	if err := s.execPreparedLocked(`DELETE FROM document_links WHERE source_document_id = ?`, documentID); err != nil {
 		return err
 	}
-	for _, candidate := range markdownlinks.Extract(body) {
+	candidates := markdownlinks.Extract(body)
+	if len(candidates) == 0 {
+		return nil
+	}
+	insert, err := s.prepareRepeatedLocked(`INSERT INTO document_links(
+		source_document_id, target_document_id, target_resource_id, target_uri,
+		relation_type, source_format, raw_target, display_text, anchor_type, anchor_value,
+		context, source_start_byte, source_end_byte, source_line, source_column, resolution_status
+	) VALUES(?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer insert.close()
+	for _, candidate := range candidates {
 		link := s.resolveLinkCandidateLocked(documentID, collectionID, candidate)
-		if err := s.execPreparedLocked(`INSERT INTO document_links(
-			source_document_id, target_document_id, target_resource_id, target_uri,
-			relation_type, source_format, raw_target, display_text, anchor_type, anchor_value,
-			context, source_start_byte, source_end_byte, source_line, source_column, resolution_status
-		) VALUES(?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		if err := insert.exec(
 			documentID, link.TargetDocumentID, link.TargetResourceID, link.TargetURI,
 			link.RelationType, link.SourceFormat, link.RawTarget, link.DisplayText, link.AnchorType, link.AnchorValue,
 			link.Context, strconv.Itoa(link.SourceStartByte), strconv.Itoa(link.SourceEndByte), strconv.Itoa(link.SourceLine), strconv.Itoa(link.SourceColumn), link.ResolutionStatus); err != nil {
@@ -2780,6 +2789,51 @@ func (s *SQLiteStore) prepareLocked(sql string) (*C.sqlite3_stmt, error) {
 	}
 	return stmt, nil
 }
+
+// repeatedStatement is one statement a loop runs many times: prepared once,
+// then reset and rebound per row, the way ImportManifest.Put already does
+// (v1.0 J32-B). execPreparedLocked prepares and finalizes on every call, which
+// is right for a statement that runs once and wasteful for one that runs once
+// per block or per link of a note.
+//
+// It is scoped to the loop that makes it and finalized by its close on every
+// exit, so no statement outlives the caller's transaction and nothing is
+// cached across a migration or a restore.
+type repeatedStatement struct {
+	store *SQLiteStore
+	stmt  *C.sqlite3_stmt
+	used  bool
+}
+
+func (s *SQLiteStore) prepareRepeatedLocked(sql string) (*repeatedStatement, error) {
+	stmt, err := s.prepareLocked(sql)
+	if err != nil {
+		return nil, err
+	}
+	return &repeatedStatement{store: s, stmt: stmt}, nil
+}
+
+// exec runs the statement once with these values, to completion.
+func (r *repeatedStatement) exec(values ...string) error {
+	if r.used {
+		if rc := C.sqlite3_reset(r.stmt); rc != C.SQLITE_OK {
+			return r.store.stepErrLocked(rc)
+		}
+		if rc := C.sqlite3_clear_bindings(r.stmt); rc != C.SQLITE_OK {
+			return r.store.stepErrLocked(rc)
+		}
+	}
+	r.used = true
+	if err := bindAll(r.stmt, values); err != nil {
+		return err
+	}
+	if rc := C.sqlite3_step(r.stmt); rc != C.SQLITE_DONE {
+		return r.store.stepErrLocked(rc)
+	}
+	return nil
+}
+
+func (r *repeatedStatement) close() { C.sqlite3_finalize(r.stmt) }
 
 func bindAll(stmt *C.sqlite3_stmt, values []string) error {
 	for i, value := range values {

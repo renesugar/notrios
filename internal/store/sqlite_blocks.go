@@ -252,13 +252,21 @@ func (s *SQLiteStore) rebuildDocumentBlocksLocked(documentID, body string) error
 	if err := s.execPreparedLocked(`DELETE FROM document_blocks WHERE document_id = ?`, documentID); err != nil {
 		return err
 	}
-	for _, block := range markdownblocks.Extract(documentID, body) {
-		marker := block.Marker
-		if err := s.execPreparedLocked(`INSERT INTO document_blocks(
-			id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte, heading_slug
-		) VALUES(?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?, NULLIF(?, ''))`,
+	blocks := markdownblocks.Extract(documentID, body)
+	if len(blocks) == 0 {
+		return nil
+	}
+	insert, err := s.prepareRepeatedLocked(`INSERT INTO document_blocks(
+		id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte, heading_slug
+	) VALUES(?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?, NULLIF(?, ''))`)
+	if err != nil {
+		return err
+	}
+	defer insert.close()
+	for _, block := range blocks {
+		if err := insert.exec(
 			block.ID, documentID, strconv.Itoa(block.Ordinal), block.Kind, strconv.Itoa(block.Level),
-			marker, block.ContentSHA256, strconv.Itoa(block.StartByte), strconv.Itoa(block.EndByte), block.Slug); err != nil {
+			block.Marker, block.ContentSHA256, strconv.Itoa(block.StartByte), strconv.Itoa(block.EndByte), block.Slug); err != nil {
 			return err
 		}
 	}
