@@ -426,3 +426,39 @@ func openTestStore(t *testing.T) *store.SQLiteStore {
 	}
 	return st
 }
+
+// TestInventoryPropertyOrderFollowsPreserveSource pins v1.0 J32-C: a note's
+// frontmatter property order is parsed and kept only when source is preserved,
+// because only the source-bundle phase reads it. The inventory fingerprint is
+// the same either way, so an import that changes this cannot move a checkpoint.
+func TestInventoryPropertyOrderFollowsPreserveSource(t *testing.T) {
+	vault := t.TempDir()
+	writeFile(t, filepath.Join(vault, "Note.md"),
+		"---\nunknown: kept\naliases: [Alias]\nstatus: draft\n---\n# Note\n\nBody.\n")
+
+	withSource, err := readInventory(context.Background(), vault, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(withSource.Notes) != 1 {
+		t.Fatalf("expected one note, got %d", len(withSource.Notes))
+	}
+	want := []string{"unknown", "aliases", "status"}
+	if !reflect.DeepEqual(withSource.Notes[0].PropertyOrder, want) {
+		t.Fatalf("preserving source: property order %v, want %v", withSource.Notes[0].PropertyOrder, want)
+	}
+
+	without, err := readInventory(context.Background(), vault, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := without.Notes[0].PropertyOrder; len(got) != 0 {
+		t.Fatalf("not preserving source: property order %v, want none", got)
+	}
+	if without.Fingerprint != withSource.Fingerprint {
+		t.Fatalf("fingerprints differ: %s and %s", without.Fingerprint, withSource.Fingerprint)
+	}
+	if !reflect.DeepEqual(without.Notes[0].Aliases, withSource.Notes[0].Aliases) {
+		t.Fatal("aliases must not depend on whether source is preserved")
+	}
+}

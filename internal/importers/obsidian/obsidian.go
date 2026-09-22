@@ -339,7 +339,9 @@ func normalizedCollection(value string) string {
 // in Files, which only the source-bundle phase reads. Every note and asset is
 // otherwise already held in Notes or Assets, so an import that does not
 // preserve source skips that second copy: ~160 MB at 382,206 notes (v1.0 J20).
-// The inventory fingerprint covers every file either way.
+// It also decides whether each note's frontmatter property order is parsed and
+// kept, for the same reason: only the source-bundle phase reads it (v1.0
+// J32-C). The inventory fingerprint covers every file either way.
 func readInventory(ctx context.Context, root string, retainFiles bool) (inventory, error) {
 	result := inventory{}
 	hash := sha256.New()
@@ -434,7 +436,15 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 			file.Title = strings.Clone(markdownTitle(rel, body))
 			file.Aliases = cloneStrings(frontmatterAliases(string(frontmatter)))
 			file.FrontmatterSHA = sha256.Sum256(frontmatter)
-			file.PropertyOrder = cloneStrings(frontmatterPropertyOrder(string(frontmatter)))
+			if retainFiles {
+				// Only the source-bundle phase reads this, and that phase runs
+				// only when source is preserved. An import that does not
+				// preserve source parsed and kept a slice per note for nothing
+				// (v1.0 J32-C). The inventory fingerprint is built from item
+				// keys and content hashes, so gating it cannot move a
+				// checkpoint.
+				file.PropertyOrder = cloneStrings(frontmatterPropertyOrder(string(frontmatter)))
+			}
 			file.TargetID = documentID(rel)
 			if previous := seenTargets[file.TargetID]; previous != "" {
 				file.TargetID += "_" + shortPathHash(rel)

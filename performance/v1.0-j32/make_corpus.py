@@ -15,6 +15,7 @@ The shapes (default: all of them):
   obsidian-10k   the shape TestObsidianImporterProfile generates, at 10,000 notes
   link-dense     four Obsidian notes of about 1 MiB carrying thousands of links each,
                  half of them a single line with no newline at all
+  property-rich  10,000 Obsidian notes with about 25 frontmatter properties each
   collision      Obsidian notes that share names -- thousands of index.md in
                  different folders -- and repeated aliases, linked by those names
   near-limit-obsidian, near-limit-joplin
@@ -128,6 +129,23 @@ def link_dense(root: pathlib.Path, notes: int = 4, target_bytes: int = 1 << 20) 
         write(root / "dense" / f"{name}.md", "".join(parts))
 
 
+def property_rich(root: pathlib.Path, count: int = 10_000, properties: int = 25) -> None:
+    """Notes whose frontmatter carries many properties (§3.1B, J32-C).
+
+    The ordinary corpus gives a note two properties, so what an inventory
+    retains per note is too small to measure. Here each note declares about
+    twenty-five, which is what a vault with a template or a plugin looks like.
+    """
+    for index in range(count):
+        fields = [f"aliases: [Alias {index:06d}]"]
+        fields += [f"property_{field:02d}: value {index}-{field}" for field in range(properties - 2)]
+        fields.append(f"status: {'draft' if index % 3 else 'published'}")
+        body = "---\n" + "\n".join(fields) + "\n---\n"
+        previous = (index - 1 + count) % count
+        write(root / f"Folder-{index % 10:02d}" / f"Note-{index:06d}.md",
+              f"{body}# Note {index}\n\nSee [[Note-{previous:06d}]].\n")
+
+
 def collision(root: pathlib.Path, folders: int = 5_000, alias_groups: int = 50) -> None:
     """Thousands of index.md in different folders, and aliases that repeat.
 
@@ -177,11 +195,19 @@ SHAPES = {
     "joplin-10k": ("joplin-raw", joplin_10k),
     "obsidian-10k": ("obsidian", obsidian_10k),
     "link-dense": ("obsidian", link_dense),
+    "property-rich": ("obsidian", property_rich),
     "collision": ("obsidian", collision),
     "near-limit-obsidian": ("obsidian", near_limit_obsidian),
     "near-limit-joplin": ("joplin-raw", near_limit_joplin),
 }
-GENERATOR_VERSION = 2
+# Per shape, so adding or changing one corpus does not rewrite the others: a
+# shape's version changes only when its own bytes would change.
+GENERATOR_VERSIONS = {"link-dense": 2}
+DEFAULT_GENERATOR_VERSION = 1
+
+
+def generator_version(shape: str) -> int:
+    return GENERATOR_VERSIONS.get(shape, DEFAULT_GENERATOR_VERSION)
 
 
 def manifest_of(root: pathlib.Path) -> dict:
@@ -201,7 +227,7 @@ def build(work: pathlib.Path, shape: str) -> dict:
     manifest_path = work / "corpora" / f"{shape}.MANIFEST.json"
     if manifest_path.is_file() and root.is_dir():
         recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if recorded.get("generator_version") == GENERATOR_VERSION and \
+        if recorded.get("generator_version") == generator_version(shape) and \
                 recorded["content"] == manifest_of(root):
             print(f"{shape}: present, {recorded['content']['files']} files", file=sys.stderr)
             return recorded
@@ -210,7 +236,7 @@ def build(work: pathlib.Path, shape: str) -> dict:
     root.mkdir(parents=True)
     generate(root)
     recorded = {"shape": shape, "kind": kind, "seed": SEED,
-                "generator_version": GENERATOR_VERSION, "content": manifest_of(root)}
+                "generator_version": generator_version(shape), "content": manifest_of(root)}
     manifest_path.write_text(json.dumps(recorded, indent=2) + "\n", encoding="utf-8")
     print(f"{shape}: wrote {recorded['content']['files']} files, "
           f"{recorded['content']['bytes']} bytes", file=sys.stderr)
