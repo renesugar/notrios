@@ -3645,6 +3645,28 @@ so an earlier kept change is part of that baseline.
   the current behaviour for overlapping and mixed Markdown and wiki matches in
   a test, then change only the assembly. Metrics: allocations and wall time on
   the link-dense corpus.
+
+  Checked before the change, 2026-09-22:
+  - **What it does now.** `rewriteObsidianLinks` collects replacements, sorts
+    them by start descending, and splices each one into the body with
+    `body[:start] + text + body[end:]`. Every splice copies the whole note, so
+    a note with thousands of links copies itself thousands of times. J32-A
+    measured 11 GB allocated to import four 1 MiB notes.
+  - **Overlaps exist and must be pinned first.** `markdownlinks.Extract`
+    returns Markdown matches and then wiki matches, each ascending, so the
+    list is not in position order, and a wiki link inside a Markdown link
+    overlaps it: in `See [label]([[Target]]) here.` the Markdown match covers
+    bytes 4-23 and the wiki match 12-22. Whether both become replacements
+    depends on resolution, so the test pins what today's code writes for
+    nested, adjacent, repeated and multi-byte cases before anything changes.
+  - **The change is the assembly only.** What is recognised, what resolves and
+    what each replacement's text is all stay as they are. One pass over the
+    body in ascending order, writing into a builder sized from the body and
+    the replacements.
+  - **The declared metrics** are allocations and wall time on
+    `link-dense/fresh`. `obsidian-10k/fresh` is the ordinary corpus that must
+    not regress, and the canonical bodies it produces must be identical, which
+    `j17_compare.py` shows by the `documents` and `document_links` tables.
 - **J32-E, F8: one-pass link coordinates** in `markdownlinks`, keeping byte
   offsets, rune columns and result order. Metric: parse time on the
   link-dense corpus, including long single-line notes.
