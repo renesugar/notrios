@@ -120,8 +120,29 @@ type Extractor struct {
 	slugs       map[string]int
 }
 
-// Reset drops what the buffers refer to, keeping their capacity.
+// The capacity Reset keeps. A 60 MiB note has about four million lines, and a
+// line table that size is 77 MB that the process would hold for good after one
+// such note: measured as live heap, and the reason this cap exists (v1.0
+// J32-T). Reuse is for the ordinary note; an unusually large one gives its
+// buffers back.
+const (
+	maxRetainedLines   = 1 << 16
+	maxRetainedBlocks  = 1 << 12
+	maxRetainedScratch = 1 << 20
+)
+
+// Reset drops what the buffers refer to, keeping capacity up to the caps
+// above.
 func (e *Extractor) Reset() {
+	if cap(e.lines) > maxRetainedLines {
+		e.lines, e.offsets = nil, nil
+	}
+	if cap(e.blocks) > maxRetainedBlocks {
+		e.blocks = nil
+	}
+	if cap(e.scratch) > maxRetainedScratch {
+		e.scratch = nil
+	}
 	for index := range e.blocks {
 		e.blocks[index] = Block{}
 	}

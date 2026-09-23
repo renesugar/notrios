@@ -50,6 +50,9 @@ func TestExtractorResetReleasesTheBody(t *testing.T) {
 		t.Fatal("nothing was extracted")
 	}
 	held := cap(extractor.blocks)
+	if held > maxRetainedBlocks {
+		t.Fatalf("this test needs a note under the retention cap, got %d blocks", held)
+	}
 	extractor.Reset()
 	if len(extractor.blocks) != 0 || len(extractor.lines) != 0 {
 		t.Fatal("Reset must empty the buffers")
@@ -66,6 +69,30 @@ func TestExtractorResetReleasesTheBody(t *testing.T) {
 		if line != "" {
 			t.Fatalf("Reset left a line behind: %q", line)
 		}
+	}
+}
+
+// TestExtractorGivesBackHugeBuffers proves the caps: a note far past them
+// leaves nothing retained, so one large note cannot make a process hold its
+// line table for good (v1.0 J32-T).
+func TestExtractorGivesBackHugeBuffers(t *testing.T) {
+	var extractor Extractor
+	body := strings.Repeat("a line of text\n", maxRetainedLines+1000)
+	extractor.Extract("doc-1", body)
+	if cap(extractor.lines) <= maxRetainedLines {
+		t.Fatalf("expected a line table past the cap, got %d", cap(extractor.lines))
+	}
+	extractor.Reset()
+	if cap(extractor.lines) != 0 || cap(extractor.offsets) != 0 {
+		t.Fatalf("a line table past the cap must be given back: %d lines, %d offsets",
+			cap(extractor.lines), cap(extractor.offsets))
+	}
+	// An ordinary note after a huge one still reuses.
+	extractor.Extract("doc-2", j32tNote(2, 5))
+	before := cap(extractor.blocks)
+	extractor.Reset()
+	if cap(extractor.blocks) != before {
+		t.Fatalf("an ordinary note must keep its capacity: %d became %d", before, cap(extractor.blocks))
 	}
 }
 
