@@ -3829,6 +3829,24 @@ so an earlier kept change is part of that baseline.
   `link-dense/fresh` as the many-blocks case. Block IDs, ordinals, hashes,
   slugs and offsets must be identical: the existing block tests, and
   `document_blocks` compared across both corpora.
+
+  Read before the change, 2026-09-23. The 3.31 GB is three copies, not one:
+  - **`identify`** joins its five parts with `strings.Join` and then converts
+    the result with `[]byte(...)`: two whole copies of a block's text for every
+    block, 0.96 GB. Hashing the parts one after another copies nothing, and
+    the bytes hashed are the same bytes.
+  - **`normalize`** splits the text into lines and joins them back even when
+    no line has trailing whitespace and there is no carriage return, which is
+    the common case. When nothing would change, the answer is the text it was
+    given.
+  - **A block's text** is built by collecting `[]string` of its lines and
+    `strings.Join`ing them. Writing into a builder sized from the block's own
+    extent drops the intermediate slice.
+
+  A block's text is not always a slice of the body — paragraphs and tables
+  trim each line, so their text genuinely differs from the bytes between the
+  offsets — which is why this keeps a copy per block rather than pretending it
+  can be sliced away.
 - **J32-R, one note buffer per phase, and stop reading a body back that the
   caller holds.** The inventory and the notes phase each read a note into a
   fresh buffer, and the store reads the body out of SQLite again through
