@@ -407,43 +407,24 @@ func readInventory(ctx context.Context, root string, retainFiles bool) (inventor
 		if err != nil {
 			return err
 		}
-		ext := strings.ToLower(filepath.Ext(rel))
-		markdown := ext == ".md" || ext == ".markdown"
-		var raw []byte
-		var fingerprint string
-		var size int64
-		if markdown {
-			// One read, hashed from the bytes the parse needs anyway: this
-			// used to stream the file to a hash and then read it again, so
-			// every note was read twice (v1.0 J32-G). The size is checked
-			// before the read, and the read is bounded one byte past the
-			// limit, so a note that grows between the two is refused rather
-			// than held.
-			if info.Size() > maxMarkdownBytes {
-				return fmt.Errorf("%w: Obsidian note %s exceeds the %d-byte limit", store.ErrInvalidInput, rel, maxMarkdownBytes)
-			}
-			raw, err = readBounded(ctx, path, maxMarkdownBytes+1)
-			if err != nil {
-				return err
-			}
-			if len(raw) > maxMarkdownBytes {
-				return fmt.Errorf("%w: Obsidian note %s exceeds the %d-byte limit", store.ErrInvalidInput, rel, maxMarkdownBytes)
-			}
-			sum := sha256.Sum256(raw)
-			fingerprint, size = hex.EncodeToString(sum[:]), int64(len(raw))
-		} else {
-			// An asset is never parsed and may be large, so it keeps streaming.
-			fingerprint, size, err = hashFile(ctx, path)
-			if err != nil {
-				return err
-			}
+		fingerprint, size, err := hashFile(ctx, path)
+		if err != nil {
+			return err
 		}
 		file := vaultFile{
 			RelPath:     rel,
 			Fingerprint: sha256FromHex(fingerprint), SizeBytes: size,
 			NotebookPath: folderPath(rel),
 		}
-		if markdown {
+		ext := strings.ToLower(filepath.Ext(rel))
+		if ext == ".md" || ext == ".markdown" {
+			if info.Size() > maxMarkdownBytes {
+				return fmt.Errorf("%w: Obsidian note %s exceeds the %d-byte limit", store.ErrInvalidInput, rel, maxMarkdownBytes)
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
 			frontmatter, _, _ := splitFrontmatterBytes(raw)
 			body := normalizeNewlines(string(raw))
 			file.ItemType = "markdown"
@@ -1423,35 +1404,6 @@ func readExact(path string, item vaultFile) ([]byte, error) {
 		return nil, fmt.Errorf("%w: Obsidian note %s changed during import", store.ErrConflict, item.RelPath)
 	}
 	return raw, nil
-}
-
-// readBounded reads a whole file, refusing to hold more than limit bytes.
-// os.ReadFile sizes its buffer from the stat and keeps reading past it, so a
-// file that grows under it grows the buffer too; this stops (v1.0 J32-G).
-func readBounded(ctx context.Context, path string, limit int64) ([]byte, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	// Sized from the stat, like os.ReadFile, because io.ReadAll grows by
-	// doubling and a 60 MiB note would then allocate about twice its size:
-	// measured at +3.6% allocated on the near-limit corpus (v1.0 J32-G).
-	size := int64(0)
-	if info, err := file.Stat(); err == nil && info.Mode().IsRegular() {
-		size = info.Size()
-	}
-	if size > limit {
-		size = limit
-	}
-	buffer := bytes.NewBuffer(make([]byte, 0, size+1))
-	if _, err := buffer.ReadFrom(io.LimitReader(file, limit)); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
 }
 
 func hashFile(ctx context.Context, path string) (string, int64, error) {
