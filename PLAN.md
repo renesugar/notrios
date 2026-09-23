@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/18 | 18 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/21 | 21 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3847,6 +3847,69 @@ so an earlier kept change is part of that baseline.
   trim each line, so their text genuinely differs from the bytes between the
   offsets — which is why this keeps a copy per block rather than pretending it
   can be sliced away.
+- **Eleven allocations per block, profiled 2026-09-23.** `MaxBlocksPerDocument`
+  caps a note at 10,000 blocks, so the many-blocks benchmark's 111,000
+  allocations are about **eleven per block**, not one:
+
+  | source | allocations | what it is |
+  |---|---:|---|
+  | `listItemRE.ReplaceAllString` | 98,304 plus 65,536 in `sync.Pool` | a regexp replace to strip a list marker, per item |
+  | `itoa(block.Occurrence)` | 98,305 | a string built only to be hashed |
+  | `hex` | 57,346 | the content hash, as a string |
+  | `Slugify` | 49,153 | a heading's slug, grown rune by rune |
+  | `base32.EncodeToString` and `"blk_" + encoded` | 32,768 and more | the block ID, in two allocations |
+
+  **Two questions answered before planning any of it.** *Does a block's order
+  change during import?* No: `Extract` appends in document order and sets
+  `Ordinal` from the length of what it has appended, nothing reorders, and the
+  store writes them in that order. *Can blocks be allocated in chunks and
+  reused?* Yes, and in Go the chunk is a slice: `[]Block` is already one
+  contiguous allocation that doubles as it grows, so what is missing is not
+  chunking but **reuse** — every note starts from a nil slice and every note
+  pays the growth again. A caller-owned slice, truncated to zero between notes,
+  is the compiler's symbol-table arena written the way this language spells it,
+  and a linked list of arrays would add indirection for nothing.
+
+- **J32-S, the eleven allocations per block.** Each of the sources above,
+  measured together on the many-blocks shape: the list marker stripped without
+  a regexp, the occurrence appended as digits rather than built as a string,
+  the hash and the ID written into buffers the next block reuses, and
+  `Slugify` sized from its input. Metric: allocations per operation on the
+  many-blocks benchmark and on `obsidian-10k/fresh`, which is where a note has
+  few blocks and the per-block cost is the whole cost. Block IDs, hashes and
+  slugs must be identical, held to the reference implementations J32-Q kept.
+- **J32-T, block storage reused across notes.** `Extract` returns a fresh
+  `[]Block` per note, so a 10,000-block note allocates and grows one every
+  time. An `ExtractInto(dst []Block, …) []Block` that appends into a slice the
+  caller truncates and reuses turns that into one allocation per import, and
+  the line table `physicalLines` builds can be reused the same way. The four
+  callers that want a one-shot `Extract` keep it, as a wrapper. Metrics:
+  allocated bytes and allocations on `near-limit-obsidian/fresh` and
+  `obsidian-10k/fresh`. The reused buffer must not leak a previous note's
+  blocks into the next: a test imports notes of decreasing block count through
+  one buffer and compares every block with what a fresh `Extract` returns.
+- **J32-U, is an edit script the right model? An investigation, not yet a
+  change.** The owner's framing, recorded 2026-09-23: import *compiles* a note,
+  and everything it does to the body before writing — canonicalizing newlines,
+  rewriting link ranges, prepending frontmatter, trimming whitespace — is an
+  edit against the original bytes. Collected as a list of edits, and applied
+  once where the note is written, the note would be copied once rather than
+  once per stage, and blocks and slices would be two views of the same buffer
+  rather than new strings.
+
+  What this slice produces is a decision with evidence behind it, because the
+  cost is a new intermediate representation on the import path, which J8's rule
+  says is not to be bought on a hunch:
+  - a prototype `edit` list and one `apply` over the phases J32-O and J32-P
+    cover, measured against them on `near-limit-obsidian/fresh` and
+    `obsidian-10k/fresh`;
+  - the answer recorded either way, and the prototype kept as evidence when the
+    answer is no.
+
+  If the edit script wins, J32-O and J32-P are withdrawn in its favour and the
+  record says so; if it does not, they ship as written and the DSL is recorded
+  as measured and rejected.
+
 - **J32-R, one note buffer per phase, and stop reading a body back that the
   caller holds.** The inventory and the notes phase each read a note into a
   fresh buffer, and the store reads the body out of SQLite again through

@@ -870,6 +870,21 @@
           "state": "not-started"
         },
         {
+          "id": "J32-S",
+          "statement": "The per-block allocations in Extract are reduced, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-T",
+          "statement": "Block storage is reused across notes instead of allocated per note, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-U",
+          "statement": "Whether an edit script beats stage-by-stage copying is decided by a measured prototype, and recorded either way",
+          "state": "not-started"
+        },
+        {
           "id": "J32-R",
           "statement": "A note buffer is reused per phase and a body already in hand is not read back from SQLite, or the change is reverted on its measurement",
           "state": "not-started"
