@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/14 | 14 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/18 | 18 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3774,6 +3774,70 @@ so an earlier kept change is part of that baseline.
   - benchmark-only experiments on disposable databases: `cache_size`,
     `temp_store`, and building the disposable manifest's indexes after
     inserts. `synchronous` is never relaxed on a canonical library.
+- **The 29× question, profiled 2026-09-23.** A fresh
+  `near-limit-obsidian` import allocates **6.95 GB to import 240 MB of
+  notes**. An allocation profile
+  (`performance/v1.0-j32/j32r/near-limit-before.allocs`) says where:
+
+  | site | allocated | what it is |
+  |---|---:|---|
+  | `markdownblocks.Extract` | 3.31 GB | splits the body into per-line strings, then `strings.Join`s them back into each block's text |
+  | `splitFrontmatter` | 0.96 GB | `string` → `[]byte` → `string` → `string`: four copies of the note to find where the frontmatter ends |
+  | `columnText`/`GoString` | 0.72 GB | the body read back out of SQLite although the caller already holds it |
+  | `canonicalBody` + `augmentFrontmatter` | 1.20 GB | `normalizeNewlines` and then concatenation to put the frontmatter back |
+  | `os.readFileContents` | 0.48 GB | the note read whole, twice (J32-G) |
+  | `noteFingerprint` | 0.24 GB | one more copy to hash |
+
+  **A rope is the wrong tool for this, and the reason matters.** A rope pays
+  for itself when a program makes many small edits to one large text and must
+  keep it live between them — a text editor. An import makes one pass of
+  rewrites and writes the result once, and J32-D already turned that pass into
+  a single assembly. What remains is not editing at all: it is the same bytes
+  being *re-materialized* — converted between `[]byte` and `string`, split into
+  pieces and joined back. A rope would add a structure over the text without
+  removing one of those conversions, and would then have to flatten itself for
+  the database write anyway. Go already gives the cheap operation a rope would
+  provide: a string slice shares its bytes and copies nothing. The code simply
+  does not use it, and the slices below make it use it.
+
+  **The owner's buffer question**, recorded because it is the right frame: a
+  note buffer is allocated *once or more per note* today, never once per
+  import. J32-R reuses buffers per phase instead. J19's measured no-op was
+  pooling the 32 KiB *hash* buffer, which is not this: these are whole-note
+  buffers and whole-note copies, and the 6.95 GB above is the new evidence
+  J32's boundaries require before revisiting that ground.
+
+- **J32-O, stop converting a note between `[]byte` and `string` to read it.**
+  `splitFrontmatter` converts the body to bytes, splits it, and converts both
+  halves back. Every caller already holds one or the other, and the halves are
+  slices of what it holds. Metric: allocated bytes on
+  `near-limit-obsidian/fresh`; `obsidian-10k/fresh` must not regress. The
+  frontmatter boundary found must not move: the existing frontmatter tests,
+  plus a test that the two forms agree on the same bodies.
+- **J32-P, assemble the canonical body once.** `canonicalBody` normalizes
+  newlines into a new string, rewrites links into another, and
+  `augmentFrontmatter` concatenates a third. One pass into one builder, sized
+  from what is known, as J32-D did for the rewrite. Metrics: allocated bytes
+  and peak RSS on `near-limit-obsidian/fresh`. The canonical body must stay
+  byte-identical, which `j17_compare.py` shows through `documents` and
+  `document_revisions`.
+- **J32-Q, build a block's text from the body, not from rejoined lines.**
+  `markdownblocks.Extract` splits the body into a string per line and then
+  `strings.Join`s runs of them back; the text it produces is a slice of the
+  body it already has, and the line table can hold offsets instead of strings.
+  Metric: allocated bytes on `near-limit-obsidian/fresh`, with
+  `link-dense/fresh` as the many-blocks case. Block IDs, ordinals, hashes,
+  slugs and offsets must be identical: the existing block tests, and
+  `document_blocks` compared across both corpora.
+- **J32-R, one note buffer per phase, and stop reading a body back that the
+  caller holds.** The inventory and the notes phase each read a note into a
+  fresh buffer, and the store reads the body out of SQLite again through
+  `columnText` where the caller passed it in. Reuse one buffer per phase, with
+  a cap so one 64 MiB note does not make an import hold 64 MiB for its whole
+  length, and pass the body that is already in hand. Metrics: allocated bytes
+  and peak RSS on `near-limit-obsidian/fresh`, and peak RSS on
+  `obsidian-10k/fresh`, which is where a retained buffer would show as a cost.
+
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and
   the revert, or not investigated with the reason. It also records any

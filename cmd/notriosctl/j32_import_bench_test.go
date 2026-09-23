@@ -30,6 +30,8 @@ import (
 //	NOTRIOS_J32_BENCH_CPUPROFILE  optional: where to write a CPU profile, which
 //	                              is for finding what to change, never for a
 //	                              measured run
+//	NOTRIOS_J32_BENCH_MEMPROFILE  optional: where to write an allocation
+//	                              profile, on the same terms
 func TestJ32ImportBench(t *testing.T) {
 	report := os.Getenv("NOTRIOS_J32_BENCH_REPORT")
 	if report == "" {
@@ -76,6 +78,21 @@ func TestJ32ImportBench(t *testing.T) {
 	var settled runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&settled)
+
+	if profile := os.Getenv("NOTRIOS_J32_BENCH_MEMPROFILE"); profile != "" {
+		file, err := os.Create(profile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// The allocation profile, not the in-use one: what a change to how a
+		// note is buffered would move is total allocation.
+		if err := pprof.Lookup("allocs").WriteTo(file, 0); err != nil {
+			t.Fatal(err)
+		}
+		if err := file.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	body, err := json.MarshalIndent(map[string]any{
 		"wall_seconds":        wall.Seconds(),

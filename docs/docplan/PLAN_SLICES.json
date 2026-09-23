@@ -855,6 +855,26 @@
           "state": "not-started"
         },
         {
+          "id": "J32-O",
+          "statement": "Reading a note's frontmatter stops converting the whole note between []byte and string, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-P",
+          "statement": "The canonical body is assembled in one pass instead of three, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-Q",
+          "statement": "A block's text is a slice of the body rather than rejoined lines, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-R",
+          "statement": "A note buffer is reused per phase and a body already in hand is not read back from SQLite, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
           "id": "J32-M",
           "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
           "state": "not-started"
