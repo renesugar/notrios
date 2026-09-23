@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/13 | 13 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/14 | 14 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3695,6 +3695,38 @@ so an earlier kept change is part of that baseline.
 - **J32-F, F9: collision-heavy namespace construction.** Metrics: namespace
   build time on the collision corpus, and memory on the ordinary corpus, where
   sets can cost more.
+
+  Measured before changing anything, 2026-09-22, and **not a cost**:
+  - A CPU profile of a fresh collision import shows `buildLinkNamespace` and
+    `appendUnique` below the profiler's 0.38 s reporting threshold, under 0.5%
+    of 77 s of samples.
+  - A benchmark at the corpus's shape (5,000 notes named `index.md`, 50
+    aliases shared by 100 notes each) builds the namespace in 213 ms, against
+    223 ms for the same 5,000 notes with no shared alias at all. Colliding
+    names make it slightly *cheaper*, because fewer distinct map keys offset
+    the linear scans. So the premise — that duplicate scans cost on a
+    collision-heavy vault — does not hold at this size, and a set would be
+    replacing 0.2% of an import with the memory the slice was written to
+    avoid. No change ships.
+  - What the same profile does show is in J32-N.
+- **J32-N, the collection scope defeats the title index.** Found while
+  measuring J32-F, 2026-09-22. `findDocumentByTitleLocked` resolves every link
+  by title with `collection_id = COALESCE(NULLIF(?, ''), collection_id)`,
+  which is not a constant the index can seek, so the query plan is
+  `SCAN documents USING COVERING INDEX documents_title_idx` plus a temp B-tree
+  for the ordering — a full index scan for every link. It is 46% of a fresh
+  collision import, 35 s of 77 s, at 5,500 notes, and it grows with the
+  library, not with the import.
+  - **The change:** when a collection is given, the SQL says
+    `collection_id = ?`; the "every collection" form keeps today's predicate.
+    The scoping rule itself does not change, and the same helper stays the one
+    place that writes it.
+  - **Declared metric:** wall time on `collision/fresh`, with
+    `obsidian-10k/fresh` as the ordinary case that must not regress.
+  - **Correctness:** the resolution a link gets, including which links are
+    ambiguous, must not change: `j17_compare.py` on both corpora, and the
+    existing collection-scoping tests, which are what say the predicate still
+    means the same thing.
 - **J32-G, §3.1C: hash Markdown from the bytes already read** in the Obsidian
   inventory, with a bounded read. Metric: inventory wall time on warm and on
   explicitly dropped caches.
