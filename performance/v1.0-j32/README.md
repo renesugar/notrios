@@ -359,6 +359,42 @@ importer reports the same warnings, all 101 ambiguity warnings included. A
 scope test pins the rendered predicate for a named collection, an empty one and
 a blank one, with and without a table alias.
 
+## J32-G — §3.1C, hash Markdown from the bytes already read: **reverted**
+
+`readInventory` streams each file to a hash and then reads it again to take its
+title and aliases, so every Markdown note is read twice — 240 MB of second
+reads for the four notes of the near-limit corpus. The candidate read a note
+once, bounded one byte past the 64 MiB limit, and hashed those bytes.
+
+Declared before the change: wall time on `near-limit-obsidian/fresh`, where the
+second read is largest. Baseline `948260f`, five runs each, alternating.
+Records in `j32g/`.
+
+| attempt | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| `io.ReadAll` (`d7a7cf4`) | wall s | 498.66 | 500.93 | 4.21 | +0.5% | within noise |
+| `io.ReadAll` | allocated bytes | 7.28 G | 7.54 G | 215 K | +3.6% | worse |
+| stat-sized buffer (`82ab0af`) | wall s | 495.87 | 497.60 | 6.20 | +0.3% | within noise |
+| stat-sized buffer | allocated bytes | 7.28 G | 7.78 G | 146 K | +6.9% | worse |
+| ordinary corpus | wall s | 80.01 | 80.27 | 0.46 | +0.3% | within noise |
+| ordinary corpus | allocated bytes | 379.2 M | 375.0 M | 336 K | −1.1% | better |
+
+**Why it does not pay.** The second read comes from the page cache, which is
+warm, so removing it saves almost nothing. Meanwhile holding a 60 MiB note in
+one buffer allocates more than the streaming hash's 32 KiB buffer plus
+`os.ReadFile`'s stat-sized one: `io.ReadAll` grows by doubling, and
+`bytes.Buffer.ReadFrom` grows past a capacity hint as well, so the second
+attempt was worse than the first. Both are kept in `j32g/`.
+
+**What is not shown.** Caches cannot be dropped on this machine (no
+passwordless sudo, as J20 recorded), so the cold-cache case — where halving the
+bytes read from disk would matter — was not measured. That is a limit of the
+measurement, not evidence either way, and it is why the finding is recorded as
+reverted here rather than closed as wrong.
+
+The ordinary corpus did gain 1.1% of allocations, which is not the declared
+metric and is not worth a second way to read a file.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
