@@ -3888,6 +3888,15 @@ so an earlier kept change is part of that baseline.
   `obsidian-10k/fresh`. The reused buffer must not leak a previous note's
   blocks into the next: a test imports notes of decreasing block count through
   one buffer and compares every block with what a fresh `Extract` returns.
+
+  **What reuse costs, decided before writing it.** A block's text is a slice of
+  the note's body, so a retained block retains the whole body: a buffer still
+  holding the last note's blocks keeps 60 MiB alive after that note is done.
+  The reusable form therefore clears the elements it keeps capacity for, and
+  the store clears it after each note is written. Peak RSS on
+  `near-limit-obsidian/fresh` is measured for exactly this reason, and a
+  reuse that trades allocations for a retained body is not a trade this slice
+  ships.
 - **J32-U, is an edit script the right model? An investigation, not yet a
   change.** The owner's framing, recorded 2026-09-23: import *compiles* a note,
   and everything it does to the body before writing — canonicalizing newlines,
