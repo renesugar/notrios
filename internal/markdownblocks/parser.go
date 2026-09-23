@@ -17,8 +17,10 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Block kinds. They are stored, so they are part of the schema contract.
@@ -151,13 +153,13 @@ func Extract(documentID, body string) []Block {
 			continue
 		}
 
-		if match := headingRE.FindStringSubmatch(trimmed); match != nil {
+		if level, headingText, ok := matchHeading(trimmed); ok {
 			if !appendBlock(Block{
 				Kind:      KindHeading,
-				Level:     len(match[1]),
+				Level:     level,
 				StartByte: offsets[index],
 				EndByte:   offsets[index] + len(line),
-				Text:      match[2],
+				Text:      headingText,
 			}) {
 				return blocks
 			}
@@ -165,14 +167,14 @@ func Extract(documentID, body string) []Block {
 			continue
 		}
 
-		if listItemRE.MatchString(line) {
+		if markerEnd, ok := matchListMarker(line); ok {
 			// One list item is one block: a link anchor points at an item, not
 			// at the whole list.
 			if !appendBlock(Block{
 				Kind:      KindListItem,
 				StartByte: offsets[index],
 				EndByte:   offsets[index] + len(line),
-				Text:      strings.TrimSpace(listItemRE.ReplaceAllString(line, "")),
+				Text:      strings.TrimSpace(line[markerEnd:]),
 			}) {
 				return blocks
 			}
@@ -180,11 +182,11 @@ func Extract(documentID, body string) []Block {
 			continue
 		}
 
-		if tableRowRE.MatchString(line) {
+		if matchTableRow(line) {
 			start := offsets[index]
 			end := offsets[index] + len(line)
 			stop := index + 1
-			for stop < len(lines) && tableRowRE.MatchString(lines[stop]) {
+			for stop < len(lines) && matchTableRow(lines[stop]) {
 				end = offsets[stop] + len(lines[stop])
 				stop++
 			}
@@ -204,8 +206,7 @@ func Extract(documentID, body string) []Block {
 		for stop < len(lines) {
 			next := lines[stop]
 			nextTrimmed := strings.TrimSpace(next)
-			if nextTrimmed == "" || headingRE.MatchString(nextTrimmed) ||
-				listItemRE.MatchString(next) || codeFence(nextTrimmed) != "" || tableRowRE.MatchString(next) {
+			if startsAnotherBlock(next, nextTrimmed) {
 				break
 			}
 			end = offsets[stop] + len(next)
@@ -234,12 +235,17 @@ func Extract(documentID, body string) []Block {
 // rather than a made-up one: it is reachable by its block ID, and inventing a
 // name would make two unrelated headings collide.
 func Slugify(text string) string {
-	var out []rune
+	// Lowercased a rune at a time into a buffer sized from the text, rather
+	// than lowercasing the whole string into a copy and collecting runes into
+	// a slice to convert once more (v1.0 J32-S).
+	text = strings.TrimSpace(text)
+	out := make([]byte, 0, len(text))
 	previousHyphen := false
-	for _, r := range strings.ToLower(strings.TrimSpace(text)) {
+	for _, r := range text {
+		r = unicode.ToLower(r)
 		switch {
 		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			out = append(out, r)
+			out = utf8.AppendRune(out, r)
 			previousHyphen = false
 		case r == '_' || r == '-' || r == ' ' || r == '\t':
 			if len(out) > 0 && !previousHyphen {
@@ -278,41 +284,66 @@ func disambiguate(slug string, seen map[string]int) string {
 // heading distinct from a paragraph that reads the same; occurrence keeps two
 // identical paragraphs in one note distinguishable without reintroducing
 // position as identity.
-// identify hashes the five parts that make a block's identity, through a
-// scratch buffer the caller reuses (v1.0 J32-Q).
+// identify derives a block's content hash and its opaque ID, through a scratch
+// buffer the caller reuses (v1.0 J32-Q, J32-S).
 //
-// The bytes hashed are exactly what a strings.Join of the parts produced. What
-// changed is the copying: the join allocated a copy of the block's text and
-// the []byte conversion allocated a second, 0.96 GB on the near-limit corpus.
-// Appending into a buffer that the next block reuses copies the text once and
-// allocates only when a block is longer than any before it.
+// The bytes hashed are exactly what a strings.Join of the five parts produced.
+// What changed is the copying: the join allocated a copy of the block's text
+// and the []byte conversion allocated a second, 0.96 GB on the near-limit
+// corpus. Appending into a buffer that the next block reuses copies the text
+// once and allocates only when a block is longer than any before it, and the
+// occurrence is appended as digits rather than built as a string first.
 //
 // A streaming hash would copy nothing at all, but sha256.New returns an
 // interface, and handing it the digest array makes that array escape for every
 // block: measured at 40,000 more allocations on a 150,000-block note, which is
 // worse than what it saves.
+//
+// Two strings are returned because both are stored, so two allocations are the
+// floor. Each is written into an array on the stack and converted once.
 func identify(documentID string, block Block, scratch []byte) ([]byte, string, string) {
 	scratch = scratch[:0]
-	for index, part := range [5]string{
-		"notrios-block-v1", documentID, block.Kind, block.Text, itoa(block.Occurrence),
+	for index, part := range [4]string{
+		"notrios-block-v1", documentID, block.Kind, block.Text,
 	} {
 		if index > 0 {
 			scratch = append(scratch, 0)
 		}
 		scratch = append(scratch, part...)
 	}
+	scratch = append(scratch, 0)
+	scratch = strconv.AppendInt(scratch, int64(block.Occurrence), 10)
 	digest := sha256.Sum256(scratch)
-	encoded := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:10]))
-	return scratch, hex(digest[:]), "blk_" + encoded
+
+	var hashBytes [sha256.Size * 2]byte
+	encodeHex(hashBytes[:0], digest[:])
+
+	// "blk_" and the base32 of the first ten bytes, lowercased in place: the
+	// encoder's own EncodeToString allocated, and the concatenation allocated
+	// again.
+	var idBytes [4 + 16]byte
+	copy(idBytes[:4], "blk_")
+	base32.StdEncoding.WithPadding(base32.NoPadding).Encode(idBytes[4:], digest[:10])
+	for index := 4; index < len(idBytes); index++ {
+		if idBytes[index] >= 'A' && idBytes[index] <= 'Z' {
+			idBytes[index] += 'a' - 'A'
+		}
+	}
+	return scratch, string(hashBytes[:]), string(idBytes[:])
 }
 
 func hex(value []byte) string {
-	const digits = "0123456789abcdef"
 	out := make([]byte, 0, len(value)*2)
+	return string(encodeHex(out, value))
+}
+
+// encodeHex appends the lowercase hex of value to out.
+func encodeHex(out []byte, value []byte) []byte {
+	const digits = "0123456789abcdef"
 	for _, b := range value {
 		out = append(out, digits[b>>4], digits[b&0x0f])
 	}
-	return string(out)
+	return out
 }
 
 // normalize is the documented part of identity: line endings are normalized and
@@ -334,6 +365,97 @@ func normalize(text string) string {
 		lines[i] = strings.TrimRight(line, " \t")
 	}
 	return strings.TrimRight(strings.Join(lines, "\n"), "\n")
+}
+
+// The three matchers below replace the regexps they are named after in the
+// parsing loop, which runs for every line of every note (v1.0 J32-S). The
+// regexps allocated: a replacement string per list item, a submatch slice per
+// heading, and a `sync.Pool` entry per call. The regexps stay in the package
+// as the reference the tests hold these to, line for line, so what is
+// recognised cannot drift.
+//
+// `\s` in Go's regexp is [\t\n\f\r ], which is what isSpaceByte matches. A
+// line never contains a newline, because the body is split on newlines first.
+
+// startsAnotherBlock reports whether a line ends the paragraph before it: a
+// blank line, or the start of a block of another kind.
+func startsAnotherBlock(line, trimmed string) bool {
+	if trimmed == "" {
+		return true
+	}
+	if _, _, ok := matchHeading(trimmed); ok {
+		return true
+	}
+	if _, ok := matchListMarker(line); ok {
+		return true
+	}
+	return codeFence(trimmed) != "" || matchTableRow(line)
+}
+
+func isSpaceByte(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\f' || b == '\r'
+}
+
+// matchListMarker implements `^\s*([-*+]|\d+[.)])\s+`, returning the end of
+// the match. It reports false when the line is not a list item.
+func matchListMarker(line string) (int, bool) {
+	index := 0
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	if index == len(line) {
+		return 0, false
+	}
+	switch line[index] {
+	case '-', '*', '+':
+		index++
+	default:
+		digits := index
+		for digits < len(line) && line[digits] >= '0' && line[digits] <= '9' {
+			digits++
+		}
+		if digits == index || digits == len(line) || (line[digits] != '.' && line[digits] != ')') {
+			return 0, false
+		}
+		index = digits + 1
+	}
+	if index == len(line) || !isSpaceByte(line[index]) {
+		return 0, false
+	}
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	return index, true
+}
+
+// matchHeading implements `^(#{1,6})\s+(.*)$`, returning the level and the
+// text after the marker.
+func matchHeading(line string) (int, string, bool) {
+	level := 0
+	for level < len(line) && line[level] == '#' {
+		level++
+	}
+	if level == 0 || level > 6 || level == len(line) || !isSpaceByte(line[level]) {
+		return 0, "", false
+	}
+	index := level
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	return level, line[index:], true
+}
+
+// matchTableRow implements `^\s*\|.*\|\s*$`.
+func matchTableRow(line string) bool {
+	start := 0
+	for start < len(line) && isSpaceByte(line[start]) {
+		start++
+	}
+	end := len(line)
+	for end > start && isSpaceByte(line[end-1]) {
+		end--
+	}
+	return end-start >= 2 && line[start] == '|' && line[end-1] == '|'
 }
 
 // joinLines is a block's text: its first line, then the rest joined with
