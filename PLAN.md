@@ -3730,6 +3730,27 @@ so an earlier kept change is part of that baseline.
 - **J32-G, §3.1C: hash Markdown from the bytes already read** in the Obsidian
   inventory, with a bounded read. Metric: inventory wall time on warm and on
   explicitly dropped caches.
+
+  Checked before the change, 2026-09-22:
+  - **What it does now.** `readInventory` calls `hashFile`, which streams the
+    file to a hash, and then calls `os.ReadFile` on the same file to take its
+    title, aliases and property order. Every Markdown note is read twice. On
+    the near-limit corpus that is 240 MB of second reads for four notes.
+  - **The change.** For a Markdown file, read once and hash those bytes. The
+    read is bounded before it happens: the size check that already refuses a
+    note over 64 MiB moves ahead of the read, and the read itself is limited
+    to one byte past the limit, so a file that grows between the stat and the
+    read is refused rather than held. Non-Markdown files keep streaming,
+    because nothing parses them and an asset may be large.
+  - **Unchanged:** the fingerprint of every file, and so the inventory
+    fingerprint and every checkpoint; the error a too-large note produces; and
+    what the inventory holds.
+  - **The declared metric** is wall time on `near-limit-obsidian/fresh`, where
+    the second read is largest, with `obsidian-10k/fresh` as the ordinary case
+    that must not regress. Caches cannot be dropped on this machine (no
+    passwordless sudo, as J20 recorded), so both are warm-cache figures and
+    the record says so: a cold cache would favour the change further, since it
+    halves the bytes read.
 - **J32-H, F3: existence-only reads** where only presence is needed, through a
   typed store method that keeps deleted-note filtering. The notes-phase body
   comparison is not touched. Metrics: allocations and wall time.
