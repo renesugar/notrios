@@ -262,6 +262,46 @@ identical `documents`, `document_blocks` and `document_links` — 40,000 blocks
 and 30,000 links on the ordinary corpus, 12,677 links on the link-dense one —
 with only volatile identifier columns differing.
 
+## J32-E — F8, one-pass link coordinates: **kept**
+
+`decorateCandidate` called `lineColumn`, which decodes the body from byte zero
+for every candidate, so a note with thousands of links decoded itself thousands
+of times and a note that is one long line was the worst case. Each extraction
+pass now carries a `lineCursor` forward. Asked for an offset behind it, the
+cursor starts over, so an answer never depends on the order it is asked in.
+`lineColumn` stays as the reference the tests compare against.
+
+Declared before the change: wall time on `link-dense/fresh`. Baseline
+`81d44ee` (which includes J32-B through J32-D), candidate `821e82c`, five runs
+each, alternating. Records in `j32e/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| link-dense/fresh | wall s | 179.98 | 32.90 | 1.42 | **−81.7%** | better |
+| link-dense/fresh | user s | 170.50 | 22.47 | 1.12 | −86.8% | better |
+| link-dense/fresh | notes/s | 0.022 | 0.122 | 0.000 | ×5.5 | better |
+| link-dense/fresh | peak RSS KiB | 74,464 | 75,440 | 4,548 | +1.3% | within noise |
+| obsidian-10k/fresh (9 runs) | wall s | 80.18 | 80.56 | 2.54 | +0.5% | within noise |
+| obsidian-10k/fresh (9 runs) | system s | 5.99 | 5.97 | 0.18 | −0.3% | within noise |
+
+**The corpus imports 5.5× faster.** With J32-D's assembly already in, what was
+left on these notes was this rescanning: 170 s of user CPU becomes 22 s.
+
+**One flagged regression did not survive a second look.** At five runs the
+ordinary corpus showed system time 5.99 → 6.19 s against a range of 0.15,
+which the rule counts as worse. A change that only removes user-space decoding
+has no reason to spend more kernel time, so the case was measured again at nine
+runs per binary: 5.99 → 5.97 s, and every other metric within noise. The
+five-run range was simply narrower than the metric's own spread. Both records
+are kept in `j32e/`; the nine-run one is the result.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_links` — 30,000 rows on the ordinary corpus and 12,677 on
+the link-dense one, which is where byte offsets, rune columns and contexts are
+stored — and identical blocks and documents, with only volatile identifier
+columns differing.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
