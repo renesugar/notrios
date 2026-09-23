@@ -2536,7 +2536,7 @@ func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (st
 	if name == "" {
 		return "", false, nil
 	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQLFor("", collectionID) + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}
@@ -2567,7 +2567,7 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		return "", false, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQL("") + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQLFor("", collectionID) + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
 	if err != nil {
 		return "", false, err
 	}

@@ -1248,6 +1248,28 @@ func CollectionScopeSQL(alias string) string {
 	return column + " = COALESCE(NULLIF(?, ''), " + column + ")"
 }
 
+// CollectionScopeSQLFor renders the same predicate, but says plainly that the
+// collection is known, so an index on the column can be used (v1.0 J32-N).
+//
+// `collection_id = COALESCE(NULLIF(?, ”), collection_id)` is not a constant
+// SQLite can seek with, so a statement carrying it scans the index it would
+// otherwise search: a title lookup on the link-resolution path scanned the
+// whole covering index for every link, 46% of a fresh collision import.
+//
+// The rule is unchanged, and this is still the only place that writes it: an
+// empty collection still means every collection, and the parameter is still
+// bound either way, so no caller's argument list depends on the scope.
+func CollectionScopeSQLFor(alias, collectionID string) string {
+	if strings.TrimSpace(collectionID) == "" {
+		return CollectionScopeSQL(alias)
+	}
+	column := "collection_id"
+	if alias != "" {
+		column = alias + ".collection_id"
+	}
+	return column + " = ?"
+}
+
 // JoinNoteText appends or prepends text to a note body, keeping the newline
 // between them right.
 //
