@@ -302,6 +302,63 @@ the link-dense one, which is where byte offsets, rune columns and contexts are
 stored — and identical blocks and documents, with only volatile identifier
 columns differing.
 
+## J32-F — F9, collision-heavy namespace construction: **rejected, no change**
+
+F9 said `appendUnique`'s linear scans cost on a vault where many notes share a
+name. They do not, at this size:
+
+- a CPU profile of a fresh collision import
+  (`j32n/collision-fresh-before.pprof`) puts `buildLinkNamespace` and
+  `appendUnique` below the profiler's 0.38 s threshold, under 0.5% of 77 s of
+  samples;
+- `BenchmarkBuildLinkNamespaceCollision` builds the namespace for the corpus's
+  shape (5,000 notes named `index.md`, 50 aliases shared by 100 notes each) in
+  **213 ms**, against **223 ms** for the same 5,000 notes with no shared alias.
+  Colliding names make it slightly cheaper: fewer distinct map keys offset the
+  scans.
+
+A set would replace 0.2% of an import with the memory the slice was written to
+avoid, so nothing ships. The benchmark stays, as the evidence and as the thing
+that would notice if this ever became a cost.
+
+## J32-N — the collection scope defeated the title index: **kept**
+
+Found while measuring J32-F. Every link resolved by title ran
+
+```sql
+collection_id = COALESCE(NULLIF(?, ''), collection_id)
+```
+
+which is not a constant SQLite can seek with, so the plan was
+`SCAN documents USING COVERING INDEX documents_title_idx` plus a temp B-tree
+for the ordering — a full index scan per link, and one that grows with the
+library rather than with the import. It was 46% of a fresh collision import,
+35 s of 77 s of samples, at 5,500 notes.
+
+`CollectionScopeSQLFor` writes `collection_id = ?` when the caller has a
+collection and keeps today's predicate when it does not, so an empty collection
+still means every collection and the bound parameter is unchanged. Both
+link-resolution lookups use it: documents by title, and resources by filename.
+
+Declared before the change: wall time on `collision/fresh`. Baseline `15ee070`,
+candidate `6bb843f`, five runs each, alternating. Records in `j32n/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| collision/fresh | wall s | 87.20 | 52.43 | 2.81 | −39.9% | better |
+| collision/fresh | user s | 73.56 | 38.43 | 1.63 | −47.8% | better |
+| collision/fresh | notes/s | 63.1 | 104.9 | 2.05 | +66.3% | better |
+| obsidian-10k/fresh | wall s | 80.15 | 80.02 | 1.45 | −0.2% | within noise |
+| obsidian-10k/fresh | user s | 76.36 | 75.30 | 0.83 | −1.4% | better |
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_links` — 16,000 rows on the collision corpus and 30,000 on
+the ordinary one, including every row's resolution status and target — and the
+importer reports the same warnings, all 101 ambiguity warnings included. A
+scope test pins the rendered predicate for a named collection, an empty one and
+a blank one, with and without a table alias.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
