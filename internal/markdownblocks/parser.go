@@ -90,6 +90,7 @@ func itoa(value int) string {
 // enable.
 func Extract(documentID, body string) []Block {
 	lines, offsets := physicalLines(body)
+	var scratch []byte
 	blocks := []Block{}
 	occurrences := map[string]int{}
 	slugs := map[string]int{}
@@ -110,7 +111,7 @@ func Extract(documentID, body string) []Block {
 		if block.Kind == KindHeading {
 			block.Slug = disambiguate(Slugify(block.Text), slugs)
 		}
-		block.ContentSHA256, block.ID = identify(documentID, block)
+		scratch, block.ContentSHA256, block.ID = identify(documentID, block, scratch)
 		blocks = append(blocks, block)
 		return true
 	}
@@ -130,18 +131,21 @@ func Extract(documentID, body string) []Block {
 		if fence := codeFence(trimmed); fence != "" {
 			start := offsets[index]
 			end := offsets[index] + len(line)
-			body := []string{line}
-			index++
-			for index < len(lines) {
-				body = append(body, lines[index])
-				end = offsets[index] + len(lines[index])
-				closed := strings.HasPrefix(strings.TrimSpace(lines[index]), fence)
-				index++
+			// Written straight into a builder rather than collected into a
+			// slice and joined: the text is the same, one allocation instead
+			// of two (v1.0 J32-Q).
+			stop := index + 1
+			for stop < len(lines) {
+				end = offsets[stop] + len(lines[stop])
+				closed := strings.HasPrefix(strings.TrimSpace(lines[stop]), fence)
+				stop++
 				if closed {
 					break
 				}
 			}
-			if !appendBlock(Block{Kind: KindCode, StartByte: start, EndByte: end, Text: strings.Join(body, "\n")}) {
+			text := joinLines(line, lines[index+1:stop], false, end-start)
+			index = stop
+			if !appendBlock(Block{Kind: KindCode, StartByte: start, EndByte: end, Text: text}) {
 				return blocks
 			}
 			continue
@@ -179,14 +183,14 @@ func Extract(documentID, body string) []Block {
 		if tableRowRE.MatchString(line) {
 			start := offsets[index]
 			end := offsets[index] + len(line)
-			rows := []string{trimmed}
-			index++
-			for index < len(lines) && tableRowRE.MatchString(lines[index]) {
-				rows = append(rows, strings.TrimSpace(lines[index]))
-				end = offsets[index] + len(lines[index])
-				index++
+			stop := index + 1
+			for stop < len(lines) && tableRowRE.MatchString(lines[stop]) {
+				end = offsets[stop] + len(lines[stop])
+				stop++
 			}
-			if !appendBlock(Block{Kind: KindTable, StartByte: start, EndByte: end, Text: strings.Join(rows, "\n")}) {
+			rows := joinLines(trimmed, lines[index+1:stop], true, end-start)
+			index = stop
+			if !appendBlock(Block{Kind: KindTable, StartByte: start, EndByte: end, Text: rows}) {
 				return blocks
 			}
 			continue
@@ -196,20 +200,20 @@ func Extract(documentID, body string) []Block {
 		// starts a different kind of block.
 		start := offsets[index]
 		end := offsets[index] + len(line)
-		paragraph := []string{trimmed}
-		index++
-		for index < len(lines) {
-			next := lines[index]
+		stop := index + 1
+		for stop < len(lines) {
+			next := lines[stop]
 			nextTrimmed := strings.TrimSpace(next)
 			if nextTrimmed == "" || headingRE.MatchString(nextTrimmed) ||
 				listItemRE.MatchString(next) || codeFence(nextTrimmed) != "" || tableRowRE.MatchString(next) {
 				break
 			}
-			paragraph = append(paragraph, nextTrimmed)
-			end = offsets[index] + len(next)
-			index++
+			end = offsets[stop] + len(next)
+			stop++
 		}
-		if !appendBlock(Block{Kind: KindParagraph, StartByte: start, EndByte: end, Text: strings.Join(paragraph, "\n")}) {
+		paragraph := joinLines(trimmed, lines[index+1:stop], true, end-start)
+		index = stop
+		if !appendBlock(Block{Kind: KindParagraph, StartByte: start, EndByte: end, Text: paragraph}) {
 			return blocks
 		}
 	}
@@ -274,12 +278,32 @@ func disambiguate(slug string, seen map[string]int) string {
 // heading distinct from a paragraph that reads the same; occurrence keeps two
 // identical paragraphs in one note distinguishable without reintroducing
 // position as identity.
-func identify(documentID string, block Block) (string, string) {
-	digest := sha256.Sum256([]byte(strings.Join([]string{
+// identify hashes the five parts that make a block's identity, through a
+// scratch buffer the caller reuses (v1.0 J32-Q).
+//
+// The bytes hashed are exactly what a strings.Join of the parts produced. What
+// changed is the copying: the join allocated a copy of the block's text and
+// the []byte conversion allocated a second, 0.96 GB on the near-limit corpus.
+// Appending into a buffer that the next block reuses copies the text once and
+// allocates only when a block is longer than any before it.
+//
+// A streaming hash would copy nothing at all, but sha256.New returns an
+// interface, and handing it the digest array makes that array escape for every
+// block: measured at 40,000 more allocations on a 150,000-block note, which is
+// worse than what it saves.
+func identify(documentID string, block Block, scratch []byte) ([]byte, string, string) {
+	scratch = scratch[:0]
+	for index, part := range [5]string{
 		"notrios-block-v1", documentID, block.Kind, block.Text, itoa(block.Occurrence),
-	}, "\x00")))
+	} {
+		if index > 0 {
+			scratch = append(scratch, 0)
+		}
+		scratch = append(scratch, part...)
+	}
+	digest := sha256.Sum256(scratch)
 	encoded := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:10]))
-	return hex(digest[:]), "blk_" + encoded
+	return scratch, hex(digest[:]), "blk_" + encoded
 }
 
 func hex(value []byte) string {
@@ -296,6 +320,13 @@ func hex(value []byte) string {
 // does not silently break every anchor in the note. Nothing else is touched —
 // case, punctuation, and emphasis are content.
 func normalize(text string) string {
+	if !needsNormalizing(text) {
+		// The common case: no carriage return and no line ending in spaces, so
+		// the answer is the text itself, minus trailing newlines. Splitting it
+		// into lines and joining them back produced the same bytes at the cost
+		// of copying every block (v1.0 J32-Q).
+		return strings.TrimRight(text, "\n")
+	}
 	text = strings.ReplaceAll(text, "\r\n", "\n")
 	text = strings.ReplaceAll(text, "\r", "\n")
 	lines := strings.Split(text, "\n")
@@ -303,6 +334,51 @@ func normalize(text string) string {
 		lines[i] = strings.TrimRight(line, " \t")
 	}
 	return strings.TrimRight(strings.Join(lines, "\n"), "\n")
+}
+
+// joinLines is a block's text: its first line, then the rest joined with
+// newlines, trimmed when the kind trims (v1.0 J32-Q).
+//
+// A block of one line is that line, which is already a slice of the body and
+// costs nothing. A longer one is written into a builder grown once, from the
+// block's extent in the body, which is an upper bound because the lines may be
+// trimmed. Collecting the lines into a slice and joining them allocated twice
+// per block; a builder left to grow by doubling allocated about twice the
+// block's size; and a builder for every block, including the one-line ones,
+// cost more allocations than the join it replaced. All three were measured.
+func joinLines(first string, rest []string, trim bool, capacity int) string {
+	if len(rest) == 0 {
+		return first
+	}
+	var builder strings.Builder
+	if capacity > len(first) {
+		builder.Grow(capacity)
+	}
+	builder.WriteString(first)
+	for _, line := range rest {
+		if trim {
+			line = strings.TrimSpace(line)
+		}
+		builder.WriteByte('\n')
+		builder.WriteString(line)
+	}
+	return builder.String()
+}
+
+// needsNormalizing reports whether normalize would change anything: a carriage
+// return anywhere, or a space or tab before a newline or at the end.
+func needsNormalizing(text string) bool {
+	for index := 0; index < len(text); index++ {
+		switch text[index] {
+		case '\r':
+			return true
+		case ' ', '\t':
+			if index+1 == len(text) || text[index+1] == '\n' {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // splitMarker removes an author-written `^marker` from the end of a block and
