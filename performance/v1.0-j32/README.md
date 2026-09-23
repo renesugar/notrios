@@ -450,6 +450,52 @@ imported by each binary produce identical `document_blocks`, 40,000 rows and
 54, with every ID, hash, slug, ordinal and offset equal, and identical
 `document_links`.
 
+## J32-S — eleven allocations per block: **kept**
+
+`MaxBlocksPerDocument` caps a note at 10,000 blocks, so the many-blocks
+benchmark's 111,000 allocations were about eleven per block: a regexp replace
+to strip each list marker (and a `sync.Pool` entry per call), the occurrence
+built as a string only to be hashed, the hash and the ID allocated twice each,
+and `Slugify` lowercasing a whole heading into a copy before collecting runes
+into a slice to convert once more.
+
+Now the list marker, heading and table-row shapes are matched by hand, the
+occurrence is appended as digits, the hash and ID are written into stack arrays
+and converted once each — two strings are stored, so two allocations are the
+floor — and `Slugify` writes bytes into a buffer sized from its input.
+
+**The regexps stay in the package** as the reference the tests hold the
+matchers to, across 4,050 lines covering every marker shape, each whitespace
+byte, both digit terminators and the near-misses (`- `, `1.`, `1 item`,
+`--`, `#######`, `|`, `x|`). What is recognised cannot drift without the tests
+saying so.
+
+| shape | before J32-Q | after J32-Q | after J32-S |
+|---|---|---|---|
+| one large note | 175.5 MB, 121 allocs | 103.4 MB, 86 allocs | 103.4 MB, 80 allocs |
+| many small blocks | 56.3 MB, 147,949 allocs, 324 ms | 54.7 MB, 111,286 allocs, 274 ms | **52.9 MB, 36,843 allocs, 196 ms** |
+
+Declared before the change: allocations on `obsidian-10k/fresh`, where a note
+has few blocks and the per-block cost is the whole cost. Baseline `9ade826`,
+candidate `0377418`, five runs each, alternating. Records in `j32s/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocations | 4,401,480 | 4,081,300 | 347 | −7.3% | better |
+| obsidian-10k/fresh | allocated bytes | 348.6 M | 337.2 M | 116 K | −3.3% | better |
+| obsidian-10k/fresh | wall s | 82.49 | 79.96 | 12.12 | −3.1% | within noise |
+| near-limit-obsidian/fresh | allocations | 70,470 | 65,358 | 146 | −7.3% | better |
+| near-limit-obsidian/fresh | wall s | 502.87 | 501.16 | 8.11 | −0.3% | within noise |
+
+Wall time stays within noise, and the ordinary corpus's range was unusually
+wide this run (12.1 s against the 0.5–2.8 s of earlier runs), which is its own
+reminder that a 3% wall-time move here would not have been a result.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_blocks` — 40,000 rows and 16,500 — with every ID, hash,
+slug, ordinal and offset equal.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
