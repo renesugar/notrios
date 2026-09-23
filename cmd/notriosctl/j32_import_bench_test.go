@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"testing"
 	"time"
 
@@ -26,6 +27,9 @@ import (
 //	NOTRIOS_J32_BENCH_ARGS    JSON array: the arguments after "notriosctl"
 //	NOTRIOS_J32_BENCH_STDOUT  where the command's own output goes
 //	NOTRIOS_J32_BENCH_REPORT  where this measurement is written, as JSON
+//	NOTRIOS_J32_BENCH_CPUPROFILE  optional: where to write a CPU profile, which
+//	                              is for finding what to change, never for a
+//	                              measured run
 func TestJ32ImportBench(t *testing.T) {
 	report := os.Getenv("NOTRIOS_J32_BENCH_REPORT")
 	if report == "" {
@@ -40,6 +44,18 @@ func TestJ32ImportBench(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer output.Close()
+
+	if profile := os.Getenv("NOTRIOS_J32_BENCH_CPUPROFILE"); profile != "" {
+		file, err := os.Create(profile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer file.Close()
+		if err := pprof.StartCPUProfile(file); err != nil {
+			t.Fatal(err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	stdout := os.Stdout
 	os.Stdout = output
