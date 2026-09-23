@@ -28,6 +28,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/renesugar/notrios/internal/markdownblocks"
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/stablelink"
 	"github.com/renesugar/notrios/internal/tempspace"
@@ -70,6 +71,12 @@ type SQLiteStore struct {
 	// was given neither a database file nor an asset store. Close removes it.
 	// The store never removes any other asset root (J22).
 	ownedAssetRoot string
+	// blockExtractor parses one note's blocks at a time through buffers it
+	// keeps between notes, rather than allocating a block slice and a line
+	// table per note: an import parses every note in a library (v1.0 J32-T).
+	// It is used only under mu, and reset after each note so no block keeps
+	// that note's body alive.
+	blockExtractor markdownblocks.Extractor
 	// tempSpace is where this store's instance keeps temporary work: import
 	// manifests, archive verification spools. It is nil when no instance is
 	// configured, and then that work goes in a private system temp directory.

@@ -252,10 +252,13 @@ func (s *SQLiteStore) rebuildDocumentBlocksLocked(documentID, body string) error
 	if err := s.execPreparedLocked(`DELETE FROM document_blocks WHERE document_id = ?`, documentID); err != nil {
 		return err
 	}
-	blocks := markdownblocks.Extract(documentID, body)
+	// The store's own extractor, reset below so the blocks it holds do not keep
+	// this note's body alive once the note is written (v1.0 J32-T).
+	blocks := s.blockExtractor.Extract(documentID, body)
 	if len(blocks) == 0 {
 		return nil
 	}
+	defer s.blockExtractor.Reset()
 	insert, err := s.prepareRepeatedLocked(`INSERT INTO document_blocks(
 		id, document_id, ordinal, kind, heading_level, marker, content_sha256, start_byte, end_byte, heading_slug
 	) VALUES(?, ?, ?, ?, ?, NULLIF(?, ''), ?, ?, ?, NULLIF(?, ''))`)

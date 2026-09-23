@@ -91,11 +91,66 @@ func itoa(value int) string {
 // a note, and cross-note correlation is not something a block key should
 // enable.
 func Extract(documentID, body string) []Block {
-	lines, offsets := physicalLines(body)
-	var scratch []byte
-	blocks := []Block{}
-	occurrences := map[string]int{}
-	slugs := map[string]int{}
+	var extractor Extractor
+	return extractor.Extract(documentID, body)
+}
+
+// Extractor extracts blocks through buffers it keeps between notes (v1.0
+// J32-T).
+//
+// Extract allocates a block slice, a line table and the maps behind them for
+// every note it is given. An import parses every note in a library, so those
+// are thousands of allocations that hold nothing once the note is written.
+//
+// The blocks an Extractor returns are valid until its next call: it is for a
+// caller that writes each note's blocks before parsing the next one, which is
+// what the import and save paths do. A caller that keeps blocks around uses
+// Extract instead.
+//
+// Reset releases what the buffers hold without giving up their capacity, and
+// matters more than it looks: a block's Text is a slice of the note's body, so
+// a buffer still holding the last note's blocks keeps that whole body alive —
+// 60 MiB for one large note.
+type Extractor struct {
+	blocks      []Block
+	lines       []string
+	offsets     []int
+	scratch     []byte
+	occurrences map[string]int
+	slugs       map[string]int
+}
+
+// Reset drops what the buffers refer to, keeping their capacity.
+func (e *Extractor) Reset() {
+	for index := range e.blocks {
+		e.blocks[index] = Block{}
+	}
+	e.blocks = e.blocks[:0]
+	for index := range e.lines {
+		e.lines[index] = ""
+	}
+	e.lines = e.lines[:0]
+	e.offsets = e.offsets[:0]
+	e.scratch = e.scratch[:0]
+}
+
+// Extract returns the blocks of one note, in document order. The result is
+// valid until the next call on this Extractor.
+func (e *Extractor) Extract(documentID, body string) []Block {
+	e.Reset()
+	lines, offsets := e.physicalLines(body)
+	scratch := e.scratch
+	blocks := e.blocks
+	if e.occurrences == nil {
+		e.occurrences, e.slugs = map[string]int{}, map[string]int{}
+	}
+	clear(e.occurrences)
+	clear(e.slugs)
+	occurrences, slugs := e.occurrences, e.slugs
+	defer func() {
+		e.scratch = scratch
+		e.blocks = blocks
+	}()
 
 	appendBlock := func(block Block) bool {
 		if len(blocks) >= MaxBlocksPerDocument {
@@ -528,9 +583,8 @@ func codeFence(trimmed string) string {
 
 // physicalLines splits on LF while recording each line's byte offset, so a
 // block's range refers to the body it was parsed from.
-func physicalLines(body string) ([]string, []int) {
-	lines := []string{}
-	offsets := []int{}
+func (e *Extractor) physicalLines(body string) ([]string, []int) {
+	lines, offsets := e.lines[:0], e.offsets[:0]
 	start := 0
 	for i := 0; i < len(body); i++ {
 		if body[i] == '\n' {
@@ -541,5 +595,6 @@ func physicalLines(body string) ([]string, []int) {
 	}
 	lines = append(lines, body[start:])
 	offsets = append(offsets, start)
+	e.lines, e.offsets = lines, offsets
 	return lines, offsets
 }
