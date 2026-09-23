@@ -395,6 +395,61 @@ reverted here rather than closed as wrong.
 The ordinary corpus did gain 1.1% of allocations, which is not the declared
 metric and is not worth a second way to read a file.
 
+## J32-Q — a block's text, copied three times: **kept**
+
+The allocation profile of a fresh near-limit import
+(`j32r/near-limit-before.allocs`) put 3.31 GB of 6.95 GB in block extraction.
+It was three copies, not one:
+
+- `identify` joined its five parts with `strings.Join` and converted the result
+  with `[]byte(...)`: two whole copies of a block's text per block;
+- `normalize` split the text into lines and joined them back even when no line
+  had trailing whitespace and there was no carriage return;
+- each block's text was collected as a `[]string` of its lines and joined.
+
+Now: a block's text is written once into a builder grown from the block's own
+extent, or is the line itself when the block has one line; `identify` appends
+into a scratch buffer the next block reuses; `normalize` returns what it was
+given when nothing would change.
+
+**Two attempts measured worse and were replaced, not kept.**
+
+| attempt | one large note | many small blocks |
+|---|---|---|
+| before the slice | 175.5 MB, 121 allocs | 56.3 MB, 147,949 allocs |
+| builder grown by doubling | 206.1 MB, 140 allocs | — |
+| streaming `sha256.New` per block | — | 55.8 MB, 214,604 allocs |
+| what shipped | **103.4 MB, 86 allocs** | **54.7 MB, 111,286 allocs** |
+
+A builder left to double allocates about twice a block's size, which is worse
+than the join it replaced; and `sha256.New` returns an interface, so handing it
+the digest array makes that array escape once per block. Both are why the
+shipped version hashes through a reused buffer instead of streaming.
+
+Declared before the change: allocated bytes on `near-limit-obsidian/fresh`.
+Baseline `e8469f8`, candidate `994894e`, five runs each, alternating. Records
+in `j32q/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 7.28 G | 5.85 G | 272 K | −19.6% | better |
+| near-limit-obsidian/fresh | allocations | 73,984 | 70,477 | 245 | −4.7% | better |
+| near-limit-obsidian/fresh | wall s | 520.97 | 508.68 | 32.38 | −2.4% | within noise |
+| link-dense/fresh | allocated bytes | 269.6 M | 254.7 M | 216 K | −5.6% | better |
+| obsidian-10k/fresh | allocated bytes | 379.0 M | 348.8 M | 589 K | −8.0% | better |
+| obsidian-10k/fresh | allocations | 4,661,580 | 4,401,560 | 340 | −5.6% | better |
+
+Wall time moves within noise everywhere: this is allocation, and the import is
+bound by other work. Nothing regressed on any case.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Reference implementations of `identify` and
+`normalize` — the code this replaced — are kept in the tests and compared
+against the new code across sixteen texts and five block kinds. Both corpora
+imported by each binary produce identical `document_blocks`, 40,000 rows and
+54, with every ID, hash, slug, ordinal and offset equal, and identical
+`document_links`.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
