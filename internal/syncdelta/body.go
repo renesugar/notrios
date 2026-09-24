@@ -50,6 +50,34 @@ func SHA256Hex(value []byte) string {
 	return hex.EncodeToString(digest[:])
 }
 
+// hashChunkBytes is how much of a string is copied at a time to hash it. Large
+// enough that the per-chunk call costs nothing, small enough that the buffer is
+// noise beside the note it hashes.
+const hashChunkBytes = 32 << 10
+
+// SHA256HexString is SHA256Hex for a string, without copying the string whole.
+//
+// `SHA256Hex([]byte(body))` allocates a second copy of the body only to hash
+// it, which for a 60 MiB note is 60 MiB: two such conversions were 480 MB of a
+// near-limit import (v1.0 J32-W1). The bytes hashed are the same bytes, so the
+// hash is the same hash.
+func SHA256HexString(value string) string {
+	if len(value) <= hashChunkBytes {
+		return SHA256Hex([]byte(value))
+	}
+	digest := sha256.New()
+	var chunk [hashChunkBytes]byte
+	for offset := 0; offset < len(value); offset += hashChunkBytes {
+		end := offset + hashChunkBytes
+		if end > len(value) {
+			end = len(value)
+		}
+		count := copy(chunk[:], value[offset:end])
+		_, _ = digest.Write(chunk[:count])
+	}
+	return hex.EncodeToString(digest.Sum(nil))
+}
+
 // Delta is a transfer delta bound to both of its endpoints by exact hash. It
 // carries the base it was generated against and the result it reconstructs, so
 // a receiver can refuse it without decoding anything.

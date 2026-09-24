@@ -212,7 +212,9 @@ func (s *SQLiteStore) insertRevisionLocked(revisionID, documentID, title, body, 
 	if err != nil {
 		return err
 	}
-	contentSHA := syncdelta.SHA256Hex([]byte(body))
+	// Hashed from the string itself: converting it to bytes copied every body
+	// written, 240 MB of a near-limit import (v1.0 J32-W1).
+	contentSHA := syncdelta.SHA256HexString(body)
 	if err := s.prepareRevisionTransferLocked(revisionID, parentRevisionID, body, contentSHA); err != nil {
 		return err
 	}

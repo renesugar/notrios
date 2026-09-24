@@ -24,6 +24,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncdelta"
 )
 
 const (
@@ -1515,7 +1516,10 @@ func (run *importRun) addWarning(message string) {
 }
 
 func noteFingerprint(item vaultFile, notebookID, canonical string) string {
-	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
+	// The canonical body is hashed from the string itself; converting it to
+	// bytes copied the whole note, 240 MB of a near-limit import (v1.0
+	// J32-W1). The outer hash is over a few dozen bytes and stays as it is.
+	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + syncdelta.SHA256HexString(canonical)))
 }
 
 // fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,
