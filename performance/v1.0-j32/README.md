@@ -614,6 +614,43 @@ allocates **4.85 GB**, down 30%. What is left: the body read back out of SQLite
 `markdownTitle`'s frontmatter split (480 MB, J32-O), block identity (480 MB),
 and the note read twice (480 MB, which J32-G measured and did not pay for).
 
+## J32-O — read a note's title without copying the note: **kept**
+
+J32-U's profile put 480 MB of a 4.85 GB near-limit import in `splitFrontmatter`,
+all of it from `markdownTitle`. That function copied a whole note twice to
+inspect a handful of its bytes:
+
+- `splitFrontmatter` converted the body to `[]byte`, split it, and converted
+  both halves back;
+- `strings.Split(body, "\n")` built a slice of every line — about four million
+  for a 60 MiB note — to find the first `# ` heading.
+
+Both are now slices of the body the caller already holds: the frontmatter is
+located by offset with `frontmatterRegion` (added by J32-U), and the lines are
+walked one at a time with `strings.Cut`.
+
+On a 7.5 MB note the function goes from **18.19 MB and 5 allocations to 32
+bytes and 1**, and runs 2.9× faster.
+
+Declared: allocated bytes on `near-limit-obsidian/fresh`. Baseline `09e2cbe`,
+candidate `11faa99`, five runs each, alternating. Records in `j32o/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 5.09 G | 4.56 G | 76 K | −10.5% | better |
+| near-limit-obsidian/fresh | allocations | 58,719 | 58,037 | 99 | −1.2% | better |
+| near-limit-obsidian/fresh | wall s | 502.95 | 496.51 | 13.66 | −1.3% | within noise |
+| obsidian-10k/fresh | allocated bytes | 268.6 M | 262.8 M | 353 K | −2.1% | better |
+| obsidian-10k/fresh | allocations | 3,720,870 | 3,680,800 | 365 | −1.1% | better |
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. A note is addressed by its title, so the old
+reading is kept in the tests and compared against the new one across twenty
+shapes, 3,000 randomly assembled bodies and four note paths — including
+unclosed frontmatter, CRLF, an empty title key, `#` without a space, and an
+indented heading. Both corpora imported by each binary produce identical
+`documents` and `document_links` apart from the volatile identifier columns.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
