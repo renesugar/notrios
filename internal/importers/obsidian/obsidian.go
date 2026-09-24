@@ -1608,12 +1608,20 @@ func shouldSkipDir(name string) bool {
 }
 
 func markdownTitle(relPath, body string) string {
-	if fm, _, ok := splitFrontmatter(body); ok {
-		if title := frontmatterScalar(fm, "title"); title != "" {
+	// Both steps used to copy the whole note to answer a question about a few
+	// of its bytes (v1.0 J32-O): splitFrontmatter converted it to []byte and
+	// converted both halves back, and strings.Split built a slice of every
+	// line -- about four million of them for a 60 MiB note -- to find the
+	// first heading. The frontmatter is located by offset and the lines are
+	// walked one at a time; both are slices of the body the caller holds.
+	if start, end, _, ok := frontmatterRegion(body); ok {
+		if title := frontmatterScalar(body[start:end], "title"); title != "" {
 			return title
 		}
 	}
-	for _, line := range strings.Split(body, "\n") {
+	for rest := body; rest != ""; {
+		line, remainder, _ := strings.Cut(rest, "\n")
+		rest = remainder
 		if trimmed := strings.TrimSpace(line); strings.HasPrefix(trimmed, "# ") {
 			return strings.TrimSpace(strings.TrimPrefix(trimmed, "# "))
 		}
