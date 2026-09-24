@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/21 | 21 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/22 | 22 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3939,6 +3939,33 @@ so an earlier kept change is part of that baseline.
   length, and pass the body that is already in hand. Metrics: allocated bytes
   and peak RSS on `near-limit-obsidian/fresh`, and peak RSS on
   `obsidian-10k/fresh`, which is where a retained buffer would show as a cost.
+
+  **Counted, 2026-09-24.** A fresh `near-limit-obsidian` import allocates
+  4.35 GB for 240 MB of notes, and almost all of it is whole-note copies —
+  about fourteen of them per note, of which one, the canonical body, is the
+  result. The body read back out of SQLite through `_Cfunc_GoString` is three
+  of those copies, 720 MB, and the largest single item left. The line table is
+  *not* a copy: `physicalLines` holds slices of the body, and its 502 MB is
+  16 bytes of string header plus 8 of offset for each of a 60 MiB note's four
+  million lines.
+
+- **J32-V, the two copies of a block's text.** Found by the same count, and
+  measured with J32-R because both are the same rule: do not copy bytes the
+  caller already holds.
+  - **`joinLines` rebuilds a block from its trimmed lines even when trimming
+    changes nothing**, and then the block's text is exactly `body[start:end]`,
+    which a slice already names. 480 MB, two copies of every note, because a
+    near-limit note is one enormous paragraph.
+  - **`identify` copies that same text again** into the hash scratch. 480 MB
+    more. J32-Q chose the scratch buffer after a streaming hash measured
+    worse, but that attempt handed the digest array to an interface method and
+    made it escape once per block; hashing with `Sum(nil)`, which allocates
+    32 bytes per block instead of copying the text, was not tried.
+  - Metrics: allocated bytes on `near-limit-obsidian/fresh`, with the
+    many-blocks benchmark and `obsidian-10k/fresh` as the cases where a
+    per-block allocation would show as a cost. Block IDs, hashes, slugs,
+    ordinals and offsets must be identical, held to the reference
+    implementations J32-Q kept.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and
