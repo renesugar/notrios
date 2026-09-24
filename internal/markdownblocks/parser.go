@@ -16,6 +16,8 @@ package markdownblocks
 import (
 	"crypto/sha256"
 	"encoding/base32"
+	"hash"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -116,6 +118,7 @@ type Extractor struct {
 	lines       []string
 	offsets     []int
 	scratch     []byte
+	blockHasher hash.Hash
 	occurrences map[string]int
 	slugs       map[string]int
 }
@@ -130,6 +133,15 @@ const (
 	maxRetainedBlocks  = 1 << 12
 	maxRetainedScratch = 1 << 20
 )
+
+// hasher is the Extractor's own, made once: a new one per block is an
+// allocation a note with thousands of blocks pays for nothing (v1.0 J32-V).
+func (e *Extractor) hasher() hash.Hash {
+	if e.blockHasher == nil {
+		e.blockHasher = sha256.New()
+	}
+	return e.blockHasher
+}
 
 // Reset drops what the buffers refer to, keeping capacity up to the caps
 // above.
@@ -189,7 +201,7 @@ func (e *Extractor) Extract(documentID, body string) []Block {
 		if block.Kind == KindHeading {
 			block.Slug = disambiguate(Slugify(block.Text), slugs)
 		}
-		scratch, block.ContentSHA256, block.ID = identify(documentID, block, scratch)
+		scratch, block.ContentSHA256, block.ID = identify(documentID, block, scratch, e.hasher())
 		blocks = append(blocks, block)
 		return true
 	}
@@ -221,7 +233,7 @@ func (e *Extractor) Extract(documentID, body string) []Block {
 					break
 				}
 			}
-			text := joinLines(line, lines[index+1:stop], false, end-start)
+			text := joinLines(body, start, end, line, lines[index+1:stop], false)
 			index = stop
 			if !appendBlock(Block{Kind: KindCode, StartByte: start, EndByte: end, Text: text}) {
 				return blocks
@@ -266,7 +278,7 @@ func (e *Extractor) Extract(documentID, body string) []Block {
 				end = offsets[stop] + len(lines[stop])
 				stop++
 			}
-			rows := joinLines(trimmed, lines[index+1:stop], true, end-start)
+			rows := joinLines(body, start, end, trimmed, lines[index+1:stop], true)
 			index = stop
 			if !appendBlock(Block{Kind: KindTable, StartByte: start, EndByte: end, Text: rows}) {
 				return blocks
@@ -288,7 +300,7 @@ func (e *Extractor) Extract(documentID, body string) []Block {
 			end = offsets[stop] + len(next)
 			stop++
 		}
-		paragraph := joinLines(trimmed, lines[index+1:stop], true, end-start)
+		paragraph := joinLines(body, start, end, trimmed, lines[index+1:stop], true)
 		index = stop
 		if !appendBlock(Block{Kind: KindParagraph, StartByte: start, EndByte: end, Text: paragraph}) {
 			return blocks
@@ -360,36 +372,59 @@ func disambiguate(slug string, seen map[string]int) string {
 // heading distinct from a paragraph that reads the same; occurrence keeps two
 // identical paragraphs in one note distinguishable without reintroducing
 // position as identity.
-// identify derives a block's content hash and its opaque ID, through a scratch
-// buffer the caller reuses (v1.0 J32-Q, J32-S).
+// streamHashThreshold is where copying a block's text to hash it stops being
+// cheaper than streaming it (v1.0 J32-V). Below it, appending into a buffer the
+// next block reuses costs no allocation at all; above it, the copy is the
+// block's whole size, and a 60 MiB paragraph copied to be hashed was 480 MB of
+// a near-limit import.
+const streamHashThreshold = 64 << 10
+
+// identify derives a block's content hash and its opaque ID (v1.0 J32-Q,
+// J32-S, J32-V).
 //
 // The bytes hashed are exactly what a strings.Join of the five parts produced.
-// What changed is the copying: the join allocated a copy of the block's text
-// and the []byte conversion allocated a second, 0.96 GB on the near-limit
-// corpus. Appending into a buffer that the next block reuses copies the text
-// once and allocates only when a block is longer than any before it, and the
-// occurrence is appended as digits rather than built as a string first.
+// What changed is the copying. A small block is appended into a scratch buffer
+// the next block reuses, which allocates only when a block is longer than any
+// before it. A large one is streamed through the caller's hasher, so its text
+// is never copied.
 //
-// A streaming hash would copy nothing at all, but sha256.New returns an
-// interface, and handing it the digest array makes that array escape for every
-// block: measured at 40,000 more allocations on a 150,000-block note, which is
-// worse than what it saves.
+// The digest comes back from Sum(nil), which allocates the 32 bytes it
+// returns: handing Sum a local array instead makes that array escape for every
+// block, which measured worse than what streaming saves (J32-Q).
 //
 // Two strings are returned because both are stored, so two allocations are the
 // floor. Each is written into an array on the stack and converted once.
-func identify(documentID string, block Block, scratch []byte) ([]byte, string, string) {
-	scratch = scratch[:0]
-	for index, part := range [4]string{
-		"notrios-block-v1", documentID, block.Kind, block.Text,
-	} {
-		if index > 0 {
-			scratch = append(scratch, 0)
+func identify(documentID string, block Block, scratch []byte, hasher hash.Hash) ([]byte, string, string) {
+	parts := [4]string{"notrios-block-v1", documentID, block.Kind, block.Text}
+	var digest [sha256.Size]byte
+	if len(block.Text) >= streamHashThreshold {
+		// The digit buffer lives in this branch: handing it to the hasher's
+		// interface makes it escape, and a variable shared with the branch
+		// below would escape for every block rather than for the large ones
+		// (measured, v1.0 J32-V).
+		var occurrence [20]byte
+		hasher.Reset()
+		for index, part := range parts {
+			if index > 0 {
+				_, _ = hasher.Write([]byte{0})
+			}
+			_, _ = io.WriteString(hasher, part)
 		}
-		scratch = append(scratch, part...)
+		_, _ = hasher.Write([]byte{0})
+		_, _ = hasher.Write(strconv.AppendInt(occurrence[:0], int64(block.Occurrence), 10))
+		copy(digest[:], hasher.Sum(nil))
+	} else {
+		scratch = scratch[:0]
+		for index, part := range parts {
+			if index > 0 {
+				scratch = append(scratch, 0)
+			}
+			scratch = append(scratch, part...)
+		}
+		scratch = append(scratch, 0)
+		scratch = strconv.AppendInt(scratch, int64(block.Occurrence), 10)
+		digest = sha256.Sum256(scratch)
 	}
-	scratch = append(scratch, 0)
-	scratch = strconv.AppendInt(scratch, int64(block.Occurrence), 10)
-	digest := sha256.Sum256(scratch)
 
 	var hashBytes [sha256.Size * 2]byte
 	encodeHex(hashBytes[:0], digest[:])
@@ -535,23 +570,37 @@ func matchTableRow(line string) bool {
 }
 
 // joinLines is a block's text: its first line, then the rest joined with
-// newlines, trimmed when the kind trims (v1.0 J32-Q).
+// newlines, trimmed when the kind trims (v1.0 J32-Q, J32-V).
 //
-// A block of one line is that line, which is already a slice of the body and
-// costs nothing. A longer one is written into a builder grown once, from the
-// block's extent in the body, which is an upper bound because the lines may be
-// trimmed. Collecting the lines into a slice and joining them allocated twice
-// per block; a builder left to grow by doubling allocated about twice the
-// block's size; and a builder for every block, including the one-line ones,
-// cost more allocations than the join it replaced. All three were measured.
-func joinLines(first string, rest []string, trim bool, capacity int) string {
+// When trimming changes nothing and no line had a carriage return stripped,
+// the text is exactly body[from:to] -- the lines are contiguous slices of the
+// body, separated by the newlines they were split on -- and a slice of the
+// body copies nothing. That is the common case and it was being rebuilt:
+// 480 MB on the near-limit corpus, where a note is one enormous paragraph.
+//
+// Otherwise it is written into a builder grown once, from the exact size.
+// Collecting the lines into a slice and joining them allocated twice per
+// block; a builder left to grow by doubling allocated about twice the block's
+// size; and a builder for every block, including the one-line ones, cost more
+// allocations than the join it replaced. All three were measured.
+func joinLines(body string, from, to int, first string, rest []string, trim bool) string {
 	if len(rest) == 0 {
 		return first
 	}
-	var builder strings.Builder
-	if capacity > len(first) {
-		builder.Grow(capacity)
+	size := len(first)
+	for _, line := range rest {
+		if trim {
+			line = strings.TrimSpace(line)
+		}
+		size += len(line) + 1
 	}
+	if size == to-from {
+		// Nothing was trimmed and nothing was stripped, so the bytes between
+		// the offsets are the text.
+		return body[from:to]
+	}
+	var builder strings.Builder
+	builder.Grow(size)
 	builder.WriteString(first)
 	for _, line := range rest {
 		if trim {

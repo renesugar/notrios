@@ -58,7 +58,7 @@ func TestIdentifyMatchesReference(t *testing.T) {
 		for _, kind := range []string{KindParagraph, KindHeading, KindCode, KindTable, KindListItem} {
 			for _, occurrence := range []int{0, 1, 42} {
 				block := Block{Kind: kind, Text: text, Occurrence: occurrence}
-				_, gotHash, gotID := identify("doc-1", block, nil)
+				_, gotHash, gotID := identify("doc-1", block, nil, sha256.New())
 				want := referenceIdentify("doc-1", block)
 				if gotHash != hex(want[:]) {
 					t.Fatalf("hash for %q/%s/%d: %s, reference %s", text, kind, occurrence, gotHash, hex(want[:]))
@@ -109,7 +109,9 @@ func TestExtractUnchangedAcrossShapes(t *testing.T) {
 // BenchmarkExtractLargeNote is the allocation claim, at the shape of the
 // near-limit corpus: a note of repeated short paragraphs.
 func BenchmarkExtractLargeNote(b *testing.B) {
-	line := strings.Repeat("near limit text ", 8)
+	// Trimmed, as the near-limit corpus writes it: a line ending in a space
+	// would make every block need rebuilding rather than slicing (v1.0 J32-V).
+	line := strings.TrimRight(strings.Repeat("near limit text ", 8), " ")
 	body := strings.Repeat(line+"\n", 200_000)
 	b.SetBytes(int64(len(body)))
 	b.ReportAllocs()
