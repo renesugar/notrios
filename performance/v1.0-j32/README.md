@@ -496,6 +496,53 @@ passes with no temp entry left. Both corpora imported by each binary produce
 identical `document_blocks` — 40,000 rows and 16,500 — with every ID, hash,
 slug, ordinal and offset equal.
 
+## J32-T — block storage reused across notes: **kept, after a capped second attempt**
+
+`Extract` allocated a block slice, a line table and two maps for every note,
+and an import parses every note in a library. An `Extractor` keeps them; the
+store holds one and resets it after each note is written. `Extract` remains for
+callers that keep blocks around, since the reused buffers are valid only until
+the next call.
+
+**The first attempt improved allocations and regressed live heap by 77 MB.**
+`Reset` cleared what the buffers referred to and kept their capacity — which is
+the point of reuse — but a 60 MiB note's line table is about four million
+entries, so after one such note the process held 77 MB for good:
+
+| attempt | case | allocated bytes | live heap | verdict |
+|---|---|---:|---:|---|
+| uncapped (`e2d08ad`) | near-limit | 5.85 G → 4.95 G (−15.4%) | 639 KB → **77.0 MB** | worse |
+| capped (`eb9cd33`) | near-limit | 5.849 G → 5.848 G (−0.02%) | 644 KB → 641 KB | within noise |
+
+`Reset` now gives back a line table, block slice or scratch buffer past its cap
+(65,536 lines, 4,096 blocks, 1 MiB). **The near-limit byte gain went with it**,
+and that is the honest reading: on that corpus the 15% came from retaining the
+table, which is the thing that cannot be kept. What remains there is the
+allocation count.
+
+Declared before the change: allocated bytes and allocations. Baseline
+`370cd02`, candidate `eb9cd33`, five runs each, alternating. Both records are
+in `j32t/`, the first attempt's under `-uncapped`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocated bytes | 337.0 M | 283.8 M | 572 K | −15.8% | better |
+| obsidian-10k/fresh | allocations | 4,081,170 | 3,800,920 | 229 | −6.9% | better |
+| obsidian-10k/fresh | live heap bytes | 1.155 M | 1.152 M | 14 K | −0.3% | within noise |
+| near-limit-obsidian/fresh | allocations | 65,323 | 60,106 | 76 | −8.0% | better |
+| near-limit-obsidian/fresh | peak RSS KiB | 1,140,580 | 1,088,960 | 123,176 | −4.5% | within noise |
+
+Across 200 notes the parser's own benchmark goes from 15.5 MB and 76,246
+allocations to 2.6 MB and 66,210, and from 137 ms to 113 ms.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. A reuse test runs notes of decreasing block
+count through one `Extractor` and compares every block with what a fresh
+`Extract` returns; a reset test proves the buffers refer to nothing afterwards;
+a third proves a note past the caps hands its buffers back while an ordinary
+one still reuses. Both corpora imported by each binary produce identical
+`document_blocks`, 40,000 rows and 616.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
