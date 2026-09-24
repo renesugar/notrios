@@ -3810,11 +3810,23 @@ so an earlier kept change is part of that baseline.
 - **J32-O, stop converting a note between `[]byte` and `string` to read it.**
   `splitFrontmatter` converts the body to bytes, splits it, and converts both
   halves back. Every caller already holds one or the other, and the halves are
-  slices of what it holds. Metric: allocated bytes on
+  slices of what it holds.
+
+  **Narrowed by J32-U's measurement, 2026-09-24.** The canonical-body path no
+  longer calls it. What remains is `markdownTitle`, which converts a whole note
+  to `[]byte` and back while the inventory is built: 480 MB of a 4.85 GB
+  near-limit import, and the largest single item J32-U's profile still shows in
+  this package. `frontmatterRegion`, which J32-U added, already answers the
+  same question by offset. Metric: allocated bytes on
   `near-limit-obsidian/fresh`; `obsidian-10k/fresh` must not regress. The
   frontmatter boundary found must not move: the existing frontmatter tests,
   plus a test that the two forms agree on the same bodies.
-- **J32-P, assemble the canonical body once.** `canonicalBody` normalizes
+- **J32-P, assemble the canonical body once — withdrawn, 2026-09-24.** J32-U
+  is this change, reached from the other direction: the canonical body is now
+  written in one pass from the link edits plus the frontmatter. What this
+  slice would have done is done and measured there.
+
+  The original statement, for the record: `canonicalBody` normalizes
   newlines into a new string, rewrites links into another, and
   `augmentFrontmatter` concatenates a third. One pass into one builder, sized
   from what is known, as J32-D did for the rewrite. Metrics: allocated bytes

@@ -543,6 +543,77 @@ a third proves a note past the caps hands its buffers back while an ordinary
 one still reuses. Both corpora imported by each binary produce identical
 `document_blocks`, 40,000 rows and 616.
 
+## J32-U — is an edit script the right model? **Yes, and it was already half-built**
+
+The owner's question: import *compiles* a note, so should everything done to the
+body before writing — canonicalizing newlines, rewriting link ranges,
+prepending frontmatter, trimming — be collected as edits against the original
+bytes and applied once, the way a text editor's rope handles edits?
+
+**The answer has two halves.**
+
+*A rope, no.* A rope pays for itself when a program makes many small edits to
+one large text and keeps it live between them. An import makes one pass and
+writes the result once, and J32-D already turned that pass into a single
+assembly. The remaining copies were not edits but *re-materializations* — the
+same bytes converted between `[]byte` and `string`, split and rejoined. A rope
+would add a structure over the text without removing one conversion, and would
+have to flatten itself for the database write. Go already gives the operation a
+rope would provide: a string slice shares its bytes and copies nothing.
+
+*An edit list, yes — and J32-D had already made one.* `rewriteObsidianLinks`
+produced a list of replacements and applied it in one pass, then
+`augmentFrontmatter` copied the result again to rebuild the frontmatter around
+it. So the edit script was there; it just stopped short of the last stage.
+`planObsidianLinks` now returns the edits, and `canonicalBodyOnce` writes the
+frontmatter and the edited body together, locating the frontmatter by offset
+instead of copying it out. The staged path remains for what the one pass
+declines: a rewrite straddling the frontmatter delimiters, or overlapping
+replacements.
+
+**No separate intermediate representation was needed**, and that is the
+result: a general edit DSL would have been a new IR on the import path, and the
+measurement below was obtained by extending the list the code already had.
+
+Declared: allocated bytes. Baseline `bae3c0b`, candidate `09e2cbe`, five runs
+each, alternating; the near-limit case re-measured at nine. Records in `j32u/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocated bytes | 283.7 M | 268.8 M | 379 K | −5.2% | better |
+| obsidian-10k/fresh | allocations | 3,801,040 | 3,720,910 | 309 | −2.1% | better |
+| obsidian-10k/fresh | user s | 74.10 | 73.58 | 0.23 | −0.7% | better |
+| near-limit-obsidian/fresh (9 runs) | allocated bytes | 5.85 G | 5.09 G | 237 K | −12.9% | better |
+| near-limit-obsidian/fresh (9 runs) | live heap bytes | 641,344 | 641,560 | 1,952 | +0.03% | within noise |
+
+At five runs the near-limit live heap was flagged worse — 641,080 → 643,384
+against a range of 1,512 — so the case was re-measured at nine runs per binary:
+a 216-byte difference against a 1,952-byte range. The narrow range was the
+artefact, as in J32-E. Both records are kept.
+
+**What it means for the two slices it was measured against.**
+- **J32-P (assemble the canonical body once) is withdrawn**: this *is* that
+  change, arrived at from the other direction.
+- **J32-O stands, with its target now exact.** The profile taken after this
+  change (`j32u/near-limit-after.allocs`) still shows 480 MB in
+  `splitFrontmatter`, all of it from `markdownTitle`, which converts a whole
+  note to `[]byte` and back to find its frontmatter while building the
+  inventory. `frontmatterRegion` already answers that by offset.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. The one-pass assembly is held to the staged
+path byte for byte across eight note shapes, 3,000 randomly assembled notes and
+three note paths, and `frontmatterRegion` is held to the splitter that returns
+the bytes. Both corpora imported by each binary produce identical `documents`
+and `document_revisions` apart from the volatile identifier columns, so every
+canonical body is unchanged.
+
+**Where the 6.95 GB stands.** After J32-Q, S, T and U a fresh near-limit import
+allocates **4.85 GB**, down 30%. What is left: the body read back out of SQLite
+(721 MB, J32-R), string conversions (720 MB), the line table (497 MB),
+`markdownTitle`'s frontmatter split (480 MB, J32-O), block identity (480 MB),
+and the note read twice (480 MB, which J32-G measured and did not pay for).
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`

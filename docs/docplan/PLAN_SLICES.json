@@ -856,12 +856,12 @@
         },
         {
           "id": "J32-O",
-          "statement": "Reading a note's frontmatter stops converting the whole note between []byte and string, or the change is reverted on its measurement",
+          "statement": "markdownTitle stops converting a whole note between []byte and string, or the change is reverted on its measurement",
           "state": "not-started"
         },
         {
           "id": "J32-P",
-          "statement": "The canonical body is assembled in one pass instead of three, or the change is reverted on its measurement",
+          "statement": "Assembling the canonical body once is withdrawn: J32-U is that change, measured there",
           "state": "not-started"
         },
         {
