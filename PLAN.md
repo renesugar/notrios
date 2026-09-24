@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/22 | 22 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/23 | 23 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3966,6 +3966,67 @@ so an earlier kept change is part of that baseline.
     per-block allocation would show as a cost. Block IDs, hashes, slugs,
     ordinals and offsets must be identical, held to the reference
     implementations J32-Q kept.
+
+- **J32-W, one in-memory note, carried to the write.** The owner's direction,
+  2026-09-24: a note should exist once in memory — an import buffer, slices of
+  it for the frontmatter, title and lines, an update buffer holding the edits,
+  and slices of that for each edit — and be written to the database from that
+  one representation, instead of being copied at every phase.
+
+  **The accounting this starts from** (`j32r/near-limit-before.allocs` and the
+  profile taken at `a3d0bef`): a fresh `near-limit-obsidian` import allocates
+  4.35 GB for 240 MB of notes, about fourteen whole-note copies. Each is now
+  named, with what it would take to remove it:
+
+  | copy | bytes | disposition |
+  |---|---:|---|
+  | two existence checks reading whole bodies back out of SQLite | 480 MB | J32-H: ask for presence, not for documents |
+  | the link-rebuild pass reading a body back | 240 MB | J32-I: reuse what the notes phase already derived |
+  | `joinLines` rebuilding a block that is already a slice | 480 MB | J32-V, measured |
+  | `identify` copying that text again to hash it | 480 MB | J32-V, measured |
+  | `readInventory`'s `string(raw)` | 240 MB | J32-W: a view of the buffer it holds |
+  | `canonicalBody`'s `string(raw)` | 240 MB | J32-W: the same |
+  | `noteFingerprint`'s `[]byte(canonical)` | 240 MB | J32-W: hash without converting |
+  | `insertRevisionLocked`'s `[]byte(body)` | 240 MB | J32-W: the same |
+  | the note read from disk a second time | 240 MB | J32-G measured and refused it on a warm cache; only the single representation would make it free |
+  | the canonical body itself | 240 MB | the result, and stays |
+  | the copy SQLite's C API takes when the body is bound | — | invisible to the Go profile, since cgo allocates it outside the heap; removing it needs a pinned buffer and `SQLITE_STATIC`, which is its own question |
+
+  **What cannot be one copy, stated plainly.** The inventory is a separate pass
+  over the whole vault, and the notes phase can resume it after a process
+  restart, so a note read during the inventory cannot still be in memory when
+  the note is written: a 382,206-note vault is why the inventory keeps bounded
+  metadata at all (J19, J20). One representation therefore means *one per note
+  within the write path*, from the read that the notes phase does to the row
+  it writes — not one across the whole import.
+
+  **Steps, each measured and kept or reverted on its own result:**
+  - **J32-W1, hash without converting.** `noteFingerprint` and
+    `insertRevisionLocked` convert a whole note from `string` to `[]byte` only
+    to hash it. A shared helper that hashes a string through a small fixed
+    buffer removes both copies and needs no new machinery. Metric: allocated
+    bytes on `near-limit-obsidian/fresh`; the fingerprints and content hashes
+    must be identical, which the existing import evidence and `j17_compare.py`
+    check.
+  - **J32-W2, a note buffer carried through the write path.** One `noteBuffer`
+    per import, reused and capped as J32-T caps its buffers: the bytes read,
+    the slices the title, frontmatter and lines are taken from, the edit list
+    J32-U already produces, and the output the canonical body is written into.
+    Metric: allocated bytes and peak RSS on `near-limit-obsidian/fresh`, with
+    `obsidian-10k/fresh` for the per-note cost.
+  - **J32-W3, the `string(raw)` views, only if W1 and W2 leave them.** A view
+    of a buffer the importer owns costs nothing, but `unsafe.String` on the
+    import path is a safety decision, not a performance one: today `unsafe`
+    appears only at cgo boundaries. It is proposed with the rule written down
+    — the buffer is owned by the note being imported, is not written after the
+    view is taken, and the view does not outlive the note — and it is the
+    owner's call, not this slice's, whether that is a trade worth making.
+
+  **Boundaries.** No change to what is written: canonical bodies, fingerprints,
+  block and link rows stay byte-identical, which `j17_compare.py` shows on both
+  corpora. Resume is not weakened: the inventory fingerprint and every
+  checkpoint position stay as they are. No representation outlives the note it
+  belongs to.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and
