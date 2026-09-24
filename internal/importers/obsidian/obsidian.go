@@ -1054,8 +1054,164 @@ func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
 
 func (run *importRun) canonicalBody(note vaultFile, raw []byte) (string, []attachmentRef, int, []string) {
 	body := normalizeNewlines(string(raw))
-	rewritten, attachments, count, warnings := rewriteObsidianLinks(body, note.RelPath, run.options.CollectionID, run.namespace)
-	return augmentFrontmatter(rewritten, note.RelPath), attachments, count, warnings
+	replacements, attachments, count, warnings := planObsidianLinks(body, note.RelPath, run.options.CollectionID, run.namespace)
+	if canonical, ok := canonicalBodyOnce(body, note.RelPath, replacements); ok {
+		return canonical, attachments, count, warnings
+	}
+	// The staged path, for the bodies the one-pass assembly declines: a link
+	// rewrite that straddles the frontmatter delimiters, or replacements that
+	// overlap each other (v1.0 J32-D, J32-U).
+	return augmentFrontmatter(applyReplacements(body, replacements), note.RelPath), attachments, count, warnings
+}
+
+// canonicalBodyOnce writes a note's canonical body in one pass (v1.0 J32-U).
+//
+// canonicalBody builds it in stages, each a new string: the newlines are
+// normalized, the links are rewritten into a second body, and the frontmatter
+// is then rebuilt around a third. The link rewrites are already an edit list --
+// J32-D made them one -- so the frontmatter is written as part of the same
+// assembly rather than by a second pass over the result.
+//
+// It returns false when the edits cannot be applied this way, which is when a
+// link rewrite crosses the frontmatter boundary; the caller then uses the
+// staged path, because this slice is about how the bytes are assembled and not
+// about what they say.
+func canonicalBodyOnce(body, relPath string, replacements []replacement) (string, bool) {
+	sortReplacements(replacements)
+	if overlapping(replacements) {
+		return "", false
+	}
+
+	fields := []string{"source_system: obsidian", "obsidian_path: " + yamlQuote(filepath.ToSlash(relPath))}
+	if folder := folderPath(relPath); folder != "" {
+		fields = append(fields, "obsidian_folder: "+yamlQuote(folder))
+	}
+
+	// The frontmatter's own bytes, and where the body after it begins.
+	frontmatterStart, frontmatterEnd, restStart, hasFrontmatter := frontmatterRegion(body)
+	if hasFrontmatter {
+		// Trailing newlines of the frontmatter and leading newlines of the
+		// rest are trimmed, exactly as augmentFrontmatter trims them.
+		for frontmatterEnd > frontmatterStart && body[frontmatterEnd-1] == '\n' {
+			frontmatterEnd--
+		}
+		for restStart < len(body) && body[restStart] == '\n' {
+			restStart++
+		}
+	}
+	if hasFrontmatter && crossesRegion(replacements, frontmatterStart, frontmatterEnd, restStart) {
+		return "", false
+	}
+
+	// Sized exactly: the body, plus what the edits add, plus the delimiters and
+	// the fields. A builder given slack allocated more than the staged path it
+	// replaces on a small note with links (measured, v1.0 J32-U).
+	size := len(body) + len("---\n---\n") + 1
+	for _, field := range fields {
+		size += len(field) + 1
+	}
+	for _, change := range replacements {
+		size += len(change.text) - (change.end - change.start)
+	}
+	var out strings.Builder
+	out.Grow(size)
+	out.WriteString("---\n")
+	for _, field := range fields {
+		out.WriteString(field)
+		out.WriteByte('\n')
+	}
+	if hasFrontmatter {
+		if strings.TrimSpace(body[frontmatterStart:frontmatterEnd]) != "" {
+			writeRegion(&out, body, frontmatterStart, frontmatterEnd, replacements)
+			out.WriteByte('\n')
+		}
+		out.WriteString("---\n")
+		writeRegion(&out, body, restStart, len(body), replacements)
+		return out.String(), true
+	}
+	out.WriteString("---\n")
+	end := len(body)
+	for end > 0 && body[end-1] == '\n' {
+		end--
+	}
+	writeRegion(&out, body, 0, end, replacements)
+	out.WriteByte('\n')
+	return out.String(), true
+}
+
+// writeRegion writes body[from:to] with the replacements that fall inside it.
+func writeRegion(out *strings.Builder, body string, from, to int, replacements []replacement) {
+	cursor := from
+	for _, change := range replacements {
+		if change.start < from || change.end > to {
+			continue
+		}
+		out.WriteString(body[cursor:change.start])
+		out.WriteString(change.text)
+		cursor = change.end
+	}
+	out.WriteString(body[cursor:to])
+}
+
+// crossesRegion reports whether a replacement straddles the frontmatter
+// delimiters, which the one-pass assembly cannot place.
+func crossesRegion(replacements []replacement, frontmatterStart, frontmatterEnd, restStart int) bool {
+	for _, change := range replacements {
+		insideFrontmatter := change.start >= frontmatterStart && change.end <= frontmatterEnd
+		insideRest := change.start >= restStart
+		if !insideFrontmatter && !insideRest {
+			return true
+		}
+	}
+	return false
+}
+
+// frontmatterRegion locates a note's frontmatter by offset rather than by
+// copying it out: where its content starts and ends, and where the body after
+// the closing delimiter begins. It answers exactly what splitFrontmatterBytes
+// answers, which the tests check on the same bodies.
+func frontmatterRegion(body string) (start, end, restStart int, ok bool) {
+	firstEnd := strings.IndexByte(body, '\n')
+	if firstEnd < 0 || strings.TrimSuffix(body[:firstEnd], "\r") != "---" {
+		return 0, 0, 0, false
+	}
+	contentStart := firstEnd + 1
+	for lineStart := contentStart; lineStart <= len(body); {
+		lineEnd := strings.IndexByte(body[lineStart:], '\n')
+		next := len(body)
+		if lineEnd >= 0 {
+			lineEnd += lineStart
+			next = lineEnd + 1
+		} else {
+			lineEnd = len(body)
+		}
+		if strings.TrimSuffix(body[lineStart:lineEnd], "\r") == "---" {
+			return contentStart, lineStart, next, true
+		}
+		if next >= len(body) {
+			break
+		}
+		lineStart = next
+	}
+	return 0, 0, 0, false
+}
+
+func sortReplacements(replacements []replacement) {
+	sort.Slice(replacements, func(i, j int) bool {
+		if replacements[i].start != replacements[j].start {
+			return replacements[i].start < replacements[j].start
+		}
+		return replacements[i].end < replacements[j].end
+	})
+}
+
+func overlapping(replacements []replacement) bool {
+	for index := 1; index < len(replacements); index++ {
+		if replacements[index].start < replacements[index-1].end {
+			return true
+		}
+	}
+	return false
 }
 
 // replacement is one link's rewritten text and the bytes of the body it
@@ -1066,7 +1222,17 @@ type replacement struct {
 	text  string
 }
 
+// rewriteObsidianLinks returns the body with its links rewritten. canonicalBody
+// uses planObsidianLinks instead and applies the edits while it assembles.
 func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace) (string, []attachmentRef, int, []string) {
+	replacements, attachments, count, warnings := planObsidianLinks(body, notePath, collectionID, ns)
+	return applyReplacements(body, replacements), attachments, count, warnings
+}
+
+// planObsidianLinks resolves a note's links and returns the edits that rewrite
+// them, rather than a rewritten body: the caller decides when to apply them,
+// which lets the canonical body be assembled in one pass (v1.0 J32-U).
+func planObsidianLinks(body, notePath, collectionID string, ns linkNamespace) ([]replacement, []attachmentRef, int, []string) {
 	replacements := []replacement{}
 	attachmentByID := map[string]attachmentRef{}
 	warnings := []string{}
@@ -1123,13 +1289,12 @@ func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace)
 		}
 		replacements = append(replacements, replacement{start: candidate.StartByte, end: candidate.EndByte, text: replacementText})
 	}
-	body = applyReplacements(body, replacements)
 	attachments := make([]attachmentRef, 0, len(attachmentByID))
 	for _, attachment := range attachmentByID {
 		attachments = append(attachments, attachment)
 	}
 	sort.Slice(attachments, func(i, j int) bool { return attachments[i].ResourceID < attachments[j].ResourceID })
-	return body, attachments, len(replacements), warnings
+	return replacements, attachments, len(replacements), warnings
 }
 
 // applyReplacements writes a note's rewritten body (v1.0 J32-D).
