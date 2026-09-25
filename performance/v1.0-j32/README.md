@@ -651,6 +651,75 @@ unclosed frontmatter, CRLF, an empty title key, `#` without a space, and an
 indented heading. Both corpora imported by each binary produce identical
 `documents` and `document_links` apart from the volatile identifier columns.
 
+## J32-V — a block's text, copied twice more: **kept**
+
+Counting what a near-limit import allocates named two copies the earlier slices
+had left: `joinLines` rebuilt a block from its trimmed lines even when trimming
+changed nothing — and then the text is exactly the bytes between the block's
+offsets, which a slice already names — and `identify` copied that same text
+again into the hash scratch. On this corpus a note is one enormous paragraph, so
+each was the whole note.
+
+Now a block's text is `body[from:to]` whenever nothing was trimmed and no
+carriage return was stripped, and a block past 64 KiB is hashed by streaming it
+through a hasher the `Extractor` keeps, while smaller ones keep the scratch,
+which costs no allocation at all.
+
+**Two mistakes the benchmarks caught.** The digit buffer for the occurrence,
+shared between the streaming and scratch branches, escaped for *every* block
+because one branch hands it to an interface: 6,674 extra allocations on a
+10,000-block note. It now lives inside the streaming branch. And the large-note
+benchmark's lines ended in a space, so it never met the case being measured;
+trimmed, as the corpus writes them, it shows the change.
+
+| shape | before | after |
+|---|---|---|
+| one large note | 103.15 MB, 84 allocs | **77.54 MB, 91 allocs** |
+| many small blocks | 52.85 MB, 36,848 allocs | **52.74 MB, 33,516 allocs** |
+
+## J32-W1 — hash a body without copying it: **kept**
+
+`insertRevisionLocked` and `noteFingerprint` each converted a whole note from
+`string` to `[]byte` only to hash it. `SHA256HexString` hashes through a 32 KiB
+window instead: a 68 MiB body costs **160 bytes and three allocations rather
+than 72 MB and five**, and runs 15% faster. The bytes hashed are the same
+bytes, so the hash is the same hash.
+
+### What the two measured, together
+
+Both were measured in one window against a common baseline, `11faa99` (J32-O),
+five runs each, three binaries alternating. Records in `j32v/` and `j32w1/`.
+
+| case | metric | J32-O | J32-V | J32-W1 | baseline range |
+|---|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | allocated bytes | 4.56 G | 4.05 G (−11.1%) | **3.55 G (−12.4%)** | 131 K / 173 K |
+| near-limit-obsidian/fresh | peak RSS KiB | 1,021,840 | 889,960 (−12.9%) | 842,996 | 53,696 |
+| near-limit-obsidian/fresh | wall s | 493.36 | 492.94 | 491.19 | 6.02 / 8.62 |
+| obsidian-10k/fresh | allocated bytes | 262.7 M | 253.4 M (−3.6%) | 253.4 M (unchanged) | 754 K / 471 K |
+
+**W1 does nothing on the ordinary corpus, and that is the expected result**, not
+a disappointment: those notes are a few hundred bytes, so converting one to hash
+it was never a cost. Its declared case is the near-limit corpus, where a note is
+60 MiB. Wall time is within noise on both, as it has been throughout the
+allocation series.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left for both. Three corpora — ordinary, collision and
+near-limit — imported by the baseline and by the J32-W1 binary produce identical
+`document_blocks` (40,000, 16,500 and 616 rows) and identical
+`document_revisions`, which is where the content hash W1 computes differently is
+stored; only the volatile identifier columns differ. `SHA256HexString` is also
+held to `SHA256Hex` at every size around the chunk boundary, including empty,
+embedded nulls and multi-byte text.
+
+**Where the 6.95 GB stands.** A fresh near-limit import allocated 6.95 GB when
+the counting began and now allocates **3.55 GB, down 49%**. What is left, by the
+profile at `a3d0bef` plus these two changes: two existence checks reading whole
+bodies back out of SQLite (480 MB, J32-H), the link-rebuild read-back (240 MB,
+J32-I), the note read from disk twice (480 MB), the two `string(raw)`
+conversions (480 MB, J32-W), the line table (502 MB, headers rather than
+copies), and the canonical body itself, which is the result.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
