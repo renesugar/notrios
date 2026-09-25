@@ -720,6 +720,66 @@ J32-I), the note read from disk twice (480 MB), the two `string(raw)`
 conversions (480 MB, J32-W), the line table (502 MB, headers rather than
 copies), and the canonical body itself, which is the result.
 
+## J32-H — F3, ask which documents exist instead of reading them: **kept**
+
+`currentDocumentIDs` and `processLinkRebuild` called `GetDocuments` and looked
+only at whether each id came back, so every body crossed the cgo boundary as a
+Go string to be discarded: 480 MB of a near-limit import, and a cost that grows
+with the size of a library's notes rather than with the import.
+`ExistingDocumentIDs` selects `d.id` alone, with the same join to the current
+revision and the same `deleted_at IS NULL`, so a deleted document and one whose
+revision row is missing are absent exactly as they were. The notes phase keeps
+`GetDocuments`, because it compares bodies.
+
+Declared: allocated bytes on `near-limit-obsidian/fresh`. Baseline `806730e`
+with the corrected harness, candidate `58e4002`, five runs each, alternating.
+Records in `j32h/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 3.55 G | 3.05 G | 127 K | −14.2% | better |
+| near-limit-obsidian/fresh | allocations | 57,528 | 50,925 | 56 | −11.5% | better |
+| near-limit-obsidian/fresh | system s | 16.91 | 15.23 | 0.19 | **−9.9%** | better |
+| near-limit-obsidian/fresh | wall s | 490.19 | 487.16 | 5.82 | −0.6% | within noise |
+| obsidian-10k/fresh | allocated bytes | 253.4 M | 232.3 M | 432 K | −8.3% | better |
+| obsidian-10k/fresh | allocations | 3,640,670 | 3,320,800 | 188 | −8.8% | better |
+
+System time falling by 10% is the first kernel-time move of the allocation
+series, and it fits what changed: this removes work from the cgo boundary rather
+than from the heap.
+
+### The live-heap metric was wrong, and this is how that surfaced
+
+At five runs, and again at nine, `live_heap_bytes` looked **worse** on both
+corpora — about +80 KB against a range of 7 KB. It was not the change. The
+nine-run values were bimodal (three runs at the baseline's level, six 70–150 KB
+above it) with no relation to wall time, and the runs that read high were the
+runs with **fewer GC cycles**: 34–36 against the baseline's 37–38, because the
+candidate allocates 8% less.
+
+`HeapAlloc` counts reachable objects *and* unreachable ones the collector has
+not swept yet, and `runtime.GC` completes the mark while leaving the sweep lazy.
+So the metric was reading "what is held, plus whatever this run had not got
+around to freeing", which moves with how many collections a run happened to do.
+The harness now collects twice, and the same comparison reports live heap within
+noise: 628,248 → 628,280 bytes on the near-limit corpus, 1.147 M → 1.145 M on
+the ordinary one.
+
+The nine-run record taken with the unswept metric is kept in `j32h/` as
+`…-unswept-metric.json`. **No earlier slice was decided on live heap** — J32-C
+recorded it explicitly as the wrong metric for a transient retention, and every
+other verdict rested on allocated bytes, wall time, peak RSS or a count — but
+every live-heap figure in the sections above carries this noise, and the ones
+that mattered have been re-read since.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. A test holds `ExistingDocumentIDs` to `GetDocuments` on
+present, deleted, revisionless and never-existed ids, on an empty list and on a
+cancelled context. Both corpora imported by each binary produce identical
+`document_links` and `index_outbox` rows and identical
+`link_indexes_refreshed` counts, so the presence check selects exactly the notes
+the full read selected.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
