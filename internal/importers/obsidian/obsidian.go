@@ -150,10 +150,14 @@ type importRun struct {
 	folderPlans []folderPlan
 	folderIDs   map[string]string
 	namespace   linkNamespace
-	phase       string
-	nextIndex   int
-	workTotal   int
-	processed   int
+	// noteBytes is the buffer the notes phase reads each note into, reused
+	// between notes and given back when a note is unusually large (v1.0
+	// J32-W2).
+	noteBytes []byte
+	phase     string
+	nextIndex int
+	workTotal int
+	processed int
 }
 
 // Import applies the deterministic plan, resuming only a checkpoint whose
@@ -927,7 +931,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		mutations := make([]store.ImportDocumentMutation, 0, len(items))
 		for _, item := range items {
-			raw, err := readExact(run.absPath(item), item)
+			raw, err := run.readNote(item)
 			if err != nil {
 				return err
 			}
@@ -1566,15 +1570,57 @@ func (run *importRun) absPath(item vaultFile) string {
 	return filepath.Join(run.sourceDir, filepath.FromSlash(item.RelPath))
 }
 
-func readExact(path string, item vaultFile) ([]byte, error) {
-	raw, err := os.ReadFile(path)
+// maxRetainedNoteBytes is how large a note buffer the import keeps between
+// notes. Reuse is for the ordinary note; an unusually large one gives its
+// buffer back rather than making the import hold it to the end (v1.0 J32-W2,
+// the rule J32-T set for the block buffers).
+const maxRetainedNoteBytes = 8 << 20
+
+// readNote reads one note into the import's own buffer and checks that it is
+// still the note the inventory hashed (v1.0 J32-W2).
+//
+// os.ReadFile allocated a buffer per note, and the notes phase reads every note
+// in the library. The buffer is reused instead, which is safe because what the
+// batch keeps -- the canonical body, the attachment references, the warnings --
+// is built from the string canonicalBody makes, not from these bytes.
+func (run *importRun) readNote(item vaultFile) ([]byte, error) {
+	path := run.absPath(item)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	if sha256Hex(raw) != item.fingerprintHex() {
+	defer file.Close()
+
+	wanted := item.SizeBytes
+	buffer := run.noteBytes[:0]
+	if int64(cap(buffer)) < wanted+1 {
+		// One byte past the size the inventory recorded, so a note that grew
+		// under us is read whole and caught by the hash below rather than
+		// silently truncated.
+		buffer = make([]byte, 0, wanted+1)
+	}
+	for {
+		if len(buffer) == cap(buffer) {
+			buffer = append(buffer, 0)[:len(buffer)]
+		}
+		count, readErr := file.Read(buffer[len(buffer):cap(buffer)])
+		buffer = buffer[:len(buffer)+count]
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return nil, readErr
+		}
+	}
+	if cap(buffer) <= maxRetainedNoteBytes {
+		run.noteBytes = buffer
+	} else {
+		run.noteBytes = nil
+	}
+	if sha256Hex(buffer) != item.fingerprintHex() {
 		return nil, fmt.Errorf("%w: Obsidian note %s changed during import", store.ErrConflict, item.RelPath)
 	}
-	return raw, nil
+	return buffer, nil
 }
 
 func hashFile(ctx context.Context, path string) (string, int64, error) {
