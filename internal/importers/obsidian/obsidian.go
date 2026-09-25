@@ -1571,10 +1571,23 @@ func (run *importRun) absPath(item vaultFile) string {
 }
 
 // maxRetainedNoteBytes is how large a note buffer the import keeps between
-// notes. Reuse is for the ordinary note; an unusually large one gives its
-// buffer back rather than making the import hold it to the end (v1.0 J32-W2,
-// the rule J32-T set for the block buffers).
-const maxRetainedNoteBytes = 8 << 20
+// notes: the largest note the importer accepts at all, so every legal note is
+// read into the same buffer (v1.0 J32-W2).
+//
+// It was 8 MiB first, on the rule J32-T set for the block buffers, and that
+// measured flat on the near-limit corpus for the obvious reason -- every note
+// there is 60 MiB, so every note allocated anyway. The bound that makes reuse
+// mean something is the one the importer already enforces: a buffer this large
+// is one a single note could legitimately need, and holding it between notes
+// costs no more than reading one more such note would.
+const maxRetainedNoteBytes = maxMarkdownBytes
+
+// retainNoteBuffer reports whether a buffer of this capacity is kept for the
+// next note. A buffer larger than any note the importer accepts was grown by a
+// file that is being refused anyway, so it is given back.
+func retainNoteBuffer(capacity int) bool {
+	return capacity <= maxRetainedNoteBytes
+}
 
 // readNote reads one note into the import's own buffer and checks that it is
 // still the note the inventory hashed (v1.0 J32-W2).
@@ -1612,7 +1625,7 @@ func (run *importRun) readNote(item vaultFile) ([]byte, error) {
 			return nil, readErr
 		}
 	}
-	if cap(buffer) <= maxRetainedNoteBytes {
+	if retainNoteBuffer(cap(buffer)) {
 		run.noteBytes = buffer
 	} else {
 		run.noteBytes = nil

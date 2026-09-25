@@ -66,32 +66,26 @@ func TestReadNoteRefusesAChangedNote(t *testing.T) {
 	}
 }
 
-// TestReadNoteGivesBackALargeBuffer proves the cap: a note past it leaves
-// nothing retained, so one large note does not make an import hold its buffer
-// to the end.
-func TestReadNoteGivesBackALargeBuffer(t *testing.T) {
-	vault := t.TempDir()
-	run := &importRun{sourceDir: vault}
-	small := "small\n"
-	if err := os.WriteFile(filepath.Join(vault, "note.md"), []byte(small), 0o600); err != nil {
-		t.Fatal(err)
+// TestRetainNoteBufferStopsAtTheNoteLimit states the rule: a buffer up to the
+// largest note the importer accepts is kept for the next note, and one beyond
+// it -- grown by a file that is being refused anyway -- is given back (v1.0
+// J32-W2).
+func TestRetainNoteBufferStopsAtTheNoteLimit(t *testing.T) {
+	for capacity, want := range map[int]bool{
+		0:                        true,
+		4096:                     true,
+		maxRetainedNoteBytes - 1: true,
+		maxRetainedNoteBytes:     true,
+		maxRetainedNoteBytes + 1: false,
+		maxRetainedNoteBytes * 2: false,
+	} {
+		if got := retainNoteBuffer(capacity); got != want {
+			t.Errorf("retainNoteBuffer(%d) = %v, want %v", capacity, got, want)
+		}
 	}
-	if _, err := run.readNote(vaultFile{RelPath: "note.md", SizeBytes: int64(len(small)), Fingerprint: sha256.Sum256([]byte(small))}); err != nil {
-		t.Fatal(err)
-	}
-	if cap(run.noteBytes) == 0 {
-		t.Fatal("an ordinary note's buffer should be kept")
-	}
-
-	large := strings.Repeat("y", maxRetainedNoteBytes+1024)
-	if err := os.WriteFile(filepath.Join(vault, "large.md"), []byte(large), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := run.readNote(vaultFile{RelPath: "large.md", SizeBytes: int64(len(large)), Fingerprint: sha256.Sum256([]byte(large))}); err != nil {
-		t.Fatal(err)
-	}
-	if run.noteBytes != nil {
-		t.Fatalf("a buffer past the cap must be given back, kept %d bytes", cap(run.noteBytes))
+	if maxRetainedNoteBytes != maxMarkdownBytes {
+		t.Errorf("the retained buffer should be bounded by the note limit: %d against %d",
+			maxRetainedNoteBytes, maxMarkdownBytes)
 	}
 }
 
