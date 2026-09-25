@@ -943,6 +943,9 @@ type Store interface {
 	UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error)
 	GetResource(ctx context.Context, id string) (Resource, error)
 	GetDocuments(ctx context.Context, ids []string) (map[string]Document, error)
+	// ExistingDocumentIDs answers which of these documents exist without
+	// reading their bodies, for a caller that needs presence alone (J32-H).
+	ExistingDocumentIDs(ctx context.Context, ids []string) (map[string]bool, error)
 	GetResources(ctx context.Context, ids []string) (map[string]Resource, error)
 	GetDocumentTags(ctx context.Context, ids []string) (map[string][]Tag, error)
 	OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error)

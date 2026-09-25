@@ -1031,13 +1031,15 @@ func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
 		for _, note := range run.inventory.Notes[start:end] {
 			ids = append(ids, note.TargetID)
 		}
-		existing, err := run.st.GetDocuments(run.ctx, ids)
+		// Presence, not documents: this pass refreshes link indexes and never
+		// reads a body (v1.0 J32-H).
+		existing, err := run.st.ExistingDocumentIDs(run.ctx, ids)
 		if err != nil {
 			return err
 		}
 		present := make([]string, 0, len(ids))
 		for _, id := range ids {
-			if _, found := existing[id]; found {
+			if existing[id] {
 				present = append(present, id)
 			}
 		}
@@ -1485,12 +1487,12 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 		for _, note := range run.inventory.Notes[start:end] {
 			ids = append(ids, note.TargetID)
 		}
-		existing, err := run.st.GetDocuments(run.ctx, ids)
+		existing, err := run.st.ExistingDocumentIDs(run.ctx, ids)
 		if err != nil {
 			return nil, err
 		}
 		for _, id := range ids {
-			if _, found := existing[id]; found {
+			if existing[id] {
 				result = append(result, id)
 			}
 		}

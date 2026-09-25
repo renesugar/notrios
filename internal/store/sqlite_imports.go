@@ -32,6 +32,55 @@ func validateLookupItems(values []string) error {
 	return nil
 }
 
+// ExistingDocumentIDs reports which of these document IDs exist, without
+// reading what they contain (v1.0 J32-H).
+//
+// An importer asking "which of these notes are already here" used GetDocuments
+// and looked only at whether each ID came back, so every body crossed the cgo
+// boundary as a Go string to be discarded: 480 MB of a near-limit import, and
+// a cost that grows with the size of a library's notes rather than with the
+// import.
+//
+// The rows it counts are the rows GetDocuments returns: the same join to the
+// current revision, so a document without one is absent here too, and the same
+// deleted_at filter, so a note in the trash is absent from both.
+func (s *SQLiteStore) ExistingDocumentIDs(ctx context.Context, ids []string) (map[string]bool, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(ids); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT d.id
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.deleted_at IS NULL AND d.id IN (` + lookupPlaceholders(len(ids)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, ids); err != nil {
+		return nil, err
+	}
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			result[columnText(stmt, 0)] = true
+		case C.SQLITE_DONE:
+			return result, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
 func (s *SQLiteStore) GetDocuments(ctx context.Context, ids []string) (map[string]Document, error) {
 	ctx = contextOrBackground(ctx)
 	if err := ctx.Err(); err != nil {
