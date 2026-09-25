@@ -7,6 +7,19 @@ package store
 static int notes_sqlite_bind_text(sqlite3_stmt *stmt, int idx, char *value) {
 	return sqlite3_bind_text(stmt, idx, value, -1, SQLITE_TRANSIENT);
 }
+
+// notes_sqlite_bind_text_n binds a value of known length. SQLITE_TRANSIENT
+// makes SQLite copy it during this call and keep nothing afterwards, which is
+// what lets the caller pass Go memory (v1.0 J32-X).
+static int notes_sqlite_bind_text_n(sqlite3_stmt *stmt, int idx, const char *value, int n) {
+	return sqlite3_bind_text(stmt, idx, value, n, SQLITE_TRANSIENT);
+}
+
+// notes_sqlite_bind_empty binds the empty string, which is not the same as
+// binding NULL: a NULL pointer would make this column NULL.
+static int notes_sqlite_bind_empty(sqlite3_stmt *stmt, int idx) {
+	return sqlite3_bind_text(stmt, idx, "", 0, SQLITE_STATIC);
+}
 */
 import "C"
 
@@ -2842,12 +2855,29 @@ func (r *repeatedStatement) exec(values ...string) error {
 
 func (r *repeatedStatement) close() { C.sqlite3_finalize(r.stmt) }
 
+// bindAll binds a statement's parameters from Go strings (v1.0 J32-X).
+//
+// It used to hand each value to C.CString, which mallocs a copy of the whole
+// value in C memory, bind that, and free it -- and SQLITE_TRANSIENT means
+// SQLite had already made its own copy during the bind. Every bound body was
+// therefore copied twice outside the Go heap, where no allocation profile shows
+// it: 120 MB of malloc traffic for a 60 MiB note.
+//
+// The bytes are now passed where they already are. cgo allows a Go pointer to
+// reach C as long as C keeps nothing after the call returns, and
+// SQLITE_TRANSIENT is exactly that promise: SQLite copies during the bind. A
+// string's bytes hold no Go pointers, so they are legal to pass, and SQLite
+// only reads them.
 func bindAll(stmt *C.sqlite3_stmt, values []string) error {
 	for i, value := range values {
 		idx := C.int(i + 1)
-		cvalue := C.CString(value)
-		rc := C.notes_sqlite_bind_text(stmt, idx, cvalue)
-		C.free(unsafe.Pointer(cvalue))
+		var rc C.int
+		if len(value) == 0 {
+			rc = C.notes_sqlite_bind_empty(stmt, idx)
+		} else {
+			rc = C.notes_sqlite_bind_text_n(stmt, idx,
+				(*C.char)(unsafe.Pointer(unsafe.StringData(value))), C.int(len(value)))
+		}
 		if rc != C.SQLITE_OK {
 			return fmt.Errorf("sqlite bind parameter %d failed", i+1)
 		}
@@ -2859,12 +2889,24 @@ func (s *SQLiteStore) stepErrLocked(rc C.int) error {
 	return fmt.Errorf("sqlite step rc=%d: %s", int(rc), C.GoString(C.sqlite3_errmsg(s.db)))
 }
 
+// columnText reads a text column by length rather than to the first NUL byte
+// (v1.0 J32-X).
+//
+// C.GoString stops at a NUL, and sqlite3_column_bytes gives the length SQLite
+// stored, so a value holding a NUL byte used to come back cut short. Binding
+// now passes an explicit length too, so what is written and what is read agree:
+// either both keep the whole value, as they do now, or both silently drop part
+// of it, as they both used to.
 func columnText(stmt *C.sqlite3_stmt, index int) string {
 	text := C.sqlite3_column_text(stmt, C.int(index))
 	if text == nil {
 		return ""
 	}
-	return C.GoString((*C.char)(unsafe.Pointer(text)))
+	length := C.sqlite3_column_bytes(stmt, C.int(index))
+	if length <= 0 {
+		return ""
+	}
+	return C.GoStringN((*C.char)(unsafe.Pointer(text)), length)
 }
 
 func columnFloat(stmt *C.sqlite3_stmt, index int) float64 {

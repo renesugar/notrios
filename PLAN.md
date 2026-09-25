@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/23 | 23 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/24 | 24 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -4050,6 +4050,38 @@ so an earlier kept change is part of that baseline.
   corpora. Resume is not weakened: the inventory fingerprint and every
   checkpoint position stay as they are. No representation outlives the note it
   belongs to.
+
+- **J32-X, bind a body without copying it into C memory first.** Found
+  2026-09-25 while answering how the write path batches: `bindAll` handed each
+  value to `C.CString`, which mallocs a copy of the whole value outside the Go
+  heap, bound that, and freed it — and `SQLITE_TRANSIENT` means SQLite had
+  already taken its own copy during the bind. Every bound body was therefore
+  copied **twice** in C memory, where no allocation profile shows it: 120 MB of
+  malloc traffic for a 60 MiB note. The bytes are now passed where they already
+  are, which cgo allows because `SQLITE_TRANSIENT` is the promise that C keeps
+  nothing after the call returns.
+
+  **Batching, for the record, is on the SQLite side:**
+  `ApplyImportDocumentBatch` opens `BEGIN IMMEDIATE`, writes every note of the
+  batch, and commits once, so rows accumulate in SQLite's page cache and WAL.
+  Because the bind copies immediately, when the transaction commits places no
+  constraint on the Go-side buffers, which is what makes J32-W2's reuse safe.
+
+  - **Declared metric:** wall time on `near-limit-obsidian/fresh`. This is the
+    first candidate with a wall-time story rather than an allocation one: a
+    60 MiB `malloc` touches fresh pages, which costs faults, and the profile
+    puts 89% of samples at the cgo boundary. Allocated bytes will barely move,
+    because the copy this removes was never on the Go heap.
+  - **A behaviour change, stated rather than buried.** `C.CString` binds with
+    length −1, so a value containing a NUL byte was stored only up to that
+    byte and the rest was dropped silently; `C.GoString` truncated the same way
+    on the way out, so the two agreed. Binding by length makes the write keep
+    the whole value, which would have left the read disagreeing with what is
+    stored — so `columnText` now reads by `sqlite3_column_bytes` as well. Both
+    ends keep the whole value. A Markdown note holding a NUL byte is
+    pathological, and nothing in the corpora contains one, so this appears in
+    no measurement: it is recorded here, and pinned by a test, because it
+    changes what such a note becomes.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and
