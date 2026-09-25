@@ -770,7 +770,11 @@ func (run *importRun) runAll(write bool) error {
 }
 
 func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
-	return run.eachBatch("source_bundle", len(run.inventory.Files), write, nextPhase, func(start, end int) error {
+	// A source bundle streams each file, but it reads one per item and commits
+	// per batch, so the same budget keeps a batch of large files bounded.
+	return run.eachSizedBatch("source_bundle", len(run.inventory.Files), func(index int) int64 {
+		return run.inventory.Files[index].SizeBytes
+	}, write, nextPhase, func(start, end int) error {
 		for _, item := range run.inventory.Files[start:end] {
 			if write {
 				file, err := os.Open(run.absPath(item))
@@ -909,7 +913,11 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 }
 
 func (run *importRun) processNotes(write bool, nextPhase string) error {
-	return run.eachBatch("notes", len(run.inventory.Notes), write, nextPhase, func(start, end int) error {
+	// The notes phase holds every canonical body of a batch at once, so this is
+	// the phase the byte budget is for (v1.0 J32-K).
+	return run.eachSizedBatch("notes", len(run.inventory.Notes), func(index int) int64 {
+		return run.inventory.Notes[index].SizeBytes
+	}, write, nextPhase, func(start, end int) error {
 		items := run.inventory.Notes[start:end]
 		ids, externalIDs, keys := make([]string, 0, len(items)), make([]string, 0, len(items)), make([]string, 0, len(items))
 		for _, item := range items {
@@ -1418,13 +1426,45 @@ type attachmentRef struct {
 	RawTarget    string
 }
 
+// importBatchByteBudget bounds a batch by the bytes its notes hold, as well as
+// by how many there are (v1.0 J32-K).
+//
+// The notes phase keeps each note's canonical body until the batch is written,
+// so a batch's memory is the sum of its notes' sizes, and only the note count
+// was bounded: a hundred notes of 60 MiB would ask for 6 GB. The budget is the
+// size one note is already allowed to reach, so a large note becomes a batch of
+// its own and nothing legal is refused.
+const importBatchByteBudget = int64(maxMarkdownBytes)
+
+// eachBatch walks a phase in windows, saving a checkpoint after each.
+//
+// A window ends at the count limit, or -- when the caller says how large its
+// items are -- once the window holds importBatchByteBudget of them, whichever
+// comes first. A window always holds at least one item, so a note larger than
+// the budget still imports. A checkpoint records the index the next window
+// starts at and not how large a window was, so varying the length changes
+// nothing about resume.
 func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase string, process func(start, end int) error) error {
+	return run.eachSizedBatch(phase, total, nil, write, nextPhase, process)
+}
+
+func (run *importRun) eachSizedBatch(phase string, total int, sizeOf func(index int) int64, write bool, nextPhase string, process func(start, end int) error) error {
 	start := 0
 	if run.phase == phase {
 		start = run.nextIndex
 	}
 	for start < total {
 		end := min(start+run.options.BatchSize, total)
+		if sizeOf != nil {
+			bytes := int64(0)
+			for index := start; index < end; index++ {
+				bytes += sizeOf(index)
+				if bytes >= importBatchByteBudget {
+					end = index + 1
+					break
+				}
+			}
+		}
 		if err := process(start, end); err != nil {
 			return err
 		}
