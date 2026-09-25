@@ -780,6 +780,69 @@ cancelled context. Both corpora imported by each binary produce identical
 `link_indexes_refreshed` counts, so the presence check selects exactly the notes
 the full read selected.
 
+## J32-I — F2, the final link pass repeated itself: **kept, and the largest win**
+
+A CPU profile of a fresh near-limit import (`j32i/near-limit-before.cpu`, 516 s
+of samples) found where the import actually spends its time, and it was not
+where the allocation slices had been working:
+
+| work | share |
+|---|---:|
+| `rebuildDocumentLinksLocked`, both callers | **67.2%** (346.9 s) |
+| — when each note is written | 173.7 s |
+| — the final pass, over the same body | **173.2 s** |
+| of which `markdownlinks.Extract` (regexps) | 256.8 s |
+| the importer's own `planObsidianLinks` | 129.4 s |
+| SQLite, all of it (`cgocall`) | **4.3%** (22 s) |
+
+A note's links were parsed three times and its blocks twice. The final pass
+exists for a real reason — a note may link to one imported later, so its links
+must be resolved again once every note exists — but *parsing* cannot change
+between the passes: the body is the same bytes. Only resolution can.
+`document_links` already stores every part of a candidate, so the pass now
+re-resolves each row and writes back only what a resolution decides. It parses
+nothing, rebuilds no blocks, and asks for the collection alone rather than
+reading a body it will not parse.
+
+**The correction this carries.** An earlier profile of the `collision` corpus
+put 89% of samples in `cgocall`, and that was generalized too far: 5,500 small
+notes are bound by per-row SQLite work, four 60 MiB notes by parsing. Same
+importer, opposite bottleneck. It is why nine slices of allocation work halved
+allocated bytes and moved wall time by a tenth — and why this slice, which
+deletes duplicated work rather than shaving allocations, moves it by a third.
+
+Declared: wall time on `near-limit-obsidian/fresh`. Baseline `9f5aead`,
+candidate `fed52e8`, five runs each, alternating. Records in `j32i/`.
+
+| case | wall s before | wall s after | baseline range | change |
+|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 490.43 | **337.92** | 49.37 | **−31.1%** |
+| obsidian-10k/fresh | 77.39 | 69.73 | 1.99 | −9.9% |
+| collision/fresh | 51.50 | 48.12 | 1.30 | −6.6% |
+| collision/reimport | 19.77 | 17.24 | 1.19 | −12.8% |
+
+Allocated bytes fell with it: −35.6% on the near-limit corpus, −6.2%, −6.0% and
+−5.7% on the others. Every case improved and none regressed — the first slice in
+the item for which that is true.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Three tests state the invariant: re-resolution produces
+what reparsing produced across resolved, unresolved, external, anchor-only and
+resource links; a target imported later becomes resolved while every field the
+body decided stays byte-identical; and a document with no block rows is declined
+so the old parse still runs for anything this path cannot vouch for — a note
+with text always produces at least one block, so blocks are the signal that the
+current path wrote the rows.
+
+Both corpora imported by each binary produce identical `document_blocks` and,
+in `document_links`, **every column except the autoincrement `id`**: 30,000 and
+16,000 rows, hash-identical when that column is excluded. The ids differ because
+the old pass deleted and re-inserted every row while this one updates in place,
+so the rows keep the numbers the write gave them. Nothing depends on the value:
+links are ordered by `source_line, source_column, id`, so position in the body
+decides, and links are neither exported in an archive nor journaled for sync —
+they are derived from the body and rebuilt whenever it changes.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
