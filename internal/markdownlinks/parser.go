@@ -10,6 +10,102 @@ import (
 	"unicode/utf8"
 )
 
+// The two matchers below replace the regexps they are named after, which a CPU
+// profile put at 256.8 s of a 516 s import -- 89.6% of all samples were regexp
+// matching (v1.0 J32-Y). The regexps stay in the package as the reference the
+// tests hold these to, body for body, so what is recognised cannot drift.
+//
+// Neither pattern needs a regexp engine: both character classes exclude the
+// terminator that ends them, so each match is found by scanning forward once,
+// with no backtracking and no alternatives to weigh.
+//
+// span is one match and its groups, holding the byte offsets
+// FindAllStringSubmatchIndex would have reported.
+type span struct {
+	start, end           int
+	bangStart, bangEnd   int
+	firstStart, firstEnd int // a Markdown link's text, a wiki link's inner
+	targetStart          int // a Markdown link's target; zero for a wiki link
+	targetEnd            int
+}
+
+// scanMarkdownLinks finds `(!?)\[([^\]\n]*)\]\(([^)\n]+)\)`, leftmost first
+// and non-overlapping, as FindAllStringSubmatchIndex does.
+//
+// A `!` belongs to a match only when it sits at or after the point the scan
+// resumed from: one already inside the previous match was consumed by it.
+func scanMarkdownLinks(body string, into []span) []span {
+	resume := 0
+	for index := resume; index < len(body); {
+		offset := strings.IndexByte(body[index:], '[')
+		if offset < 0 {
+			break
+		}
+		open := index + offset
+		text := open + 1
+		for text < len(body) && body[text] != ']' && body[text] != '\n' {
+			text++
+		}
+		if text >= len(body) || body[text] != ']' || text+1 >= len(body) || body[text+1] != '(' {
+			index = open + 1
+			continue
+		}
+		target := text + 2
+		for target < len(body) && body[target] != ')' && body[target] != '\n' {
+			target++
+		}
+		if target >= len(body) || body[target] != ')' || target == text+2 {
+			index = open + 1
+			continue
+		}
+		found := span{
+			start: open, end: target + 1,
+			bangStart: open, bangEnd: open,
+			firstStart: open + 1, firstEnd: text,
+			targetStart: text + 2, targetEnd: target,
+		}
+		if open > resume-1 && open > 0 && body[open-1] == '!' && open-1 >= resume {
+			found.start, found.bangStart = open-1, open-1
+		}
+		into = append(into, found)
+		resume = found.end
+		index = resume
+	}
+	return into
+}
+
+// scanWikiLinks finds `(!?)\[\[([^\]\n]+)\]\]` on the same terms.
+func scanWikiLinks(body string, into []span) []span {
+	resume := 0
+	for index := resume; index+1 < len(body); {
+		offset := strings.Index(body[index:], "[[")
+		if offset < 0 {
+			break
+		}
+		open := index + offset
+		inner := open + 2
+		for inner < len(body) && body[inner] != ']' && body[inner] != '\n' {
+			inner++
+		}
+		if inner == open+2 || inner+1 >= len(body) || body[inner] != ']' || body[inner+1] != ']' {
+			index = open + 1
+			continue
+		}
+		found := span{
+			start: open, end: inner + 2,
+			bangStart: open, bangEnd: open,
+			firstStart: open + 2, firstEnd: inner,
+		}
+		if open > 0 && body[open-1] == '!' && open-1 >= resume {
+			found.start, found.bangStart = open-1, open-1
+		}
+		into = append(into, found)
+		resume = found.end
+		index = resume
+	}
+	return into
+}
+
 // Candidate is one raw link-like object extracted from Markdown source.
 type Candidate struct {
 	RelationType string
@@ -33,47 +129,40 @@ var (
 // Extract returns Markdown inline links/images plus Obsidian wikilinks/embeds.
 func Extract(body string) []Candidate {
 	matches := []Candidate{}
-	seen := map[string]bool{}
-	// One cursor per pass: each regexp reports its matches in ascending order,
-	// and the second pass starts again at the beginning of the body.
+	// One cursor per pass: each pass reports its matches in ascending order,
+	// and the second starts again at the beginning of the body.
 	cursor := newLineCursor(body)
-	for _, loc := range markdownLinkRE.FindAllStringSubmatchIndex(body, -1) {
-		if len(loc) < 8 {
-			continue
-		}
-		rawTarget := strings.TrimSpace(body[loc[6]:loc[7]])
+	spans := scanMarkdownLinks(body, nil)
+	for _, found := range spans {
+		rawTarget := strings.TrimSpace(body[found.targetStart:found.targetEnd])
 		rawTarget = stripMarkdownTitle(rawTarget)
 		candidate := Candidate{
-			RelationType: relationFromBang(body[loc[2]:loc[3]]),
+			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "markdown",
-			DisplayText:  body[loc[4]:loc[5]],
+			DisplayText:  body[found.firstStart:found.firstEnd],
 			RawTarget:    rawTarget,
-			StartByte:    loc[0],
-			EndByte:      loc[1],
+			StartByte:    found.start,
+			EndByte:      found.end,
 		}
 		decorateCandidate(body, cursor, &candidate)
-		key := candidateKey(candidate)
-		seen[key] = true
 		matches = append(matches, candidate)
 	}
 	cursor = newLineCursor(body)
-	for _, loc := range wikiLinkRE.FindAllStringSubmatchIndex(body, -1) {
-		if len(loc) < 6 {
-			continue
-		}
-		key := body[loc[0]:loc[1]]
-		if seen[key] {
-			continue
-		}
-		inner := strings.TrimSpace(body[loc[4]:loc[5]])
+	// The de-duplication that used to sit here could never fire: the Markdown
+	// pass stored keys of the form "markdown:target:display" while this pass
+	// looked up the raw matched text, so no key ever matched. It is left out
+	// rather than fixed, because fixing it would change which links are
+	// reported; recorded as a finding in performance/v1.0-j32/README.md.
+	for _, found := range scanWikiLinks(body, spans[:0]) {
+		inner := strings.TrimSpace(body[found.firstStart:found.firstEnd])
 		rawTarget, display := splitWikiTarget(inner)
 		candidate := Candidate{
-			RelationType: relationFromBang(body[loc[2]:loc[3]]),
+			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "obsidian-wikilink",
 			DisplayText:  display,
 			RawTarget:    rawTarget,
-			StartByte:    loc[0],
-			EndByte:      loc[1],
+			StartByte:    found.start,
+			EndByte:      found.end,
 		}
 		decorateCandidate(body, cursor, &candidate)
 		matches = append(matches, candidate)
@@ -211,8 +300,4 @@ func contextAround(body string, start, end, radius int) string {
 		right++
 	}
 	return strings.TrimSpace(body[left:right])
-}
-
-func candidateKey(candidate Candidate) string {
-	return candidate.SourceFormat + ":" + candidate.RawTarget + ":" + candidate.DisplayText
 }
