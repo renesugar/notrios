@@ -993,6 +993,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J37",
+      "title": "Decide what a link matched by both patterns should be",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J37-A",
+          "statement": "What both patterns record for one span today is stated by a test, as the description any decision is compared against",
+          "state": "not-started"
+        },
+        {
+          "id": "J37-B",
+          "statement": "Which row survives for a span both patterns match is decided and recorded with its reason, leaving no overlapping byte ranges",
+          "state": "not-started"
+        },
+        {
+          "id": "J37-C",
+          "statement": "The rewrite, the stored-row resolution, the backlink listing and the preview follow the decision, shown by importing a vault that uses the form",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**36 items: 32 complete, 0 in progress, 4 not started, 0 deferred.**
+**37 items: 32 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -97,6 +97,7 @@ this section is archived when the plan completes and the rules are not.
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
 | J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
+| J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -4426,3 +4427,62 @@ other, as J32's scope already requires.
 
 **Working state.** A partial-path link that names one file resolves to it, and
 the tests say so.
+
+## J37. Decide what a link matched by both patterns should be
+
+**Goal.** A span of a note that both link patterns match has one recorded
+intention behind it, instead of a de-duplication that could never run.
+
+**What J32-Y found, 2026-09-25.** `markdownlinks.Extract` ran its two patterns
+in turn and tried to drop a wiki link the Markdown pass had already reported:
+
+```go
+seen[candidateKey(candidate)] = true   // "markdown:" + rawTarget + ":" + displayText
+…
+if seen[body[loc[0]:loc[1]]] { continue }   // the raw matched text, e.g. "[[Target]]"
+```
+
+The keys are of different kinds, so no lookup ever matched and nothing was ever
+dropped. Every link both patterns find has always been reported twice. J32-Y
+removed the dead map and `candidateKey` with it — dead code should not sit in a
+parser pretending to guard something — but removing it decided nothing, which
+is why this item exists.
+
+**The case it was reaching for.** A wiki link inside a Markdown link's target,
+`[text]([[Target]])`, matches both: the Markdown pattern spans the whole thing
+with the raw target `[[Target]]`, and the wiki pattern spans `[[Target]]` inside
+it with the target `Target`. Two `document_links` rows describe one span, with
+different targets and overlapping byte ranges. J32-D met the same shape from the
+other side: its one-pass body assembly hands overlapping replacements back to
+the older splice loop precisely because two rewrites can cover the same bytes.
+
+**Scope.**
+
+- **J37-A, what is actually recorded today.** A test that states what a reader
+  and the store see for `[text]([[Target]])` and its variants — an embed inside
+  a link, a link inside an embed, a wiki link in a Markdown title, and the same
+  span in a note that is rewritten on import. This is a description, not a
+  change: it is what any decision has to be compared against.
+- **J37-B, the decision.** Which row should exist, argued from what a reader
+  means and what Obsidian resolves, and recorded with its reason. The options
+  are to keep both rows, to keep the inner wiki link only, or to keep the outer
+  Markdown link only. Whatever is chosen, the byte ranges of the rows that
+  remain must not overlap, because an overlapping rewrite is what J32-D had to
+  work around.
+- **J37-C, the consequences.** Whatever changes, these must follow it: the link
+  rewriting on import, the resolution J32-I now re-runs from stored rows, the
+  backlink listing, and the preview. A vault whose notes use this form is
+  imported and compared before and after, so the change is visible as rows
+  rather than asserted.
+
+**Boundaries.**
+- No new link syntax is recognised, and none stops being recognised: this
+  decides which of two overlapping records survives, not what a link is.
+- No performance work here. J32 measured this code; this item is about what it
+  should say.
+
+**Dependencies.** J32-Y found it; J32-D and J32-I describe the paths that a
+change would have to follow.
+
+**Working state.** One span of a note produces the links its author meant, and
+a test says which.
