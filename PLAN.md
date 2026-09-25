@@ -3754,6 +3754,29 @@ so an earlier kept change is part of that baseline.
 - **J32-H, F3: existence-only reads** where only presence is needed, through a
   typed store method that keeps deleted-note filtering. The notes-phase body
   comparison is not touched. Metrics: allocations and wall time.
+
+  **Counted, 2026-09-24.** Two callers ask `GetDocuments` for whole documents
+  and use only whether the ID came back: `currentDocumentIDs`, which collects
+  the IDs an import wrote, and `processLinkRebuild`, which asks which notes of
+  a batch exist before refreshing their links. Every body crosses the cgo
+  boundary as a Go string to be discarded: 480 MB of a near-limit import, the
+  largest single item left, and it grows with the size of a library's notes
+  rather than with the import.
+
+  - **The change.** `ExistingDocumentIDs(ctx, ids) (map[string]bool, error)`
+    selects `d.id` alone, with the same `FROM documents d JOIN
+    document_revisions r ON r.id = d.current_revision_id` and the same
+    `d.deleted_at IS NULL`, so a document that is deleted, or has no current
+    revision, is absent exactly as it is absent today. Only those two callers
+    change; the notes phase keeps `GetDocuments`, because it compares bodies.
+  - **Declared metric:** allocated bytes on `near-limit-obsidian/fresh`, where
+    a body is 60 MiB, with `obsidian-10k/fresh` as the ordinary case that must
+    not regress.
+  - **Correctness:** a test asserts the new method agrees with `GetDocuments`
+    on the same ids — present, absent, deleted, and a document whose current
+    revision row is missing — and the imported libraries stay identical on
+    both corpora, which also proves the import still writes the same
+    `DocumentIDs` and refreshes the same link indexes.
 - **J32-I, F2: reuse blocks in the final link pass** when they describe the
   current revision. This is an investigation first: the invariant that blocks
   and links describe the same body under cancellation and resume is proven
