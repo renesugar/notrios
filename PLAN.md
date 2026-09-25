@@ -3849,6 +3849,29 @@ so an earlier kept change is part of that baseline.
   changed reimports.
 - **J32-K, F5: byte-bounded batches** and bounded rereads. Metric: peak RSS on
   the near-limit corpus. A single legitimate large note still imports.
+
+  **Read before the change, 2026-09-26.** A batch is bounded by note *count*
+  alone: `eachBatch` takes windows of `options.BatchSize`, a hundred by default
+  and five hundred at most. The notes phase holds each note's canonical body
+  until the batch is written, so a batch's memory is the sum of its notes'
+  sizes, and nothing bounds that sum. A hundred notes of 60 MiB would ask for
+  6 GB; the near-limit corpus peaks at 837 MB only because it holds four such
+  notes among two hundred small ones.
+
+  - **The change.** A window ends at whichever comes first: the count limit, or
+    an accumulated 64 MiB of note bytes — the size a single note is already
+    allowed to reach, so one large note becomes one batch and nothing legal is
+    refused. The sizes come from the inventory, which records them, so nothing
+    is read to decide a window. Only the phases that hold note content use the
+    bound; the notebook, resource and link-rebuild phases carry no bodies.
+  - **Resume is unchanged by construction.** A checkpoint records the index the
+    next batch starts at, not how large a batch was, so windows may vary in
+    length without a checkpoint meaning anything different. A test resumes an
+    import whose batches were byte-bounded and compares the result with one
+    that ran uninterrupted.
+  - **Declared metric:** peak RSS on `near-limit-obsidian/fresh`, with
+    `obsidian-10k/fresh` as the ordinary case that must not regress — smaller
+    batches mean more commits, so wall time there is what would pay for it.
 - **J32-L, the smaller candidates.** Each is measured and dispositioned
   separately:
   - F7, Joplin's duplicate ID map;
