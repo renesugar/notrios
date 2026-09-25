@@ -32,6 +32,9 @@ import (
 //	                              measured run
 //	NOTRIOS_J32_BENCH_MEMPROFILE  optional: where to write an allocation
 //	                              profile, on the same terms
+//	NOTRIOS_J32_BENCH_HEAPPROFILE optional: where to write an in-use heap
+//	                              profile, taken after the forced collection,
+//	                              for finding what an import leaves behind
 func TestJ32ImportBench(t *testing.T) {
 	report := os.Getenv("NOTRIOS_J32_BENCH_REPORT")
 	if report == "" {
@@ -87,6 +90,21 @@ func TestJ32ImportBench(t *testing.T) {
 		// The allocation profile, not the in-use one: what a change to how a
 		// note is buffered would move is total allocation.
 		if err := pprof.Lookup("allocs").WriteTo(file, 0); err != nil {
+			t.Fatal(err)
+		}
+		if err := file.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if profile := os.Getenv("NOTRIOS_J32_BENCH_HEAPPROFILE"); profile != "" {
+		file, err := os.Create(profile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// The in-use profile, after the collection above: what the import is
+		// still holding, which is what live_heap_bytes reports as one number.
+		if err := pprof.Lookup("heap").WriteTo(file, 0); err != nil {
 			t.Fatal(err)
 		}
 		if err := file.Close(); err != nil {
