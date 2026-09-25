@@ -75,10 +75,20 @@ func TestJ32ImportBench(t *testing.T) {
 	runtime.ReadMemStats(&after)
 	os.Stdout = stdout
 
-	// Live heap is read after a forced collection, and after the command has
-	// returned, so it is what the command left behind rather than what it held
-	// at its peak; peak RSS is the measure of that.
+	// Live heap is read after the command has returned, so it is what the
+	// command left behind rather than what it held at its peak; peak RSS is the
+	// measure of that.
+	//
+	// Collected twice, deliberately. HeapAlloc counts reachable objects *and*
+	// unreachable ones the collector has not swept yet, and runtime.GC
+	// completes the mark while leaving the sweep lazy. With one collection the
+	// number therefore moves with how many collections a run happened to do: a
+	// change that allocated 8% less ran 34-36 collections instead of 37-38 and
+	// read 70-150 KB *higher*, bimodally and with no relation to its wall time
+	// (v1.0 J32-H). The second collection sweeps what the first marked, so what
+	// is reported is what is still held.
 	var settled runtime.MemStats
+	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&settled)
 
