@@ -89,7 +89,8 @@ func j32yBodies() []string {
 // replace, offset for offset, on every body (v1.0 J32-Y).
 func TestScannersAgreeWithTheirRegexps(t *testing.T) {
 	for _, body := range j32yBodies() {
-		markdown := scanMarkdownLinks(body, nil)
+		var markdown []span
+		scanMarkdownLinks(body, func(found span) { markdown = append(markdown, found) })
 		want := markdownLinkRE.FindAllStringSubmatchIndex(body, -1)
 		if len(markdown) != len(want) {
 			t.Fatalf("markdown in %q: scanner found %d, regexp found %d", body, len(markdown), len(want))
@@ -104,7 +105,8 @@ func TestScannersAgreeWithTheirRegexps(t *testing.T) {
 			}
 		}
 
-		wiki := scanWikiLinks(body, nil)
+		var wiki []span
+		scanWikiLinks(body, func(found span) { wiki = append(wiki, found) })
 		want = wikiLinkRE.FindAllStringSubmatchIndex(body, -1)
 		if len(wiki) != len(want) {
 			t.Fatalf("wiki in %q: scanner found %d, regexp found %d", body, len(wiki), len(want))

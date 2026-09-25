@@ -19,6 +19,10 @@ import (
 // terminator that ends them, so each match is found by scanning forward once,
 // with no backtracking and no alternatives to weigh.
 //
+// Each match is handed to a visitor as it is found, rather than collected into
+// a slice first: a slice that grows once per note cost 0.7% more allocated
+// bytes than the regexps did on a corpus of small notes (measured, v1.0 J32-Y).
+//
 // span is one match and its groups, holding the byte offsets
 // FindAllStringSubmatchIndex would have reported.
 type span struct {
@@ -34,7 +38,7 @@ type span struct {
 //
 // A `!` belongs to a match only when it sits at or after the point the scan
 // resumed from: one already inside the previous match was consumed by it.
-func scanMarkdownLinks(body string, into []span) []span {
+func scanMarkdownLinks(body string, visit func(span)) {
 	resume := 0
 	for index := resume; index < len(body); {
 		offset := strings.IndexByte(body[index:], '[')
@@ -67,15 +71,14 @@ func scanMarkdownLinks(body string, into []span) []span {
 		if open > resume-1 && open > 0 && body[open-1] == '!' && open-1 >= resume {
 			found.start, found.bangStart = open-1, open-1
 		}
-		into = append(into, found)
+		visit(found)
 		resume = found.end
 		index = resume
 	}
-	return into
 }
 
 // scanWikiLinks finds `(!?)\[\[([^\]\n]+)\]\]` on the same terms.
-func scanWikiLinks(body string, into []span) []span {
+func scanWikiLinks(body string, visit func(span)) {
 	resume := 0
 	for index := resume; index+1 < len(body); {
 		offset := strings.Index(body[index:], "[[")
@@ -99,11 +102,10 @@ func scanWikiLinks(body string, into []span) []span {
 		if open > 0 && body[open-1] == '!' && open-1 >= resume {
 			found.start, found.bangStart = open-1, open-1
 		}
-		into = append(into, found)
+		visit(found)
 		resume = found.end
 		index = resume
 	}
-	return into
 }
 
 // Candidate is one raw link-like object extracted from Markdown source.
@@ -132,8 +134,7 @@ func Extract(body string) []Candidate {
 	// One cursor per pass: each pass reports its matches in ascending order,
 	// and the second starts again at the beginning of the body.
 	cursor := newLineCursor(body)
-	spans := scanMarkdownLinks(body, nil)
-	for _, found := range spans {
+	scanMarkdownLinks(body, func(found span) {
 		rawTarget := strings.TrimSpace(body[found.targetStart:found.targetEnd])
 		rawTarget = stripMarkdownTitle(rawTarget)
 		candidate := Candidate{
@@ -146,14 +147,14 @@ func Extract(body string) []Candidate {
 		}
 		decorateCandidate(body, cursor, &candidate)
 		matches = append(matches, candidate)
-	}
+	})
 	cursor = newLineCursor(body)
 	// The de-duplication that used to sit here could never fire: the Markdown
 	// pass stored keys of the form "markdown:target:display" while this pass
 	// looked up the raw matched text, so no key ever matched. It is left out
 	// rather than fixed, because fixing it would change which links are
 	// reported; recorded as a finding in performance/v1.0-j32/README.md.
-	for _, found := range scanWikiLinks(body, spans[:0]) {
+	scanWikiLinks(body, func(found span) {
 		inner := strings.TrimSpace(body[found.firstStart:found.firstEnd])
 		rawTarget, display := splitWikiTarget(inner)
 		candidate := Candidate{
@@ -166,7 +167,7 @@ func Extract(body string) []Candidate {
 		}
 		decorateCandidate(body, cursor, &candidate)
 		matches = append(matches, candidate)
-	}
+	})
 	return matches
 }
 
