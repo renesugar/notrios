@@ -843,6 +843,69 @@ links are ordered by `source_line, source_column, id`, so position in the body
 decides, and links are neither exported in an archive nor journaled for sync —
 they are derived from the body and rebuilt whenever it changes.
 
+## J32-Y — match links without a regexp engine: **kept, and the fastest slice**
+
+The same profile that found J32-I found this: 89.6% of a near-limit import's
+samples were regexp matching, 256.8 s of it inside `markdownlinks.Extract`.
+Neither link pattern needs an engine. Both character classes exclude the
+terminator that ends them — `[^\]\n]*` stops at the `]` it is looking for — so
+each match is found by scanning forward once, with no backtracking and no
+alternatives to weigh.
+
+Declared: wall time on `near-limit-obsidian/fresh` and `link-dense/fresh`.
+Baseline `fed52e8` (J32-I), candidate `094c3c0`, five runs each, alternating.
+Records in `j32y/`.
+
+| case | wall s before | wall s after | baseline range | change | allocated bytes |
+|---|---:|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 336.64 | **83.98** | 2.69 | **−75.1%** | −0.01% |
+| link-dense/fresh | 25.50 | 20.87 | 0.67 | −18.2% | −5.5% |
+| obsidian-10k/fresh | 69.96 | 66.36 | 3.38 | −5.1% | −3.6% |
+| collision/fresh | 47.70 | 46.81 | 1.25 | −1.9%, within noise | −3.1% |
+
+On the parser's own benchmark, a link-dense body goes from **1,220 ms and
+37.6 MB to 133 ms and 28.4 MB — 9.2× faster**.
+
+**The first form regressed, and was replaced rather than excused.** It collected
+each pass's matches into a slice that grows once per note, and measured **0.7%
+more allocated bytes** than the regexps on the two small-note corpora — past
+their range, so a regression by the rule, even beside a 75% wall-time win.
+Handing each match to a visitor removes the intermediate: the slice form was
+146 ms and 34.3 MB on the benchmark, the visitor form 133 ms and 28.4 MB, and
+every corpus now improves or holds with no regression anywhere. Both
+measurements are kept in `j32y/`, the first as `…-span-slice.json`.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. `markdownLinkRE` and `wikiLinkRE` stay in the package
+as the reference: the tests compare the scanners' offsets and capture groups
+against them on **20,048 bodies** — 48 written for the edges, 20,000 generated
+from brackets, bangs, newlines, pipes, anchors and multi-byte text — and hold
+`Extract` field for field against a copy of its old self. Three corpora imported
+by each binary produce identical `document_links`: 30,000, 16,000 and 12,677
+rows, with every offset, rune column, anchor and context equal.
+
+**A latent bug found, recorded rather than fixed.** The de-duplication between
+the two passes could never fire: the Markdown pass stored keys shaped
+`markdown:target:display` while the wiki pass looked up the raw matched text, so
+no lookup ever matched and a link both patterns find has always been reported
+twice. J32-Y removed the dead map and `candidateKey` with it — dead code should
+not sit in a parser pretending to guard something — but removing it decided
+nothing, so what the guard was reaching for is now **J37**: a wiki link inside a
+Markdown link's target produces two `document_links` rows over overlapping bytes,
+and which one should survive is a decision about meaning, not performance.
+
+### Where the import stands after J32-I and J32-Y
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **84.0 s** | **−84.0%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 837 MB | −16.1% |
+
+The clock moved when the work went away, not when the copies did: eleven slices
+of allocation work took wall time down about a tenth, and two slices that
+deleted duplicated *parsing* took it down by a further factor of four.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
