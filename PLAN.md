@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/24 | 24 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/25 | 25 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -4143,6 +4143,34 @@ so an earlier kept change is part of that baseline.
     pathological, and nothing in the corpora contains one, so this appears in
     no measurement: it is recorded here, and pinned by a test, because it
     changes what such a note becomes.
+
+- **J32-Y, match links without a regexp engine.** The same profile that found
+  J32-I found this, and it is the larger half: `markdownlinks.Extract` spends
+  **256.8 s of a 516 s import inside `regexp`**, and 89.6% of all samples are
+  regexp matching. J32-I removes one of the three parses per note; what remains
+  is still the biggest single cost in the import.
+
+  J32-S already did this for the block parser — the list-marker, heading and
+  table-row patterns became hand-written matchers, the regexps stayed in the
+  package as the reference the tests hold them to, and that parser's time fell
+  29% on the many-blocks shape. The two link patterns are of the same kind: a
+  Markdown link is `[text](target)` with an optional `!`, and a wiki link is
+  `[[target|display]]` with an optional `!`. Neither needs backtracking.
+
+  - **The rule is the one J32-S used.** `markdownLinkRE` and `wikiLinkRE` stay
+    in the package. The scanner is held to them over the corpora's own bodies
+    and over generated text — brackets that do not close, nested brackets,
+    escaped brackets, a link split across lines, multi-byte text, and the
+    `seen` de-duplication between the two passes — so what is recognised cannot
+    drift without a test failing.
+  - **Declared metric:** wall time on `near-limit-obsidian/fresh` and on
+    `link-dense/fresh`, with `obsidian-10k/fresh` and `collision/fresh` as the
+    cases that must not regress. Every candidate's byte offsets, rune columns,
+    anchors, display text, contexts and order must be identical, which
+    `document_links` shows on all four corpora.
+  - **Not a grammar change.** J32's boundaries say a performance change keeps
+    what is recognised. If the scanner and the regexps disagree on any input,
+    the regexps win and the disagreement is a defect in the scanner.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and

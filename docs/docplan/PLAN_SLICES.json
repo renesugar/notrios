@@ -905,6 +905,11 @@
           "state": "not-started"
         },
         {
+          "id": "J32-Y",
+          "statement": "Link extraction matches without a regexp engine, held to the regexps it replaces, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
           "id": "J32-M",
           "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
           "state": "not-started"
