@@ -223,7 +223,25 @@ func (s *SQLiteStore) RebuildImportDocumentLinksBatch(ctx context.Context, req I
 		}
 	}()
 	for _, documentID := range req.DocumentIDs {
-		document, err := s.getDocumentLocked(strings.TrimSpace(documentID))
+		id := strings.TrimSpace(documentID)
+		// The collection alone, not the document: this pass re-resolves links
+		// and does not read a body unless it has to parse one (v1.0 J32-I).
+		collectionID, found, err := s.documentCollectionLocked(id)
+		if err != nil {
+			return err
+		}
+		if !found {
+			continue
+		}
+		reresolved, err := s.reresolveDocumentLinksLocked(id, collectionID)
+		if err != nil {
+			return err
+		}
+		if reresolved {
+			continue
+		}
+		// Rows this pass will not vouch for: parse the body, as it always did.
+		document, err := s.getDocumentLocked(id)
 		if err != nil {
 			if err == ErrNotFound {
 				continue
