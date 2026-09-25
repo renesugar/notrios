@@ -3781,6 +3781,67 @@ so an earlier kept change is part of that baseline.
   current revision. This is an investigation first: the invariant that blocks
   and links describe the same body under cancellation and resume is proven
   before anything is measured. Metric: wall time on fresh imports.
+
+  **What the CPU profile found, 2026-09-25** (`j32i/near-limit-before.cpu`, a
+  fresh `near-limit-obsidian` import, 516 s of samples): this is not a small
+  slice. It is where the import spends its time.
+
+  | work | share |
+  |---|---:|
+  | `rebuildDocumentLinksLocked`, both callers | **67.2%** (346.9 s) |
+  | — from `ApplyImportDocumentBatch`, when each note is written | 173.7 s |
+  | — from `RebuildImportDocumentLinksBatch`, the final pass | 173.2 s |
+  | of which `markdownlinks.Extract` (regexps) | 256.8 s |
+  | of which `rebuildDocumentBlocksLocked` | 90.0 s |
+  | the importer's own `planObsidianLinks` | 129.4 s |
+  | SQLite, all of it (`cgocall`) | **4.3%** (22 s) |
+  | SHA-256 | 3.4% (17 s) |
+
+  So a note's links are parsed **three times** — once by the importer to
+  rewrite them, once by the store when the note is written, once by the final
+  pass — and its blocks **twice**. The 50/50 split between the two store
+  callers is the same work done twice over an identical body.
+
+  **This also corrects the earlier reading.** A profile of the `collision`
+  corpus put 89% of samples in `cgocall`, and that was generalized too far:
+  with 5,500 small notes the per-row SQLite work dominates, and with 60 MiB
+  notes parsing does. Same importer, opposite bottleneck. It is why the
+  allocation slices moved allocated bytes by half and wall time by a tenth.
+
+  **The design.** The final pass exists because a note may link to one
+  imported later, so its links must be resolved again once every note exists.
+  But what changes between the two passes is *resolution*, not parsing: the
+  body is the same bytes, so the candidates, their offsets and the blocks are
+  identical. `document_links` already stores every part of a candidate —
+  `raw_target`, `relation_type`, `source_format`, `anchor_type`,
+  `anchor_value`, the byte positions and the context. The final pass can
+  therefore re-resolve each stored row and update its target and status,
+  parsing nothing, and leave the blocks alone entirely.
+
+  **The invariant, and how it is proven before anything is measured:**
+  - Links and blocks are written inside the same transaction as the body they
+    describe (`rebuildDocumentLinksLocked` is called within
+    `ApplyImportDocumentBatch`'s `BEGIN IMMEDIATE`), so a committed body always
+    has rows that describe it, and an interrupted batch rolls both back
+    together. Tests must state this for an interruption between the body write
+    and the commit, and for a resume that re-runs the batch.
+  - A document whose rows were written by an older path might have none. The
+    presence of **block** rows is the signal that the current path processed
+    it: every note with text produces at least one block, so a document with
+    blocks and no link rows genuinely has no links, and one with neither is
+    parsed as it is today. That fallback keeps the old behaviour for anything
+    the new path cannot vouch for.
+  - Re-resolution must produce exactly what re-parsing produced:
+    `j17_compare.py` on the ordinary and collision corpora, where the collision
+    corpus is the case with ambiguous and cross-batch targets, plus the
+    existing link tests.
+
+  **Declared metric:** wall time on `near-limit-obsidian/fresh`. This is the
+  first candidate in the item whose target is the clock rather than the heap,
+  and the expected saving — the final pass's 173 s — is larger than everything
+  measured so far combined. `obsidian-10k/fresh` and `collision/fresh` must not
+  regress, and `collision/reimport` is watched because an unchanged reimport is
+  where a skipped rebuild could hide a wrong result.
 - **J32-J, §3.1D: Obsidian checkpoint consolidation and stable-note skips**,
   with failures injected between commit and progress publication, and a
   provenance-repair case. Metrics: commit count and wall time on no-op and 1%
