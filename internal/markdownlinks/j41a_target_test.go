@@ -11,107 +11,121 @@ type j41Case struct {
 	none    bool   // no candidate at all
 }
 
-// j41Cases states what a Markdown link's target is taken to be, case by case,
-// as it is recorded today. CommonMark allows a destination to contain "zero or
-// more balanced pairs of unescaped parentheses", which is not an exotic shape: a
-// Wikipedia URL, a Python docs anchor and several citation styles all carry one.
-// Nine of these rows are wrong because of it, each marked with what J41-B should
-// make it, so that the change can be seen to move those rows and no others.
+// j41Cases states what a Markdown link's target is taken to be, case by case.
+// CommonMark allows a destination to contain "zero or more balanced pairs of
+// unescaped parentheses", which is not an exotic shape: a Wikipedia URL, a Python
+// docs anchor and several citation styles all carry one. J41-A stated these rows
+// as they were, each marked with what it should become; J41-B moved them, and
+// each comment now records what it was.
 var j41Cases = []j41Case{
 	{
-		// J41-B: the URL loses its tail and the final `)` is left as prose.
+		// Was `https://example.org/Foo_(bar` with the final `)` left as prose,
+		// which is the defect this item was opened for.
 		name:    "a URL with a balanced pair",
 		body:    "See [text](https://example.org/Foo_(bar)) here.\n",
-		raw:     "https://example.org/Foo_(bar",
-		matched: "[text](https://example.org/Foo_(bar)",
+		raw:     "https://example.org/Foo_(bar)",
+		matched: "[text](https://example.org/Foo_(bar))",
 	},
 	{
-		// J41-B: should be `a(b)c`.
+		// Was `a(b`.
 		name:    "a balanced pair with a tail",
 		body:    "See [text](a(b)c) here.\n",
-		raw:     "a(b",
-		matched: "[text](a(b)",
+		raw:     "a(b)c",
+		matched: "[text](a(b)c)",
 	},
 	{
-		// J41-B: should be `a(b(c))d`.
+		// Was `a(b(c`. CommonMark asks for at least three levels; depth
+		// counting has no limit.
 		name:    "two levels of nesting",
 		body:    "See [text](a(b(c))d) here.\n",
-		raw:     "a(b(c",
-		matched: "[text](a(b(c)",
+		raw:     "a(b(c))d",
+		matched: "[text](a(b(c))d)",
 	},
 	{
-		// J41-B: should be `a(b).png`, so the image resolves.
+		// Was `a(b`, so the image did not resolve.
 		name:    "an embed with a balanced pair",
 		body:    "See ![alt](a(b).png) here.\n",
-		raw:     "a(b",
-		matched: "![alt](a(b)",
+		raw:     "a(b).png",
+		matched: "![alt](a(b).png)",
 	},
 	{
-		// J41-B: should be `a(b)`.
+		// Was `a(b`. Two links on one line each end at their own parenthesis.
 		name:    "two links on one line each keep their own target",
 		body:    "See [one](a(b)) and [two](c(d)) here.\n",
-		raw:     "a(b",
-		matched: "[one](a(b)",
+		raw:     "a(b)",
+		matched: "[one](a(b))",
 	},
 	{
-		// J41-B: should be `a\(b\)`. Escaped parentheses do not count toward
-		// the balance, so these two cancel and the unescaped one closes.
+		// Was `a\(b\`. Escaped parentheses are text: they count toward nothing,
+		// so these two cancel each other and the unescaped one closes.
 		name:    "escaped parentheses in a target",
 		body:    "See [text](a\\(b\\)) here.\n",
-		raw:     "a\\(b\\",
-		matched: "[text](a\\(b\\)",
+		raw:     "a\\(b\\)",
+		matched: "[text](a\\(b\\))",
 	},
 	{
-		// J41-B: should be `a\)b` — an escaped parenthesis does not close anything.
+		// Was `a\`. An escaped parenthesis closes nothing.
 		name:    "an escaped closing parenthesis in a target",
 		body:    "See [text](a\\)b) here.\n",
-		raw:     "a\\",
-		matched: "[text](a\\)",
+		raw:     "a\\)b",
+		matched: "[text](a\\)b)",
 	},
 	{
-		// Unbalanced input must not become a different kind of wrong: the
-		// target still ends at the first closing parenthesis, as it always has.
+		// Unbalanced input must not become a different kind of wrong: with no
+		// closing parenthesis to find, the target ends at the first one, which
+		// is what this scan has always returned. Unchanged by J41-B.
 		name:    "an unclosed pair still ends at the first parenthesis",
 		body:    "See [text](a(b) here.\n",
 		raw:     "a(b",
 		matched: "[text](a(b)",
 	},
 	{
+		// Unchanged by J41-B: depth is zero, so the first `)` closes.
 		name:    "an extra closing parenthesis still ends the target",
 		body:    "See [text](a)b) here.\n",
 		raw:     "a",
 		matched: "[text](a)",
 	},
 	{
+		// A backslash does not buy a line either: the escape ends at the line.
+		name: "an escape does not carry a target across a line",
+		body: "See [text](a\\\nb) here.\n",
+		none: true,
+	},
+	{
+		// Unchanged by J41-B.
 		name: "a target may not cross a line",
 		body: "See [text](a(b\nc)) here.\n",
 		none: true,
 	},
 	{
 		// An angle-bracketed destination may hold spaces and unbalanced
-		// parentheses. Notrios does not read that form: the title rule cuts the
-		// target at the first space, so only `<a` survives. Stated here rather
-		// than fixed, because supporting it means changing what a space in a
-		// target means (J42).
+		// parentheses. Notrios still does not read that form — the title rule
+		// cuts the target at the first space, so only `<a` survives — but the
+		// span did move: it was `[text](<a (b)` and now covers the whole link,
+		// because the parentheses inside it balance. That is an improvement on
+		// its own terms, since a rewrite of this span no longer strands `c>)`
+		// in the note, and `<a` resolves to nothing either way so no rewrite
+		// happens. Reading the form is J42.
 		name:    "an angle-bracketed destination is not read",
 		body:    "See [text](<a (b) c>) here.\n",
 		raw:     "<a",
-		matched: "[text](<a (b)",
+		matched: "[text](<a (b) c>)",
 	},
 	{
-		// J41-B: the target should be `a(b)` and the span should reach past the title.
+		// Was target `a(b` with the span stopping before the title.
 		name:    "a title after a balanced pair is still stripped",
 		body:    "See [text](a(b) \"title\") here.\n",
-		raw:     "a(b",
-		matched: "[text](a(b)",
+		raw:     "a(b)",
+		matched: "[text](a(b) \"title\")",
 	},
 	{
-		// J37's rule still holds: this is one literal href, not two rows.
-		// J41-B: should be `[[Target]](x)`; J37's one-row rule is unaffected either way.
+		// Was `[[Target]](x`. J37's one-row rule is unaffected: this is still a
+		// single literal href, now recorded whole.
 		name:    "a literal href containing a parenthesis",
 		body:    "See [text]([[Target]](x)) here.\n",
-		raw:     "[[Target]](x",
-		matched: "[text]([[Target]](x)",
+		raw:     "[[Target]](x)",
+		matched: "[text]([[Target]](x))",
 	},
 }
 

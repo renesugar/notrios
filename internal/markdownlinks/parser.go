@@ -54,11 +54,8 @@ func scanMarkdownLinks(body string, visit func(span)) {
 			index = open + 1
 			continue
 		}
-		target := text + 2
-		for target < len(body) && body[target] != ')' && body[target] != '\n' {
-			target++
-		}
-		if target >= len(body) || body[target] != ')' || target == text+2 {
+		target, ok := targetEnd(body, text+2)
+		if !ok || target == text+2 {
 			index = open + 1
 			continue
 		}
@@ -75,6 +72,61 @@ func scanMarkdownLinks(body string, visit func(span)) {
 		resume = found.end
 		index = resume
 	}
+}
+
+// targetEnd finds the parenthesis that closes a Markdown link's destination,
+// starting at the first byte of that destination, and reports whether there is
+// one before the line ends.
+//
+// CommonMark allows a destination to hold "zero or more balanced pairs of
+// unescaped parentheses", so the closing parenthesis is the one that matches the
+// opening `(` rather than the first `)` in the body. Ending at the first `)`
+// truncated every ordinary link whose URL carries a pair — a Wikipedia URL, a
+// Python docs anchor, several citation styles — recording a target that resolves
+// to nothing and a span that leaves the tail of the URL behind as prose (v1.0
+// J41).
+//
+// A backslash escapes the byte after it, so `\(` and `\)` are text and count
+// toward nothing.
+//
+// When the parentheses do not balance there is no closing one to find, and the
+// answer is the first `)` at any depth: that is what this scan has always
+// returned, and a body that is wrong today should not become a different kind of
+// wrong (v1.0 J41-B).
+func targetEnd(body string, start int) (int, bool) {
+	depth := 0
+	firstClose := -1
+	for index := start; index < len(body); index++ {
+		switch body[index] {
+		case '\n':
+			return fallbackClose(firstClose)
+		case '\\':
+			if index+1 < len(body) && body[index+1] == '\n' {
+				// A destination may not cross a line, and a backslash does not
+				// buy one: the escape ends at the line, not through it.
+				return fallbackClose(firstClose)
+			}
+			index++
+		case '(':
+			depth++
+		case ')':
+			if firstClose < 0 {
+				firstClose = index
+			}
+			if depth == 0 {
+				return index, true
+			}
+			depth--
+		}
+	}
+	return fallbackClose(firstClose)
+}
+
+func fallbackClose(firstClose int) (int, bool) {
+	if firstClose < 0 {
+		return 0, false
+	}
+	return firstClose, true
 }
 
 // scanWikiLinks finds `(!?)\[\[([^\]\n]+)\]\]` on the same terms.

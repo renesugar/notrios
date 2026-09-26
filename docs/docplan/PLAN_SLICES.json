@@ -1185,12 +1185,34 @@
         },
         {
           "id": "J41-B",
-          "statement": "A target ends at the parenthesis that closes it by depth as CommonMark does, and J32-Y's reference is taught the same rule or retired with its reason",
+          "statement": "A target ends at the parenthesis that closes it by depth, escapes count toward nothing, an unbalanced target still ends at the first parenthesis, and the Markdown reference is an independent implementation rather than a regexp",
           "state": "not-started"
         },
         {
           "id": "J41-C",
-          "statement": "Rewriting, stored rows and what a reimport of an existing library revises are measured the way J36-C measured them",
+          "statement": "A note or attachment whose file name carries a parenthesis resolves and is rewritten, an external URL is recorded whole, and a reimport repairs a library imported before the fix without revising anything else",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J42",
+      "title": "An angle-bracketed link target may contain spaces",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J42-A",
+          "statement": "The rows recorded today for angle-bracketed destinations, with and without titles, and for the percent-encoded alternative, are stated as tests",
+          "state": "not-started"
+        },
+        {
+          "id": "J42-B",
+          "statement": "A destination beginning with < ends at the matching > and keeps the spaces between them, with every other destination read as it is today",
+          "state": "not-started"
+        },
+        {
+          "id": "J42-C",
+          "statement": "Rewriting, stored rows, the preview and what a reimport revises are measured the way J36-C and J41-C measured them, carrying a note whose name has a space",
           "state": "not-started"
         }
       ]

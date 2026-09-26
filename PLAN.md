@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**41 items: 36 complete, 0 in progress, 5 not started, 0 deferred.**
+**42 items: 36 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -102,6 +102,7 @@ this section is archived when the plan completes and the rules are not.
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
 | J41. A Markdown link's target may contain balanced parentheses | not-started | 0/3 | 3 |
+| J42. An angle-bracketed link target may contain spaces | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -5064,25 +5065,114 @@ with that decision.
   target, an unbalanced one, an escaped parenthesis, an angle-bracketed
   destination `[text](<a (b) c>)`, and a target whose parentheses balance across
   what is also a title — the description any change is compared against.
-- **J41-B, the scanner.** The target ends at the `)` that closes the one the
-  destination opened with, counting depth, as CommonMark does; an unbalanced
-  target still ends at the first `)`, so a body that is wrong today does not
-  become a different kind of wrong. The hand-written scanner and the regexp it
-  replaced no longer agree, so J32-Y's reference test needs the regexp side
-  taught the same rule or retired with its reason — it exists to hold the
-  scanner to a pattern, and a scanner that is deliberately better than the
-  pattern needs a different reference.
-- **J41-C, the consequences.** Rewriting on import, the stored rows, and the
-  libraries already imported: a reimport changes the recorded target and the
-  span, so what a reimport revises is measured the way J36-C measured it.
+- **J41-B, the scanner, done 2026-09-26.** `targetEnd` walks the destination
+  once, counting depth, and returns the `)` that closes the `(` the destination
+  opened with. A backslash escapes the byte after it, so `\(` and `\)` are text
+  and count toward nothing, and an escape does not carry a target across a line
+  either. When the parentheses do not balance there is no closing one to find and
+  the answer is the first `)` at any depth, which is what the scan always
+  returned — a body that is wrong today does not become a different kind of
+  wrong. One pass, no allocation, as before.
+
+  **The regexp side is retired as the Markdown reference, with its reason.** A
+  regexp cannot express this rule: RE2 has no recursion and the rule counts
+  depth. In its place `referenceMarkdownSpans` is a second implementation written
+  differently on purpose — it collects a destination's unescaped parentheses and
+  resolves the closer from that list, where the scanner decides while walking —
+  and the two are compared over every one of J32-Y's 20,000 generated bodies.
+  The old pattern is kept as a live cross-check for what it can still express:
+  where no destination carries a parenthesis or a backslash, the scanner must
+  still agree with it offset for offset. The wiki scan is unaffected and is still
+  held to its own regexp.
+- **J41-C, the consequences, done 2026-09-26.** The defect cost more than a
+  short string. A note or attachment whose **file name carries a parenthesis**
+  never resolved at all, because the recorded target was missing its tail — so
+  the link stayed as prose and the attachment went unreferenced. With the target
+  read whole, `[draft](Note_(draft).md)` resolves and is rewritten,
+  `![shot](assets/img_(1).png)` resolves and the resource gains its reference,
+  and an external URL is recorded whole instead of truncated.
+
+  Nothing else in the suite moved: no existing test depended on a truncated
+  target.
+
+  A library imported before J41 has these links unrewritten, because neither
+  target resolved — which means the stale body is the vault's own text, so the
+  simulation is exact. A reimport is the repair, it revises only that note, and
+  J36-C's invariant still holds: a reimport of what this build wrote adds no
+  revision to anything. Pinned in
+  `internal/importers/obsidian/j41c_parens_test.go`.
 
 **Boundaries.**
 - No new link syntax: this is the extent of a target, not what a link is.
 - The no-overlap invariant J37 established holds afterwards, over the same
   generated bodies.
 
+**Deferred out of this item, 2026-09-26.** An angle-bracketed destination,
+`[text](<a (b) c>)`, is still not read: the title rule cuts a target at the first
+space, so only `<a` survives. Its **span** did move here, because the
+parentheses inside it balance, which is an improvement on its own terms — a
+rewrite of that span no longer strands `c>)` in the note — but the target is
+still wrong. Reading the form means changing what a space in a target means,
+which is J42.
+
 **Dependencies.** J37 for the scanner's current shape and the invariant. J32-Y
 for the reference test this changes.
 
 **Working state.** A link whose URL contains balanced parentheses records that
 URL, and the rows for the shapes around it are pinned.
+
+## J42. An angle-bracketed link target may contain spaces
+
+**Goal.** `[text](<My Note.md>)` finds `My Note.md`, instead of looking for a
+note called `<My`.
+
+**What J41 found, 2026-09-26.** A Markdown link's target is cut at the first
+space, because that is how the optional title after a destination is stripped:
+
+```
+[text](<a (b) c>)   ->  target "<a"
+```
+
+CommonMark allows a destination wrapped in `<>` to contain spaces, and Obsidian's
+own documentation recommends exactly that form for a note whose name has one —
+`[text](<Target Note>)`, alongside `[text](Target%20Note)`. So this is not an
+exotic shape either: it is the documented way to link to a note with a space in
+its name, and Notrios does not read it.
+
+J41 moved the **span** of such a link, because the parentheses inside the angle
+brackets balance, so a rewrite no longer strands the tail in the note. The
+target is still wrong.
+
+**Why it is separate from J41.** J41 decided where a target *ends*. This decides
+what a target *contains*, and it changes the meaning of a space — which is what
+distinguishes a destination from its title. Getting that wrong turns a title into
+part of a path for every link in every library, so it wants its own tests and its
+own reimport measurement.
+
+**Scope.**
+
+- **J42-A, what is recorded today.** The rows for `[text](<a b>)`,
+  `[text](<a (b) c>)`, `[text](<a> "title")`, `[text](<a b> "title")`, an
+  unclosed `<a b`, a `>` inside the brackets, and a percent-encoded space — the
+  description any change is compared against, including that `%20` already works
+  and is the alternative a note can use today.
+- **J42-B, the rule.** A destination that begins with `<` ends at the matching
+  `>` and keeps the spaces between them; the angle brackets are not part of the
+  target. Everything else keeps today's rule, including the title strip, so a
+  destination that does not begin with `<` is unchanged.
+- **J42-C, the consequences.** Rewriting on import, the stored rows, the preview,
+  and what a reimport of an existing library revises, measured the way J36-C and
+  J41-C measured it. A note whose name has a space is the case to carry through.
+
+**Boundaries.**
+- The title after a destination is still stripped, and a destination that does
+  not begin with `<` is read exactly as it is today.
+- No new link syntax: `<>` is CommonMark's existing form, not an invention here.
+- J37's one-row rule and J41's extent rule both still hold, over the same
+  generated bodies.
+
+**Dependencies.** J41 for the extent rule and the reference implementation this
+changes alongside. J37 for the invariant.
+
+**Working state.** A link written the documented way to a note whose name has a
+space resolves to that note, and the rows for the shapes around it are pinned.

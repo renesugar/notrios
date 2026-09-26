@@ -8,8 +8,20 @@ import (
 	"testing"
 )
 
-// referenceExtract is Extract written with the two regexps instead of the
-// hand-written scanners, which is what this file exists to hold them to.
+// referenceMarkdownLocs presents referenceMarkdownSpans in the shape
+// FindAllStringSubmatchIndex used to return, so referenceExtract reads as it did.
+func referenceMarkdownLocs(body string) [][]int {
+	var locs [][]int
+	for _, found := range referenceMarkdownSpans(body) {
+		locs = append(locs, []int{found.start, found.end, found.bangStart, found.bangEnd,
+			found.firstStart, found.firstEnd, found.targetStart, found.targetEnd})
+	}
+	return locs
+}
+
+// referenceExtract is Extract written against second implementations of its two
+// scans, which is what this file exists to hold them to. The wiki scan is still
+// held to its regexp; the Markdown scan outgrew one in J41.
 //
 // It carried the de-duplication that sat in Extract before J32-Y, keys and all,
 // including the fact that they could never match. J37 decided what that
@@ -23,10 +35,7 @@ func referenceExtract(body string) []Candidate {
 	matches := []Candidate{}
 	claimed := [][2]int{}
 	cursor := newLineCursor(body)
-	for _, loc := range markdownLinkRE.FindAllStringSubmatchIndex(body, -1) {
-		if len(loc) < 8 {
-			continue
-		}
+	for _, loc := range referenceMarkdownLocs(body) {
 		claimed = append(claimed, [2]int{loc[0], loc[1]})
 		rawTarget := strings.TrimSpace(body[loc[6]:loc[7]])
 		rawTarget = stripMarkdownTitle(rawTarget)
@@ -72,6 +81,92 @@ func referenceExtract(body string) []Candidate {
 	return matches
 }
 
+// referenceMarkdownSpans is a second implementation of what scanMarkdownLinks
+// finds, written differently on purpose: it collects the unescaped parentheses
+// of a destination first and resolves the closing one from that list, where the
+// scanner decides while walking. Two implementations of the same small rule,
+// compared over every generated body, is what this file did with a regexp until
+// J41 — and a regexp can no longer express the rule, because RE2 has no
+// recursion and the rule counts depth.
+func referenceMarkdownSpans(body string) []span {
+	var spans []span
+	resume := 0
+	for open := 0; open < len(body); open++ {
+		if open < resume || body[open] != '[' {
+			continue
+		}
+		text := -1
+		for index := open + 1; index < len(body); index++ {
+			if body[index] == '\n' {
+				break
+			}
+			if body[index] == ']' {
+				text = index
+				break
+			}
+		}
+		if text < 0 || text+1 >= len(body) || body[text+1] != '(' {
+			continue
+		}
+		type paren struct {
+			at   int
+			open bool
+		}
+		var parens []paren
+		for index := text + 2; index < len(body); index++ {
+			if body[index] == '\n' {
+				break
+			}
+			if body[index] == '\\' {
+				if index+1 < len(body) && body[index+1] == '\n' {
+					break
+				}
+				index++
+				continue
+			}
+			if body[index] == '(' {
+				parens = append(parens, paren{index, true})
+			}
+			if body[index] == ')' {
+				parens = append(parens, paren{index, false})
+			}
+		}
+		end, depth, first := -1, 0, -1
+		for _, found := range parens {
+			if found.open {
+				depth++
+				continue
+			}
+			if first < 0 {
+				first = found.at
+			}
+			if depth == 0 {
+				end = found.at
+				break
+			}
+			depth--
+		}
+		if end < 0 {
+			end = first
+		}
+		if end < 0 || end == text+2 {
+			continue
+		}
+		found := span{
+			start: open, end: end + 1,
+			bangStart: open, bangEnd: open,
+			firstStart: open + 1, firstEnd: text,
+			targetStart: text + 2, targetEnd: end,
+		}
+		if open > 0 && body[open-1] == '!' && open-1 >= resume {
+			found.start, found.bangStart = open-1, open-1
+		}
+		spans = append(spans, found)
+		resume = found.end
+	}
+	return spans
+}
+
 // j32yBodies covers what the two patterns can meet: brackets that do not close,
 // nested and repeated brackets, a bang in every position, links split across
 // lines, empty text and empty targets, titles, pipes, anchors, and multi-byte
@@ -99,29 +194,45 @@ func j32yBodies() []string {
 	return bodies
 }
 
-// TestScannersAgreeWithTheirRegexps holds the two matchers to the patterns they
-// replace, offset for offset, on every body (v1.0 J32-Y).
+// TestScannersAgreeWithTheirRegexps holds the two matchers to their references,
+// offset for offset, on every body (v1.0 J32-Y, J41).
 func TestScannersAgreeWithTheirRegexps(t *testing.T) {
 	for _, body := range j32yBodies() {
 		var markdown []span
 		scanMarkdownLinks(body, func(found span) { markdown = append(markdown, found) })
-		want := markdownLinkRE.FindAllStringSubmatchIndex(body, -1)
-		if len(markdown) != len(want) {
-			t.Fatalf("markdown in %q: scanner found %d, regexp found %d", body, len(markdown), len(want))
+		if reference := referenceMarkdownSpans(body); !reflect.DeepEqual(markdown, reference) {
+			t.Fatalf("markdown in %q: scanner %+v, reference %+v", body, markdown, reference)
 		}
-		for index, found := range markdown {
-			loc := want[index]
-			if found.start != loc[0] || found.end != loc[1] ||
-				found.bangStart != loc[2] || found.bangEnd != loc[3] ||
-				found.firstStart != loc[4] || found.firstEnd != loc[5] ||
-				found.targetStart != loc[6] || found.targetEnd != loc[7] {
-				t.Fatalf("markdown %d in %q: scanner %+v, regexp %v", index, body, found, loc)
+		// Where no destination carries a parenthesis, the rule J41 added cannot
+		// have applied, and the pattern this scan replaced must still agree
+		// exactly. That keeps the old pattern a live cross-check for the shapes
+		// it can still express.
+		parenFree := true
+		for _, found := range markdown {
+			if strings.ContainsAny(body[found.targetStart:found.targetEnd], "()\\") {
+				parenFree = false
+				break
+			}
+		}
+		if parenFree {
+			want := markdownLinkRE.FindAllStringSubmatchIndex(body, -1)
+			if len(markdown) != len(want) {
+				t.Fatalf("markdown in %q: scanner found %d, regexp found %d", body, len(markdown), len(want))
+			}
+			for index, found := range markdown {
+				loc := want[index]
+				if found.start != loc[0] || found.end != loc[1] ||
+					found.bangStart != loc[2] || found.bangEnd != loc[3] ||
+					found.firstStart != loc[4] || found.firstEnd != loc[5] ||
+					found.targetStart != loc[6] || found.targetEnd != loc[7] {
+					t.Fatalf("markdown %d in %q: scanner %+v, regexp %v", index, body, found, loc)
+				}
 			}
 		}
 
 		var wiki []span
 		scanWikiLinks(body, func(found span) { wiki = append(wiki, found) })
-		want = wikiLinkRE.FindAllStringSubmatchIndex(body, -1)
+		want := wikiLinkRE.FindAllStringSubmatchIndex(body, -1)
 		if len(wiki) != len(want) {
 			t.Fatalf("wiki in %q: scanner found %d, regexp found %d", body, len(wiki), len(want))
 		}
@@ -136,8 +247,8 @@ func TestScannersAgreeWithTheirRegexps(t *testing.T) {
 	}
 }
 
-// TestExtractMatchesTheRegexpExtract is the whole function held to its old
-// self: every candidate, every field, in order.
+// TestExtractMatchesTheRegexpExtract is the whole function held to the reference
+// implementations: every candidate, every field, in order.
 func TestExtractMatchesTheRegexpExtract(t *testing.T) {
 	for _, body := range j32yBodies() {
 		got, want := Extract(body), referenceExtract(body)
