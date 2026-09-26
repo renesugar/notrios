@@ -1012,32 +1012,37 @@
     {
       "id": "J36",
       "title": "Resolve Obsidian partial-path links the way Obsidian does",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J36-A",
           "statement": "What Obsidian documents and what Notrios does are stated side by side, with tests pinning each case, and no test asserts suffix matching because Obsidian does not do it",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
         },
         {
           "id": "J36-B",
           "statement": "A path-shaped link that matches no path is unresolved rather than resolved by file name, for notes and attachments",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
         },
         {
           "id": "J36-C",
           "statement": "A reimport of a library imported before the fix revises exactly the notes whose links moved and rebuilds their link rows, and a no-op reimport adds no revision to any note",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
         },
         {
           "id": "J36-D",
           "statement": "The vault-root path is preferred over the note-relative one for notes and attachments, matching Obsidian, with the rule cited to its source",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
         },
         {
           "id": "J36-E",
           "statement": "A bare name shared between folders with no note of that name at the vault root stays ambiguous rather than guessed, because the ambiguity is what a reader can be asked about (J40)",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
         }
       ]
     },

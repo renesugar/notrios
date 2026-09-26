@@ -178,3 +178,18 @@ what a prompt can offer, and what puts J36-B's pathless links outside J40 as a
 No parser grammar changed: `markdownlinks` recognises the same links. An
 ambiguous link still stays unresolved with a warning, and the importer still
 never guesses between candidates.
+
+## Archive
+
+`notrios-v1.0-j36-f6b9719.zip`, built from commit `f6b9719` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,456,882 bytes, 2,936 entries, accepted by `check_release_zip.py`,
+built by `package_release.sh` with the usage guard on and no override.
+
+There are no measurement directories here. This item's evidence is its tests:
+`internal/importers/obsidian/j36a_resolve_test.go`, which states every
+resolution case with Obsidian's answer beside it, and
+`internal/importers/obsidian/j36c_reimport_test.go`, which pins what a reimport
+of a library imported before the fix revises. The one measurement taken — the
+rejected tiebreak's cost — is in the J36-E section above, because it decided
+nothing and needs no directory of its own.

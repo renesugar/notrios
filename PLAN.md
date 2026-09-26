@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**40 items: 34 complete, 0 in progress, 6 not started, 0 deferred.**
+**40 items: 35 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -96,7 +96,7 @@ this section is archived when the plan completes and the rules are not.
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
-| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/5 | 5 |
+| J36. Resolve Obsidian partial-path links the way Obsidian does | complete | 5/5 | — |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
@@ -4512,7 +4512,7 @@ CSP directive.
 **Working state.** No covered form loads a remote resource in the preview, and
 the CSP says so explicitly.
 
-## J36. Resolve Obsidian partial-path links the way Obsidian does
+## J36. Resolve Obsidian partial-path links the way Obsidian does — complete
 
 **Goal.** A vault link that names a note or attachment by a partial path, such
 as `[[topic-00001/index]]`, resolves to the file it names when exactly one file
