@@ -83,3 +83,55 @@ expected to be modest:
   (480 MB, the shape J32-U fixed on the other side), `parseItemBytes`' copies
   (780 MB), and `rewriteJoplinLinkLine` with `splitPhysicalLines` (10.6% of the
   near-limit import's CPU, and Joplin's only sizeable Go-side cost).
+
+## J38-C — byte-bounded Joplin batches: **kept, with its cost stated**
+
+Joplin windowed its notes phase by item count alone — a hundred by default, five
+hundred at most — while the phase keeps every canonical body of a batch until it
+is written. A window now ends at the count or once it holds 64 MiB of items, the
+size one RAW item may already reach, so a large item becomes a batch of its own
+and nothing legal is refused. The sizes come from the inventory the manifest
+already holds, so no file is read to decide a window.
+
+Only the notes phase takes the bound. Two other loops walk the same inventory
+with identical-looking code, and both collect ids and carry no bodies. Joplin
+already writes its checkpoint inside the batch, so J32-J's duplicate write does
+not exist here.
+
+**The corpus had to be built for it,** as on the Obsidian side:
+`near-limit-joplin` holds four large items among two hundred small ones, so a
+hundred-item batch happened to hold only those four. `many-large-joplin` is
+twelve RAW items of 60 MiB and nothing else.
+
+Declared: peak RSS. Baseline `97ac9c5`, candidate `fb10ed1`, five runs each,
+alternating. Records in `j38c/`.
+
+| case | peak RSS before | after | baseline range | change | wall s |
+|---|---:|---:|---:|---:|---:|
+| many-large-joplin/fresh | 3.38 G | **1.15 G** | 123 M | **−66.0%** | unchanged |
+| near-limit-joplin/fresh | 1.39 G | 1.20 G | 171 M | −13.8% | unchanged |
+| joplin-10k/fresh | 34.0 M | 34.0 M | 0.9 M | within noise | unchanged |
+
+**A larger win than the Obsidian side's 51%, and a larger cost with it.** On
+`many-large-joplin`: commits 5 → 10, prepared statements 270 → 335 (+24.1%),
+allocations 5,656 → 6,991 (+23.6%), user CPU +0.63% — every one past its range,
+and every one the direct consequence of more batches, because bounding a batch
+means making more of them. Peak RSS falls by 2.2 GB for that. Wall time is
+unchanged on all three corpora, so nothing is being traded for time.
+
+This is the same trade the owner accepted for J32-K, in the same direction, with
+a bigger memory gain and a proportionally bigger bookkeeping cost. Joplin's
+batches held more per item because the phase keeps the parsed RAW item as well as
+the canonical body.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. A test states the window rule — small items all fit, one
+item at or past the budget stands alone, the budget closes a window early, a
+small item before a large one keeps them together — and that the budget is the
+size limit one item may already reach. Both corpora imported by each binary
+produce identical `document_blocks`, `document_links`, `document_sources` — the
+RAW provenance rows — and `documents`.
+
+Two of the import report's 44 fields change, and both count the thing that
+changed: `batches_completed` 4 → 9 and `canonical_document_batches` 1 → 6 on
+`many-large-joplin`.
