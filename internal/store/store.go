@@ -534,9 +534,14 @@ type ImportDocumentMutation struct {
 	RemoveTags     []string
 	Resources      []AttachResourceRequest
 	State          ImportItemState
-	SkipDocument   bool
-	SkipSource     bool
-	SkipState      bool
+	// ContentSHA256 is the body's hash when the importer already computed it
+	// over the same bytes it puts in Document.Body, which it does to decide
+	// whether the note changed at all. Empty means the store hashes the body
+	// itself (v1.0 J32-AA).
+	ContentSHA256 string
+	SkipDocument  bool
+	SkipSource    bool
+	SkipState     bool
 }
 
 // ImportDocumentBatchRequest atomically applies a bounded set of document

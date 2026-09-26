@@ -63,7 +63,7 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 				VALUES(?, ?, ?, ?, ?, ?)`, document.PreferredID, document.CollectionID, document.NotebookID, document.Title, document.BodyMIMEType, revisionID); err != nil {
 				return err
 			}
-			if err := s.insertRevisionLocked(revisionID, document.PreferredID, document.Title, document.Body, document.BodyMIMEType, document.Message, ""); err != nil {
+			if err := s.insertRevisionLocked(revisionID, document.PreferredID, document.Title, document.Body, document.BodyMIMEType, document.Message, "", mutation.ContentSHA256); err != nil {
 				return err
 			}
 			if err := s.insertDocumentFTSLocked(document.PreferredID, document.CollectionID, document.Title, document.Body); err != nil {
@@ -93,7 +93,7 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 				if err != nil {
 					return err
 				}
-				if err := s.insertRevisionLocked(revisionID, document.PreferredID, document.Title, document.Body, document.BodyMIMEType, document.Message, current.CurrentRevisionID); err != nil {
+				if err := s.insertRevisionLocked(revisionID, document.PreferredID, document.Title, document.Body, document.BodyMIMEType, document.Message, current.CurrentRevisionID, mutation.ContentSHA256); err != nil {
 					return err
 				}
 				if err := s.execPreparedLocked(`UPDATE documents SET notebook_id = ?, title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP

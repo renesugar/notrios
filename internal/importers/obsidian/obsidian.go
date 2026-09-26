@@ -960,7 +960,12 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				current, found = documents[mapped]
 			}
 			trashed := !found && sourceDocuments[item.RelPath] != ""
-			fingerprint := noteFingerprint(item, notebookID, canonical)
+			// The canonical body is hashed once here and used twice: for the
+			// fingerprint that decides whether this note changed, and as the
+			// revision's content_sha256, which the store would otherwise hash
+			// over the same bytes (v1.0 J32-AA).
+			canonicalSHA := syncdelta.SHA256HexString(canonical)
+			fingerprint := noteFingerprint(item, notebookID, canonicalSHA)
 			action := "create"
 			if trashed {
 				action = "unchanged"
@@ -994,7 +999,8 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			state.TargetID = targetID
 			state.Fingerprint = fingerprint
 			mutation := store.ImportDocumentMutation{
-				Action: action,
+				Action:        action,
+				ContentSHA256: canonicalSHA,
 				Document: store.CreateDocumentRequest{
 					PreferredID: targetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
 					Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
@@ -1562,11 +1568,15 @@ func (run *importRun) addWarning(message string) {
 	}
 }
 
-func noteFingerprint(item vaultFile, notebookID, canonical string) string {
-	// The canonical body is hashed from the string itself; converting it to
-	// bytes copied the whole note, 240 MB of a near-limit import (v1.0
-	// J32-W1). The outer hash is over a few dozen bytes and stays as it is.
-	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + syncdelta.SHA256HexString(canonical)))
+// noteFingerprint composes what decides whether a note changed: the file's
+// hash, the notebook it lands in, and the hash of the canonical body.
+//
+// It takes the body's hash rather than the body, because the caller has it: the
+// same value is the revision's content_sha256, and hashing the body twice was a
+// fifth of everything a near-limit import hashed (v1.0 J32-AA). The outer hash
+// is over a few dozen bytes.
+func noteFingerprint(item vaultFile, notebookID, canonicalSHA string) string {
+	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + canonicalSHA))
 }
 
 // fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,

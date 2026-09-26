@@ -156,7 +156,7 @@ func (s *SQLiteStore) j19WriteBatch(ids []string, notes []j19Note, withFTS bool)
 			VALUES(?, ?, ?, ?, ?, ?)`, ids[index], "default", DefaultNotebookID, note.Title, "text/markdown", revisionID); err != nil {
 			return err
 		}
-		if err := s.insertRevisionLocked(revisionID, ids[index], note.Title, note.Body, "text/markdown", "j19", ""); err != nil {
+		if err := s.insertRevisionLocked(revisionID, ids[index], note.Title, note.Body, "text/markdown", "j19", "", ""); err != nil {
 			return err
 		}
 		if withFTS {

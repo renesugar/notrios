@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/renesugar/notrios/internal/syncdelta"
 	"io"
 	"os"
 	"path/filepath"
@@ -42,7 +43,13 @@ func TestJ19StreamedFingerprintIsByteIdentical(t *testing.T) {
 	for i, body := range bodies {
 		for _, notebook := range notebooks {
 			item := vaultFile{Fingerprint: sha256.Sum256([]byte(fmt.Sprintf("file-%d", i)))}
-			if got, want := fingerprintStreamed(item, notebook, body), noteFingerprint(item, notebook, body); got != want {
+			// noteFingerprint takes the canonical body's hash rather than the
+			// body, since v1.0 J32-AA: the caller has that hash already and
+			// hashing the body twice was a fifth of what an import hashed. What
+			// this test compares is unchanged - the streamed composition against
+			// the current one, over the same bytes.
+			if got, want := fingerprintStreamed(item, notebook, body),
+				noteFingerprint(item, notebook, syncdelta.SHA256HexString(body)); got != want {
 				t.Fatalf("body %d notebook %q: streamed %s, current %s", i, notebook, got, want)
 			}
 		}

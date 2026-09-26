@@ -206,15 +206,26 @@ func (s *SQLiteStore) backfillRevisionBatch() (bool, error) {
 // binds the revision to its exact content and its named parent, and — when the
 // journal is enrolled — decides how the revision will travel before the capture
 // trigger reads that decision.
-func (s *SQLiteStore) insertRevisionLocked(revisionID, documentID, title, body, mimeType, message, parentRevisionID string) error {
+// insertRevisionLocked writes a revision. contentSHA may carry the body's hash
+// when the caller already computed it over the same bytes; empty means compute
+// it here (v1.0 J32-AA).
+//
+// An import hashes a note five times over, and two of those passes are the same
+// canonical body: the importer hashes it for the fingerprint that decides
+// whether the note changed, and this function hashed it again for
+// content_sha256. The importer now passes what it computed, from the same
+// string it passes as the body.
+func (s *SQLiteStore) insertRevisionLocked(revisionID, documentID, title, body, mimeType, message, parentRevisionID, contentSHA string) error {
 	parents := syncbody.NormalizeParents([]string{parentRevisionID})
 	encodedParents, err := json.Marshal(parents)
 	if err != nil {
 		return err
 	}
-	// Hashed from the string itself: converting it to bytes copied every body
-	// written, 240 MB of a near-limit import (v1.0 J32-W1).
-	contentSHA := syncdelta.SHA256HexString(body)
+	if contentSHA == "" {
+		// Hashed from the string itself: converting it to bytes copied every
+		// body written, 240 MB of a near-limit import (v1.0 J32-W1).
+		contentSHA = syncdelta.SHA256HexString(body)
+	}
 	if err := s.prepareRevisionTransferLocked(revisionID, parentRevisionID, body, contentSHA); err != nil {
 		return err
 	}
