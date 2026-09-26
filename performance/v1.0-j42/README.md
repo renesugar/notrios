@@ -108,3 +108,21 @@ bracketed form is where a title most often appears.
 A title is the author's text. Losing it on import is the same class of harm as
 losing a link: the note comes back from a round trip saying less than it said.
 The test records what happens rather than endorsing it.
+
+## Archive
+
+`notrios-v1.0-j42-36309b6.zip`, built from commit `36309b6` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,488,501 bytes, 2,948 entries, accepted by `check_release_zip.py`.
+
+**Built with `NOTRIOS_AGENT_USAGE_GUARD=off`, authorized by the owner for this
+archive on 2026-09-26.** The seven-day bucket stood at 17.0% remaining against a
+20.0% required reserve; the five-hour bucket had rolled into a new window and had
+94.0%. The weekly bucket resets 2026-09-29.
+
+There are no measurement directories here. This item's evidence is its tests:
+`internal/markdownlinks/j42a_angle_test.go` for what a bracketed destination is
+taken to be, `internal/markdownlinks/j32y_scanner_test.go` for the reference that
+learned the same rule differently and the subset the old pattern still
+cross-checks, and `internal/importers/obsidian/j42c_angle_test.go` for the
+import, the rows, the no-op reimport and the repair.

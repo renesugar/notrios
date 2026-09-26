@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**43 items: 37 complete, 0 in progress, 6 not started, 0 deferred.**
+**43 items: 38 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -102,7 +102,7 @@ this section is archived when the plan completes and the rules are not.
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
-| J42. An angle-bracketed link target may contain spaces | not-started | 0/3 | 3 |
+| J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
@@ -5122,7 +5122,7 @@ for the reference test this changes.
 **Working state.** A link whose URL contains balanced parentheses records that
 URL, and the rows for the shapes around it are pinned.
 
-## J42. An angle-bracketed link target may contain spaces
+## J42. An angle-bracketed link target may contain spaces — complete
 
 **Goal.** `[text](<My Note.md>)` finds `My Note.md`, instead of looking for a
 note called `<My`.

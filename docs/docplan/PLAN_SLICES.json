@@ -1201,22 +1201,25 @@
     {
       "id": "J42",
       "title": "An angle-bracketed link target may contain spaces",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J42-A",
           "statement": "The rows recorded today for angle-bracketed destinations, with and without titles, and for the percent-encoded alternative, are stated as tests",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
         },
         {
           "id": "J42-B",
           "statement": "A destination beginning with < ends at the matching > and keeps the spaces inside it, the closing parenthesis is looked for after that bracket, and every other destination is read as it is today",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
         },
         {
           "id": "J42-C",
           "statement": "A note or attachment whose name has a space resolves through the bracketed form, the percent-encoded alternative still resolves, and a reimport repairs a library imported before the fix without revising anything else",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
         }
       ]
     },
