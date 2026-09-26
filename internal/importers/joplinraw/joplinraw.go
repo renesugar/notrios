@@ -245,10 +245,15 @@ func splitPhysicalLines(text string) []string {
 	}
 	lines := make([]string, 0, strings.Count(text, "\n")+1)
 	start := 0
-	for index := 0; index < len(text); index++ {
-		if text[index] != '\r' && text[index] != '\n' {
-			continue
+	// Jump to the next line ending rather than testing every byte (v1.0
+	// J38-E): IndexAny reads the same bytes with one call per line instead of
+	// one comparison per character.
+	for start <= len(text) {
+		offset := strings.IndexAny(text[start:], "\r\n")
+		if offset < 0 {
+			break
 		}
+		index := start + offset
 		lines = append(lines, text[start:index])
 		if text[index] == '\r' && index+1 < len(text) && text[index+1] == '\n' {
 			index++
@@ -504,8 +509,27 @@ func rewriteJoplinLinkLine(output *strings.Builder, line string, inlineCodeLengt
 			continue
 		}
 		if *inlineCodeLength != 0 || index+2 > len(line) || line[index:index+2] != ":/" || isEscaped(line, index) {
-			output.WriteByte(line[index])
-			index++
+			// Copy the whole run up to the next byte that could matter, rather
+			// than one byte at a time (v1.0 J38-E). Inside inline code only a
+			// backtick can end it; outside, a backtick or the colon of a `:/`
+			// link. Everything between is copied unchanged, so a note with few
+			// links is copied in a few writes instead of one per character.
+			next := index + 1
+			if remainder := line[next:]; remainder != "" {
+				var offset int
+				if *inlineCodeLength != 0 {
+					offset = strings.IndexByte(remainder, '`')
+				} else {
+					offset = strings.IndexAny(remainder, "`:")
+				}
+				if offset < 0 {
+					next = len(line)
+				} else {
+					next += offset
+				}
+			}
+			output.WriteString(line[index:next])
+			index = next
 			continue
 		}
 		end := index + 2
