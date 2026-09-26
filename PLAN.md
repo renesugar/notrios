@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/25 | 25 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/26 | 26 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -4196,6 +4196,37 @@ so an earlier kept change is part of that baseline.
   - **Not a grammar change.** J32's boundaries say a performance change keeps
     what is recognised. If the scanner and the regexps disagree on any input,
     the regexps win and the disagreement is a defect in the scanner.
+
+- **J32-Z, find a block's trailing marker without scanning the block.** Found
+  by re-profiling after J32-I and J32-Y, 2026-09-26
+  (`j32i/near-limit-after-j32y.cpu`). At 84 s the import looks nothing like it
+  did at 525 s, and the leader is a function that was invisible before:
+
+  | work | share now | share at 525 s |
+  |---|---:|---:|
+  | `splitMarker` | **47.1%** | invisible |
+  | SQLite (`cgocall`) | 25.7% | 4.3% |
+  | SHA-256 | 17.7% | 3.4% |
+  | `markdownlinks.Extract` | minor | 74.8% |
+
+  `markerRE` is `\s\^([A-Za-z0-9_-]{1,128})\s*$` — anchored at the end — but
+  `FindStringSubmatchIndex` scans forward from byte zero, so a 60 MiB
+  single-paragraph block runs the regexp engine over 60 MiB to inspect its last
+  hundred and thirty bytes. Reading the tail instead is O(marker) rather than
+  O(block).
+
+  - **The rule is J32-S's and J32-Y's.** `markerRE` stays in the package as the
+    reference the tests hold the tail check to, over markers of every length,
+    a marker with no preceding space, one followed by whitespace, one too long,
+    one holding a character the class excludes, a block that is only a marker,
+    and multi-byte text before it.
+  - **Declared metric:** wall time on `near-limit-obsidian/fresh`, with
+    `obsidian-10k/fresh`, `link-dense/fresh` and `collision/fresh` as the cases
+    that must not regress. Every block's ID, hash, marker, slug, ordinal and
+    offsets must be identical, which `document_blocks` shows on each corpus.
+  - **What it leaves.** If it lands, the import is SQLite and hashing — work
+    that is being done for a reason — and J32 has taken it as far as parsing
+    changes can.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and
