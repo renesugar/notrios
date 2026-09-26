@@ -96,7 +96,7 @@ this section is archived when the plan completes and the rules are not.
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
-| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/4 | 4 |
+| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/5 | 5 |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
@@ -4575,11 +4575,24 @@ reason.
   if no path matches it is unresolved. `resolveAssetID` has the same shape and
   the same fix. This makes a wrong target become a reported unresolved link,
   which is what Obsidian shows.
-- **J36-D, the precedence decision, for the owner.** Obsidian prefers the
-  vault-root path over the note-relative one for a bare name; Notrios prefers
-  relative. Changing it alters which note an existing link points at in every
-  library already imported, so it is not shipped on my own authority. Recorded
-  with the evidence, for a decision.
+- **J36-D, precedence: match Obsidian.** The owner decided on 2026-09-26 to
+  match Obsidian, after the rule was confirmed from the source rather than
+  inferred: "We want `[[A]]` to point to the same note across the vault" and
+  "This is not a bug. it's intentional. Otherwise, where `[[A]]` points to
+  depends on which file it is contained" — an Obsidian moderator, at
+  <https://forum.obsidian.md/t/absolute-link-path-has-higher-precedence-than-relative-path/69542>.
+  So the vault-root path is tried before the note-relative one, for notes and
+  attachments alike, and a bare name is a root path too. This also rescues a
+  bare name shared between the root and a folder, which the name map could
+  previously only call ambiguous.
+- **J36-E, the residual divergence, for a decision.** Obsidian's rationale goes
+  further than precedence: a bare name should not depend on the containing file
+  at all. When the name is shared between two folders and no note of that name
+  sits at the vault root, Obsidian still resolves to one of them, chosen by its
+  own index order; Notrios reports the link as ambiguous and leaves it. Choosing
+  arbitrarily would resolve a link to a note nobody named, which is the defect
+  J36-B just removed, so the ambiguity report stands until the owner decides
+  what an unreproducible ordering should become here. Pinned as a test row.
 - **J36-C, libraries imported before the fix.** Record what a reimport of an
   already-imported vault does:
   - which notes it revises, which should be only those whose rewritten body

@@ -1390,16 +1390,20 @@ func pathShapedTarget(raw string) bool {
 	return strings.Contains(raw, "/") || strings.HasPrefix(raw, ".")
 }
 
+// vaultCandidates lists the paths a link target can name, vault root first.
+// Obsidian resolves the root path ahead of the note-relative one so that a
+// link means the same note wherever it is written: "We want [[A]] to point to
+// the same note across the vault. Otherwise, where [[A]] points to depends on
+// which file it is contained." A bare name is a root path too, which is how
+// [[note]] reaches note.md at the root from a note inside a folder.
+func vaultCandidates(noteDir, raw string) [2]string {
+	return [2]string{raw, filepath.ToSlash(filepath.Join(noteDir, raw))}
+}
+
 func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
 	raw = decodeVaultTarget(raw)
 	noteDir := folderPath(notePath)
-	candidates := []string{}
-	if pathShapedTarget(raw) {
-		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)), raw)
-	} else {
-		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)))
-	}
-	for _, candidate := range candidates {
+	for _, candidate := range vaultCandidates(noteDir, raw) {
 		if id := ns.notesByPath[normalizeNotePath(candidate)]; id != "" {
 			return id, false
 		}
@@ -1419,8 +1423,7 @@ func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
 
 func resolveAssetID(notePath, raw string, ns linkNamespace) (string, bool) {
 	raw = decodeVaultTarget(raw)
-	noteDir := folderPath(notePath)
-	for _, candidate := range []string{filepath.ToSlash(filepath.Join(noteDir, raw)), raw} {
+	for _, candidate := range vaultCandidates(folderPath(notePath), raw) {
 		if id := ns.assetsByPath[normalizeVaultPath(candidate)]; id != "" {
 			return id, false
 		}

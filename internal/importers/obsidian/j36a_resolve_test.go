@@ -37,9 +37,10 @@ func j36Namespace() linkNamespace {
 	}
 }
 
-// TestJ36ANoteResolutionAsItIs pins what resolveNoteID does today, so that any
-// change to it is visible. The Obsidian column records what Obsidian's
-// documentation says for the same link, which is not always the same thing:
+// TestJ36ANoteResolutionAsItIs pins what resolveNoteID does, case by case, with
+// what Obsidian does for the same link beside it. After J36-B and J36-D the two
+// agree everywhere except the row marked J36-E. Obsidian's rule is that
+// "Folder paths start at the vault root and use forward slashes", so a link
 // "Folder paths start at the vault root and use forward slashes", so a link
 // containing a slash names a path and nothing else.
 func TestJ36ANoteResolutionAsItIs(t *testing.T) {
@@ -85,12 +86,22 @@ func TestJ36ANoteResolutionAsItIs(t *testing.T) {
 			obsidian: "same: there is no wrong/path/unique",
 		},
 		{
-			// The precedence divergence held for J36-D.
-			name:     "bare shared name prefers the note-relative note",
+			// J36-D: before the fix this picked folder/note.md, so [[note]]
+			// meant a different note depending on where it was written.
+			name:     "bare shared name prefers the vault root",
 			from:     "folder/other.md",
 			raw:      "note",
-			wantID:   "doc-folder",
-			obsidian: "doc-root: the vault-root path is preferred",
+			wantID:   "doc-root",
+			obsidian: "same: the vault-root path is preferred",
+		},
+		{
+			// J36-D also rescues this one: the root path now answers a name
+			// that the name map could only call ambiguous.
+			name:     "bare shared name reaches the root from elsewhere",
+			from:     "elsewhere/other.md",
+			raw:      "note",
+			wantID:   "doc-root",
+			obsidian: "same",
 		},
 		{
 			name:     "bare name resolves relative before the ambiguous name map",
@@ -100,12 +111,16 @@ func TestJ36ANoteResolutionAsItIs(t *testing.T) {
 			obsidian: "same: area-01/topic-00001/index.md is in the same folder",
 		},
 		{
-			name:      "bare shared name with no relative match is ambiguous",
+			// The residual divergence, recorded as J36-E: with no note of this
+			// name at the vault root, Obsidian still picks one of the two by
+			// its own index order, which this importer cannot reproduce, so it
+			// reports the ambiguity instead of guessing.
+			name:      "bare shared name with no root or relative match is ambiguous",
 			from:      "elsewhere/other.md",
 			raw:       "index",
 			wantID:    "",
 			ambiguous: true,
-			obsidian:  "resolves: Obsidian picks one rather than refusing",
+			obsidian:  "resolves: Obsidian picks one rather than refusing (J36-E)",
 		},
 		{
 			name:     "unique bare name resolves from anywhere",
@@ -146,11 +161,19 @@ func TestJ36AAssetResolutionAsItIs(t *testing.T) {
 			obsidian: "same",
 		},
 		{
-			name:     "note-relative path resolves",
+			// J36-D: before the fix the note-relative folder/img/logo.png won.
+			name:     "path present at the root and relative prefers the root",
 			from:     "folder/other.md",
 			raw:      "img/logo.png",
-			wantID:   "res-folder",
-			obsidian: "res-root: the vault-root path is preferred",
+			wantID:   "res-root",
+			obsidian: "same: the vault-root path is preferred",
+		},
+		{
+			name:     "note-relative path resolves when the root has no match",
+			from:     "folder/other.md",
+			raw:      "only/deep/picture.png",
+			wantID:   "res-unique",
+			obsidian: "same",
 		},
 		{
 			// J36-B: before the fix this resolved to only/deep/picture.png.
@@ -161,12 +184,13 @@ func TestJ36AAssetResolutionAsItIs(t *testing.T) {
 			obsidian: "same: there is no wrong/path/picture.png",
 		},
 		{
+			// J36-E again, for attachments.
 			name:      "shared file name with no path match is ambiguous",
 			from:      "elsewhere/other.md",
 			raw:       "logo.png",
 			wantID:    "",
 			ambiguous: true,
-			obsidian:  "resolves: Obsidian picks one rather than refusing",
+			obsidian:  "resolves: Obsidian picks one rather than refusing (J36-E)",
 		},
 	}
 	for _, testCase := range cases {

@@ -1031,7 +1031,12 @@
         },
         {
           "id": "J36-D",
-          "statement": "Whether to prefer the vault-root path over the note-relative one for a bare name is decided by the owner, with the evidence recorded",
+          "statement": "The vault-root path is preferred over the note-relative one for notes and attachments, matching Obsidian, with the rule cited to its source",
+          "state": "not-started"
+        },
+        {
+          "id": "J36-E",
+          "statement": "Whether a bare name shared between folders with no note of that name at the vault root should resolve to one of them rather than be reported ambiguous is decided by the owner",
           "state": "not-started"
         }
       ]
