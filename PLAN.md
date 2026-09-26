@@ -96,7 +96,7 @@ this section is archived when the plan completes and the rules are not.
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
-| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
+| J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/4 | 4 |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
@@ -4537,20 +4537,49 @@ partial path, which is why every gate passed.
 Found while building a benchmark, so under the J8 rule it is recorded here and
 not fixed in J32.
 
-**Scope.**
+**J36-A found the premise wrong, 2026-09-26.** Obsidian's documentation says a
+link containing a slash is a path **from the vault root**: "Folder paths start at
+the vault root and use forward slashes (`/`), even on Windows:
+`[[Projects/Three laws of motion]]`"
+(<https://obsidian.md/help/Linking+notes+and+files/Internal+links>). There is no
+suffix matching. So `[[topic-00001/index]]` does **not** resolve to
+`area-01/topic-00001/index.md` in Obsidian — it is a broken link — and the fix
+this item was written to make would have moved *away* from Obsidian's behaviour.
 
-- **J36-A, pin the rule and Obsidian's behaviour.** Confirm against Obsidian's
-  own documented behaviour how a partial path resolves, including when several
-  files end with it. Then write the rule down as tests that fail on today's
-  code:
-  - a partial path matching exactly one note resolves to it;
-  - one matching several notes stays ambiguous, with the warning;
-  - the match falls on folder boundaries, so `pic-00001/index` matches nothing;
-  - the existing relative, root, base-name and alias resolution is unchanged.
-- **J36-B, notes and attachments.** `resolveNoteID` and `resolveAssetID` gain
-  the suffix step between the exact paths and the base-name fallback. The
-  namespace gains whatever index makes that step cheap: a suffix scan per link
-  over 5,000 same-named notes is the kind of cost J32-F measures.
+Probing `resolveNoteID` against the documented rules found a worse defect than
+the one this item was opened for, and two divergences of precedence:
+
+| case | Notrios today | Obsidian |
+|---|---|---|
+| `[[topic-00002/index]]`, no such path from the root | ambiguous, unresolved | unresolved |
+| **`[[wrong/path/unique]]`**, path absent but the base name unique | **resolves to `unique.md`** | unresolved |
+| `[[Note]]` from `folder/`, with both `Note.md` and `folder/Note.md` | picks `folder/Note.md` | prefers the root `Note.md` |
+| `[[folder/Note]]`, exact root path | resolves | resolves |
+
+The second row is the real defect: the base-name fallback runs even when the
+link is path-shaped, so a link whose path matches nothing resolves to a file
+somewhere else in the vault with the same file name. A wrong target is worse
+than an unresolved one, and worse than the ambiguity warning that opened this
+item. The third row changes which note an existing link points at, so it is a
+decision rather than a fix. J32's 101 ambiguity warnings on the collision corpus
+turn out to have had the right *outcome* — unresolved — for the wrong stated
+reason.
+
+**Scope, rewritten on that finding.**
+
+- **J36-A, state what happens now.** Done: the table above, and tests that pin
+  each row as current behaviour, so any change to them is visible. No test
+  asserts suffix matching, because Obsidian does not do it.
+- **J36-B, stop a path-shaped link resolving by file name.** The fix the
+  finding actually calls for: when a link contains a slash, it names a path, and
+  if no path matches it is unresolved. `resolveAssetID` has the same shape and
+  the same fix. This makes a wrong target become a reported unresolved link,
+  which is what Obsidian shows.
+- **J36-D, the precedence decision, for the owner.** Obsidian prefers the
+  vault-root path over the note-relative one for a bare name; Notrios prefers
+  relative. Changing it alters which note an existing link points at in every
+  library already imported, so it is not shipped on my own authority. Recorded
+  with the evidence, for a decision.
 - **J36-C, libraries imported before the fix.** Record what a reimport of an
   already-imported vault does:
   - which notes it revises, which should be only those whose rewritten body

@@ -1016,17 +1016,22 @@
       "slices": [
         {
           "id": "J36-A",
-          "statement": "Tests pin how a partial-path link resolves, confirmed against Obsidian's behaviour, and fail on today's code",
+          "statement": "What Obsidian documents and what Notrios does are stated side by side, with tests pinning each case, and no test asserts suffix matching because Obsidian does not do it",
           "state": "not-started"
         },
         {
           "id": "J36-B",
-          "statement": "Note and attachment links naming exactly one file by partial path resolve to it, with ambiguous ones still warned and unresolved",
+          "statement": "A path-shaped link that matches no path is unresolved rather than resolved by file name, for notes and attachments",
           "state": "not-started"
         },
         {
           "id": "J36-C",
-          "statement": "What reimporting a vault imported before the fix revises is recorded, and a no-op reimport of an unaffected vault still creates no revisions",
+          "statement": "What a reimport of an already-imported vault revises is recorded, and a no-op reimport of an unaffected vault still creates no revisions",
+          "state": "not-started"
+        },
+        {
+          "id": "J36-D",
+          "statement": "Whether to prefer the vault-root path over the note-relative one for a bare name is decided by the owner, with the evidence recorded",
           "state": "not-started"
         }
       ]
