@@ -74,9 +74,9 @@ func scanMarkdownLinks(body string, visit func(span)) {
 	}
 }
 
-// targetEnd finds the parenthesis that closes a Markdown link's destination,
-// starting at the first byte of that destination, and reports whether there is
-// one before the line ends.
+// targetEnd finds the parenthesis that closes a Markdown link, starting at the
+// first byte of its destination, and reports whether there is one before the
+// line ends.
 //
 // CommonMark allows a destination to hold "zero or more balanced pairs of
 // unescaped parentheses", so the closing parenthesis is the one that matches the
@@ -94,6 +94,40 @@ func scanMarkdownLinks(body string, visit func(span)) {
 // returned, and a body that is wrong today should not become a different kind of
 // wrong (v1.0 J41-B).
 func targetEnd(body string, start int) (int, bool) {
+	// A destination wrapped in <> may hold spaces and parentheses, so the link
+	// does not end on a parenthesis inside the brackets. The closing parenthesis
+	// is looked for after the bracket that closes the destination (v1.0 J42).
+	if start < len(body) && body[start] == '<' {
+		if bracket, ok := angleClose(body, start); ok {
+			if end, ok := closeParen(body, bracket+1); ok {
+				return end, true
+			}
+		}
+	}
+	return closeParen(body, start)
+}
+
+// angleClose returns the index of the `>` that closes the `<` at open, and
+// whether there is one before the line ends. CommonMark does not allow an
+// unescaped `<` or `>` inside this form, and a backslash escapes the byte after
+// it, so an escaped `>` does not close anything.
+func angleClose(text string, open int) (int, bool) {
+	for index := open + 1; index < len(text); index++ {
+		switch text[index] {
+		case '\n':
+			return 0, false
+		case '\\':
+			index++
+		case '<':
+			return 0, false
+		case '>':
+			return index, true
+		}
+	}
+	return 0, false
+}
+
+func closeParen(body string, start int) (int, bool) {
 	depth := 0
 	firstClose := -1
 	for index := start; index < len(body); index++ {
@@ -193,8 +227,7 @@ func Extract(body string) []Candidate {
 	cursor := newLineCursor(body)
 	scanMarkdownLinks(body, func(found span) {
 		claimed = append(claimed, byteRange{start: found.start, end: found.end})
-		rawTarget := strings.TrimSpace(body[found.targetStart:found.targetEnd])
-		rawTarget = stripMarkdownTitle(rawTarget)
+		rawTarget := markdownTarget(body[found.targetStart:found.targetEnd])
 		candidate := Candidate{
 			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "markdown",
@@ -264,6 +297,33 @@ func relationFromBang(bang string) string {
 		return "embed"
 	}
 	return "link"
+}
+
+// markdownTarget reads a link's destination out of the bytes between its
+// parentheses, which may be followed by a title.
+//
+// A destination wrapped in <> keeps the spaces inside the brackets, which is the
+// point of that form and the documented way to link to a note whose name has one.
+// The brackets themselves are not part of the destination, and anything after the
+// closing bracket is a title rather than part of the path. Every other
+// destination is read as it always was, cut at the first space (v1.0 J42).
+func markdownTarget(region string) string {
+	region = strings.TrimSpace(region)
+	if inner, ok := angleDestination(region); ok {
+		return inner
+	}
+	return stripMarkdownTitle(region)
+}
+
+func angleDestination(region string) (string, bool) {
+	if !strings.HasPrefix(region, "<") {
+		return "", false
+	}
+	bracket, ok := angleClose(region, 0)
+	if !ok {
+		return "", false
+	}
+	return strings.TrimSpace(region[1:bracket]), true
 }
 
 func stripMarkdownTitle(target string) string {

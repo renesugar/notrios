@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**42 items: 37 complete, 0 in progress, 5 not started, 0 deferred.**
+**43 items: 37 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -103,6 +103,7 @@ this section is archived when the plan completes and the rules are not.
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | not-started | 0/3 | 3 |
+| J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -5156,13 +5157,34 @@ own reimport measurement.
   unclosed `<a b`, a `>` inside the brackets, and a percent-encoded space — the
   description any change is compared against, including that `%20` already works
   and is the alternative a note can use today.
-- **J42-B, the rule.** A destination that begins with `<` ends at the matching
-  `>` and keeps the spaces between them; the angle brackets are not part of the
-  target. Everything else keeps today's rule, including the title strip, so a
-  destination that does not begin with `<` is unchanged.
-- **J42-C, the consequences.** Rewriting on import, the stored rows, the preview,
-  and what a reimport of an existing library revises, measured the way J36-C and
-  J41-C measured it. A note whose name has a space is the case to carry through.
+- **J42-B, the rule, done 2026-09-26.** One helper, `angleClose`, finds the `>`
+  that closes the `<`, and both the span scan and the target read go through it.
+  `targetEnd` looks for the closing parenthesis **after** that bracket, so a
+  parenthesis inside the brackets is an ordinary character and J41's depth rule
+  does not end the link on one. `markdownTarget` returns what sits between the
+  brackets, spaces and all; the brackets are not part of it, and anything after
+  the closing bracket is a title. An unescaped `<` or `>` may not appear inside,
+  and a backslash escapes the byte after it.
+
+  Everything else is unchanged: a destination that does not begin with `<` is
+  still cut at the first space, and a `<` with no closing bracket falls back to
+  that rule rather than becoming a different kind of wrong.
+- **J42-C, the consequences, done 2026-09-26.** A note named `My Note.md` linked
+  as `[note](<My Note.md>)` now resolves and is rewritten; so does
+  `![shot](<assets/my shot.png>)`, and the resource gains its reference. A
+  bracketed destination with a title resolves too. The percent-encoded
+  alternative still resolves, as it already did — it is what a note could use
+  before this.
+
+  The preview needs nothing: an unresolved bracketed link renders inert like any
+  other, because the preview strips the `href` of a scheme it does not know, and a
+  resolved one is a `document://` or `resource://` URI by the time it is stored.
+
+  A library imported before J42 has these links unrewritten, because their
+  targets did not resolve, so the stale body is the vault's own text and the
+  simulation of it is exact. A reimport is the repair, it revises only that note,
+  and J36-C's invariant still holds. Pinned in
+  `internal/importers/obsidian/j42c_angle_test.go`.
 
 **Boundaries.**
 - The title after a destination is still stripped, and a destination that does
@@ -5174,5 +5196,62 @@ own reimport measurement.
 **Dependencies.** J41 for the extent rule and the reference implementation this
 changes alongside. J37 for the invariant.
 
+**Found here, deferred to J43, 2026-09-26.** Rewriting a Markdown link drops its
+title: `[a](Target.md "A title")` becomes `[a](document://…)` and the title is
+gone. That has always been true, for an ordinary destination as much as a
+bracketed one, because the replacement text is built from the display text and
+the URI alone. J42 only made it easier to meet, since a bracketed destination is
+the form a title most often accompanies. Recorded as what happens rather than
+endorsed.
+
 **Working state.** A link written the documented way to a note whose name has a
 space resolves to that note, and the rows for the shapes around it are pinned.
+
+## J43. Rewriting a link should not drop its title
+
+**Goal.** A link that carried a title still carries it after an import rewrites
+where it points.
+
+**What J42-C found, 2026-09-26.** The replacement text for a Markdown link is
+built from the display text and the resolved URI alone:
+
+```go
+replacementText = prefix + "[" + candidate.DisplayText + "](" + uri + ")"
+```
+
+So `[a](Target.md "A title")` becomes `[a](document://…)` and the title is gone
+from the note. This has always been true and is not caused by J42 — a title may
+follow any destination — but J42 made it easier to meet, because the bracketed
+form is where a title most often appears.
+
+A title is the author's text. Losing it on import is the same class of harm as
+losing a link: the note comes back from a round trip saying less than it said.
+
+**Scope.**
+
+- **J43-A, what is dropped, and where else.** A test stating what a rewrite does
+  to a title today, for a link, an embed, a bracketed destination and a wiki link
+  with display text. The Joplin importer's rewriting is read for the same defect,
+  because J38 showed these two share more than they look like they do.
+- **J43-B, carry the title.** The candidate already knows where the destination
+  ends; what follows it inside the parentheses is the title, and it is put back
+  after the URI. A link with no title is unchanged, byte for byte, which the
+  pinned rewrite cases in `j32d_rewrite_test.go` say.
+- **J43-C, the consequences.** Stored rows, the preview, and what a reimport of a
+  library imported before this revises — a note whose links had titles is revised
+  once, to put them back, measured the way J36-C measured it.
+
+**Boundaries.**
+- No change to which links resolve or to where they point: this is what the
+  rewrite writes, not what it decides.
+- A title is copied, never parsed or normalised. Whatever the author wrote
+  between the quotes is what comes back.
+- J37's one-row rule, J41's extent rule and J42's bracket rule all still hold,
+  over the same generated bodies.
+
+**Dependencies.** J42 found it. J32-D owns the rewriting path a change goes
+through, and its pinned cases are the guard that a link without a title is
+untouched.
+
+**Working state.** A title survives an import, and a link that never had one is
+written exactly as it is today.

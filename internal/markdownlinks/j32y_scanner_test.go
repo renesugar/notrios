@@ -37,8 +37,7 @@ func referenceExtract(body string) []Candidate {
 	cursor := newLineCursor(body)
 	for _, loc := range referenceMarkdownLocs(body) {
 		claimed = append(claimed, [2]int{loc[0], loc[1]})
-		rawTarget := strings.TrimSpace(body[loc[6]:loc[7]])
-		rawTarget = stripMarkdownTitle(rawTarget)
+		rawTarget := markdownTarget(body[loc[6]:loc[7]])
 		candidate := Candidate{
 			RelationType: relationFromBang(body[loc[2]:loc[3]]),
 			SourceFormat: "markdown",
@@ -108,46 +107,18 @@ func referenceMarkdownSpans(body string) []span {
 		if text < 0 || text+1 >= len(body) || body[text+1] != '(' {
 			continue
 		}
-		type paren struct {
-			at   int
-			open bool
-		}
-		var parens []paren
-		for index := text + 2; index < len(body); index++ {
-			if body[index] == '\n' {
-				break
-			}
-			if body[index] == '\\' {
-				if index+1 < len(body) && body[index+1] == '\n' {
-					break
+		end := -1
+		if text+2 < len(body) && body[text+2] == '<' {
+			if bracket, ok := referenceAngleClose(body, text+2); ok {
+				if after, ok := referenceCloseParen(body, bracket+1); ok {
+					end = after
 				}
-				index++
-				continue
 			}
-			if body[index] == '(' {
-				parens = append(parens, paren{index, true})
-			}
-			if body[index] == ')' {
-				parens = append(parens, paren{index, false})
-			}
-		}
-		end, depth, first := -1, 0, -1
-		for _, found := range parens {
-			if found.open {
-				depth++
-				continue
-			}
-			if first < 0 {
-				first = found.at
-			}
-			if depth == 0 {
-				end = found.at
-				break
-			}
-			depth--
 		}
 		if end < 0 {
-			end = first
+			if after, ok := referenceCloseParen(body, text+2); ok {
+				end = after
+			}
 		}
 		if end < 0 || end == text+2 {
 			continue
@@ -165,6 +136,74 @@ func referenceMarkdownSpans(body string) []span {
 		resume = found.end
 	}
 	return spans
+}
+
+// referenceCloseParen resolves the closing parenthesis by collecting a
+// destination's unescaped parentheses first and walking that list, where the
+// scanner decides while walking the bytes.
+func referenceCloseParen(body string, from int) (int, bool) {
+	type paren struct {
+		at   int
+		open bool
+	}
+	var parens []paren
+	for index := from; index < len(body); index++ {
+		if body[index] == '\n' {
+			break
+		}
+		if body[index] == '\\' {
+			if index+1 < len(body) && body[index+1] == '\n' {
+				break
+			}
+			index++
+			continue
+		}
+		if body[index] == '(' {
+			parens = append(parens, paren{index, true})
+		}
+		if body[index] == ')' {
+			parens = append(parens, paren{index, false})
+		}
+	}
+	depth, first := 0, -1
+	for _, found := range parens {
+		if found.open {
+			depth++
+			continue
+		}
+		if first < 0 {
+			first = found.at
+		}
+		if depth == 0 {
+			return found.at, true
+		}
+		depth--
+	}
+	if first < 0 {
+		return 0, false
+	}
+	return first, true
+}
+
+// referenceAngleClose finds the `>` that closes a bracketed destination by
+// jumping between the bytes that can matter, where angleClose examines each one.
+func referenceAngleClose(text string, open int) (int, bool) {
+	for index := open + 1; index < len(text); {
+		next := strings.IndexAny(text[index:], "\n<>\\")
+		if next < 0 {
+			return 0, false
+		}
+		at := index + next
+		switch text[at] {
+		case '\n', '<':
+			return 0, false
+		case '>':
+			return at, true
+		default:
+			index = at + 2
+		}
+	}
+	return 0, false
 }
 
 // j32yBodies covers what the two patterns can meet: brackets that do not close,

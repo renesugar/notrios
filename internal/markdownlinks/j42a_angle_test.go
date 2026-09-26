@@ -11,96 +11,99 @@ import "testing"
 // target at the first space, because that is how the optional title after a
 // destination is stripped, so the form reads as `<a` and resolves to nothing.
 //
-// Each row that is wrong is marked with what J42-B should make it, so the change
-// can be seen to move those rows and no others.
+// J42-A stated each row as it was, marked with what it should become; J42-B moved
+// twelve of them, and each comment now records what it was. Three rows had to
+// stay as they were and say so.
 var j42Cases = []j41Case{
 	{
-		// J42-B: should be `a b`.
+		// Was `<a`.
 		name:    "a destination with a space",
 		body:    "See [text](<a b>) here.\n",
-		raw:     "<a",
+		raw:     "a b",
 		matched: "[text](<a b>)",
 	},
 	{
-		// J42-B: should be `My Note.md`, which is the case the form exists for.
+		// Was `<My`. This is the case the form exists for, and the one that
+		// makes it worth reading.
 		name:    "a note whose name has a space",
 		body:    "See [text](<My Note.md>) here.\n",
-		raw:     "<My",
+		raw:     "My Note.md",
 		matched: "[text](<My Note.md>)",
 	},
 	{
-		// J42-B: should be `a`. The brackets are not part of the destination.
+		// Was `<a>`: the brackets are not part of the destination.
 		name:    "a bracketed destination with no space",
 		body:    "See [text](<a>) here.\n",
-		raw:     "<a>",
+		raw:     "a",
 		matched: "[text](<a>)",
 	},
 	{
-		// J42-B: should be `a`.
+		// Was `<a>`.
 		name:    "a bracketed destination with a title",
 		body:    "See [text](<a> \"title\") here.\n",
-		raw:     "<a>",
+		raw:     "a",
 		matched: "[text](<a> \"title\")",
 	},
 	{
-		// J42-B: should be `a b`.
+		// Was `<a`. What follows the closing bracket is a title, not path.
 		name:    "a spaced destination with a title",
 		body:    "See [text](<a b> \"title\") here.\n",
-		raw:     "<a",
+		raw:     "a b",
 		matched: "[text](<a b> \"title\")",
 	},
 	{
-		// J42-B: should be `a (b) c`. J41 already gave this row its whole span,
-		// because the parentheses inside the brackets balance.
+		// Was `<a`. J41 had already given this row its whole span, because the
+		// parentheses inside the brackets happen to balance.
 		name:    "a spaced destination with balanced parentheses",
 		body:    "See [text](<a (b) c>) here.\n",
-		raw:     "<a",
+		raw:     "a (b) c",
 		matched: "[text](<a (b) c>)",
 	},
 	{
-		// J42-B: should be `a ) b`, and the span should reach the real closing
-		// parenthesis. Inside the brackets a parenthesis is an ordinary
-		// character, so J41's depth rule must not end the link on it.
+		// Was `<a` with the span cut to `[text](<a )`. Inside the brackets a
+		// parenthesis is an ordinary character, so J41's depth rule must not
+		// end the link on one.
 		name:    "an unbalanced parenthesis inside the brackets",
 		body:    "See [text](<a ) b>) here.\n",
-		raw:     "<a",
-		matched: "[text](<a )",
+		raw:     "a ) b",
+		matched: "[text](<a ) b>)",
 	},
 	{
-		// J42-B: should be `a) b`, span `[text](<a) b>)`.
+		// Was `<a` with the span cut to `[text](<a)`.
 		name:    "a closing parenthesis immediately inside the brackets",
 		body:    "See [text](<a) b>) here.\n",
-		raw:     "<a",
-		matched: "[text](<a)",
+		raw:     "a) b",
+		matched: "[text](<a) b>)",
 	},
 	{
-		// J42-B: should be `a\>b` — a backslash escapes the byte after it, so
-		// this `>` does not close the destination.
+		// Was `<a\\>b>`. A backslash escapes the byte after it, so this `>` does
+		// not close the destination.
 		name:    "an escaped closing bracket",
 		body:    "See [text](<a\\>b>) here.\n",
-		raw:     "<a\\>b>",
+		raw:     "a\\>b",
 		matched: "[text](<a\\>b>)",
 	},
 	{
-		// J42-B: should be `a`. The destination ends at the first unescaped `>`,
-		// and what follows it before the parenthesis is not part of it.
+		// Was `<a`. The destination ends at the first unescaped `>`; what
+		// follows it before the parenthesis is not part of it.
 		name:    "an unescaped bracket ends the destination",
 		body:    "See [text](<a > b>) here.\n",
-		raw:     "<a",
+		raw:     "a",
 		matched: "[text](<a > b>)",
 	},
 	{
-		// J42-B: should be the empty destination CommonMark allows.
+		// Was `<>`. CommonMark allows an empty destination, and an empty target
+		// resolves to nothing, which is the honest reading of what was written.
 		name:    "an empty bracketed destination",
 		body:    "See [text](<>) here.\n",
-		raw:     "<>",
+		raw:     "",
 		matched: "[text](<>)",
 	},
 	{
-		// J42-B: should be `a b` with the heading anchor `h` split off as usual.
+		// Was `<a`. The anchor is split off as it is for any other destination.
 		name:    "a spaced destination with an anchor",
 		body:    "See [text](<a b#h>) here.\n",
-		raw:     "<a",
+		raw:     "a b",
 		matched: "[text](<a b#h>)",
 	},
 	{

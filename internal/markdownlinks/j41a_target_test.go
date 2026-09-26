@@ -99,17 +99,13 @@ var j41Cases = []j41Case{
 		none: true,
 	},
 	{
-		// An angle-bracketed destination may hold spaces and unbalanced
-		// parentheses. Notrios still does not read that form — the title rule
-		// cuts the target at the first space, so only `<a` survives — but the
-		// span did move: it was `[text](<a (b)` and now covers the whole link,
-		// because the parentheses inside it balance. That is an improvement on
-		// its own terms, since a rewrite of this span no longer strands `c>)`
-		// in the note, and `<a` resolves to nothing either way so no rewrite
-		// happens. Reading the form is J42.
-		name:    "an angle-bracketed destination is not read",
+		// J42 reads this form: the destination is what sits between the
+		// brackets, spaces and all. J41 had already given the row its whole
+		// span, because the parentheses inside the brackets balance; before
+		// that the span was `[text](<a (b) c>` and the target `<a`.
+		name:    "an angle-bracketed destination is read",
 		body:    "See [text](<a (b) c>) here.\n",
-		raw:     "<a",
+		raw:     "a (b) c",
 		matched: "[text](<a (b) c>)",
 	},
 	{
