@@ -841,7 +841,7 @@
         },
         {
           "id": "J32-J",
-          "statement": "Obsidian checkpoint consolidation and stable-note skips are kept or reverted on commit count and reimport time, with injected-failure resume",
+          "statement": "Checkpoint consolidation is measured and reverted, and a note whose source hash is unchanged is skipped before it is read, or that too is reverted on its measurement",
           "state": "not-started"
         },
         {

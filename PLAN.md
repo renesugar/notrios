@@ -3848,6 +3848,33 @@ so an earlier kept change is part of that baseline.
   with failures injected between commit and progress publication, and a
   provenance-repair case. Metrics: commit count and wall time on no-op and 1%
   changed reimports.
+
+  **Checkpoint consolidation: measured and reverted, 2026-09-26.** The walker
+  wrote each batch's checkpoint a second time, after the batch had already
+  written it atomically. The counter added to measure the declared metric
+  disproved the premise: `PutImportCheckpoint` is an autocommitted statement,
+  not a `BEGIN`/`COMMIT` pair, so commits were 223 before and 223 after. It
+  removed 202 prepared statements and moved no clock, so it was reverted as
+  J32-G was. The counter and the progress-failure resume test are kept.
+
+  **Stable-note skips remain, and are the half worth doing.** A no-op reimport
+  still reads, canonicalizes, hashes and rewrites every note to conclude that
+  nothing changed: `obsidian-10k/reimport` takes 37 s against 66 s for a fresh
+  import, for a vault where nothing moved. The inventory already hashes every
+  file during its scan, and `import_item_states` already records a fingerprint
+  per item, so a note whose source hash matches what the last import recorded
+  cannot have changed and need not be read a second time.
+  - **What has to be proven before the skip:** that the recorded fingerprint
+    covers everything the canonical body depends on — the file's bytes, the
+    notebook it lands in, and the import configuration's renames — because a
+    skip on a fingerprint that misses one of those would leave a stale note.
+    The provenance-repair case the slice names is exactly this: a note whose
+    stored provenance is wrong must still be repaired, so the skip cannot be
+    unconditional.
+  - **Metrics:** wall time and commit count on `obsidian-10k/reimport`, and on
+    a reimport where 1% of the notes changed — a scenario the harness does not
+    have yet and this slice adds, since a skip that helps a no-op reimport must
+    not slow the ordinary case of a few edits.
 - **J32-K, F5: byte-bounded batches** and bounded rereads. Metric: peak RSS on
   the near-limit corpus. A single legitimate large note still imports.
 
