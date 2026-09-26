@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/renesugar/notrios/internal/hashmeter"
 )
 
 // FormatVCDIFF1 names the constrained RFC 3284 default-table profile this
@@ -46,6 +47,7 @@ var (
 // SHA256Hex is the single content-identity function for body and delta
 // objects. Exact SHA-256 is the only identity Notrios recognizes.
 func SHA256Hex(value []byte) string {
+	hashmeter.Add(len(value))
 	digest := sha256.Sum256(value)
 	return hex.EncodeToString(digest[:])
 }
@@ -65,6 +67,7 @@ func SHA256HexString(value string) string {
 	if len(value) <= hashChunkBytes {
 		return SHA256Hex([]byte(value))
 	}
+	hashmeter.Add(len(value))
 	digest := sha256.New()
 	var chunk [hashChunkBytes]byte
 	for offset := 0; offset < len(value); offset += hashChunkBytes {

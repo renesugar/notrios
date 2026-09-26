@@ -18,6 +18,8 @@ import (
 	"encoding/base32"
 	"hash"
 	"io"
+
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"regexp"
 	"strconv"
 	"strings"
@@ -396,6 +398,7 @@ const streamHashThreshold = 64 << 10
 // floor. Each is written into an array on the stack and converted once.
 func identify(documentID string, block Block, scratch []byte, hasher hash.Hash) ([]byte, string, string) {
 	parts := [4]string{"notrios-block-v1", documentID, block.Kind, block.Text}
+	hashmeter.Add(len(block.Text))
 	var digest [sha256.Size]byte
 	if len(block.Text) >= streamHashThreshold {
 		// The digit buffer lives in this branch: handing it to the hasher's

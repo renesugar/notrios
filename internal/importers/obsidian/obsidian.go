@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/store"
 	"github.com/renesugar/notrios/internal/syncdelta"
@@ -1692,6 +1693,7 @@ func hashFile(ctx context.Context, path string) (string, int64, error) {
 		count, readErr := file.Read(buffer)
 		if count > 0 {
 			_, _ = hash.Write(buffer[:count])
+			hashmeter.Add(count)
 			size += int64(count)
 		}
 		if readErr == io.EOF {
@@ -1963,6 +1965,7 @@ func yamlQuote(value string) string {
 }
 
 func sha256Hex(value []byte) string {
+	hashmeter.Add(len(value))
 	sum := sha256.Sum256(value)
 	return hex.EncodeToString(sum[:])
 }

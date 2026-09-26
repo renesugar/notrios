@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -69,11 +70,14 @@ func TestJ32ImportBench(t *testing.T) {
 	runtime.ReadMemStats(&before)
 	statementsBefore := store.PreparedStatements()
 	commitsBefore := store.Commits()
+	hashedBefore, hashCallsBefore := hashmeter.Bytes(), hashmeter.Calls()
 	started := time.Now()
 	runImport(args[1:])
 	wall := time.Since(started)
 	statements := store.PreparedStatements() - statementsBefore
 	commits := store.Commits() - commitsBefore
+	hashedBytes := hashmeter.Bytes() - hashedBefore
+	hashCalls := hashmeter.Calls() - hashCallsBefore
 	runtime.ReadMemStats(&after)
 	os.Stdout = stdout
 
@@ -133,6 +137,8 @@ func TestJ32ImportBench(t *testing.T) {
 		"live_heap_bytes":     settled.HeapAlloc,
 		"prepared_statements": statements,
 		"commits":             commits,
+		"hashed_bytes":        hashedBytes,
+		"hash_calls":          hashCalls,
 		"go_version":          runtime.Version(),
 		"gomaxprocs":          runtime.GOMAXPROCS(0),
 	}, "", "  ")

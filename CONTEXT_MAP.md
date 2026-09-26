@@ -224,6 +224,11 @@ Feature contracts, which describe one capability rather than the project:
   committed batch boundary, and the rest are cancelled through the context.
 - `internal/localize/` — remote-media localization behind the domain policy,
   quarantine, exact-hash and dry-run rules in `SECURITY_AND_MEDIA_POLICY.md`.
+- `internal/hashmeter/` — counts the content bytes this process has put through
+  SHA-256, and how many times (v1.0 J32-AA). An import hashes a note more than
+  once, a CPU profile could not say how many passes that was, and a counter that
+  every hashing path can reach cannot live in any of them. Content-free: a
+  length and a call, never a byte of what was hashed.
 - `internal/markdownblocks/` — deterministic block splitter behind schema-v14
   addressable blocks and schema-v15 heading slugs; block identity is
   content-derived and scoped to the document, and `Slugify` is the shared
