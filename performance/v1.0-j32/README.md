@@ -1064,6 +1064,64 @@ link regexps, and a marker pattern scanned from the wrong end — none was in th
 review this item set out to investigate, and all three were found by profiling
 after the review's own candidates had been measured.
 
+## J32-AA — hash a body once, not twice: **kept**
+
+The profile of the 45 s import put SHA-256 at 33.3% of it, spread over four
+sites I could name — and the arithmetic did not fit four. **So the passes were
+counted before anything was changed.** `internal/hashmeter` records the content
+bytes this process hashes and how many times, beside the prepared-statement and
+commit counters, and the answer was **1.26 GB for a 252 MB corpus: exactly 5.0
+passes over every byte**, in 9,318 calls.
+
+| pass | what it hashes | removable |
+|---|---|---|
+| the inventory scan | the source file | no, it is the fingerprint |
+| the read's verification | the source file again | no, it is the guard against a note changing mid-import |
+| `noteFingerprint` | the canonical body | no |
+| **the revision insert** | **the canonical body again** | **yes** |
+| block identity | each block's text | no |
+
+That sized the slice at one pass of five, about 6.6%, before it was built. The
+importer now hashes the canonical body once and uses the value twice: for the
+fingerprint that decides whether the note changed, and as the mutation's
+`ContentSHA256`, which the store writes instead of hashing the body itself. Both
+come from the same local variable in the same function, so "the hash passed is
+the hash of the body passed" holds by construction. Every other caller of
+`insertRevisionLocked` passes nothing and the store hashes as before.
+
+Declared: wall time on `near-limit-obsidian/fresh`, with the hashed-byte count as
+the check that the pass went away rather than moved. Baseline `e607c39`,
+candidate `4ac8e48`, five runs each, alternating. Records in `j32aa/`.
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | **hashed bytes** | 1.258 G | **1.007 G** | 0 | **−20.0%** |
+| near-limit-obsidian/fresh | wall s | 45.54 | 43.30 | 1.81 | −4.9% |
+| near-limit-obsidian/fresh | user s | 32.24 | 29.33 | 0.36 | −9.0% |
+| obsidian-10k/fresh | hashed bytes | 18.96 M | 14.41 M | 0 | −24.0% |
+| obsidian-10k/fresh | allocated bytes | 203.1 M | 196.7 M | 358 K | −3.2% |
+| obsidian-10k/fresh | wall s | 66.16 | 66.10 | 1.78 | within noise |
+
+Exactly one pass of five went away, which is what the count says and what the
+prediction was: −20.0% of hashed bytes for a predicted 6.6% of wall time, and
+4.9% measured. The ordinary corpus is unchanged in time, because a note of a few
+hundred bytes is not bound by hashing.
+
+**The counter also settled a question the profile could not.** The implied
+throughput is 87 MB/s, which is slow even for a CPU without SHA extensions —
+this one is Coffee Lake, so AVX2 software SHA-256 is the fast path. That is this
+laptop downclocking under hours of sustained AVX2, not anything the code does,
+and it means hashing's *share* here is flattered compared with a desktop.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Both corpora imported by each binary produce
+`document_revisions` differing only in the random revision `id` — so every
+`content_sha256` is the same value it was — and identical `import_item_states`,
+10,041 and 10,550 rows, so the fingerprints that decide whether a note changed
+are unchanged. `noteFingerprint` now takes the body's hash rather than the body;
+J19's streamed-fingerprint evidence test follows that signature and still
+compares the streamed composition against the current one over the same bytes.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
