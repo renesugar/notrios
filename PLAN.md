@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/26 | 26 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/27 | 27 |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3901,7 +3901,12 @@ so an earlier kept change is part of that baseline.
     `obsidian-10k/fresh` as the ordinary case that must not regress — smaller
     batches mean more commits, so wall time there is what would pay for it.
 - **J32-L, the smaller candidates.** Each is measured and dispositioned
-  separately:
+  separately. **Re-scoped 2026-09-26 by the profile of the 45 s import:** SQLite
+  is now 48.5% of it, where it was 4.3% when this item began, so the
+  benchmark-only database experiments are no longer the tail of this slice but
+  the only remaining candidates aimed at the dominant cost. They come first. The
+  Joplin items below belong to J38 now, and are struck here rather than deleted
+  so the review's findings keep their numbers.
   - F7, Joplin's duplicate ID map;
   - F10, title splitting and the list-prefix match;
   - §3.2B, cached Joplin notebook paths, on a deep hierarchy;
@@ -4067,8 +4072,13 @@ so an earlier kept change is part of that baseline.
   record says so; if it does not, they ship as written and the DSL is recorded
   as measured and rejected.
 
-- **J32-R, one note buffer per phase, and stop reading a body back that the
-  caller holds.** The inventory and the notes phase each read a note into a
+- **J32-R — withdrawn 2026-09-26, on the profile of the 45 s import.** The
+  copies it targets are `memmove`, 5.3% of that import, and its largest item —
+  the body read back out of SQLite — was removed by J32-H and J32-I instead. The
+  note buffer it proposed shipped as J32-W2. What is left is not worth a slice,
+  and a slice kept open on a 5% share would be measured against noise.
+
+  The original statement: The inventory and the notes phase each read a note into a
   fresh buffer, and the store reads the body out of SQLite again through
   `columnText` where the caller passed it in. Reuse one buffer per phase, with
   a cap so one 64 MiB note does not make an import hold 64 MiB for its whole
@@ -4150,7 +4160,11 @@ so an earlier kept change is part of that baseline.
     J32-U already produces, and the output the canonical body is written into.
     Metric: allocated bytes and peak RSS on `near-limit-obsidian/fresh`, with
     `obsidian-10k/fresh` for the per-note cost.
-  - **J32-W3, the `string(raw)` views, only if W1 and W2 leave them.** A view
+  - **J32-W3 — withdrawn 2026-09-26.** It would put `unsafe` on the import path
+    for a share of the 5.3% that copying now costs, and J32-W2 showed that
+    reusing the read buffer and viewing it without copying are alternatives
+    rather than additions. The safety question is not worth asking for that
+    much. The original statement: A view
     of a buffer the importer owns costs nothing, but `unsafe.String` on the
     import path is a safety decision, not a performance one: today `unsafe`
     appears only at cgo boundaries. It is proposed with the rule written down
@@ -4254,6 +4268,31 @@ so an earlier kept change is part of that baseline.
   - **What it leaves.** If it lands, the import is SQLite and hashing — work
     that is being done for a reason — and J32 has taken it as far as parsing
     changes can.
+
+- **J32-AA, hash a body once, not twice.** Found by the profile of the 45 s
+  import, 2026-09-26 (`j32z/near-limit-after-j32z.cpu`): SHA-256 is 33.3% of it,
+  spread over four sites, and two of them hash the same bytes.
+  `noteFingerprint` hashes the canonical body, and `insertRevisionLocked` hashes
+  it again for `content_sha256`. The importer can hand the hash it already
+  computed to the store.
+
+  - **Sized before it is built.** 14.4 s to hash what should be about 1.2 GB
+    across five passes implies roughly 100 MB/s, which is slow even for a CPU
+    without SHA extensions — this one is Coffee Lake, so AVX2 software SHA-256
+    is the fast path. Either there are more passes than the four named sites
+    account for, or the throughput is genuinely that low, and the answer decides
+    whether removing one pass is worth 6% or considerably more. So the first
+    step is a counter of bytes hashed, beside the prepared-statement and commit
+    counters, and a run that says how many times each note's bytes go through
+    SHA-256.
+  - **Declared metric:** wall time on `near-limit-obsidian/fresh`, with the
+    hashed-byte count as the check that the pass really went away.
+    `obsidian-10k/fresh` must not regress.
+  - **What must not change:** `content_sha256`, the import fingerprints and the
+    revision identities are all hashes that other things are addressed by, so
+    every one of them must be the same value it is today — passed in rather than
+    recomputed, never computed differently. `j17_compare.py` on both corpora,
+    which compares `document_revisions` where the content hash is stored.
 
 - **J32-M, the record.** `performance/v1.0-j32/README.md` holds one row per
   finding: implemented with its measurement, rejected with its measurement and

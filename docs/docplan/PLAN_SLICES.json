@@ -851,7 +851,7 @@
         },
         {
           "id": "J32-L",
-          "statement": "F7, F10, cached Joplin notebook paths, compact Joplin resources and the disposable-database PRAGMA and index experiments each have a measured disposition",
+          "statement": "The smaller candidates are each measured and dispositioned, the database experiments first because SQLite is now 48.5% of the import",
           "state": "not-started"
         },
         {
@@ -886,7 +886,7 @@
         },
         {
           "id": "J32-R",
-          "statement": "A note buffer is reused per phase and a body already in hand is not read back from SQLite, or the change is reverted on its measurement",
+          "statement": "Withdrawn: the copies it targeted are 5.3% of the import, and its largest item was removed by J32-H and J32-I",
           "state": "not-started"
         },
         {
@@ -912,6 +912,11 @@
         {
           "id": "J32-Z",
           "statement": "A block's trailing marker is found by reading its tail rather than scanning the block, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J32-AA",
+          "statement": "A body is hashed once per import rather than twice, sized first by a counter of bytes hashed, or the change is reverted on its measurement",
           "state": "not-started"
         },
         {
