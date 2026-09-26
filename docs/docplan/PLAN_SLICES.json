@@ -1049,22 +1049,25 @@
     {
       "id": "J37",
       "title": "Decide what a link matched by both patterns should be",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J37-A",
           "statement": "What both patterns record for one span today is stated by a test, as the description any decision is compared against",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
         },
         {
           "id": "J37-B",
           "statement": "A wiki link inside a Markdown link's target is a literal href and only the outer Markdown row survives, matching Obsidian, with no two remaining rows overlapping",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
         },
         {
           "id": "J37-C",
           "statement": "Import rewriting, the stored rows, the preview and libraries imported before the fix all follow the decision, with the no-overlap invariant asserted over generated bodies",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
         }
       ]
     },

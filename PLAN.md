@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**41 items: 35 complete, 0 in progress, 6 not started, 0 deferred.**
+**41 items: 36 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -97,7 +97,7 @@ this section is archived when the plan completes and the rules are not.
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
 | J36. Resolve Obsidian partial-path links the way Obsidian does | complete | 5/5 | — |
-| J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
+| J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
@@ -4650,7 +4650,7 @@ other, as J32's scope already requires.
 **Working state.** A partial-path link that names one file resolves to it, and
 the tests say so.
 
-## J37. Decide what a link matched by both patterns should be
+## J37. Decide what a link matched by both patterns should be — complete
 
 **Goal.** A span of a note that both link patterns match has one recorded
 intention behind it, instead of a de-duplication that could never run.

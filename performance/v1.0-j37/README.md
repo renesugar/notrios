@@ -115,3 +115,25 @@ which CommonMark allows — a Wikipedia URL, a Python docs anchor, a citation
 style — so the fix would change stored rows for bodies that have nothing to do
 with wiki links. It is J41, under the rule that a finding needing its own code
 change gets its own item.
+
+## Archive
+
+`notrios-v1.0-j37-3737bdc.zip`, built from commit `3737bdc` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,468,481 bytes, 2,940 entries, accepted by `check_release_zip.py`.
+
+**Built with `NOTRIOS_AGENT_USAGE_GUARD=off`, authorized by the owner for this
+archive on 2026-09-26.** The preflight paused the packaging because the seven-day
+bucket stood at exactly 20.0% remaining against a 20.0% required reserve. The
+owner's reason: the five-hour bucket is what moves quickly and it had 51%
+remaining, while the weekly bucket moves slowly by comparison. Every other
+archive in this manifest was built with the guard on and no override, and this
+one says so rather than borrowing that line.
+
+There are no measurement directories here. This item's evidence is its tests:
+`internal/markdownlinks/j37_nested_test.go`, which pins one row per span and
+asserts the no-overlap invariant over the 20,000 generated bodies J32-Y's
+reference test uses, and `internal/importers/obsidian/j37c_rows_test.go`, which
+follows a fresh import, a no-op reimport, a doctored pre-J37 body and its repair.
+`internal/importers/obsidian/j32d_rewrite_test.go` carries the two pinned
+rewrites this decision changed, with the reason beside them.
