@@ -631,13 +631,44 @@ func needsNormalizing(text string) bool {
 // splitMarker removes an author-written `^marker` from the end of a block and
 // returns it separately. The marker is a name the author chose; it is not part
 // of the text that derives identity.
+// isMarkerByte reports whether a byte may appear in an author-written marker:
+// [A-Za-z0-9_-], the class markerRE uses.
+func isMarkerByte(b byte) bool {
+	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' || b == '-'
+}
+
+// splitMarker removes an author-written `^marker` from the end of a block and
+// returns it separately, by reading the block's tail (v1.0 J32-Z).
+//
+// markerRE is `\s\^([A-Za-z0-9_-]{1,128})\s*$`, anchored at the end, but
+// FindStringSubmatchIndex scans forward from byte zero: a 60 MiB paragraph ran
+// the regexp engine over 60 MiB to inspect its last hundred and thirty bytes,
+// which a profile put at 47% of a near-limit import. What the pattern says can
+// be read backwards instead -- trailing whitespace, then marker bytes, then a
+// caret, then the whitespace before it -- in time proportional to the marker.
+//
+// The scan is over bytes, which is safe for a class and a whitespace set that
+// are both ASCII: a UTF-8 continuation byte is neither, so the scan stops at it.
+//
+// markerRE stays in the package as the reference the tests hold this to.
 func splitMarker(text string) (string, string) {
-	match := markerRE.FindStringSubmatchIndex(text)
-	if match == nil {
+	end := len(text)
+	for end > 0 && isSpaceByte(text[end-1]) {
+		end--
+	}
+	markerEnd := end
+	for end > 0 && isMarkerByte(text[end-1]) {
+		end--
+	}
+	length := markerEnd - end
+	if length == 0 || length > MaxMarkerBytes || end == 0 || text[end-1] != '^' {
 		return text, ""
 	}
-	marker := text[match[2]:match[3]]
-	return strings.TrimRight(text[:match[0]], " \t"), marker
+	caret := end - 1
+	if caret == 0 || !isSpaceByte(text[caret-1]) {
+		return text, ""
+	}
+	return strings.TrimRight(text[:caret-1], " \t"), text[end:markerEnd]
 }
 
 func codeFence(trimmed string) string {
