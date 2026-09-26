@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**39 items: 33 complete, 0 in progress, 6 not started, 0 deferred.**
+**39 items: 34 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -98,7 +98,7 @@ this section is archived when the plan completes and the rules are not.
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
 | J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
-| J38. Carry J32's import findings into the Joplin importer, where they measure | not-started | 0/6 | 6 |
+| J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 
 Nothing is half-finished.
@@ -4628,7 +4628,7 @@ change would have to follow.
 **Working state.** One span of a note produces the links its author meant, and
 a test says which.
 
-## J38. Carry J32's import findings into the Joplin importer, where they measure
+## J38. Carry J32's import findings into the Joplin importer, where they measure — complete
 
 **Goal.** Every J32 finding that could apply to a Joplin RAW import has been
 tried there and kept or rejected on its own measurement, and the ones that

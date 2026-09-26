@@ -302,3 +302,12 @@ At 67.7 s, 85% of the ordinary Joplin corpus is SQLite, and
 writes a provenance row per note. The same two owner decisions that set
 Obsidian's floor set this one: the full-text index is inline, and `synchronous`
 is never relaxed on a canonical library.
+
+## Archive
+
+`notrios-v1.0-j38-a5c42db.zip`, built from commit `a5c42db` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,442,426 bytes.
+
+The measurement records are in this directory: the four profiles J38-A took
+before any change, and one directory per slice holding what that slice measured.
