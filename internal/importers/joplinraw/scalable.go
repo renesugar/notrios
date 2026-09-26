@@ -1185,6 +1185,15 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		if err != nil {
 			return err
 		}
+		// A window ends at the item count or once it holds the byte budget,
+		// whichever comes first (v1.0 J38-C, the rule J32-K set for the
+		// Obsidian phase). The notes phase keeps every canonical body of a
+		// batch until it is written, so a batch's memory is the sum of its
+		// items' sizes, and only the count was bounded.
+		if bounded := boundedByItemBytes(items); bounded < len(items) {
+			items = items[:bounded]
+		}
+		end = start + len(items)
 		externalIDs := make([]string, 0, len(items))
 		keys := make([]string, 0, len(items))
 		for _, item := range items {
@@ -1535,6 +1544,28 @@ func readInventoryItem(item inventoryItem) (parsedItem, error) {
 		return parsedItem{}, fmt.Errorf("%w: Joplin RAW item %s no longer matches inventory", store.ErrConflict, item.RelativePath)
 	}
 	return parsed, nil
+}
+
+// importBatchByteBudget bounds a batch by the bytes its items hold, as well as
+// by how many there are (v1.0 J38-C).
+//
+// It is the size one RAW item may already reach, so a large item becomes a batch
+// of its own and nothing legal is refused. On the Obsidian side the same bound
+// took a corpus of twelve near-limit notes from 1.88 GB of peak RSS to 917 MB
+// (v1.0 J32-K).
+const importBatchByteBudget = int64(maxRAWItemSize)
+
+// boundedByItemBytes returns how many of these items a batch should hold: all of
+// them, or as many as fit the budget, and never fewer than one.
+func boundedByItemBytes(items []inventoryItem) int {
+	var bytes int64
+	for index, item := range items {
+		bytes += item.SizeBytes
+		if bytes >= importBatchByteBudget {
+			return index + 1
+		}
+	}
+	return len(items)
 }
 
 func (run *importRun) inventoryItems(kind string, start, end int) ([]inventoryItem, error) {

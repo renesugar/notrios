@@ -20,6 +20,8 @@ The shapes (default: all of them):
                  different folders -- and repeated aliases, linked by those names
   many-large     twelve Obsidian notes just under the limit, which is what a
                  count-bounded batch holds all of at once
+  many-large-joplin
+                 the same shape as RAW items, for the Joplin importer
   near-limit-obsidian, near-limit-joplin
                  a few notes just under the importers' 64 MiB limit among
                  ordinary ones
@@ -191,6 +193,22 @@ def near_limit_obsidian(root: pathlib.Path, large: int = 4, small: int = 200) ->
               f"# Small {index}\n\nLinks to [[Large-{index % large}]] and [[Small-{(index + 1) % small:04d}]].\n")
 
 
+def many_large_joplin(root: pathlib.Path, large: int = 12) -> None:
+    """Twelve RAW items just under the limit, and nothing else (v1.0 J38-C).
+
+    near-limit-joplin holds four large items among two hundred small ones, so a
+    batch of a hundred happens to hold only those four. This is the shape a
+    count-bounded batch holds all of at once.
+    """
+    write(root / "folder-00.md", "id: folder-00\ntitle: Folder 00\ntype_: 2\n")
+    line = ("near limit text " * 8).rstrip() + "\n"
+    body = line * (NEAR_LIMIT_BYTES // len(line))
+    for index in range(large):
+        note = f"large-{index:06d}"
+        write(root / f"{note}.md",
+              f"Large {index}\n\n{body}\nid: {note}\nparent_id: folder-00\ntitle: Large {index}\ntype_: 1\n")
+
+
 def near_limit_joplin(root: pathlib.Path, large: int = 4, small: int = 200) -> None:
     """The Joplin RAW form of the same shape."""
     write(root / "folder-00.md", "id: folder-00\ntitle: Folder 00\ntype_: 2\n")
@@ -215,6 +233,7 @@ SHAPES = {
     "collision": ("obsidian", collision),
     "many-large": ("obsidian", many_large),
     "near-limit-obsidian": ("obsidian", near_limit_obsidian),
+    "many-large-joplin": ("joplin-raw", many_large_joplin),
     "near-limit-joplin": ("joplin-raw", near_limit_joplin),
 }
 # Per shape, so adding or changing one corpus does not rewrite the others: a
