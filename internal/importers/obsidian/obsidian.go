@@ -1380,11 +1380,21 @@ func applyReplacements(body string, replacements []replacement) string {
 	return out.String()
 }
 
+// pathShapedTarget reports whether a link target names a path rather than a
+// file name. Obsidian's documentation is explicit that "Folder paths start at
+// the vault root and use forward slashes (/), even on Windows", so a target
+// carrying a slash is a path and nothing else. When no path matches it, the
+// link is broken; resolving it to whichever file happens to share its last
+// segment would point the reader at a note the author never wrote down.
+func pathShapedTarget(raw string) bool {
+	return strings.Contains(raw, "/") || strings.HasPrefix(raw, ".")
+}
+
 func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
 	raw = decodeVaultTarget(raw)
 	noteDir := folderPath(notePath)
 	candidates := []string{}
-	if strings.Contains(raw, "/") || strings.HasPrefix(raw, ".") {
+	if pathShapedTarget(raw) {
 		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)), raw)
 	} else {
 		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)))
@@ -1393,6 +1403,11 @@ func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
 		if id := ns.notesByPath[normalizeNotePath(candidate)]; id != "" {
 			return id, false
 		}
+	}
+	if pathShapedTarget(raw) {
+		// A path that matches nothing is a broken link, not a name to look up.
+		// The link text stays as it is, which is what Obsidian shows.
+		return "", false
 	}
 	key := strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
 	ids := ns.notesByName[key]
@@ -1409,6 +1424,9 @@ func resolveAssetID(notePath, raw string, ns linkNamespace) (string, bool) {
 		if id := ns.assetsByPath[normalizeVaultPath(candidate)]; id != "" {
 			return id, false
 		}
+	}
+	if pathShapedTarget(raw) {
+		return "", false
 	}
 	ids := ns.assetsByBase[strings.ToLower(filepath.Base(raw))]
 	if len(ids) == 1 {

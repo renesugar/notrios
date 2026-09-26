@@ -67,23 +67,22 @@ func TestJ36ANoteResolutionAsItIs(t *testing.T) {
 			obsidian: "same: the path exists from the vault root",
 		},
 		{
-			// The link this item was opened for. Obsidian agrees the link is
-			// broken; only the reported reason differs.
-			name:      "partial path is not a path and not a name",
-			from:      "area-01/topic-00001/index.md",
-			raw:       "topic-00002/index",
-			wantID:    "",
-			ambiguous: true,
-			obsidian:  "unresolved: no such path, and no suffix matching",
+			// The link this item was opened for. J36-B stopped calling it
+			// ambiguous: it is simply a path that does not exist.
+			name:     "partial path is not a path and not a name",
+			from:     "area-01/topic-00001/index.md",
+			raw:      "topic-00002/index",
+			wantID:   "",
+			obsidian: "same: no such path, and no suffix matching",
 		},
 		{
-			// The defect J36-A found. The path matches nothing, yet the link
-			// resolves to a note elsewhere in the vault by its base name.
-			name:     "path that matches nothing resolves by base name",
+			// The defect J36-A found, fixed by J36-B: before the fix this
+			// resolved to only/deep/unique.md, a note the link never named.
+			name:     "path that matches nothing is unresolved",
 			from:     "area-01/topic-00001/index.md",
 			raw:      "wrong/path/unique",
-			wantID:   "doc-unique",
-			obsidian: "unresolved: there is no wrong/path/unique",
+			wantID:   "",
+			obsidian: "same: there is no wrong/path/unique",
 		},
 		{
 			// The precedence divergence held for J36-D.
@@ -154,11 +153,12 @@ func TestJ36AAssetResolutionAsItIs(t *testing.T) {
 			obsidian: "res-root: the vault-root path is preferred",
 		},
 		{
-			name:     "path that matches nothing resolves by file name",
+			// J36-B: before the fix this resolved to only/deep/picture.png.
+			name:     "path that matches nothing is unresolved",
 			from:     "note.md",
 			raw:      "wrong/path/picture.png",
-			wantID:   "res-unique",
-			obsidian: "unresolved: there is no wrong/path/picture.png",
+			wantID:   "",
+			obsidian: "same: there is no wrong/path/picture.png",
 		},
 		{
 			name:      "shared file name with no path match is ambiguous",
