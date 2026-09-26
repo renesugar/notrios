@@ -1156,6 +1156,94 @@ whole note to read its last bytes, a body hashed twice. The remaining costs are
 each the only time the import does that thing, and the two largest are governed
 by decisions the owner has already made rather than by how the code is written.
 
+## J32-M — the record
+
+`performance-code-review.md` is a dated snapshot (2026-09-17) that measured
+nothing: it says so itself, and its numbers come from J17, J19 and J20. This
+section supersedes it by reference and does not edit it.
+
+### Every finding the review made
+
+| finding | disposition | measurement |
+|---|---|---|
+| **F1** repeated SQL preparation | **kept** (J32-B) | prepared statements 381,522 → 281,520 on the ordinary corpus, −26.2%; wall −5.1% |
+| **F2** blocks and links derived twice | **kept** (J32-I) | the final pass re-resolves from stored rows instead of reparsing: near-limit wall 490.4 → 337.9 s, −31.1%, and every corpus improved |
+| **F3** body-bearing queries used only for existence | **kept** (J32-H) | `ExistingDocumentIDs`: −14.2% bytes and −9.9% system time on near-limit, −8.3% bytes on the ordinary corpus |
+| **F4** phases bounded in scheduling, not in writes | **not investigated** | excluded by this item's scope as a new store API; the part that was reachable shipped as F5's byte bound |
+| **F5** count-bounded batches are not byte-bounded | **kept** (J32-K) | peak RSS 1.88 GB → 917 MB on a corpus of twelve 60 MiB notes, −51.3%; the cost, 903 allocations and 55 statements, was put to the owner and accepted |
+| **F6** resources incur multiple hash and read passes | **not investigated** | excluded with F4 as a new store API. The note-body half of the same idea was measured: J32-G reverted the single read, and J32-AA removed one of five hashing passes |
+| **F7** Joplin retains duplicate ID maps | **moved to J38** | Joplin is profiled first there, because this item's history says the analogy is a worse guide than the measurement |
+| **F8** coordinate decoration is O(K·B) | **kept** (J32-E) | a cursor per pass: link-dense wall 180.0 → 32.9 s, −81.7% |
+| **F9** alias collisions make namespace construction quadratic | **rejected** (J32-F) | 213 ms at the collision shape against 223 ms with no shared alias: collisions make it *cheaper*, and the profiler cannot see it at all |
+| **F10** redundant parsing and allocation | **kept** (J32-S, J32-O) | the list-prefix match by hand, the title read without copying the note: 18.19 MB and 5 allocations became 32 bytes and 1 |
+| **§3.1A** assemble rewritten text once | **kept** (J32-D) | 11.55 GB allocated becomes 270 MB on the link-dense corpus, −97.7% |
+| **§3.1B** property order only when source is preserved | **kept** (J32-C) | peak RSS −30.9% on a property-rich vault; live heap, the other declared metric, was the wrong one and is recorded as such |
+| **§3.1C** hash Markdown from the inventory read | **reverted** (J32-G) | wall time within noise twice, allocations worse both times; the warm cache makes the second read nearly free, and a cold cache could not be measured here |
+| **§3.1D** checkpoint consolidation and stable-note skips | **half reverted, half deferred** | the consolidation removed 202 statements and no commits at all — the duplicate write was autocommitted, not a transaction — and the skip needs a schema addition, so it is J39 |
+| **§3.1E** disk-backed inventory | **not investigated** | excluded by scope, and the profile never asked for it |
+| **§3.2A, §3.2B** compact Joplin representations, cached notebook paths | **moved to J38** | |
+| **§4.4** parallel parse pipeline | **not investigated** | excluded by scope |
+
+### What the review did not find, which was almost all of it
+
+Three changes took a near-limit import from **525.6 s to 43.3 s**. None was in
+the review:
+
+| change | share it removed | how it was found |
+|---|---|---|
+| J32-I, the final link pass reparsing | 31% of the import | profiling after the review's candidates were measured |
+| J32-Y, links matched without a regexp engine | 75% of what remained | the same profile |
+| J32-Z, a marker pattern scanned from the wrong end | 45% of what remained after that | re-profiling once the earlier leaders were gone |
+
+The review read the code carefully and pointed at the wrong things, because it
+never ran anything: two of its own candidates turned out not to be costs at all
+(F9, §3.1C), and the three largest costs were invisible to reading. Its value was
+in the candidates it named precisely enough to *test* — F1, F2, F3, F5, F8, F10
+and §3.1A all shipped.
+
+### Where the import ended up
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **43.3 s** | **−91.8%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 762 MB | −23.6% |
+| hashed bytes | 5.0 passes | 4.0 passes | −20% |
+
+`obsidian-10k/fresh` went from 88.1 s to 66.1 s, `collision/fresh` from 93.2 s to
+46.4 s, `link-dense/fresh` from 193.1 s to 19.9 s, and a corpus of twelve 60 MiB
+notes from 1.88 GB of peak RSS to 917 MB.
+
+### Correctness defects found along the way, none fixed here
+
+J8's rule is that a defect found while measuring becomes its own item.
+
+| defect | item |
+|---|---|
+| Obsidian partial-path links (`[[topic-00001/index]]`) are reported ambiguous although one file ends with the path | **J36** |
+| A link both patterns match is recorded twice, and the de-duplication that was meant to stop it could never fire | **J37** |
+
+### Work this item defined and did not do
+
+| work | item | why |
+|---|---|---|
+| skip a note a reimport cannot change | **J39** | needs a canonical hash recorded per item, which is a schema addition this item's boundaries exclude |
+| carry these findings into the Joplin importer | **J38** | most of J32 already reaches it through shared code; what does not is its batching, its reads and what it asks the store for |
+
+### How the rule behaved
+
+The rule — declared metric, five runs, median beating the baseline's own range,
+nothing else worse — was worth having. It rejected three changes that looked
+right (F9, §3.1C, the consolidation), and it forced four re-measurements that
+changed an answer: J32-E's flagged system time, J32-H's live heap, J32-T's
+retention, J32-Y's allocation. Two of those re-measurements found a defect in the
+harness rather than in the code: `live_heap_bytes` was reading unswept garbage,
+and a binary label does not say whether it is still the tip of the kept work.
+
+Where a measurement was ambiguous the record says so, and where a metric was
+declared wrongly — J32-C's live heap, J32-W2's near-limit target — the record
+says that too rather than quietly choosing the metric that flattered the change.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
