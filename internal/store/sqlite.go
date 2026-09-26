@@ -1070,6 +1070,9 @@ func (s *SQLiteStore) execLocked(sql string) error {
 	if s.db == nil {
 		return fmt.Errorf("sqlite store is closed")
 	}
+	if sql == "COMMIT" {
+		commits.Add(1)
+	}
 	csql := C.CString(sql)
 	defer C.free(unsafe.Pointer(csql))
 	var errmsg *C.char

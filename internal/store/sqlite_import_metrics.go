@@ -20,6 +20,14 @@ var preparedStatements atomic.Int64
 // It is a process-wide count, not a per-store one, and it is content-free.
 func PreparedStatements() int64 { return preparedStatements.Load() }
 
+// commits counts the transactions this process has committed (v1.0 J32-J). An
+// import's cost is partly how many times it makes SQLite durable, and that is a
+// number rather than an inference from timings.
+var commits atomic.Int64
+
+// Commits is the number of transactions this process has committed.
+func Commits() int64 { return commits.Load() }
+
 // SQLiteImportMetrics is aggregate, content-free evidence for importer
 // performance and canonical consistency checks.
 type SQLiteImportMetrics struct {

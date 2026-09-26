@@ -51,7 +51,7 @@ LOAD_CEILING = 1.0
 LOAD_WAIT_SECONDS = 1800
 METRICS = ("wall_seconds", "process_wall_seconds", "user_seconds", "system_seconds",
            "peak_rss_kib", "total_alloc_bytes", "mallocs", "live_heap_bytes",
-           "prepared_statements", "notes_per_second")
+           "prepared_statements", "commits", "notes_per_second")
 
 
 def build(commit: str, work: pathlib.Path, label: str) -> int:

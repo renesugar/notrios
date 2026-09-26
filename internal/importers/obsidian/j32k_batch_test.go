@@ -52,7 +52,7 @@ func TestSizedBatchWindows(t *testing.T) {
 			windows := [][2]int{}
 			err := run.eachSizedBatch("notes", len(testCase.sizes),
 				func(index int) int64 { return testCase.sizes[index] },
-				false, "done", func(start, end int) error {
+				false, false, "done", func(start, end int) error {
 					windows = append(windows, [2]int{start, end})
 					return nil
 				})

@@ -68,10 +68,12 @@ func TestJ32ImportBench(t *testing.T) {
 	var before, after runtime.MemStats
 	runtime.ReadMemStats(&before)
 	statementsBefore := store.PreparedStatements()
+	commitsBefore := store.Commits()
 	started := time.Now()
 	runImport(args[1:])
 	wall := time.Since(started)
 	statements := store.PreparedStatements() - statementsBefore
+	commits := store.Commits() - commitsBefore
 	runtime.ReadMemStats(&after)
 	os.Stdout = stdout
 
@@ -130,6 +132,7 @@ func TestJ32ImportBench(t *testing.T) {
 		"heap_sys_bytes":      after.HeapSys,
 		"live_heap_bytes":     settled.HeapAlloc,
 		"prepared_statements": statements,
+		"commits":             commits,
 		"go_version":          runtime.Version(),
 		"gomaxprocs":          runtime.GOMAXPROCS(0),
 	}, "", "  ")
