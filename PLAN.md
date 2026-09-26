@@ -4684,15 +4684,51 @@ the older splice loop precisely because two rewrites can cover the same bytes.
   a link, a link inside an embed, a wiki link in a Markdown title, and the same
   span in a note that is rewritten on import. This is a description, not a
   change: it is what any decision has to be compared against.
-- **J37-B, the decision.** Which row should exist, argued from what a reader
-  means and what Obsidian resolves, and recorded with its reason. The options
-  are to keep both rows, to keep the inner wiki link only, or to keep the outer
-  Markdown link only. Whatever is chosen, the byte ranges of the rows that
-  remain must not overlap, because an overlapping rewrite is what J32-D had to
-  work around.
+
+  **Probed 2026-09-26**, which is where J37-B's decision was argued from:
+
+  | body | rows recorded |
+  |---|---|
+  | `[text]([[Target]])` | `markdown` raw `[[Target]]` display `text` span [4,22); `obsidian-wikilink` raw `Target` span [11,21) |
+  | `![text]([[Target]])` | `markdown` embed raw `[[Target]]` span [4,23); `obsidian-wikilink` **link** raw `Target` span [12,22) |
+  | `[[Target]]` | `obsidian-wikilink` raw `Target` span [4,14) |
+  | `[[Target\|text]]` | `obsidian-wikilink` raw `Target` display `text` |
+
+  Two artifacts the probe found, which J37-B's decision makes load-bearing
+  because the outer row becomes the only survivor:
+  - `[text]([[Target#heading]])` records the outer row as raw `[[Target` with
+    anchor `heading]]`. The anchor split runs on a literal href and mangles it.
+    A literal href has no anchor to split off.
+  - `[outer]([inner](deep))` already records **one** row, raw `[inner](deep`,
+    spanning `[outer]([inner](deep)` — truncated before the final parenthesis.
+    That is a precedent for keeping the outer link, and a span bug beside it.
+- **J37-B, decided 2026-09-26: keep the outer Markdown link only.** The owner's
+  reading is that `[text]([[Target]])` is a syntax error for `[[Target|text]]`,
+  and that what belongs inside a Markdown link's parentheses is an href. So the
+  `[[Target]]` inside one is a literal href, not a wiki link, and a `[[Target]]`
+  at the top level still resolves as a wiki link.
+
+  Obsidian agrees, and it is the same conclusion the one person who hit it
+  reached. `[Woodworking]([[Woodworking]])` makes no backlink to Woodworking, and
+  clicking it in viewing mode "creates a new file called `[[Woodworking]]`" —
+  the brackets are part of the destination. The answer given was to use
+  `[[note|display text]]`
+  (<https://forum.obsidian.md/t/wikilinks-inside-markdown-links-not-recognized-as-normal-backlinks/34139>).
+
+  Notrios' outer row already records exactly that: raw target `[[Target]]`,
+  display text `text`. So the change is to suppress the nested wiki-link
+  candidate, not to invent a row. The store then resolves the literal href to
+  `unresolved`, since no note is titled `[[Target]]` — Obsidian's outcome
+  without Obsidian's habit of creating a file named after the mistake.
+
+  One row per span satisfies the constraint this slice was written with: the
+  byte ranges that remain do not overlap, so no overlapping rewrite reaches the
+  path J32-D had to work around.
 - **J37-C, the consequences.** Whatever changes, these must follow it: the link
   rewriting on import, the resolution J32-I now re-runs from stored rows, the
-  backlink listing, and the preview. A vault whose notes use this form is
+  backlink listing, and the preview. The two artifacts J37-A found are part of
+  this slice: a literal href is not split on `#`, and the outer span covers the
+  whole link. A vault whose notes use this form is
   imported and compared before and after, so the change is visible as rows
   rather than asserted.
 
@@ -4704,6 +4740,10 @@ the older splice loop precisely because two rewrites can cover the same bytes.
 
 **Dependencies.** J32-Y found it; J32-D and J32-I describe the paths that a
 change would have to follow.
+
+**J40 depends on this.** J40-A marks a link in the reader by the byte range of
+the row it came from. Two rows covering one span would mark it twice, so this
+item settles before J40-A builds on the rows.
 
 **Working state.** One span of a note produces the links its author meant, and
 a test says which.

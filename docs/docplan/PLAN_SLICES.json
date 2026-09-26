@@ -1058,7 +1058,7 @@
         },
         {
           "id": "J37-B",
-          "statement": "Which row survives for a span both patterns match is decided and recorded with its reason, leaving no overlapping byte ranges",
+          "statement": "A wiki link inside a Markdown link's target is a literal href and only the outer Markdown row survives, matching Obsidian, with no two remaining rows overlapping",
           "state": "not-started"
         },
         {
