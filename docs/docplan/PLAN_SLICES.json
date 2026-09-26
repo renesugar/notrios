@@ -841,7 +841,7 @@
         },
         {
           "id": "J32-J",
-          "statement": "Checkpoint consolidation is measured and reverted, and a note whose source hash is unchanged is skipped before it is read, or that too is reverted on its measurement",
+          "statement": "Checkpoint consolidation is measured and reverted, and the stable-note skip is deferred to J39 with its design recorded, because it needs a schema addition this item's boundaries exclude",
           "state": "not-started"
         },
         {
@@ -1059,6 +1059,33 @@
         {
           "id": "J38-F",
           "statement": "performance/v1.0-j38/README.md records every finding as carried, rejected or already shared",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J39",
+      "title": "Skip a note a reimport cannot change",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J39-A",
+          "statement": "The canonical body hash is recorded per import item, and an item without one is not skippable",
+          "state": "not-started"
+        },
+        {
+          "id": "J39-B",
+          "statement": "A note is skipped only when the import fingerprint is unchanged and its recorded hash matches the stored revision's, so a diverged note is still repaired",
+          "state": "not-started"
+        },
+        {
+          "id": "J39-C",
+          "statement": "A reimport with every note skipped still leaves the library as a fresh import would, with the link pass, item states and checkpoint intact",
+          "state": "not-started"
+        },
+        {
+          "id": "J39-D",
+          "statement": "The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains",
           "state": "not-started"
         }
       ]

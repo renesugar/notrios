@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**38 items: 32 complete, 0 in progress, 6 not started, 0 deferred.**
+**39 items: 32 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -99,6 +99,7 @@ this section is archived when the plan completes and the rules are not.
 | J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | not-started | 0/6 | 6 |
+| J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -3857,7 +3858,14 @@ so an earlier kept change is part of that baseline.
   removed 202 prepared statements and moved no clock, so it was reverted as
   J32-G was. The counter and the progress-failure resume test are kept.
 
-  **Stable-note skips remain, and are the half worth doing.** A no-op reimport
+  **Stable-note skips are deferred to J39, 2026-09-26.** A safe skip needs a
+  recorded canonical body hash per item to compare against the stored
+  revision's, and `import_item_states` has no column for one: recording it is a
+  schema addition, and redefining the existing `fingerprint` column would make
+  every note of every existing library look changed. J32's boundaries exclude a
+  new store API for less. The prize and the design are in J39.
+
+  **What the deferred half is worth.** A no-op reimport
   still reads, canonicalizes, hashes and rewrites every note to conclude that
   nothing changed: `obsidian-10k/reimport` takes 37 s against 66 s for a fresh
   import, for a vault where nothing moved. The inventory already hashes every
@@ -4677,3 +4685,82 @@ depends on this item.
 
 **Working state.** A Joplin import has been measured, and every J32 finding that
 applies to it has been carried across or rejected with its measurement.
+
+## J39. Skip a note a reimport cannot change
+
+**Goal.** A reimport of a vault that has not changed does not read, canonicalize
+or hash the notes it is about to leave alone, and a note that *has* diverged is
+still repaired.
+
+**The prize, measured 2026-09-26.** A no-op reimport does almost all the work of
+a fresh one to conclude that nothing moved:
+
+| case | fresh | no-op reimport |
+|---|---:|---:|
+| obsidian-10k | 65.7 s | **37.7 s** |
+| collision | 46.4 s | **16.3 s** |
+
+Every note is read from disk, canonicalized, hashed twice more, and compared
+against the stored body — for a vault where nothing changed.
+
+**Why the obvious skip is wrong.** A note's canonical body is not a function of
+its own bytes alone. Links are rewritten against the vault's namespace, so
+adding or removing *another* note can change what this note's links resolve to
+and therefore its canonical body. The import configuration's renames and
+`--preserve-source` change it too. A skip keyed on the file's hash would leave
+those notes stale, silently.
+
+**What a safe skip needs, and why J32 could not do it.** The witness has to be
+that the *stored* note is exactly what this vault would produce now:
+- the import fingerprint — the inventory's fingerprint, the renames and
+  preserve-source, which `importFingerprint` already composes — is unchanged
+  since the last completed import, so nothing in the vault or the configuration
+  can have moved a link; **and**
+- the canonical body hash recorded for the item equals the current revision's
+  `content_sha256`, which is readable without reading a body.
+
+The second half has nowhere to live: `import_item_states` has a single
+`fingerprint` column holding a composite of the file hash, the notebook and the
+canonical hash, and no column for the canonical hash on its own. Recording it
+means a schema addition, and redefining what `fingerprint` holds would make
+every note of every existing library look changed on the next import. J32's
+boundaries exclude a new store API for less, so the skip is this item rather
+than a slice of that one.
+
+**Scope.**
+
+- **J39-A, record the canonical hash per item.** A column on
+  `import_item_states`, written by the importers that compute it — the Obsidian
+  importer has it in hand since J32-AA. An item with no recorded hash is not
+  skippable, so an existing library gets no skips until one import has run,
+  which is the safe direction.
+- **J39-B, the skip, and what it must not skip.** The condition above, applied
+  per note. A note is *not* skipped when its recorded hash is absent, when it
+  differs from the stored revision's, or when the item's last action was a
+  conflict. That is what keeps the repair case: a note edited inside Notrios
+  after an import has a different `content_sha256`, so a reimport still rewrites
+  it exactly as it does today.
+- **J39-C, what the reimport still has to do.** Even with every note skipped, a
+  reimport must still leave the library in the state a fresh import would: the
+  final link pass still runs, because a skipped note's *links* may resolve
+  differently, and the item states and checkpoint still advance. What the skip
+  removes is the read, the canonicalization and the hashing — not the phases.
+- **J39-D, the measurements.** Wall time, hashed bytes and read bytes on
+  `obsidian-10k/reimport` and `collision/reimport`, and on a **1%-changed
+  reimport**, a scenario the J32 harness does not have and this item adds: a
+  skip that helps a no-op reimport must not slow the ordinary case of a few
+  edits. J32's rule applies unchanged.
+
+**Boundaries.**
+- No note is skipped that a fresh import would write differently. The
+  comparison is between hashes of what is stored and what the vault produces,
+  never between timestamps or sizes.
+- Repair is not weakened: divergence in the library is still corrected.
+- No change to what a fresh import writes.
+
+**Dependencies.** J32-AA, which computes the canonical hash the importer would
+record. J32's harness and rule.
+
+**Working state.** A no-op reimport of an unchanged vault costs the scan and the
+link pass, not a full pass over every note, and a diverged note is still
+repaired.
