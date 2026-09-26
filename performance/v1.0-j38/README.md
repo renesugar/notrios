@@ -224,3 +224,81 @@ item changed between the scan and the read, and the retention bound. Both corpor
 imported by each binary produce identical `document_links`, `document_sources`,
 bodies, and `import_item_states` — the last mattering for J38-B, since the
 presence check decides which ids the import reports as written.
+
+## J38-F — the record
+
+### Every J32 finding, and where it reached Joplin
+
+| J32 finding | how Joplin got it | measured here |
+|---|---|---|
+| J32-B, prepared statements reused for block and link inserts | shared, `internal/store` | in J38-A's baseline |
+| J32-C, property order only when source is preserved | Joplin's scan already gated it before J32 | — |
+| J32-D, one-pass body assembly | Obsidian-only code; Joplin assembles differently and was not repeating a splice | not applicable |
+| J32-E, one-pass link coordinates | shared, `internal/markdownlinks` | in J38-A's baseline |
+| J32-F, namespace construction | rejected on the Obsidian side | not applicable |
+| J32-G, single read of a note | reverted on the Obsidian side; the Joplin equivalent shipped as **J38-D**, where the buffer is reused rather than the read merged | −14.1% bytes |
+| J32-H, existence-only reads | **J38-B** | −14.1% bytes, −11.9% system time |
+| J32-I, the final link pass re-resolves instead of reparsing | shared, `internal/store`, and Joplin calls that pass | in J38-A's baseline |
+| J32-K, byte-bounded batches | **J38-C** | peak RSS −66.0% |
+| J32-N, the collection scope uses the title index | shared, `internal/store` | in J38-A's baseline |
+| J32-O, a title read without copying the note | Obsidian-only: a Joplin title comes from item metadata, not from the body | not applicable |
+| J32-Q, S, T, block text, per-block allocations, reused storage | shared, `internal/markdownblocks` | in J38-A's baseline |
+| J32-U, the canonical body assembled from its edits | Obsidian-only; `buildDocumentBody` is the Joplin shape and is **not carried** — see below | — |
+| J32-V, a block's text sliced, a large hash streamed | shared, `internal/markdownblocks` | in J38-A's baseline |
+| J32-W1, a body hashed without being copied | shared, `internal/store` | in J38-A's baseline |
+| J32-W2, a reused note buffer | **J38-D** | −14.1% bytes |
+| J32-X, a body bound to SQLite by length | shared, `internal/store` | in J38-A's baseline |
+| J32-Y, links matched without a regexp engine | shared, `internal/markdownlinks`; `joplinraw` holds no regexp of its own | in J38-A's baseline |
+| J32-Z, a marker read from a block's tail | shared, `internal/markdownblocks` | in J38-A's baseline |
+| J32-AA, a canonical body hashed once | shared, `internal/store`; Joplin's own fingerprint composes different parts and hashes the body once already | in J38-A's baseline |
+| J32-L's database experiments | **not investigated**: the disposable manifest database is Joplin's, but it never appears in either Joplin profile — `ImportManifest.Put` is below the threshold in both | — |
+| F7, Joplin's duplicate ID map | **not investigated**: the profiles do not show it. `run.noteIDMap` is a map of short ids, and the review said itself that transferring it "can remove one map's buckets, not the underlying shared string bytes" |  — |
+| §3.2A, compact Joplin resource representations | **not investigated**: no resource-heavy corpus showed a cost, and the near-limit and 10k profiles put resources nowhere near the top | — |
+| §3.2B, cached Joplin notebook paths | **not investigated**: `notebookPath` does not appear in either profile; the corpora have ten folders, and a deep hierarchy was never built | — |
+
+### What J38 added that J32 had not named
+
+| slice | finding | measured |
+|---|---|---|
+| J38-E | `rewriteJoplinLinkLine` copied a body one byte at a time, and `splitPhysicalLines` tested every byte for a line ending | wall −4.8%, user CPU −6.8% on the near-limit corpus |
+
+### Where a Joplin import ended up
+
+| case | at the J32-A baseline | now | change |
+|---|---:|---:|---|
+| near-limit-joplin/fresh, wall | 396.6 s | **45.8 s** | **−88.5%** |
+| near-limit-joplin/fresh, allocated | 6.04 G | 2.69 G | −55.5% |
+| near-limit-joplin/fresh, peak RSS | 1.45 G | 0.96 G | −33.8% |
+| joplin-10k/fresh, wall | 81.3 s | 67.7 s | −16.7% |
+| joplin-10k/fresh, allocated | 337.0 M | 240.9 M | −28.5% |
+| many-large-joplin/fresh, peak RSS | — | 1.15 G, from 3.38 G before J38-C | −66.0% |
+
+Most of that came from shared code: J38-A measured the near-limit corpus at 52.3 s
+before a single Joplin-specific change, down from 396.6 s. J38's own four slices
+took it from 52.3 s to 45.8 s, and cut peak memory on a corpus of twelve large
+items by two thirds.
+
+### What did not carry, and why
+
+Four of the review's Joplin candidates were **not investigated**, and the reason
+is the same in each case: the profiles do not show them. J38-A was written
+before any slice ran precisely so that this would be a decision rather than a
+shrug — J32's history is that its own reading of the code named two costs that
+were not costs (F9, §3.1C) and missed the three that mattered.
+
+`buildDocumentBody` is the one place where a J32 change has a visible Joplin
+counterpart that was not carried. It allocates 480 MB of a near-limit import
+assembling the canonical body in stages, which is the shape J32-U fixed on the
+other side. It is left alone because the profile puts it at 480 MB of 2.69 GB
+with no wall-time share worth naming, and because J32-U's own measurement was
+−5.2% of allocated bytes and nothing on the clock. If a Joplin import's
+allocations matter later, that is where to look, and this paragraph is the
+pointer.
+
+### joplin-10k is SQLite, and that is the floor
+
+At 67.7 s, 85% of the ordinary Joplin corpus is SQLite, and
+`setDocumentSourceLocked` alone is a fifth of the import, because a Joplin import
+writes a provenance row per note. The same two owner decisions that set
+Obsidian's floor set this one: the full-text index is inline, and `synchronous`
+is never relaxed on a canonical library.
