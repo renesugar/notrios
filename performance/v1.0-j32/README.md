@@ -1000,6 +1000,70 @@ unchanged before reading and parsing it, measured on a no-op and a 1%-changed
 reimport. The harness has no 1%-changed scenario yet, and the skip is where that
 metric belongs.
 
+## J32-Z — a block's marker, read from its tail: **kept**
+
+Re-profiling after J32-I and J32-Y showed an import that looked nothing like the
+one those slices were chosen against, and the leader was a function that had
+been invisible: `splitMarker`, 47.1% of an 84 s import, where
+`markdownlinks.Extract` had been 74.8% of a 525 s one.
+
+`markerRE` is `\s\^([A-Za-z0-9_-]{1,128})\s*$`, anchored at the end of a block,
+but `FindStringSubmatchIndex` scans forward from byte zero: a 60 MiB paragraph
+ran the regexp engine over 60 MiB to inspect its last hundred and thirty bytes.
+What the pattern says reads backwards instead — trailing whitespace, then marker
+bytes, then a caret, then the whitespace before it — in time proportional to the
+marker rather than to the block.
+
+**On a 62 MB block: 9.30 s becomes 576 ns.** Extracting a large note's blocks
+falls from 4,585 ms to 678 ms.
+
+Declared: wall time on `near-limit-obsidian/fresh`. Baseline `ef633c7`,
+candidate `49e60c7`, five runs each, alternating. Records in `j32z/`.
+
+| case | wall s before | wall s after | baseline range | change |
+|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 82.80 | **45.50** | 1.36 | **−45.1%** |
+| link-dense/fresh | 20.76 | 19.92 | 0.92 | −4.0%, within noise |
+| collision/fresh | 47.80 | 46.37 | 2.23 | −3.0%, within noise |
+| obsidian-10k/fresh | 66.74 | 65.66 | 1.84 | −1.6%, within noise |
+
+User CPU on the near-limit corpus fell 53.7%. Allocations are slightly better on
+all four cases, prepared statements identical, and nothing regressed.
+
+**The first measurement of this slice used the wrong baseline, and is kept to say
+so.** It compared against the binary built from `d2593ae` — the checkpoint
+consolidation that J32-J then reverted — so every case showed prepared
+statements and allocations "worse", which was the consolidation reappearing
+rather than anything this change did. The correct baseline is the revert commit.
+Those records are in `j32z/` as `…-wrong-baseline.json`; the lesson is that a
+binary label does not say whether it is still the tip of the kept work.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. `markerRE` stays in the package as the reference, and
+the tests hold the tail scan to it over **20,036 texts**: markers of every length
+including one past the 128-byte limit, no space before the caret, a caret with
+nothing after it, each kind of trailing whitespace, two marker-shaped tails,
+characters the class excludes, multi-byte text before the marker, and a block
+that is only a marker. The scan reads bytes, which is safe because the marker
+class and Go's `\s` are both ASCII: a UTF-8 continuation byte is neither, so the
+scan stops at it. Both corpora imported by each binary produce identical
+`document_blocks` — 40,000 and 16,500 rows, every marker, hash, slug and offset
+equal — and identical `document_links`.
+
+### Where the import stands
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **45.5 s** | **−91.3%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 762 MB | −23.6% |
+
+An import that took eight and a half minutes takes forty-five seconds. Of the
+three findings that account for almost all of it — the final pass reparsing, the
+link regexps, and a marker pattern scanned from the wrong end — none was in the
+review this item set out to investigate, and all three were found by profiling
+after the review's own candidates had been measured.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
