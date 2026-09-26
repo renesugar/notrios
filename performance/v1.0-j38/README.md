@@ -135,3 +135,42 @@ RAW provenance rows — and `documents`.
 Two of the import report's 44 fields change, and both count the thing that
 changed: `batches_completed` 4 → 9 and `canonical_document_batches` 1 → 6 on
 `many-large-joplin`.
+
+## J38-E — Joplin's own scans, by runs instead of bytes: **kept**
+
+The two costs J38-A named as Joplin's only sizeable Go-side work.
+`rewriteJoplinLinkLine` walked each body one byte at a time, writing every
+character individually, at 5.9% of a near-limit import; `splitPhysicalLines`
+tested every byte for a line ending, at 4.7%. Both now jump to the next byte
+that could matter — a backtick inside inline code, a backtick or the colon of a
+`:/` link outside it, or the next line ending — and copy the run between in one
+write.
+
+| micro-benchmark | before | after |
+|---|---:|---:|
+| the rewriter, a paragraph with one link | 19.5 µs, 16 allocations | **10.1 µs, 9 allocations** |
+| the splitter, a 20,000-line body | 5.33 ms | **4.12 ms** |
+
+Declared: wall time on `near-limit-joplin/fresh`. Baseline `fb10ed1`, candidate
+`d1ee668`, five runs each, alternating. Records in `j38e/`.
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| near-limit-joplin/fresh | wall s | 50.38 | **47.94** | 0.60 | **−4.8%** |
+| near-limit-joplin/fresh | user s | 35.40 | 32.99 | 0.65 | −6.8% |
+| joplin-10k/fresh | wall s | 67.81 | 68.37 | 1.44 | within noise |
+
+J38-A predicted about 5% on the near-limit corpus — roughly half of the 10.6% the
+two functions cost — and nothing on `joplin-10k`, which is 85% SQLite. That is
+what happened, which is the first time in either item that a prediction made
+before the work matched the measurement this closely.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. The byte-at-a-time versions are kept in the tests as the
+reference and compared over **20,024 lines** — links resolved to a note and to a
+resource, unresolved ones, escaped colons, inline code of every backtick run
+length, code that never closes, a colon with nothing after it, multi-byte text —
+with the **inline-code state carried out of each line** compared as well, since
+that state machine is what a run-skipping rewriter could most easily break. Both
+corpora imported by each binary produce identical `document_links`,
+`document_sources` and bodies.
