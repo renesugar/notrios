@@ -174,3 +174,53 @@ with the **inline-code state carried out of each line** compared as well, since
 that state machine is what a run-skipping rewriter could most easily break. Both
 corpora imported by each binary produce identical `document_links`,
 `document_sources` and bodies.
+
+## J38-B and J38-D — presence, and one item buffer: **both kept**
+
+Measured together, since both are small and neither touches what the other does.
+
+**J38-B.** The helper that collects the ids an import wrote called `GetDocuments`
+and looked only at whether each id came back, so every body crossed the cgo
+boundary to be discarded. It asks `ExistingDocumentIDs` now — the method J32-H
+added for the same reason on the Obsidian side. The notes phase keeps
+`GetDocuments`, because it compares bodies.
+
+**J38-D.** `readInventoryItem` allocated a buffer per item with `os.ReadFile`,
+and the notes phase reads every item in an export. The buffer comes from the
+caller and goes back with the bytes, preallocated from the size the inventory
+recorded and given back when an item is larger than any legal one. Reuse is safe
+because a batch keeps the parsed item and the canonical body, not these bytes.
+
+Declared: allocated bytes. Baseline `d1ee668`, candidate `c12d8e2`, five runs
+each, alternating. Records in `j38bd/`.
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| near-limit-joplin/fresh | **allocated bytes** | 3.130 G | **2.690 G** | 31 K | **−14.1%** |
+| near-limit-joplin/fresh | allocations | 40,566 | 36,783 | 134 | −9.3% |
+| near-limit-joplin/fresh | system s | 13.21 | 11.64 | 0.33 | −11.9% |
+| near-limit-joplin/fresh | peak RSS | 1.140 G | 958 M | 113 M | −15.9% |
+| near-limit-joplin/fresh | wall s | 48.39 | 45.85 | 1.26 | −5.3% |
+| joplin-10k/fresh | allocated bytes | 256.3 M | 240.9 M | 116 K | −6.0% |
+| joplin-10k/fresh | allocations | 3,144,370 | 2,964,310 | 362 | −5.7% |
+| joplin-10k/fresh | wall s | 67.89 | 67.74 | 1.50 | within noise |
+
+More than expected: I said before measuring that both were allocation wins with
+no wall-time story, and the near-limit corpus moved 5.3% of wall and 11.9% of
+system time as well — the system time being J38-B removing bodies from the cgo
+boundary, which is what J32-H did on the other side.
+
+**Two metrics read "worse", and both are the instrument rather than the code.**
+`hashed_bytes` rose 503 MB → 755 MB and `hash_calls` 408 → 612. The rise is
+**exactly 252 MB, one pass over a 252 MB corpus, and exactly 204 calls, one per
+item**: J38-D's read counts its fingerprint hash through `hashmeter`, which
+`readInventoryItem` never did. The same hashing happens as before; it is now
+counted. J38-A's figure of "2.0 passes" for a Joplin import was therefore an
+undercount, and the true figure is 3.0.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Tests cover a shorter item read after a longer one, an
+item changed between the scan and the read, and the retention bound. Both corpora
+imported by each binary produce identical `document_links`, `document_sources`,
+bodies, and `import_item_states` — the last mattering for J38-B, since the
+presence check decides which ids the import reports as written.
