@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**42 items: 36 complete, 0 in progress, 6 not started, 0 deferred.**
+**42 items: 37 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -101,7 +101,7 @@ this section is archived when the plan completes and the rules are not.
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
-| J41. A Markdown link's target may contain balanced parentheses | not-started | 0/3 | 3 |
+| J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
@@ -5035,7 +5035,7 @@ ambiguity is kept. Nothing depends on this item.
 offers the notes it might mean, choosing one repairs the note in a revision, and
 declining leaves it exactly as it was.
 
-## J41. A Markdown link's target may contain balanced parentheses
+## J41. A Markdown link's target may contain balanced parentheses — complete
 
 **Goal.** `[text](https://example.org/Foo_(bar))` records the link its author
 wrote, instead of one that stops in the middle of the URL.

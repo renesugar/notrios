@@ -1176,22 +1176,25 @@
     {
       "id": "J41",
       "title": "A Markdown link's target may contain balanced parentheses",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J41-A",
           "statement": "The rows recorded today for balanced, unbalanced, escaped and angle-bracketed targets are stated as tests",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
         },
         {
           "id": "J41-B",
           "statement": "A target ends at the parenthesis that closes it by depth, escapes count toward nothing, an unbalanced target still ends at the first parenthesis, and the Markdown reference is an independent implementation rather than a regexp",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
         },
         {
           "id": "J41-C",
           "statement": "A note or attachment whose file name carries a parenthesis resolves and is rewritten, an external URL is recorded whole, and a reimport repairs a library imported before the fix without revising anything else",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
         }
       ]
     },

@@ -104,3 +104,22 @@ recommends for a note whose name contains a space, `[text](<Target Note>)`,
 alongside `[text](Target%20Note)`. Reading it means changing what a space in a
 target means, which is exactly what separates a destination from its title, so it
 is J42 rather than a second change here.
+
+## Archive
+
+`notrios-v1.0-j41-c71acbb.zip`, built from commit `c71acbb` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,479,358 bytes, 2,944 entries, accepted by `check_release_zip.py`.
+
+**Built with `NOTRIOS_AGENT_USAGE_GUARD=off`, authorized by the owner for this
+archive on 2026-09-26.** The seven-day bucket stood at 18.0% remaining against a
+20.0% required reserve, below the line rather than on it as J37's was; the
+five-hour bucket, which is the one that moves quickly, had 41.0%. The weekly
+bucket resets 2026-09-29.
+
+There are no measurement directories here. This item's evidence is its tests:
+`internal/markdownlinks/j41a_target_test.go` for what a target is taken to be,
+`internal/markdownlinks/j32y_scanner_test.go` for the independent reference
+compared over 20,000 generated bodies and the subset the old pattern still
+cross-checks, and `internal/importers/obsidian/j41c_parens_test.go` for the
+import, the rows, the no-op reimport and the repair.
