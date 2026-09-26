@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**39 items: 32 complete, 0 in progress, 7 not started, 0 deferred.**
+**39 items: 33 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -92,7 +92,7 @@ this section is archived when the plan completes and the rules are not.
 | J29. Decide which HTML reference forms the remote-media scanner is responsible for | complete | 1/1 | — |
 | J30. Stop a lying Content-Type header deciding the type of an inconclusive payload | complete | 1/1 | — |
 | J31. Bring the vendored Ledger theme up to its Bluge result-URL fix | complete | 3/3 | — |
-| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | not-started | 0/27 | 27 |
+| J32. Investigate the import performance review's findings, and keep only what measurement shows is faster | complete | 27/27 | — |
 | J33. Decide whether Ogg media and comment-led SVG are localizable | complete | 1/1 | — |
 | J34. Stop the preview loading remote images through media elements | complete | 1/1 | — |
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
@@ -3481,7 +3481,7 @@ measurements, or G18g's README says exactly what cannot run and why; every
 statement about the served address agrees with the build's `baseURL`, and a
 check fails when one stops agreeing.
 
-## J32. Investigate the import performance review's findings, and keep only what measurement shows is faster
+## J32. Investigate the import performance review's findings, and keep only what measurement shows is faster — complete
 
 **Goal.** Every finding in `performance-code-review.md` is investigated. A change
 ships only if a benchmark, written before the change, shows it improves import

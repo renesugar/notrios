@@ -792,142 +792,169 @@
     {
       "id": "J32",
       "title": "Investigate the import performance review's findings, and keep only what measurement shows is faster",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J32-A",
           "statement": "A synthetic benchmark matrix, a prepared-statement counter and a baseline with dispersion exist before any candidate is measured",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-B",
           "statement": "F1, reusing prepared block and link insert statements, is kept or reverted on its measured prepare count and wall time",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-C",
           "statement": "Building PropertyOrder only when source is preserved is kept or reverted on its measured heap and peak RSS",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-D",
           "statement": "Single-pass Obsidian replacement assembly is kept or reverted on the link-dense corpus, after overlapping-match behaviour is pinned",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-E",
           "statement": "F8, one-pass link coordinates, is kept or reverted on the link-dense corpus with offsets, columns and order unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-F",
           "statement": "F9, collision-heavy namespace construction, is kept or reverted on the collision corpus without costing memory on the ordinary corpus",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-G",
           "statement": "Hashing Obsidian Markdown from bytes already read is kept or reverted on warm and dropped-cache inventory time",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-H",
           "statement": "F3, existence-only store reads, is kept or reverted on measured allocations and wall time with deleted-note filtering unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-I",
           "statement": "F2, reusing current blocks in the final link pass, is kept or reverted after its revision invariant is proven",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-J",
           "statement": "Checkpoint consolidation is measured and reverted, and the stable-note skip is deferred to J39 with its design recorded, because it needs a schema addition this item's boundaries exclude",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-K",
           "statement": "F5, byte-bounded batches, is kept or reverted on peak RSS with near-limit notes, and a single large note still imports",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-L",
           "statement": "The smaller candidates are each measured and dispositioned, the database experiments first because SQLite is now 48.5% of the import",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-O",
           "statement": "markdownTitle stops converting a whole note between []byte and string, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-P",
           "statement": "Assembling the canonical body once is withdrawn: J32-U is that change, measured there",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-Q",
           "statement": "A block's text is a slice of the body rather than rejoined lines, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-S",
           "statement": "The per-block allocations in Extract are reduced, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-T",
           "statement": "Block storage is reused across notes instead of allocated per note, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-U",
           "statement": "Whether an edit script beats stage-by-stage copying is decided by a measured prototype, and recorded either way",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-R",
           "statement": "Withdrawn: the copies it targeted are 5.3% of the import, and its largest item was removed by J32-H and J32-I",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-V",
           "statement": "A block's text is sliced rather than rebuilt when trimming changes nothing, and hashed without a second copy, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-W",
           "statement": "A note is read, edited and written from one in-memory representation within the write path, or each step is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-X",
           "statement": "A body is bound to SQLite without being copied into C memory first, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-Y",
           "statement": "Link extraction matches without a regexp engine, held to the regexps it replaces, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-Z",
           "statement": "A block's trailing marker is found by reading its tail rather than scanning the block, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-AA",
           "statement": "A body is hashed once per import rather than twice, sized first by a counter of bytes hashed, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-M",
           "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         },
         {
           "id": "J32-N",
           "statement": "The link-resolution title lookup uses the title index when a collection is given, or the change is reverted on its measurement",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
         }
       ]
     },

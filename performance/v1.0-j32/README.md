@@ -1252,3 +1252,14 @@ says that too rather than quietly choosing the metric that flattered the change.
   no suffix step. Under the J8 rule this is a plan item of its own, not a J32
   change. The `collision` corpus exercises it, so whichever of J32-F and J36
   lands second is measured against a baseline that includes the other.
+
+## Archive
+
+`notrios-v1.0-j32-2937c76.zip`, built from commit `2937c76` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,311,272 bytes, 2,907 entries.
+
+The measurement records are in this directory: `baseline/` holds the twelve
+cases J32-A measured before any candidate, and one directory per slice holds
+what that slice measured, including the runs that were taken with the wrong
+baseline or the wrong metric and are kept so the record says which.
