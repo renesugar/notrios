@@ -1122,6 +1122,40 @@ are unchanged. `noteFingerprint` now takes the body's hash rather than the body;
 J19's streamed-fingerprint evidence test follows that signature and still
 compares the streamed composition against the current one over the same bytes.
 
+## J32-L — the smaller candidates: **dispositioned, nothing left to ship here**
+
+The slice collected the review's remaining candidates. Re-profiling the import
+at 45 s decided where each belongs.
+
+| candidate | disposition |
+|---|---|
+| F10, the list-prefix match | **done in J32-S**: `listItemRE.ReplaceAllString` per list item became a hand-written matcher, and the block parser's many-blocks shape went from 36,848 allocations and 324 ms to 33,516 and 196 ms |
+| F10, title splitting | **done in J32-O**: `markdownTitle` stopped copying a whole note twice to read its title — 18.19 MB and 5 allocations became 32 bytes and 1 |
+| F7, Joplin's duplicate ID map | **moved to J38** |
+| §3.2B, cached Joplin notebook paths | **moved to J38** |
+| §3.2A, compact Joplin resource representations | **moved to J38** |
+| `cache_size`, `temp_store`, indexes after inserts, on disposable databases | **moved to J38**, because the disposable database is Joplin's: `store.ImportManifest` is opened by `internal/importers/joplinraw` and by nothing in the Obsidian path, so it does not appear in an Obsidian profile at all |
+
+### Where an Obsidian import's remaining time goes, and why J32 stops here
+
+The 43 s import, by profile (`j32z/near-limit-after-j32z.cpu`, taken at 45 s
+before J32-AA removed a hashing pass):
+
+| work | share | why it stays |
+|---|---:|---|
+| `insertDocumentFTSLocked` — full-text tokenization | 10.40 s, **24%** | the full-text index is inline by the owner's decision in J19; making it not inline is a design change, not a tweak |
+| SHA-256, four remaining passes | ~12 s, 28% | the file's hash, the read's verification, the fingerprint and block identity — J32-AA removed the fifth, and each of these four is the only copy of its answer |
+| `COMMIT` — fsync | 4.79 s, 11% | `synchronous` is never relaxed on a canonical library, which is this item's own boundary and J19's owner decision |
+| other SQLite inserts | ~5.4 s, 12% | the revision, the source row, the document |
+| parsing | ~3 s, 7% | after J32-Q, S, T, Y and Z |
+
+Everything above the line is work being done once, for a reason. The three
+findings that took this import from 525.6 s to 43.3 s were all *repeated* work —
+a pass that reparsed what another had just parsed, a regexp engine run over a
+whole note to read its last bytes, a body hashed twice. The remaining costs are
+each the only time the import does that thing, and the two largest are governed
+by decisions the owner has already made rather than by how the code is written.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`

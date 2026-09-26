@@ -3915,14 +3915,26 @@ so an earlier kept change is part of that baseline.
   the only remaining candidates aimed at the dominant cost. They come first. The
   Joplin items below belong to J38 now, and are struck here rather than deleted
   so the review's findings keep their numbers.
-  - F7, Joplin's duplicate ID map;
-  - F10, title splitting and the list-prefix match;
-  - §3.2B, cached Joplin notebook paths, on a deep hierarchy;
+  - F7, Joplin's duplicate ID map — **moved to J38**;
+  - F10, title splitting and the list-prefix match — **done**: the match in
+    J32-S, the title in J32-O;
+  - §3.2B, cached Joplin notebook paths, on a deep hierarchy — **moved to
+    J38**;
   - §3.2A, compact Joplin resource representations, on a resource-heavy
-    corpus;
+    corpus — **moved to J38**;
   - benchmark-only experiments on disposable databases: `cache_size`,
     `temp_store`, and building the disposable manifest's indexes after
-    inserts. `synchronous` is never relaxed on a canonical library.
+    inserts. `synchronous` is never relaxed on a canonical library. **Moved to
+    J38**, because the disposable database is Joplin's: `store.ImportManifest`
+    is opened by the Joplin importer and by nothing in the Obsidian path, so
+    there is no Obsidian measurement to make.
+
+  So this slice ships nothing of its own, and its record states where an
+  Obsidian import's remaining time goes: full-text tokenization at 24%, four
+  hashing passes at 28%, commit fsyncs at 11%, the other inserts at 12%, and
+  parsing at 7%. The two largest are governed by owner decisions — inline
+  full-text indexing and never relaxing `synchronous` — rather than by how the
+  code is written.
 - **The 29× question, profiled 2026-09-23.** A fresh
   `near-limit-obsidian` import allocates **6.95 GB to import 240 MB of
   notes**. An allocation profile
