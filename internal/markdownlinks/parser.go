@@ -131,10 +131,16 @@ var (
 // Extract returns Markdown inline links/images plus Obsidian wikilinks/embeds.
 func Extract(body string) []Candidate {
 	matches := []Candidate{}
+	// Where the Markdown links sit, in ascending order because the scan is
+	// leftmost-first and non-overlapping. The wiki pass walks them with one
+	// index rather than searching, so this costs one small slice per note and
+	// no work per link.
+	claimed := []byteRange{}
 	// One cursor per pass: each pass reports its matches in ascending order,
 	// and the second starts again at the beginning of the body.
 	cursor := newLineCursor(body)
 	scanMarkdownLinks(body, func(found span) {
+		claimed = append(claimed, byteRange{start: found.start, end: found.end})
 		rawTarget := strings.TrimSpace(body[found.targetStart:found.targetEnd])
 		rawTarget = stripMarkdownTitle(rawTarget)
 		candidate := Candidate{
@@ -145,16 +151,34 @@ func Extract(body string) []Candidate {
 			StartByte:    found.start,
 			EndByte:      found.end,
 		}
-		decorateCandidate(body, cursor, &candidate)
+		decorateCandidate(body, cursor, &candidate, literalHref(rawTarget))
 		matches = append(matches, candidate)
 	})
 	cursor = newLineCursor(body)
-	// The de-duplication that used to sit here could never fire: the Markdown
+	// What sat here was a de-duplication that could never fire: the Markdown
 	// pass stored keys of the form "markdown:target:display" while this pass
-	// looked up the raw matched text, so no key ever matched. It is left out
-	// rather than fixed, because fixing it would change which links are
-	// reported; recorded as a finding in performance/v1.0-j32/README.md.
+	// looked up the raw matched text, so no key ever matched, and every link
+	// both passes found was reported twice (v1.0 J32-Y). J37 decided what
+	// should happen instead: a wiki link inside a Markdown link's target is a
+	// literal href, so only the Markdown row survives. `[text]([[Target]])` is
+	// a mistake for `[[Target|text]]`, and Obsidian reads it the same way —
+	// the brackets are part of the destination, and no backlink to Target is
+	// made. A `[[Target]]` anywhere else is still a wiki link.
+	claim := 0
 	scanWikiLinks(body, func(found span) {
+		// Both sequences ascend and neither overlaps itself, so one index walks
+		// them together. Overlap rather than containment is the test: a body
+		// like `[a](x[[b)]]` has a wiki match that starts inside the Markdown
+		// link and ends past it, and keeping both would leave two rows over the
+		// same bytes — the thing this decision exists to prevent. Dropping every
+		// wiki match that overlaps a Markdown link makes what remains provably
+		// disjoint.
+		for claim < len(claimed) && claimed[claim].end <= found.start {
+			claim++
+		}
+		if claim < len(claimed) && claimed[claim].start < found.end {
+			return
+		}
 		inner := strings.TrimSpace(body[found.firstStart:found.firstEnd])
 		rawTarget, display := splitWikiTarget(inner)
 		candidate := Candidate{
@@ -165,10 +189,22 @@ func Extract(body string) []Candidate {
 			StartByte:    found.start,
 			EndByte:      found.end,
 		}
-		decorateCandidate(body, cursor, &candidate)
+		decorateCandidate(body, cursor, &candidate, false)
 		matches = append(matches, candidate)
 	})
 	return matches
+}
+
+// byteRange is a half-open span of the body.
+type byteRange struct{ start, end int }
+
+// literalHref reports whether a Markdown link's target is a wiki link written
+// where an href belongs. Such a target names nothing, so it keeps every byte it
+// was written with: splitting an anchor off `[[Target#heading]]` would record
+// the target as `[[Target` and invent the heading `heading]]`, neither of which
+// appears in the note (v1.0 J37).
+func literalHref(rawTarget string) bool {
+	return strings.HasPrefix(rawTarget, "[[")
 }
 
 func relationFromBang(bang string) string {
@@ -198,9 +234,12 @@ func splitWikiTarget(inner string) (string, string) {
 	return rawTarget, display
 }
 
-func decorateCandidate(body string, cursor *lineCursor, candidate *Candidate) {
+func decorateCandidate(body string, cursor *lineCursor, candidate *Candidate, literal bool) {
 	candidate.Line, candidate.Column = cursor.at(candidate.StartByte)
 	candidate.Context = contextAround(body, candidate.StartByte, candidate.EndByte, 80)
+	if literal {
+		return
+	}
 	base, anchorType, anchorValue := splitAnchor(candidate.RawTarget)
 	candidate.RawTarget = base
 	candidate.AnchorType = anchorType

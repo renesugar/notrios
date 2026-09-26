@@ -8,18 +8,26 @@ import (
 	"testing"
 )
 
-// referenceExtract is Extract as it was before J32-Y: the two regexps, and the
-// de-duplication that sat between them. The de-duplication is kept here exactly
-// as it was, including the fact that its keys could never match, so this really
-// is the old behaviour and not a tidied version of it.
+// referenceExtract is Extract written with the two regexps instead of the
+// hand-written scanners, which is what this file exists to hold them to.
+//
+// It carried the de-duplication that sat in Extract before J32-Y, keys and all,
+// including the fact that they could never match. J37 decided what that
+// de-duplication should have been — a wiki link overlapping a Markdown link is
+// part of it, not a row of its own — so the reference implements that rule the
+// slow way, scanning every claimed range per wiki match, while Extract walks
+// both sequences with a single index. The old duplicate-row behaviour is not
+// kept here: it is recorded in performance/v1.0-j32/README.md, and what replaced
+// it is pinned in j37_nested_test.go.
 func referenceExtract(body string) []Candidate {
 	matches := []Candidate{}
-	seen := map[string]bool{}
+	claimed := [][2]int{}
 	cursor := newLineCursor(body)
 	for _, loc := range markdownLinkRE.FindAllStringSubmatchIndex(body, -1) {
 		if len(loc) < 8 {
 			continue
 		}
+		claimed = append(claimed, [2]int{loc[0], loc[1]})
 		rawTarget := strings.TrimSpace(body[loc[6]:loc[7]])
 		rawTarget = stripMarkdownTitle(rawTarget)
 		candidate := Candidate{
@@ -30,8 +38,7 @@ func referenceExtract(body string) []Candidate {
 			StartByte:    loc[0],
 			EndByte:      loc[1],
 		}
-		decorateCandidate(body, cursor, &candidate)
-		seen[candidate.SourceFormat+":"+candidate.RawTarget+":"+candidate.DisplayText] = true
+		decorateCandidate(body, cursor, &candidate, literalHref(rawTarget))
 		matches = append(matches, candidate)
 	}
 	cursor = newLineCursor(body)
@@ -39,7 +46,14 @@ func referenceExtract(body string) []Candidate {
 		if len(loc) < 6 {
 			continue
 		}
-		if seen[body[loc[0]:loc[1]]] {
+		overlapped := false
+		for _, claim := range claimed {
+			if claim[0] < loc[1] && loc[0] < claim[1] {
+				overlapped = true
+				break
+			}
+		}
+		if overlapped {
 			continue
 		}
 		inner := strings.TrimSpace(body[loc[4]:loc[5]])
@@ -52,7 +66,7 @@ func referenceExtract(body string) []Candidate {
 			StartByte:    loc[0],
 			EndByte:      loc[1],
 		}
-		decorateCandidate(body, cursor, &candidate)
+		decorateCandidate(body, cursor, &candidate, false)
 		matches = append(matches, candidate)
 	}
 	return matches

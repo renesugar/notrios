@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**40 items: 35 complete, 0 in progress, 5 not started, 0 deferred.**
+**41 items: 35 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -101,6 +101,7 @@ this section is archived when the plan completes and the rules are not.
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
 | J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
+| J41. A Markdown link's target may contain balanced parentheses | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -4724,11 +4725,45 @@ the older splice loop precisely because two rewrites can cover the same bytes.
   One row per span satisfies the constraint this slice was written with: the
   byte ranges that remain do not overlap, so no overlapping rewrite reaches the
   path J32-D had to work around.
-- **J37-C, the consequences.** Whatever changes, these must follow it: the link
-  rewriting on import, the resolution J32-I now re-runs from stored rows, the
-  backlink listing, and the preview. The two artifacts J37-A found are part of
-  this slice: a literal href is not split on `#`, and the outer span covers the
-  whole link. A vault whose notes use this form is
+- **J37-C, the consequences, done 2026-09-26.** `Extract` drops a wiki match
+  that **overlaps** a Markdown link rather than one merely contained in its
+  target: `[a](x[[b)]]` produces a wiki match that starts inside the Markdown
+  link and ends past it, and keeping both would leave two rows over the same
+  bytes — the thing this decision exists to prevent. Dropping every overlapping
+  match makes what remains provably disjoint, and the invariant is asserted over
+  the 20,000 bodies J32-Y's reference test generates, not over hand-picked ones.
+  `decorateCandidate` leaves a literal href's bytes alone, so
+  `[[Target#heading]]` is no longer recorded as raw `[[Target` with the invented
+  anchor `heading]]`.
+
+  What followed, each checked rather than assumed:
+  - **Import rewriting.** The nested wiki link is no longer rewritten. J32-D's
+    two pinned cases said it was, and they are updated *by decision*, with the
+    reason in the test: the top-level embed in the same body still rewrites,
+    which is why both live in one case.
+  - **The store's rows.** One row per span. The literal href resolves to
+    `unresolved` — no note is titled `[[Target]]` — with no target document and
+    no anchor.
+  - **The preview.** Nothing to change: it strips the `href` of any anchor whose
+    scheme it does not know, so a literal href renders inert. That is Obsidian's
+    outcome without Obsidian's habit of creating a file named after the mistake.
+  - **A library imported before J37**, which is the finding worth writing down.
+    Its body reads `[label]([[document://…]])`, because the old importer
+    rewrote inside the literal href. Read by the new parser that is one literal
+    href `[[document://…]]`, brackets included, which resolves to nothing — so
+    the edge that used to reach the target *from inside the parentheses*
+    disappears from the index until the note is reimported. The top-level link
+    in the same note is unaffected. A reimport restores the body the vault
+    actually has and the rows that follow from it, and J36-C's invariant still
+    holds: a reimport of what this build wrote adds no revision to anything.
+
+**Deferred out of this item, 2026-09-26.** J37-A's second artifact —
+`[outer]([inner](deep))` recording a span that stops before the final
+parenthesis — is not a wiki-link question and is not fixed here. The same
+truncation applies to every ordinary Markdown link whose URL contains
+parentheses, which CommonMark allows when they balance, so the fix would change
+stored rows for bodies that have nothing to do with this decision. It is **J41**,
+under the rule that a finding needing its own code change gets its own item. A vault whose notes use this form is
   imported and compared before and after, so the change is visible as rows
   rather than asserted.
 
@@ -4998,3 +5033,56 @@ ambiguity is kept. Nothing depends on this item.
 **Working state.** An ambiguous link is visible in the reader, clicking it
 offers the notes it might mean, choosing one repairs the note in a revision, and
 declining leaves it exactly as it was.
+
+## J41. A Markdown link's target may contain balanced parentheses
+
+**Goal.** `[text](https://example.org/Foo_(bar))` records the link its author
+wrote, instead of one that stops in the middle of the URL.
+
+**What J37-A found, 2026-09-26.** The Markdown scanner ends a target at the
+first `)`:
+
+```
+[outer]([inner](deep))   ->  one row, raw "[inner](deep", span "[outer]([inner](deep)"
+```
+
+CommonMark allows unescaped parentheses in a link destination when they balance,
+so this is not an exotic shape: a Wikipedia URL, a Python docs anchor and a
+citation style all carry one. Today each records a truncated target and a span
+that stops before the final parenthesis, which means the target does not
+resolve, and a rewrite of that span would leave the tail of the URL behind as
+prose.
+
+It was found while deciding J37, which is about a wiki link inside a Markdown
+link's target, and deferred out of it: this truncation has nothing to do with
+wiki links, and fixing it changes stored rows for bodies that have nothing to do
+with that decision.
+
+**Scope.**
+
+- **J41-A, what is recorded today.** A test stating the rows for a balanced
+  target, an unbalanced one, an escaped parenthesis, an angle-bracketed
+  destination `[text](<a (b) c>)`, and a target whose parentheses balance across
+  what is also a title — the description any change is compared against.
+- **J41-B, the scanner.** The target ends at the `)` that closes the one the
+  destination opened with, counting depth, as CommonMark does; an unbalanced
+  target still ends at the first `)`, so a body that is wrong today does not
+  become a different kind of wrong. The hand-written scanner and the regexp it
+  replaced no longer agree, so J32-Y's reference test needs the regexp side
+  taught the same rule or retired with its reason — it exists to hold the
+  scanner to a pattern, and a scanner that is deliberately better than the
+  pattern needs a different reference.
+- **J41-C, the consequences.** Rewriting on import, the stored rows, and the
+  libraries already imported: a reimport changes the recorded target and the
+  span, so what a reimport revises is measured the way J36-C measured it.
+
+**Boundaries.**
+- No new link syntax: this is the extent of a target, not what a link is.
+- The no-overlap invariant J37 established holds afterwards, over the same
+  generated bodies.
+
+**Dependencies.** J37 for the scanner's current shape and the invariant. J32-Y
+for the reference test this changes.
+
+**Working state.** A link whose URL contains balanced parentheses records that
+URL, and the rows for the shapes around it are pinned.

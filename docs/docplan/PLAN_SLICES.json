@@ -1063,7 +1063,7 @@
         },
         {
           "id": "J37-C",
-          "statement": "The rewrite, the stored-row resolution, the backlink listing and the preview follow the decision, shown by importing a vault that uses the form",
+          "statement": "Import rewriting, the stored rows, the preview and libraries imported before the fix all follow the decision, with the no-overlap invariant asserted over generated bodies",
           "state": "not-started"
         }
       ]
@@ -1166,6 +1166,28 @@
         {
           "id": "J40-E",
           "statement": "Opening a note pays nothing new: the marking comes from the link rows the note already has, measured on a link-heavy note and the collision shape",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J41",
+      "title": "A Markdown link's target may contain balanced parentheses",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J41-A",
+          "statement": "The rows recorded today for balanced, unbalanced, escaped and angle-bracketed targets are stated as tests",
+          "state": "not-started"
+        },
+        {
+          "id": "J41-B",
+          "statement": "A target ends at the parenthesis that closes it by depth as CommonMark does, and J32-Y's reference is taught the same rule or retired with its reason",
+          "state": "not-started"
+        },
+        {
+          "id": "J41-C",
+          "statement": "Rewriting, stored rows and what a reimport of an existing library revises are measured the way J36-C measured them",
           "state": "not-started"
         }
       ]

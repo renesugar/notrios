@@ -42,8 +42,14 @@ func j32dNamespace() linkNamespace {
 // one of these must still hold afterwards.
 func TestRewriteObsidianLinksPinned(t *testing.T) {
 	want := map[string]string{
-		"nested wiki inside markdown": "See [label]([[document://default/documents/doc-target]]) here.\n",
-		"nested embed and markdown":   "Nested ![[document://default/documents/doc-target]] inside [a]([[document://default/documents/doc-target]]).\n",
+		// J37 changed these two by decision, not by accident. A wiki link
+		// written where a Markdown link's href belongs is a literal href, so it
+		// is not a link to rewrite; `[label]([[Target]])` is a mistake for
+		// `[[Target|label]]`, and Obsidian reads it the same way. The top-level
+		// embed in the second case is still rewritten, which is the point of
+		// keeping both in one body.
+		"nested wiki inside markdown": "See [label]([[Target]]) here.\n",
+		"nested embed and markdown":   "Nested ![[document://default/documents/doc-target]] inside [a]([[Target]]).\n",
 		"adjacent":                    "[[document://default/documents/doc-target]][[document://default/documents/doc-other]]\n",
 		"repeated":                    "A [[document://default/documents/doc-target]] and [[document://default/documents/doc-target]] and [[document://default/documents/doc-target]].\n",
 		"at both ends":                "[[document://default/documents/doc-target]] middle [[document://default/documents/doc-other]]",
