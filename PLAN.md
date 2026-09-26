@@ -4593,11 +4593,26 @@ reason.
   arbitrarily would resolve a link to a note nobody named, which is the defect
   J36-B just removed, so the ambiguity report stands until the owner decides
   what an unreproducible ordering should become here. Pinned as a test row.
-- **J36-C, libraries imported before the fix.** Record what a reimport of an
-  already-imported vault does:
-  - which notes it revises, which should be only those whose rewritten body
-    changes because a link now resolves;
-  - whether a no-op reimport of an unaffected vault still creates no revisions.
+- **J36-C, libraries imported before the fix.** Measured, 2026-09-26: a reimport
+  is the repair, and no migration tool is needed. The importer calls a note
+  unchanged only when `current.Body == canonical` — the body already in the
+  database compared against the one this build would write — so a library
+  imported before J36-B and J36-D has exactly the notes whose links moved
+  rewritten, and nothing else. `j36c_reimport_test.go` puts the pre-fix bodies
+  back by hand, byte for byte as an older build wrote them, and pins both halves:
+  - the reimport reports two notes updated and four unchanged, adds one revision
+    to exactly those two, and rebuilds their link rows from the new bodies;
+  - a no-op reimport of the same vault adds no revision to any note, which is
+    stronger than the counters saying "unchanged".
+
+  **This constrains J39.** J39's skip is allowed to decide that a reimport
+  cannot change a note. That premise breaks whenever the rewriting rules
+  themselves change, as they just did: the source file is identical and the
+  recorded hash matches the stored revision, so the skip would fire and the
+  pre-fix link would survive the reimport that is supposed to repair it. J39
+  needs something in the recorded state that moves when the link rules move —
+  a rule version — or its skip silently freezes every library at the rules of
+  the build that last imported it.
 
 **Boundaries.**
 - No parser grammar change: `markdownlinks` recognises the same links.
@@ -4794,6 +4809,14 @@ than a slice of that one.
   conflict. That is what keeps the repair case: a note edited inside Notrios
   after an import has a different `content_sha256`, so a reimport still rewrites
   it exactly as it does today.
+
+  **J36-C adds a condition, 2026-09-26.** None of the above notices a change to
+  the rewriting rules. J36-B and J36-D changed which note a link resolves to
+  without touching any vault file, so a skip keyed on the file and the recorded
+  hash would fire and leave the pre-fix link in place — defeating the reimport
+  that J36-C measured as the repair. The recorded state needs a rule version
+  that moves when link resolution, frontmatter handling or body canonicalisation
+  moves, and a note whose recorded version is not this build's is not skippable.
 - **J39-C, what the reimport still has to do.** Even with every note skipped, a
   reimport must still leave the library in the state a fresh import would: the
   final link pass still runs, because a skipped note's *links* may resolve

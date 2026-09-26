@@ -1026,7 +1026,7 @@
         },
         {
           "id": "J36-C",
-          "statement": "What a reimport of an already-imported vault revises is recorded, and a no-op reimport of an unaffected vault still creates no revisions",
+          "statement": "A reimport of a library imported before the fix revises exactly the notes whose links moved and rebuilds their link rows, and a no-op reimport adds no revision to any note",
           "state": "not-started"
         },
         {
