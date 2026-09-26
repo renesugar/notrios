@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**39 items: 34 complete, 0 in progress, 5 not started, 0 deferred.**
+**40 items: 34 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -100,6 +100,7 @@ this section is archived when the plan completes and the rules are not.
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
+| J40. Resolve an ambiguous link from the note you are reading | not-started | 0/5 | 5 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -4585,14 +4586,36 @@ reason.
   attachments alike, and a bare name is a root path too. This also rescues a
   bare name shared between the root and a folder, which the name map could
   previously only call ambiguous.
-- **J36-E, the residual divergence, for a decision.** Obsidian's rationale goes
-  further than precedence: a bare name should not depend on the containing file
-  at all. When the name is shared between two folders and no note of that name
-  sits at the vault root, Obsidian still resolves to one of them, chosen by its
-  own index order; Notrios reports the link as ambiguous and leaves it. Choosing
-  arbitrarily would resolve a link to a note nobody named, which is the defect
-  J36-B just removed, so the ambiguity report stands until the owner decides
-  what an unreproducible ordering should become here. Pinned as a test row.
+- **J36-E, the residual divergence: keep the ambiguity. Decided 2026-09-26.**
+  Obsidian's rationale goes further than precedence — a bare name should not
+  depend on the containing file at all. When the name is shared between two
+  folders and no note of that name sits at the vault root, Obsidian still
+  resolves to one of them, chosen by an index order that is its own
+  implementation detail: the API contract is one sentence, "Get the best match
+  for a linkpath", with nothing about ordering
+  (<https://docs.obsidian.md/Reference/TypeScript+API/MetadataCache/getFirstLinkpathDest>),
+  and the order underneath is the vault scan's `readdir` order — a filename
+  hash on ext4, name order on NTFS, roughly insertion order on APFS. There is
+  nothing there to match.
+
+  Two rules were considered and both are rejected:
+  - **a timestamp tiebreak**, which would not simulate Obsidian at all — its
+    order correlates with nothing temporal — and would break what J36-C pinned,
+    because mtime does not survive a zip extraction, a `git checkout`, an
+    `rsync` without `-t` or a restore from backup, so the first restore would
+    move links and create revisions with no file content having changed;
+  - **shallowest path, then lexicographic**, deterministic and cheap enough
+    (measured: the namespace build goes 161 ms to 185 ms on the collision shape
+    and 665 ms to 759 ms at 10,000 notes, which is +0.14% of a 66 s import and
+    below what the measurement rule can call a regression) — but rejected for a
+    better reason than cost. It guesses.
+
+  The ambiguity is *information*, and the right owner of the choice is the person
+  reading the note, who knows which note they meant. So the ambiguity is kept
+  and reported, and **J40** spends it: a reader who clicks an ambiguous link is
+  offered the candidates and picks one, and the note is repaired for good. A
+  rule that guessed would have thrown that information away before anyone could
+  be asked. Pinned as a test row in `j36a_resolve_test.go`.
 - **J36-C, libraries imported before the fix.** Measured, 2026-09-26: a reimport
   is the repair, and no migration tool is needed. The importer calls a note
   unchanged only when `current.Body == canonical` — the body already in the
@@ -4841,3 +4864,97 @@ record. J32's harness and rule.
 **Working state.** A no-op reimport of an unchanged vault costs the scan and the
 link pass, not a full pass over every note, and a diverged note is still
 repaired.
+
+## J40. Resolve an ambiguous link from the note you are reading
+
+**Goal.** A reader who meets an ambiguous link can see that it is ambiguous,
+click it, choose among the notes it might mean, and have the note they are
+reading repaired to name the one they chose — or decline, and leave it alone.
+
+**Why this item exists.** J36-E decided to keep the ambiguity rather than guess
+which note a shared name means. That decision is only worth making if the
+ambiguity reaches the one person who knows the answer. Today it does not:
+
+| surface | what it says about an ambiguous link |
+|---|---|
+| the reader | nothing at all |
+| the editor | an underline, and "more than one note or resource matches" in the broken-link list |
+| Library Health, lint | a count and a location, content-free by design |
+| the import report | one warning, at import time, then gone |
+
+An unrewritten wikilink is not even a link in the reader. The importer leaves
+the literal `[[name]]` text in the body, and the preview only rewires *anchors*
+by URI scheme — `document://`, `resource://`, `notrios://` become
+`data-app-uri` with `href="#"` for the click router. Nothing renders `[[...]]`,
+so there is no click target, no cursor change and no tooltip. The reader cannot
+tell an ambiguous link from prose.
+
+**The two ambiguities are not the same one.** This matters for what a prompt can
+offer:
+- *import-time* ambiguity means several **vault files** share a name, in
+  Obsidian's namespace. It is a warning and then nothing: no link row, no
+  candidates, only raw text left in the body.
+- *runtime* ambiguity means several **notes in the collection** share a
+  **title**, in Notrios' namespace (`resolveLinkCandidateLocked` →
+  `findDocumentByTitleLocked`), and it does reach the database as
+  `resolution_status = 'ambiguous'`.
+
+So a path-shaped link that matches no path — J36-B's case — has no candidates to
+offer at all. That is a "did you mean" search, not a disambiguation, and it is
+out of scope here.
+
+**What already exists to build on.** A bounded candidate service
+(`suggestLinkTargets`, `LinkPicker`) that already inserts canonical Markdown
+links rather than wikilinks; a classifier that already knows `ambiguous` and
+already explains it (`describeLinkStatus`); the preview click router; and
+`notriosctl fix` for repair away from the UI.
+
+**Scope.**
+
+- **J40-A, make an ambiguous link visible in the reader.** Decide how an
+  unresolved or ambiguous wikilink renders, and render it: marked, and a click
+  target. This is the first time the reader says anything about a link that will
+  not open, so the marking is a UI decision to write down in `UI_DESIGN.md`
+  before it is built, not one to discover in the code.
+- **J40-B, where the candidates come from.** Nothing stores them: the status is
+  recorded, the candidate list is not. Decide between re-resolving on demand
+  when the reader asks, and recording the candidates when the ambiguity is
+  found. Bounded either way — a name shared by 5,000 notes, which J32's
+  collision corpus has, is a list nobody can use, so the prompt shows a bounded
+  page with the count and the way to narrow it, as the link picker already does.
+- **J40-C, the prompt, and the repair.** Choosing a candidate rewrites that one
+  link in the body to the canonical `document://` form and saves it as an
+  ordinary revision: a base revision, and the conflict path taken when the note
+  moved underneath. Declining changes nothing and leaves the link marked. The
+  rewrite touches one span, the one clicked, and never reflows the rest of the
+  note.
+- **J40-D, the import-time ambiguity reaches the reader.** What the Obsidian and
+  Joplin importers know at import time — that several vault files share this
+  name — is currently discarded. Carry enough of it that a reader meeting that
+  link is offered the same prompt, or record why the runtime title-based
+  candidates are sufficient and the import-time ones need not be kept.
+- **J40-E, what it costs, and what it must not cost.** A reader opening a note
+  must not pay for this: the marking comes from the link rows the note already
+  has, not from a resolution pass per preview. Measured against J32's rule on a
+  note with many links, and on the collision corpus's shape, where nearly every
+  link is ambiguous.
+
+**Boundaries.**
+- The preview stays sanitized. A candidate's title is rendered as text, never as
+  markup, and the prompt introduces no new HTML from note content.
+- No prose is rewritten automatically (H14): the only bytes that change are the
+  one link span the reader chose to change.
+- Lint findings stay content-free. Showing candidates in the reader to the
+  person whose library it is does not license putting note text into a report.
+- The importer still never guesses. J36-E's decision stands: what the reader is
+  offered is a choice, and declining is a supported answer that leaves the note
+  as it is.
+- No new ambiguity notion. `ambiguous` keeps the meaning
+  `resolveLinkCandidateLocked` gives it.
+
+**Dependencies.** J36 for the resolution rules and for the decision that the
+ambiguity is kept. Nothing depends on this item.
+
+**Working state.** An ambiguous link is visible in the reader, clicking it
+offers the notes it might mean, choosing one repairs the note in a revision, and
+declining leaves it exactly as it was.

@@ -1036,7 +1036,7 @@
         },
         {
           "id": "J36-E",
-          "statement": "Whether a bare name shared between folders with no note of that name at the vault root should resolve to one of them rather than be reported ambiguous is decided by the owner",
+          "statement": "A bare name shared between folders with no note of that name at the vault root stays ambiguous rather than guessed, because the ambiguity is what a reader can be asked about (J40)",
           "state": "not-started"
         }
       ]
@@ -1129,6 +1129,38 @@
         {
           "id": "J39-D",
           "statement": "The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains",
+          "state": "not-started"
+        }
+      ]
+    },
+    {
+      "id": "J40",
+      "title": "Resolve an ambiguous link from the note you are reading",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J40-A",
+          "statement": "An unresolved or ambiguous wikilink is marked and clickable in the reader, to a rendering written down in UI_DESIGN.md first",
+          "state": "not-started"
+        },
+        {
+          "id": "J40-B",
+          "statement": "The candidates a prompt offers come from a decided source, bounded and paged, so a name shared by thousands of notes is still usable",
+          "state": "not-started"
+        },
+        {
+          "id": "J40-C",
+          "statement": "Choosing a candidate rewrites only the clicked span to a canonical link in an ordinary revision with the conflict path, and declining changes nothing",
+          "state": "not-started"
+        },
+        {
+          "id": "J40-D",
+          "statement": "Import-time ambiguity reaches the reader's prompt, or it is recorded why the runtime title candidates suffice",
+          "state": "not-started"
+        },
+        {
+          "id": "J40-E",
+          "statement": "Opening a note pays nothing new: the marking comes from the link rows the note already has, measured on a link-heavy note and the collision shape",
           "state": "not-started"
         }
       ]
