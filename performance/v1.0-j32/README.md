@@ -956,6 +956,50 @@ One field of the import report changes, and it is the change itself:
 `batches_completed` on `many-large` goes from 2 to 7. The other 26 fields of the
 report, and every content row, are identical.
 
+## J32-J — checkpoint consolidation: **reverted, and the premise was wrong**
+
+The notes and link-rebuild phases pass their checkpoint to the store with the
+batch, so it commits atomically with the rows it describes — and the walker then
+wrote the same checkpoint again, computed by the same rule. That looked like two
+commits per batch where one was already correct, so the walker was changed to
+write a checkpoint only for phases whose batch does not carry one.
+
+**A counter was added to measure the declared metric, and it disproved the
+premise.** `store.Commits()` counts committed transactions the way
+`store.PreparedStatements()` counts prepared statements. Against a baseline
+rebuilt with the counter (`21df22f` plus the counter, so the only difference is
+the change itself):
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| obsidian-10k/fresh | **commits** | 223 | **223** | 0 | none |
+| obsidian-10k/fresh | prepared statements | 271,516 | 271,314 | 2 | −202 |
+| obsidian-10k/fresh | wall s | 66.72 | 66.16 | 1.70 | within noise |
+| obsidian-10k/reimport | commits | 222 | 222 | 0 | none |
+| obsidian-10k/reimport | wall s | 38.34 | 37.36 | 1.51 | within noise |
+
+`PutImportCheckpoint` is an autocommitted statement, not a `BEGIN`/`COMMIT`
+pair, so the second write was never a second transaction. What the change
+removed is 200 prepared statements and 200 small autocommitted writes per
+10,000-note import — and the clock did not move on a fresh import, a no-op
+reimport, or the collision reimport.
+
+So the finding is not a performance finding, and J32's rule is that a change
+whose measurement shows no gain is reverted rather than kept, as J32-G was. The
+walker is back as it was.
+
+**What is kept from the slice:** the commit counter, because measurement
+infrastructure that corrects a premise has earned its place and J38-C will
+need it, and the test that resumes an import whose *progress publication* fails
+after a batch has committed — the failure the plan named, which is about resume
+rather than about how many times a checkpoint is written.
+
+**The other half of J32-J is not done.** The slice covers checkpoint
+consolidation *and* stable-note skips: skipping a note whose source hash is
+unchanged before reading and parsing it, measured on a no-op and a 1%-changed
+reimport. The harness has no 1%-changed scenario yet, and the skip is where that
+metric belongs.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`

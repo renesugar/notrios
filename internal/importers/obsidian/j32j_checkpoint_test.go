@@ -37,38 +37,11 @@ func j32jStore(t *testing.T) *store.SQLiteStore {
 	return st
 }
 
-// TestImportCommitsOncePerBatch states what J32-J removed: the notes and
-// link-rebuild phases pass their checkpoint to the store with the batch, so it
-// commits atomically with the rows it describes, and the walker no longer writes
-// the same checkpoint again in a transaction of its own.
-func TestImportCommitsOncePerBatch(t *testing.T) {
-	ctx := context.Background()
-	vault := j32jVault(t, 20)
-	st := j32jStore(t)
-
-	before := store.Commits()
-	report, err := Import(ctx, st, vault, Options{CollectionID: "default", BatchSize: 5})
-	if err != nil {
-		t.Fatal(err)
-	}
-	commits := store.Commits() - before
-
-	// Four notes batches and four link-rebuild batches, plus the phases that
-	// still checkpoint through the walker and the import's own bookkeeping. What
-	// matters is the shape: fewer commits than the old two-per-batch, and at
-	// least one per batch.
-	if report.BatchesCompleted == 0 {
-		t.Fatal("no batches were reported")
-	}
-	if commits < int64(report.BatchesCompleted) {
-		t.Errorf("%d commits for %d batches: a batch must still be durable",
-			commits, report.BatchesCompleted)
-	}
-	if commits >= int64(report.BatchesCompleted)*2 {
-		t.Errorf("%d commits for %d batches: the duplicate checkpoint write is back",
-			commits, report.BatchesCompleted)
-	}
-}
+// J32-J measured the checkpoint consolidation and reverted it: the duplicate
+// write was an autocommitted statement rather than a second transaction, so
+// removing it left the commit count unchanged and the clock unmoved. What is
+// kept from that slice is the counter that showed it, and the test below, which
+// is about resume rather than about how many times a checkpoint is written.
 
 // TestResumeAfterProgressFailure injects the failure the plan named: the batch
 // and its checkpoint have committed, and then publishing progress fails. The

@@ -774,7 +774,7 @@ func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
 	// per batch, so the same budget keeps a batch of large files bounded.
 	return run.eachSizedBatch("source_bundle", len(run.inventory.Files), func(index int) int64 {
 		return run.inventory.Files[index].SizeBytes
-	}, false, write, nextPhase, func(start, end int) error {
+	}, write, nextPhase, func(start, end int) error {
 		for _, item := range run.inventory.Files[start:end] {
 			if write {
 				file, err := os.Open(run.absPath(item))
@@ -917,7 +917,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 	// the phase the byte budget is for (v1.0 J32-K).
 	return run.eachSizedBatch("notes", len(run.inventory.Notes), func(index int) int64 {
 		return run.inventory.Notes[index].SizeBytes
-	}, true, write, nextPhase, func(start, end int) error {
+	}, write, nextPhase, func(start, end int) error {
 		items := run.inventory.Notes[start:end]
 		ids, externalIDs, keys := make([]string, 0, len(items)), make([]string, 0, len(items)), make([]string, 0, len(items))
 		for _, item := range items {
@@ -1035,8 +1035,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 }
 
 func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
-	// The link-rebuild batch carries its own checkpoint too (v1.0 J32-J).
-	return run.eachSizedBatch("link_rebuild", len(run.inventory.Notes), nil, true, write, nextPhase, func(start, end int) error {
+	return run.eachBatch("link_rebuild", len(run.inventory.Notes), write, nextPhase, func(start, end int) error {
 		if !write {
 			return nil
 		}
@@ -1446,19 +1445,10 @@ const importBatchByteBudget = int64(maxMarkdownBytes)
 // starts at and not how large a window was, so varying the length changes
 // nothing about resume.
 func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase string, process func(start, end int) error) error {
-	return run.eachSizedBatch(phase, total, nil, false, write, nextPhase, process)
+	return run.eachSizedBatch(phase, total, nil, write, nextPhase, process)
 }
 
-// eachSizedBatch walks a phase in windows. selfCheckpointed says the process
-// function writes the checkpoint itself, inside the transaction that writes the
-// batch (v1.0 J32-J).
-//
-// The notes and link-rebuild phases pass their checkpoint to the store with the
-// batch, so it commits atomically with the rows it describes -- and then this
-// function used to write the same checkpoint again in a transaction of its own,
-// computed by the same rule. Two commits per batch where one was already
-// correct, and the second one durable a moment after the first.
-func (run *importRun) eachSizedBatch(phase string, total int, sizeOf func(index int) int64, selfCheckpointed bool, write bool, nextPhase string, process func(start, end int) error) error {
+func (run *importRun) eachSizedBatch(phase string, total int, sizeOf func(index int) int64, write bool, nextPhase string, process func(start, end int) error) error {
 	start := 0
 	if run.phase == phase {
 		start = run.nextIndex
@@ -1481,14 +1471,12 @@ func (run *importRun) eachSizedBatch(phase string, total int, sizeOf func(index 
 		run.processed += end - start
 		run.report.BatchesCompleted++
 		if write {
-			if !selfCheckpointed {
-				checkpointPhase, checkpointIndex := phase, end
-				if end == total {
-					checkpointPhase, checkpointIndex = nextPhase, 0
-				}
-				if err := run.saveCheckpoint(checkpointPhase, checkpointIndex, "running"); err != nil {
-					return err
-				}
+			checkpointPhase, checkpointIndex := phase, end
+			if end == total {
+				checkpointPhase, checkpointIndex = nextPhase, 0
+			}
+			if err := run.saveCheckpoint(checkpointPhase, checkpointIndex, "running"); err != nil {
+				return err
 			}
 			if run.options.AfterBatch != nil {
 				if err := run.options.AfterBatch(phase, end, total); err != nil {
