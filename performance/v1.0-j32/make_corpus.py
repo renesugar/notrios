@@ -18,6 +18,8 @@ The shapes (default: all of them):
   property-rich  10,000 Obsidian notes with about 25 frontmatter properties each
   collision      Obsidian notes that share names -- thousands of index.md in
                  different folders -- and repeated aliases, linked by those names
+  many-large     twelve Obsidian notes just under the limit, which is what a
+                 count-bounded batch holds all of at once
   near-limit-obsidian, near-limit-joplin
                  a few notes just under the importers' 64 MiB limit among
                  ordinary ones
@@ -164,6 +166,20 @@ def collision(root: pathlib.Path, folders: int = 5_000, alias_groups: int = 50) 
             write(folder / "notes.md", f"# Notes {index}\n\nBack to [[index]] and [[Topic {index:05d}]].\n")
 
 
+def many_large(root: pathlib.Path, large: int = 12) -> None:
+    """Twelve notes just under the limit, and nothing else (v1.0 J32-K).
+
+    near-limit-obsidian holds four large notes among two hundred small ones, so
+    a batch of a hundred notes happens to hold only those four. This is the
+    shape the byte bound exists for: with a batch bounded by count alone, all
+    twelve bodies are held at once.
+    """
+    line = ("near limit text " * 8).rstrip() + "\n"
+    body = line * (NEAR_LIMIT_BYTES // len(line))
+    for index in range(large):
+        write(root / f"Large-{index:02d}.md", f"# Large {index}\n\n[[Large-{(index + 1) % large:02d}]]\n\n{body}")
+
+
 def near_limit_obsidian(root: pathlib.Path, large: int = 4, small: int = 200) -> None:
     """A few notes just under 64 MiB among ordinary ones (F5: byte-bounded batches)."""
     line = ("near limit text " * 8).rstrip() + "\n"
@@ -197,6 +213,7 @@ SHAPES = {
     "link-dense": ("obsidian", link_dense),
     "property-rich": ("obsidian", property_rich),
     "collision": ("obsidian", collision),
+    "many-large": ("obsidian", many_large),
     "near-limit-obsidian": ("obsidian", near_limit_obsidian),
     "near-limit-joplin": ("joplin-raw", near_limit_joplin),
 }

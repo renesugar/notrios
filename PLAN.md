@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**37 items: 32 complete, 0 in progress, 5 not started, 0 deferred.**
+**38 items: 32 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -98,6 +98,7 @@ this section is archived when the plan completes and the rules are not.
 | J35. Make G18g's browser smoke runnable again | complete | 3/3 | — |
 | J36. Resolve Obsidian partial-path links the way Obsidian does | not-started | 0/3 | 3 |
 | J37. Decide what a link matched by both patterns should be | not-started | 0/3 | 3 |
+| J38. Carry J32's import findings into the Joplin importer, where they measure | not-started | 0/6 | 6 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -4509,3 +4510,73 @@ change would have to follow.
 
 **Working state.** One span of a note produces the links its author meant, and
 a test says which.
+
+## J38. Carry J32's import findings into the Joplin importer, where they measure
+
+**Goal.** Every J32 finding that could apply to a Joplin RAW import has been
+tried there and kept or rejected on its own measurement, and the ones that
+already apply through shared code are recorded as such rather than re-done.
+
+**What is already shared, checked 2026-09-26.** Most of J32 lives in
+`internal/store` and `internal/markdownlinks`, which the Joplin importer uses,
+so it already has:
+
+| finding | where it lives | Joplin gets it |
+|---|---|---|
+| J32-B, prepared statements reused for block and link inserts | `internal/store` | yes |
+| J32-E, one-pass link coordinates | `internal/markdownlinks` | yes |
+| J32-I, the final link pass re-resolves instead of reparsing | `internal/store` | yes, and it calls that pass |
+| J32-N, the collection scope uses the title index | `internal/store` | yes |
+| J32-Q, J32-S, J32-T, block text, per-block allocations, reused storage | `internal/markdownblocks`, `internal/store` | yes |
+| J32-W1, a body hashed without being copied | `internal/store` | yes |
+| J32-X, a body bound to SQLite by length | `internal/store` | yes |
+| J32-Y, links matched without a regexp engine | `internal/markdownlinks` | yes |
+| J32-C, property order only when source is preserved | its own scan | already gated there before J32 |
+
+`internal/importers/joplinraw` holds no regexp of its own, so J32-Y reaches it
+whole. What is *not* shared is the importer's own shape: how it batches, how it
+reads an item, and what it asks the store for.
+
+**Scope.**
+
+- **J38-A, measure first, as J32-A did.** A CPU profile and an allocation
+  profile of a fresh `joplin-10k` and `near-limit-joplin` import, recorded
+  before any change, and a note of which J32 findings the profiles show already
+  paid off here. J32's own history is the reason: nine slices of allocation work
+  moved the Obsidian clock a tenth, and two that deleted duplicated parsing
+  moved it fourfold — so the profile decides the order, not the analogy.
+- **J38-B, existence-only reads.** `scalable.go` calls `GetDocuments` and uses
+  only `if _, found := documents[id]`, which is what J32-H replaced on the
+  Obsidian side; `ExistingDocumentIDs` already exists. Metric: allocated bytes
+  on `near-limit-joplin/fresh`.
+- **J38-C, byte-bounded batches.** Joplin batches by item count alone
+  (`defaultBatchSize` 100, `maxBatchSize` 500), which is what J32-K found on the
+  Obsidian side: peak RSS there fell 51% on a corpus of twelve 60 MiB notes.
+  `near-limit-joplin/fresh` already peaks at 1.39 GB, higher than Obsidian's
+  did. Metric: peak RSS on `near-limit-joplin/fresh` and on a many-large RAW
+  corpus, with the cost in commits and prepared statements stated as J32-K
+  stated it.
+- **J38-D, a reused item buffer.** Three `os.ReadFile` calls in `scalable.go`
+  allocate a buffer per item, which is J32-W2's finding. Metric: allocated
+  bytes on `near-limit-joplin/fresh`, with the same retention cap so one large
+  item does not make an import hold its buffer to the end.
+- **J38-E, whatever J38-A finds that is not on this list.** Each measured and
+  dispositioned on its own, under J32's rule.
+- **J38-F, the record.** `performance/v1.0-j38/README.md`, one row per finding:
+  carried with its measurement, rejected with its measurement, or already
+  shared with where it lives.
+
+**Boundaries.**
+- The same rule as J32: a change ships only if a benchmark written before it
+  shows it beats the baseline's own range on the declared metric, and nothing
+  else regresses beyond that range.
+- No change to what a Joplin import writes: canonical bodies, fingerprints,
+  resource references, notebook placement, tags and block and link rows stay
+  byte-identical, which `j17_compare.py` shows on both corpora.
+- Joplin's own correctness gates stay as J17 and J20 left them.
+
+**Dependencies.** J32 for the findings, the harness and the rule. Nothing
+depends on this item.
+
+**Working state.** A Joplin import has been measured, and every J32 finding that
+applies to it has been carried across or rejected with its measurement.

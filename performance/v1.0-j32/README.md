@@ -906,6 +906,56 @@ The clock moved when the work went away, not when the copies did: eleven slices
 of allocation work took wall time down about a tenth, and two slices that
 deleted duplicated *parsing* took it down by a further factor of four.
 
+## J32-K — F5, byte-bounded batches: **kept, with its cost stated**
+
+A batch was windowed by note count alone — a hundred by default, five hundred at
+most — while the notes phase keeps every canonical body of a batch until it is
+written. A batch's memory was the sum of its notes' sizes with nothing bounding
+that sum: a hundred notes of 60 MiB would ask for 6 GB. A window now ends at the
+count limit or once it holds 64 MiB of notes, the size one note may already
+reach, so a large note becomes a batch of its own and nothing legal is refused.
+The sizes come from the inventory, so no file is read to decide a window.
+
+**The corpus had to be built for it.** `near-limit-obsidian` holds four large
+notes among two hundred small ones, so a hundred-note batch happened to hold
+only those four, and the bound had little to separate. `many-large` is twelve
+notes of 60 MiB and nothing else — the shape a count-bounded batch holds all of
+at once.
+
+Declared: peak RSS. Baseline `094c3c0`, candidate `21df22f`, five runs each,
+alternating. Records in `j32k/`.
+
+| case | peak RSS before | after | baseline range | change | wall s |
+|---|---:|---:|---:|---:|---:|
+| many-large/fresh | 1.88 G | **917 M** | 25 M | **−51.3%** | −1.3% |
+| near-limit-obsidian/fresh | 838 M | 784 M | 1.5 M | −6.5% | unchanged |
+| obsidian-10k/fresh | 42.8 M | 43.1 M | 0.7 M | within noise | unchanged |
+| near-limit-joplin/fresh | 1.39 G | 1.39 G | 121 M | **nothing** | unchanged |
+
+**What it costs, and why that is the mechanism rather than a side effect.** On
+`many-large`: 4,923 → 5,826 allocations (+18.3%) and 300 → 355 prepared
+statements (+18.3%), both past their range. Bounding a batch *means* more
+batches, and each batch commits and prepares statements. The absolute price is
+903 allocations and 55 statements against halving peak RSS from 1.88 GB to
+917 MB, and wall time improved rather than paying for it. Under J32's rule that
+is a trade-off for the owner and not a ship: it was put to the owner with these
+numbers and kept on that basis, 2026-09-26.
+
+**Joplin shows nothing because Joplin was not changed.** Its importer batches in
+its own code, and its near-limit peak — 1.39 GB — is higher than Obsidian's was.
+Carrying this across is J38-C.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Tests state the window rule — count decides for small
+notes, one note past the budget stands alone, the budget closes a window early —
+and that a byte-bounded import interrupted between batches and resumed produces
+the library an uninterrupted one produces. Both corpora imported by each binary
+produce identical `document_blocks`, `document_links` and `documents`.
+
+One field of the import report changes, and it is the change itself:
+`batches_completed` on `many-large` goes from 2 to 7. The other 26 fields of the
+report, and every content row, are identical.
+
 ## Found along the way
 
 - **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`

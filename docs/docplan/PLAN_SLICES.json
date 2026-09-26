@@ -1015,6 +1015,43 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J38",
+      "title": "Carry J32's import findings into the Joplin importer, where they measure",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J38-A",
+          "statement": "A Joplin import is profiled for CPU and allocations before any change, and which J32 findings already apply through shared code is recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "J38-B",
+          "statement": "Joplin's existence-only reads ask for presence, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J38-C",
+          "statement": "Joplin batches are bounded by bytes as well as item count, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J38-D",
+          "statement": "Joplin reads each item into a reused capped buffer, or the change is reverted on its measurement",
+          "state": "not-started"
+        },
+        {
+          "id": "J38-E",
+          "statement": "Whatever the profile names beyond this list is measured and dispositioned on its own",
+          "state": "not-started"
+        },
+        {
+          "id": "J38-F",
+          "statement": "performance/v1.0-j38/README.md records every finding as carried, rejected or already shared",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
