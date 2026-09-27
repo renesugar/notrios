@@ -1230,17 +1230,17 @@
       "slices": [
         {
           "id": "J43-A",
-          "statement": "What a rewrite does to a title today is stated for a link, an embed, a bracketed destination and a wiki link with display text, and the Joplin importer is read for the same defect",
+          "statement": "All five title forms are shown lost by the Obsidian rewrite, the Joplin rewriter is shown immune because it substitutes in place, and notriosctl fix is found to share the defect",
           "state": "not-started"
         },
         {
           "id": "J43-B",
-          "statement": "A title is carried through the rewrite and put back after the URI, with a link that has no title written byte for byte as it is today",
+          "statement": "A title is carried as raw bytes and put back after the URI by both rewriters, with notriosctl fix recovering it from the link's own bytes and no schema change, and a link with no title written exactly as before",
           "state": "not-started"
         },
         {
           "id": "J43-C",
-          "statement": "Stored rows, the preview and what a reimport of a library imported before the fix revises are measured the way J36-C measured them",
+          "statement": "Stored rows never carry a title, the preview needs no change, and a reimport of a library imported before the fix revises only the notes whose titles were lost",
           "state": "not-started"
         }
       ]

@@ -53,14 +53,11 @@ func TestJ42CSpacedNamesResolve(t *testing.T) {
 	if !strings.Contains(index.Body, "[pct]("+noteURI+")") {
 		t.Errorf("the percent-encoded alternative should still resolve, body was:\n%s", index.Body)
 	}
-	if !strings.Contains(index.Body, "[titled]("+noteURI+")") {
-		t.Errorf("a bracketed link with a title should resolve, body was:\n%s", index.Body)
-	}
-	// Rewriting a Markdown link has always dropped its title, for an ordinary
-	// destination as much as a bracketed one. Recorded here as what happens, not
-	// endorsed: it is J43.
-	if strings.Contains(index.Body, "\"A title\"") {
-		t.Errorf("unexpected: the title survived the rewrite, body was:\n%s", index.Body)
+	// J43 put the title back. When this test was written the rewrite dropped it,
+	// which is what sent J43 to the plan; the row recorded that rather than
+	// endorsing it, and now records the repair.
+	if !strings.Contains(index.Body, "[titled]("+noteURI+" \"A title\")") {
+		t.Errorf("a bracketed link with a title should resolve and keep it, body was:\n%s", index.Body)
 	}
 
 	rows := outgoingRows(t, ctx, st, indexID)
@@ -133,7 +130,8 @@ func TestJ42CSpacedNamesResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get repaired index: %v", err)
 	}
-	for _, want := range []string{"[note](" + noteURI + ")", "![shot](" + shotURI + ")", "[titled](" + noteURI + ")"} {
+	for _, want := range []string{"[note](" + noteURI + ")", "![shot](" + shotURI + ")",
+		"[titled](" + noteURI + " \"A title\")"} {
 		if !strings.Contains(repaired.Body, want) {
 			t.Errorf("the reimport should rewrite %s, body was:\n%s", want, repaired.Body)
 		}

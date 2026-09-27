@@ -1307,7 +1307,9 @@ func planObsidianLinks(body, notePath, collectionID string, ns linkNamespace) ([
 			if candidate.RelationType == "embed" {
 				prefix = "!"
 			}
-			replacementText = prefix + "[" + candidate.DisplayText + "](" + uri + ")"
+			// The title is put back exactly as it was written. Dropping it
+			// lost the author's own text on every import (v1.0 J43).
+			replacementText = prefix + "[" + candidate.DisplayText + "](" + uri + candidate.TitleSuffix + ")"
 		}
 		replacements = append(replacements, replacement{start: candidate.StartByte, end: candidate.EndByte, text: replacementText})
 	}

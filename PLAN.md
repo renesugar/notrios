@@ -5229,17 +5229,51 @@ losing a link: the note comes back from a round trip saying less than it said.
 
 **Scope.**
 
-- **J43-A, what is dropped, and where else.** A test stating what a rewrite does
-  to a title today, for a link, an embed, a bracketed destination and a wiki link
-  with display text. The Joplin importer's rewriting is read for the same defect,
-  because J38 showed these two share more than they look like they do.
-- **J43-B, carry the title.** The candidate already knows where the destination
-  ends; what follows it inside the parentheses is the title, and it is put back
-  after the URI. A link with no title is unchanged, byte for byte, which the
-  pinned rewrite cases in `j32d_rewrite_test.go` say.
-- **J43-C, the consequences.** Stored rows, the preview, and what a reimport of a
-  library imported before this revises — a note whose links had titles is revised
-  once, to put them back, measured the way J36-C measured it.
+- **J43-A, what is dropped, and where else. Done 2026-09-26.** All five title
+  forms were lost by the Obsidian rewrite: double-quoted, single-quoted,
+  parenthesised, a title after a bracketed destination, and a title on an embed. A
+  wiki link's display text was already carried, because it is not a title.
+
+  **The Joplin importer does not have this defect.** It substitutes the `:/id`
+  token where it stands and copies everything around it unchanged, so a title is
+  never seen and never lost. The Obsidian rewriter rebuilds the link from its
+  parts, which is why only it drops things. Pinned in
+  `internal/importers/joplinraw/j43a_title_test.go` so that stays true.
+
+  **`notriosctl fix` did have it.** `renderMarkdownLink` in `sqlite_fix.go`
+  rebuilds a link the same way, from a stored row whose `RawTarget` records the
+  destination alone — so repairing a non-canonical target or adding missing alt
+  text cost the author their title. A repair tool losing text is worse than an
+  importer doing it, so it is fixed here rather than deferred again.
+- **J43-B, carry the title. Done 2026-09-26.** `markdownDestination` returns the
+  destination and, beside it, the bytes that followed it — the whitespace and
+  whichever of the three delimiters the author used — and `Candidate.TitleSuffix`
+  carries them. Both rewriters put them back after the URI and any anchor. The
+  bytes are copied, never parsed or normalised, which is how one field covers
+  `"…"`, `'…'` and `(…)` without knowing the difference.
+
+  `notriosctl fix` has no candidate to read, only a stored row, but it does hold
+  the link's own bytes (`before := document.Body[start:end]`), so
+  `markdownlinks.TitleSuffix` recovers the title from those. No column, no schema
+  change.
+
+  A link with no title is written byte for byte as before, which the pinned cases
+  in `j32d_rewrite_test.go` say and a row of J43-A's own table guards.
+- **J43-C, the consequences. Done 2026-09-26.** The stored rows do not change: a
+  row records where a link points, and a title is not part of that — asserted, so
+  a title cannot leak into a target.
+
+  The preview needs nothing. A title becomes the `title` attribute the Markdown
+  renderer writes, escaped as an attribute value, and the preview already strips
+  every `on*` and `style` attribute from note-controlled HTML. A note authored in
+  Notrios could always carry one, so this is not a new kind of content reaching
+  the preview — only one that imported notes stopped losing.
+
+  A library imported before J43 has the titles gone from its bodies, which is an
+  exact simulation because those bytes are what the old importer wrote. A reimport
+  revises that note **once** to put them back, adds no revision to any other, and
+  J36-C's invariant still holds for a library written by this build. Pinned in
+  `internal/importers/obsidian/j43c_reimport_test.go`.
 
 **Boundaries.**
 - No change to which links resolve or to where they point: this is what the

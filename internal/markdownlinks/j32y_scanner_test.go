@@ -37,12 +37,13 @@ func referenceExtract(body string) []Candidate {
 	cursor := newLineCursor(body)
 	for _, loc := range referenceMarkdownLocs(body) {
 		claimed = append(claimed, [2]int{loc[0], loc[1]})
-		rawTarget := markdownTarget(body[loc[6]:loc[7]])
+		rawTarget, titleSuffix := markdownDestination(body[loc[6]:loc[7]])
 		candidate := Candidate{
 			RelationType: relationFromBang(body[loc[2]:loc[3]]),
 			SourceFormat: "markdown",
 			DisplayText:  body[loc[4]:loc[5]],
 			RawTarget:    rawTarget,
+			TitleSuffix:  titleSuffix,
 			StartByte:    loc[0],
 			EndByte:      loc[1],
 		}

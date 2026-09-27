@@ -200,13 +200,19 @@ type Candidate struct {
 	SourceFormat string
 	RawTarget    string
 	DisplayText  string
-	AnchorType   string
-	AnchorValue  string
-	Context      string
-	StartByte    int
-	EndByte      int
-	Line         int
-	Column       int
+	// TitleSuffix is whatever follows the destination inside the parentheses,
+	// copied byte for byte: the whitespace that separates it and the quotes or
+	// parentheses the author put around it. It is never parsed or normalised,
+	// because a rewriter's job is to put it back exactly as it was found, and
+	// because a title may be delimited three different ways (v1.0 J43).
+	TitleSuffix string
+	AnchorType  string
+	AnchorValue string
+	Context     string
+	StartByte   int
+	EndByte     int
+	Line        int
+	Column      int
 }
 
 var (
@@ -227,12 +233,13 @@ func Extract(body string) []Candidate {
 	cursor := newLineCursor(body)
 	scanMarkdownLinks(body, func(found span) {
 		claimed = append(claimed, byteRange{start: found.start, end: found.end})
-		rawTarget := markdownTarget(body[found.targetStart:found.targetEnd])
+		rawTarget, titleSuffix := markdownDestination(body[found.targetStart:found.targetEnd])
 		candidate := Candidate{
 			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "markdown",
 			DisplayText:  body[found.firstStart:found.firstEnd],
 			RawTarget:    rawTarget,
+			TitleSuffix:  titleSuffix,
 			StartByte:    found.start,
 			EndByte:      found.end,
 		}
@@ -299,41 +306,46 @@ func relationFromBang(bang string) string {
 	return "link"
 }
 
-// markdownTarget reads a link's destination out of the bytes between its
-// parentheses, which may be followed by a title.
+// markdownDestination splits the bytes between a link's parentheses into the
+// destination and whatever follows it, which is a title.
 //
 // A destination wrapped in <> keeps the spaces inside the brackets, which is the
 // point of that form and the documented way to link to a note whose name has one.
 // The brackets themselves are not part of the destination, and anything after the
 // closing bracket is a title rather than part of the path. Every other
 // destination is read as it always was, cut at the first space (v1.0 J42).
-func markdownTarget(region string) string {
+//
+// The title comes back as the raw bytes that followed the destination, so a
+// rewriter can put them back without knowing which of the three delimiters the
+// author used (v1.0 J43).
+func markdownDestination(region string) (string, string) {
 	region = strings.TrimSpace(region)
-	if inner, ok := angleDestination(region); ok {
-		return inner
+	if strings.HasPrefix(region, "<") {
+		if bracket, ok := angleClose(region, 0); ok {
+			return strings.TrimSpace(region[1:bracket]), region[bracket+1:]
+		}
 	}
-	return stripMarkdownTitle(region)
-}
-
-func angleDestination(region string) (string, bool) {
-	if !strings.HasPrefix(region, "<") {
-		return "", false
-	}
-	bracket, ok := angleClose(region, 0)
-	if !ok {
-		return "", false
-	}
-	return strings.TrimSpace(region[1:bracket]), true
-}
-
-func stripMarkdownTitle(target string) string {
 	// Basic Markdown links may include an optional title after whitespace.
 	// Keep URIs with escaped spaces for later parser hardening, but support the
 	// common [label](target "title") form here.
-	if i := strings.IndexAny(target, " \t"); i > 0 {
-		return strings.TrimSpace(target[:i])
+	if index := strings.IndexAny(region, " \t"); index > 0 {
+		return strings.TrimSpace(region[:index]), region[index:]
 	}
-	return target
+	return region, ""
+}
+
+// TitleSuffix returns what follows the destination inside one Markdown link's
+// parentheses, for a caller that holds the link's own bytes and nothing else —
+// `notriosctl fix`, which rebuilds a link from a stored row and would otherwise
+// drop the title the author wrote. It is empty when there is no title, or when
+// text is not exactly one inline link.
+func TitleSuffix(text string) string {
+	for _, candidate := range Extract(text) {
+		if candidate.SourceFormat == "markdown" && candidate.StartByte == 0 && candidate.EndByte == len(text) {
+			return candidate.TitleSuffix
+		}
+	}
+	return ""
 }
 
 func splitWikiTarget(inner string) (string, string) {
