@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**43 items: 38 complete, 0 in progress, 5 not started, 0 deferred.**
+**44 items: 38 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -104,6 +104,7 @@ this section is archived when the plan completes and the rules are not.
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
+| J44. Keep Recoll's external indexers out of the search sidecar | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -5363,3 +5364,72 @@ untouched.
 
 **Working state.** A title survives an import, and a link that never had one is
 written exactly as it is today.
+
+## J44. Keep Recoll's external indexers out of the search sidecar
+
+**Goal.** The search sidecar indexes the note projection and nothing else, and no
+test reaches the owner's own data while it runs.
+
+**What happened, 2026-10-18.** After Recoll was reinstalled, the sidecar's live
+startup test (`TestLiveSidecarStartupRepairsDamageAndReportsStatus`) ran for more
+than five minutes instead of under a second. The process it was waiting on was
+`python3 /usr/local/share/recoll/filters/rcljoplin.py index`, at 94% CPU, holding
+**`~/.config/joplin-desktop/database.sqlite` — the owner's real Joplin library —
+open** and indexing it into the test's temporary Xapian database. It was stopped
+and the 170 MB temporary index deleted.
+
+**Why.** Recoll 1.44.0 ships an *external indexer* for Joplin, declared in its
+sample `backends` file, and **recollindex copies that sample into any
+configuration directory that has no `backends` file of its own**. Verified in an
+isolated configuration with `HOME` pointed at an empty directory: with no
+`backends` file, recollindex creates one with `[JOPLIN]` active; with an empty
+one, it leaves it empty and runs no external indexer. An external indexer finds
+its data itself — `rcljoplin.py` looks under `HOME` — so `topdirs`, which is how
+`EnsureConfig` scopes the sidecar to the projection, does not bound it at all.
+
+Two defects, then:
+
+- **The sidecar.** `internal/recoll` `EnsureConfig` writes `recoll.conf`,
+  `fields`, `mimeconf` and the handler, but no `backends`. On a machine with
+  Recoll 1.44 or later and a Joplin library, a running instance's search index
+  takes in another application's notes. Merged results are verified against the
+  canonical store, so those hits are expected not to reach a Notrios search
+  page — to be confirmed — but the index directory holds the other library's text,
+  and the indexing cost is unbounded by anything Notrios controls.
+- **The tests.** The sidecar tests isolate `XDG_CONFIG_HOME`, `XDG_RUNTIME_DIR`
+  and `RECOLL_CONFDIR`, but not `HOME`. Any external indexer Recoll enables can
+  therefore read the owner's own data during `go test ./...`, the scaffold
+  validation and every archive build.
+
+The Recoll build in use is dated 2026-07-14, so this has been possible since
+then, not only since the reinstall. No archive can contain what was indexed: the
+temporary directories are outside the worktree an archive is built from.
+
+**Scope.**
+
+- **J44-A, an empty `backends`, always.** `EnsureConfig` writes a `backends` file
+  with no sections and a comment saying why, so recollindex never installs its
+  sample. A test asserts the file exists, declares no section, and survives an
+  index pass unchanged. The live test asserts that no process but the Markdown
+  handler is started under the sidecar's configuration.
+- **J44-B, the tests do not reach the owner.** Every test that runs a real Recoll
+  binary sets `HOME` to its temporary directory as well, and a check fails if a
+  sidecar test opens a path outside it. Until this lands, `go test ./...`, the
+  scaffold validation and archive packaging can read the owner's Joplin library
+  and should be run with `HOME` isolated, or not at all.
+- **J44-C, the instances already running.** Say what an existing instance's index
+  holds after this ships: whether the next startup's regenerated configuration
+  and reconciliation remove what an external indexer added, or whether the index
+  has to be rebuilt — and say it in `docs/troubleshooting.md`.
+
+**Boundaries.**
+- The sidecar's scope stays what `topdirs` says: the projection directory.
+- No change to how Notrios' own notes are indexed or how results are merged.
+- An owner who wants Recoll to index Joplin keeps that in their own Recoll
+  configuration (`~/.recoll`), which this does not touch.
+
+**Dependencies.** None. It blocks nothing in code, but it does make every full
+test run read the owner's data until J44-A and J44-B land.
+
+**Working state.** The sidecar indexes the projection alone whatever Recoll
+ships, and no test can reach the owner's home directory.

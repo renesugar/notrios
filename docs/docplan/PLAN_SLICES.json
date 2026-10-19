@@ -1249,6 +1249,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J44",
+      "title": "Keep Recoll's external indexers out of the search sidecar",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J44-A",
+          "statement": "The sidecar's configuration always carries an empty backends file, so Recoll never installs an external indexer into it, and a test proves it survives an index pass",
+          "state": "not-started"
+        },
+        {
+          "id": "J44-B",
+          "statement": "Every test that runs a real Recoll binary isolates HOME as well, and a check fails if a sidecar test opens a path outside its temporary directory",
+          "state": "not-started"
+        },
+        {
+          "id": "J44-C",
+          "statement": "What an existing instance's index holds after the fix, and whether it must be rebuilt, is stated in the troubleshooting guide",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
