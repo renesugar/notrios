@@ -5003,19 +5003,25 @@ reader could find by looking for "reports". J40-F adds one.
   *titled* that name the row says `unresolved`, not `ambiguous`. A report built
   only from rows would then miss the very case that put this item on the plan.
   J40-E depends on what this slice finds.
-- **J40-B, the preview shows the ambiguity.** An ambiguous link is marked in the
-  preview so it reads differently from prose and from a working link, with the
-  reason available on hover; it is not a click target and offers no choice. The
+- **J40-B, the preview shows the ambiguity.** An ambiguous link, and an
+  unresolved one in a distinct style, is marked in the preview so it reads
+  differently from prose and from a working link, with the reason available on
+  hover; it is not a click target and offers no choice. The marking is emitted by
+  a renderer rule that recognises the link syntax (decision 3). The
   rendering is written into `UI_DESIGN.md` before it is built, because it is the
   first time the preview says anything about a link that will not open. The
   marking comes from a classification the GUI already makes — the editor's
   debounced buffer check — so opening or editing a note costs no new request.
 - **J40-C, the report's content.** One entry per note that has an ambiguous link,
-  giving the **note** (its URL and title), each **ambiguous link as written** in
-  that note, and the **notes it might mean** (each URL and title). Deterministic
+  giving the **note** (its title, linked by `document://`), each **ambiguous
+  link as written** in that note, and the **notes it might mean** (each title,
+  linked the same way), with the stable `notrios://` URL beside each in the
+  command's output (decision 5). A count of unresolved links, with a pointer to
+  lint, closes the report (decision 2). Deterministic
   order and a digest over every finding, as lint has; counts always complete,
-  with notes per report and candidates per link capped and the cap stated where
-  it hides something, because one name shared by 5,000 notes — J32's collision
+  with notes per report and candidates per link capped — a default, a ceiling
+  and a `--detail-limit` style flag, as lint has (decision 8) — and the cap
+  stated where it hides something, because one name shared by 5,000 notes — J32's collision
   corpus has exactly that — is a list nobody can read. The link text is written
   as literal text, never as a live link, so the report does not itself contain an
   ambiguous link for the next report to find. Generated when asked, never on a
@@ -5027,9 +5033,11 @@ reader could find by looking for "reports". J40-F adds one.
   graph report already is: read-only, regenerated in place under a stable ID, and
   excluded from publication handoffs, graph ranking and lint by the existing
   read-only-notebook predicate. That note is what makes the report readable in
-  the GUI, and its candidate URLs are links the owner can follow. Which other
-  surfaces carry it, and whether the GUI gains a control to generate it, are
-  decisions below.
+  the GUI, and its candidate URLs are links the owner can follow. REST carries
+  IDs, locations and fingerprints only; MCP does not offer the report
+  (decision 1). Library Health gains a control that generates reports, beside
+  the lint count, and it generates the graph report as well, which has never had
+  one (decision 6).
 - **J40-E, the import-time ambiguity reaches the report.** If J40-A confirms that
   J36-E's case is recorded as `unresolved`, the candidates have to come from
   somewhere: recorded at import, when the importer knows which vault files share
@@ -5042,58 +5050,42 @@ reader could find by looking for "reports". J40-F adds one.
   what it will and will not quote from notes, and what it costs. It links to the
   detailed sections rather than repeating them, and the documentation checks keep
   it complete — a report that exists but is not listed fails the build, the way an
-  unclaimed command already does.
+  unclaimed command already does. Written here; J9 checks it (decision 7).
 
-**Open decisions, for the owner.**
+**Decisions, accepted by the owner 2026-10-18.** Each was proposed with a
+recommendation, and the recommendation was taken:
 
-1. **What the report may quote, and on which surfaces.** The report cannot do its
-   job without the link text and the candidates' titles, which is exactly what
-   lint refuses to emit. Options: (a) full content everywhere the report is
-   produced; (b) full content in the Reports note and the CLI, which stay on the
-   owner's machine, and IDs and fingerprints only on REST and MCP, like lint;
-   (c) full content in the Reports note alone. Recommended: **(b)**, with MCP
-   either content-free or not offered, since an MCP client is the surface most
-   likely to forward what it reads.
-2. **Ambiguous only, or unresolved as well.** The request is for ambiguous links.
-   An unresolved link is the same reading problem in the preview but has no
-   candidates to report. Recommended: mark both in the preview with distinct
-   styles, and keep the report to ambiguous links, with a count of unresolved
-   ones pointing to lint.
-3. **How the preview finds the link.** The preview renders HTML from the body and
-   keeps no source offsets, so the editor's byte-range marking does not carry
-   over. A wikilink is not rendered as an anchor at all. The choice is between a
-   renderer rule that recognises the link syntax and emits a marked element, and
-   a pass after rendering that matches the classified links' text. Recommended:
-   the renderer rule, because matching text after rendering mis-marks a phrase
-   that merely looks like a link and cannot tell two identical links apart.
-4. **Where candidates come from** — J40-E, decided on J40-A's evidence.
-5. **How a note is named in the report.** `document://…` opens in the app and is
-   what `notriosctl fix` canonicalises to; `notrios://` is the stable form that
-   survives a move between libraries; a title is what a person recognises.
-   Recommended: the title, linked by `document://`, with the stable URL beside it
-   in the CLI form.
-6. **A GUI control to generate reports.** The graph report has none today; this
-   one would share the gap. Options: a "Generate" control per report in Library
-   Health, a Reports entry that lists and regenerates them, or generation staying
-   on the command line with the GUI only reading the notes. Recommended: a control
-   in Library Health beside the lint count it explains, which also closes the
-   graph report's gap — but it widens this item past ambiguous links, so it is the
-   owner's call.
-7. **Where J40-F belongs.** A Reports section is documentation for every report,
-   not only this one, and J9 is the release documentation item. Recommended: write
-   it here, because this item adds a report and would otherwise make the gap
-   worse, and have J9 check it rather than create it.
-8. **The caps.** Defaults for notes per report and candidates per link, and
-   whether the command takes a limit as lint's `--detail-limit` does.
-   Recommended: follow lint's shape — a default, a ceiling, and counts that never
-   truncate.
+1. **What the report may quote, and where.** Link text and titles appear in the
+   Reports note and in the command's output, which stay on the owner's machine.
+   REST carries IDs, locations and fingerprints only, as lint does. **MCP does not
+   offer this report**: the recommendation left a choice between a content-free
+   form and none, and none is taken, because a content-free form would be lint's
+   `ambiguous_link` check again, which `get_lint_report` already serves — and an
+   MCP client is the surface most likely to forward what it reads.
+2. **Both, in the preview; ambiguous only, in the report.** The preview marks an
+   ambiguous link and an unresolved one, with distinct styles. The report lists
+   ambiguous links and gives a count of unresolved ones with a pointer to lint.
+3. **A renderer rule finds the link.** The preview recognises the link syntax
+   while rendering and emits a marked element, rather than matching text after
+   rendering, which mis-marks a phrase that only looks like a link and cannot
+   tell two identical links apart.
+4. **Where candidates come from** is settled by J40-A's evidence, as J40-E says.
+5. **A note is named by its title, linked by `document://`**, with the stable
+   `notrios://` URL beside it in the command's output.
+6. **Library Health gains a control that generates reports**, beside the lint
+   count it explains. It covers the graph report as well, which has had no
+   control at all, so this item closes that gap too.
+7. **J40-F is written here**, and J9 checks it rather than creating it.
+8. **The caps follow lint's shape**: a default, a ceiling, a `--detail-limit`
+   style flag on the command, and counts that never truncate.
 
 **Boundaries.**
 - Nothing is repaired. No prose is rewritten (H14), and the preview's marking
   changes no bytes.
 - The preview stays sanitized. A marking is an element and a class the renderer
   emits; no note text becomes markup, and the hover reason is fixed text.
-- Lint stays content-free, whatever decision 1 settles for this report.
+- Lint stays content-free, and so do this report's REST form and every MCP
+  tool.
 - The importer still never guesses between candidates (J36-E).
 - No new ambiguity notion: `ambiguous` keeps the meaning
   `resolveLinkCandidateLocked` gives it, and any import-time recording J40-E adds
@@ -5407,16 +5399,39 @@ temporary directories are outside the worktree an archive is built from.
 
 **Scope.**
 
-- **J44-A, an empty `backends`, always.** `EnsureConfig` writes a `backends` file
-  with no sections and a comment saying why, so recollindex never installs its
-  sample. A test asserts the file exists, declares no section, and survives an
-  index pass unchanged. The live test asserts that no process but the Markdown
-  handler is started under the sidecar's configuration.
-- **J44-B, the tests do not reach the owner.** Every test that runs a real Recoll
-  binary sets `HOME` to its temporary directory as well, and a check fails if a
-  sidecar test opens a path outside it. Until this lands, `go test ./...`, the
-  scaffold validation and archive packaging can read the owner's Joplin library
-  and should be run with `HOME` isolated, or not at all.
+- **J44-A, an empty `backends`, always. Done 2026-10-18.** `EnsureConfig`
+  writes a `backends` file declaring no section, with a comment saying why, and
+  rewrites it on every start, so a file someone edited or an older build let
+  Recoll install is replaced. `TestEnsureConfigDeclaresNoExternalIndexers` pins
+  that without a Recoll binary; both live tests call
+  `recolltest.AssertNoExternalIndexers` **after** a real index pass, which is
+  when recollindex would have installed its sample. Removing the write makes
+  `TestLiveRecollPipeline` fail with Recoll's own `[JOPLIN]` sample quoted in the
+  message — shown, not assumed.
+- **J44-B, the tests do not reach the owner. Done 2026-10-18.** A test-support
+  package, `internal/recoll/recolltest`, has `Isolate`, which moves `HOME` and
+  every XDG directory — config, data, state, cache, runtime, and the shared
+  `XDG_CONFIG_DIRS`/`XDG_DATA_DIRS` — under the test's own temporary directory.
+  All three tests that run real Recoll use it.
+  `TestEveryLiveRecollTestIsolates` scans the repository and fails the build if a
+  test file that runs Recoll does not.
+
+  **The "opens a path outside" check is a script, not a test hook.** Catching an
+  open as it happens needs syscall tracing, which the test suite cannot assume, so
+  `scripts/check_recoll_isolation.sh` does it on demand: it traces every open and
+  every program started by the live tests and fails if a path under the real
+  `HOME` is opened outside the repository and Go's caches, or if any Recoll
+  external indexer starts. It is opt-in — it needs `strace` and permission to
+  trace a child — and skips when either is missing. Against the real `HOME`: 1,962
+  traced calls, nothing of the owner's opened, no external indexer started.
+  Against a synthetic home with both protections removed: it reports
+  `rcljoplin.py` started and the synthetic `joplin-desktop/database.sqlite`
+  opened, so both detectors are shown to fire.
+
+  The sidecar startup test went from more than five minutes to under two seconds.
+  The scripts that start a service (`mvp_smoke.sh`, the J7 cross-version drill)
+  keep the sidecar disabled, and the HTTP tests use a fake status, so no other
+  path runs Recoll.
 - **J44-C, the instances already running.** Say what an existing instance's index
   holds after this ships: whether the next startup's regenerated configuration
   and reconciliation remove what an external indexer added, or whether the index

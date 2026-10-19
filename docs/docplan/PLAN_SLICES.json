@@ -1153,17 +1153,17 @@
         },
         {
           "id": "J40-B",
-          "statement": "An ambiguous link is marked in the preview, with no click prompt, to a rendering written into UI_DESIGN.md first, from a classification the GUI already makes",
+          "statement": "Ambiguous and unresolved links are marked in the preview in distinct styles by a renderer rule, with no click prompt, to a rendering written into UI_DESIGN.md first",
           "state": "not-started"
         },
         {
           "id": "J40-C",
-          "statement": "A report lists each note with an ambiguous link, the link as written and the notes it might mean, deterministic and bounded with complete counts, generated only when asked",
+          "statement": "A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked",
           "state": "not-started"
         },
         {
           "id": "J40-D",
-          "statement": "The report is produced by a command and written as a read-only note in the Reports notebook, which is how the GUI reads it",
+          "statement": "The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report",
           "state": "not-started"
         },
         {
@@ -1262,7 +1262,7 @@
         },
         {
           "id": "J44-B",
-          "statement": "Every test that runs a real Recoll binary isolates HOME as well, and a check fails if a sidecar test opens a path outside its temporary directory",
+          "statement": "Every test that runs a real Recoll binary isolates HOME and every XDG directory, the build fails if one does not, and an opt-in trace proves no path of the owner's is opened",
           "state": "not-started"
         },
         {

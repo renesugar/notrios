@@ -16,6 +16,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/api"
 	"github.com/renesugar/notrios/internal/config"
+	"github.com/renesugar/notrios/internal/recoll/recolltest"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -204,12 +205,10 @@ func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	if _, err := exec.LookPath("recollq"); err != nil {
 		t.Skip("recollq not installed")
 	}
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "xdg-config"))
-	t.Setenv("XDG_RUNTIME_DIR", filepath.Join(dir, "xdg-runtime"))
-	if err := os.MkdirAll(os.Getenv("XDG_RUNTIME_DIR"), 0o700); err != nil {
-		t.Fatal(err)
-	}
+	// HOME as well as the XDG directories: this test once spent five minutes
+	// indexing the owner's real Joplin library through an external indexer
+	// Recoll found under HOME (v1.0 J44).
+	dir := recolltest.Isolate(t)
 	cfg := config.Default()
 	cfg.Data.Directory = dir
 	config.UseDataDirectory(&cfg, dir, nil)
@@ -269,6 +268,9 @@ func TestLiveSidecarStartupRepairsDamageAndReportsStatus(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(notesDir, "orphan.md")); !os.IsNotExist(err) {
 		t.Fatalf("orphan survived startup reconciliation: %v", err)
 	}
+	// The index pass has run, so recollindex has had its chance to install a
+	// sample backends file. It must still declare nothing.
+	recolltest.AssertNoExternalIndexers(t, cfg.SearchSidecar.IndexDir)
 }
 
 // Two Notrios instances on one machine is a supported arrangement, and a bare

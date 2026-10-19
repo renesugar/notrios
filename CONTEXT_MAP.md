@@ -271,6 +271,7 @@ Feature contracts, which describe one capability rather than the project:
   `notebook:`, tags, provenance/time fields, literal unknown-colon fallback,
   URLs/hyphens/emoji, and Trash scope.
 - `internal/recoll/` — external-process Recoll sidecar: generated config (fields prefixes, `publishedts` range slot, `underscoreasletter`), the embedded from-scratch `notrios_md_handler.py` front-matter handler, `recollindex`/`recollq` invocation, query compilation, and result parsing. GPL boundary: binaries are user-installed and never linked or vendored.
+- `internal/recoll/recolltest/` — test support for anything that runs a real Recoll binary: `Isolate` moves `HOME` and every XDG directory under the test's own temporary directory, and `AssertNoExternalIndexers` fails a test whose sidecar configuration declares a Recoll external indexer. `TestEveryLiveRecollTestIsolates` fails the build if a live-Recoll test skips `Isolate` (v1.0 J44). Imported by tests only.
 - `internal/service/` — activates optional Recoll: startup reconciliation and
   index, 30-second bounded drain, 10-minute reconciliation, runtime status,
   cancellation, and stable deduplicated merged search.
