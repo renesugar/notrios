@@ -2919,7 +2919,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "fa1be263002565a8c1f52efb6f54d9ff4aa2e7c1c1ded15d11fd915207ceb28c",
+      "sha256": "4f4161c05db04ca9a876a3bf21602bc13e6543a76213630a7874b65f8e529622",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [

@@ -78,6 +78,8 @@ func TestParseResultsRejectsHostileAndDuplicateRows(t *testing.T) {
 	validURL := "file:///data/projections/notes/doc_one.md"
 	output := strings.Join([]string{
 		b64("https://example.test/doc.md") + " " + b64("remote"),
+		// An external indexer's document, left in an index built before v1.0 J44.
+		b64("joplin://x-callback-url/openNote?id=jop00") + " " + b64("another application's note"),
 		b64("file://server/data/projections/notes/remote.md") + " " + b64("remote host"),
 		b64("file:///data/outside/notes/outside.md") + " " + b64("outside"),
 		b64("file:///data/projections/notes/nested/doc.md") + " " + b64("nested"),

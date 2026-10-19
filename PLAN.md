@@ -5385,8 +5385,8 @@ Two defects, then:
   `fields`, `mimeconf` and the handler, but no `backends`. On a machine with
   Recoll 1.44 or later and a Joplin library, a running instance's search index
   takes in another application's notes. Merged results are verified against the
-  canonical store, so those hits are expected not to reach a Notrios search
-  page — to be confirmed — but the index directory holds the other library's text,
+  canonical store, so those hits do not reach a Notrios search page (confirmed
+  in J44-C), but the index directory holds the other library's text,
   and the indexing cost is unbounded by anything Notrios controls.
 - **The tests.** The sidecar tests isolate `XDG_CONFIG_HOME`, `XDG_RUNTIME_DIR`
   and `RECOLL_CONFDIR`, but not `HOME`. Any external indexer Recoll enables can
@@ -5432,10 +5432,40 @@ temporary directories are outside the worktree an archive is built from.
   The scripts that start a service (`mvp_smoke.sh`, the J7 cross-version drill)
   keep the sidecar disabled, and the HTTP tests use a fake status, so no other
   path runs Recoll.
-- **J44-C, the instances already running.** Say what an existing instance's index
-  holds after this ships: whether the next startup's regenerated configuration
-  and reconciliation remove what an external indexer added, or whether the index
-  has to be rebuilt — and say it in `docs/troubleshooting.md`.
+- **J44-C, the instances already running. Done 2026-10-18.** The index has to
+  be rebuilt; a restart does not clean it. Shown with a drill against a
+  synthetic Joplin library under an isolated `HOME`, using Recoll 1.44:
+  - A configuration written by the old build, which has no `backends`, gets
+    Recoll's sample on the first pass. The index then holds 3 projection
+    documents and 30 Joplin notes.
+  - Writing J44-A's `backends` and running the next incremental pass, with a
+    projection change in between, leaves all 30 Joplin notes. Recoll tags an
+    external indexer's documents with `rclbes` so that its own purge leaves them
+    alone, and with the indexer gone nothing ever purges them. Projection
+    reconciliation works on files, not on the index, so it cannot reach them
+    either.
+  - `recollindex -z` and deleting the index directory both leave 0. So does
+    regenerating the configuration into an empty directory, which is what the
+    next start does. The documented fix is deletion: a reset run by hand before
+    the upgraded build has rewritten `backends` would start the Joplin indexer
+    again.
+  - `recollq -c <index_dir> -Q rclbes:JOPLIN` prints a count without printing any
+    note, so it is the check the guide gives.
+
+  What the leftovers do: they never reach a search page. `documentIDFromURL`
+  accepts only `file:` URLs under the projection's `notes` directory, and
+  `TestParseResultsRejectsHostileAndDuplicateRows` now carries a `joplin://` row
+  to pin that. They do count against recollq's window of
+  `mergedSearchWindow`+1 results before they are dropped, though, so a query
+  matching many Joplin notes loses Recoll-only matches. FTS5 results are not
+  affected. `docs/troubleshooting.md` has one row saying who is affected, the
+  check, and the fix: stop the service, delete the index directory, start it
+  again.
+
+  An automatic rebuild is not part of this slice. The old build's file is the
+  only sign an instance was affected, and it would have to be read before
+  `EnsureConfig` overwrites it. That is a code change, and per J8 it gets its own
+  item if the owner wants one.
 
 **Boundaries.**
 - The sidecar's scope stays what `topdirs` says: the projection directory.
