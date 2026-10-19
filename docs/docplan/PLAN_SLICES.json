@@ -1143,32 +1143,37 @@
     },
     {
       "id": "J40",
-      "title": "Resolve an ambiguous link from the note you are reading",
+      "title": "Show ambiguous links, and report them with the notes they might mean",
       "state": "not-started",
       "slices": [
         {
           "id": "J40-A",
-          "statement": "An unresolved or ambiguous wikilink is marked and clickable in the reader, to a rendering written down in UI_DESIGN.md first",
+          "statement": "What the stored row, the editor, Library Health, lint and the preview say is stated as tests for title, vault-name and attachment-name ambiguity",
           "state": "not-started"
         },
         {
           "id": "J40-B",
-          "statement": "The candidates a prompt offers come from a decided source, bounded and paged, so a name shared by thousands of notes is still usable",
+          "statement": "An ambiguous link is marked in the preview, with no click prompt, to a rendering written into UI_DESIGN.md first, from a classification the GUI already makes",
           "state": "not-started"
         },
         {
           "id": "J40-C",
-          "statement": "Choosing a candidate rewrites only the clicked span to a canonical link in an ordinary revision with the conflict path, and declining changes nothing",
+          "statement": "A report lists each note with an ambiguous link, the link as written and the notes it might mean, deterministic and bounded with complete counts, generated only when asked",
           "state": "not-started"
         },
         {
           "id": "J40-D",
-          "statement": "Import-time ambiguity reaches the reader's prompt, or it is recorded why the runtime title candidates suffice",
+          "statement": "The report is produced by a command and written as a read-only note in the Reports notebook, which is how the GUI reads it",
           "state": "not-started"
         },
         {
           "id": "J40-E",
-          "statement": "Opening a note pays nothing new: the marking comes from the link rows the note already has, measured on a link-heavy note and the collision shape",
+          "statement": "Import-time ambiguity reaches the report, by recording candidates at import or by a recorded reason it need not",
+          "state": "not-started"
+        },
+        {
+          "id": "J40-F",
+          "statement": "One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete",
           "state": "not-started"
         }
       ]
