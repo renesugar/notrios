@@ -136,6 +136,20 @@ fixture set has grown since, so the extra rows here have no H2a counterpart. The
 The total without the stub would have been 9,262,467 bytes, because ELK was
 bundled.
 
+## J45-C: the gate passes
+
+`npm audit` finds 0 vulnerabilities in `web/` and in `docs-site/`. With the
+audit clean, `scripts/package_release.sh` ran to the end from `4fe08b7`, the
+J45-B commit. It ran `npm ci`, `npm audit` and the web build in both packages,
+the scaffold validation and the full test suite. The ZIP it produced,
+`notrios-v1.0-j44-4fe08b7.zip`, is J44's archive: 26,609,076 bytes and 2,977
+entries, accepted by `check_release_zip.py`. That is the run J44's close waited
+on.
+
+The ZIP carries the built web UI. Every file in it was searched for elkjs's
+licence text and its `org.eclipse.elk` package names, and the only match was this
+record, which quotes them.
+
 ## Checks
 
 - 305 web tests pass, after a clean `npm ci`, as do the type check and the build.
