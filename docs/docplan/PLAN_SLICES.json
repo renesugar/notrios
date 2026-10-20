@@ -1284,7 +1284,7 @@
         },
         {
           "id": "J45-B",
-          "statement": "katex 0.18.11 and mermaid 12.2.0 are pinned, mermaid's EPL-2.0 elkjs is replaced by a refusing stub so no ELK code ships, H2a's probe re-run against mermaid 12.2.0 under the production CSP shows the same containment, math still renders, and the bundle size change is recorded",
+          "statement": "katex 0.18.11 and mermaid 12.2.0 are pinned, mermaid's EPL-2.0 elkjs is replaced at install by a refusing local stub so no EPL code is installed or shipped, and the licence gate reads a linked package's licence from its target; H2a's probe re-run against mermaid 12.2.0 under the production CSP shows the same containment, math still renders, and the bundle size change is recorded",
           "state": "not-started"
         },
         {

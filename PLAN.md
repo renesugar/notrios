@@ -5526,19 +5526,34 @@ written.
   - **ELK stays out, decided by the owner 2026-10-19.** mermaid 12 depends on
     `elkjs` 0.9.3, which is EPL-2.0, and bundles it as a 1.47 MB chunk that loads
     for any diagram asking for an ELK layout. mermaid 11 shipped no ELK. EPL-2.0
-    is weak copyleft, and the rule is MIT/Apache-2.0 compatible. So a Vite alias
-    points `elkjs/lib/elk.bundled.js` at a stub whose `layout` refuses. An ELK
-    diagram then fails like any other diagram that will not render: its source
-    stays visible with a note. Every other diagram renders as it did under 11. A
-    test pins the alias and the refusal, and the record shows the ELK code is
-    gone from the build.
+    is weak copyleft, and the rule is MIT/Apache-2.0 compatible. **How it stays
+    out, decided by the owner 2026-10-19:** the package is replaced at install.
+    `web/elk-refused/` is a local Apache-2.0 package named `elkjs` whose
+    `layout` refuses. `package.json` depends on it, and an npm `overrides` entry
+    makes mermaid's `elkjs` resolve to it. EPL code is then never downloaded,
+    installed or bundled.
+
+    A first approach, a Vite alias, kept ELK out of the bundle but not out of
+    `node_modules`. G20's licence gate refuses every lockfile package whose
+    licence is not on its list, so it refused `elkjs` simply for being
+    installed. The gate learns one general rule instead of an exemption: a
+    lockfile entry that is a link takes the licence of the package it links to.
+    It fails if that target is missing or has no licence.
+
+    mermaid 12 also makes ELK its default layout, so the preview's mermaid
+    configuration sets `layout: 'dagre'`, which is what 11 used. An ELK diagram
+    then fails like any other diagram that will not render: its source stays
+    visible with a note. Every other diagram renders as it did under 11. Tests
+    pin the stub, the path mermaid imports it by, and the configuration. The
+    record shows the ELK code is gone from the build.
 - **J45-C, the gate passes.** `npm audit` is clean in both packages, and
   `scripts/package_release.sh` runs through to a ZIP that `check_release_zip.py`
   accepts. J44 is then closed from that commit.
 
 **Boundaries.**
 - No `--force`, no `overrides` to force a version under a package that does not
-  ask for it, and no audit level that hides a finding. The gate stays
+  ask for it, and no audit level that hides a finding. The one override replaces
+  `elkjs` with the local stub; it forces no version of anything. The gate stays
   `npm audit`, as it is.
 - No change to the preview's sanitiser, CSP or mermaid configuration, unless
   mermaid 12 requires one. Any change goes through H2a's measures.
