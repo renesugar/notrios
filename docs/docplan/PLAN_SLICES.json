@@ -1231,22 +1231,25 @@
     {
       "id": "J43",
       "title": "Rewriting a link should not drop its title",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J43-A",
           "statement": "All five title forms are shown lost by the Obsidian rewrite, the Joplin rewriter is shown immune because it substitutes in place, and notriosctl fix is found to share the defect",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
         },
         {
           "id": "J43-B",
           "statement": "A title is carried as raw bytes and put back after the URI by both rewriters, with notriosctl fix recovering it from the link's own bytes and no schema change, and a link with no title written exactly as before",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
         },
         {
           "id": "J43-C",
           "statement": "Stored rows never carry a title, the preview needs no change, and a reimport of a library imported before the fix revises only the notes whose titles were lost",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
         }
       ]
     },

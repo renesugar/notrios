@@ -105,3 +105,15 @@ There are no measurement directories here. This item's evidence is its tests:
 had the defect, `internal/store/fix_test.go` (`TestFixKeepsATitle`) for the
 repair tool, and `internal/importers/obsidian/j43c_reimport_test.go` for the
 rows, the no-op reimport and the repair.
+
+## Archive
+
+`notrios-v1.0-j43-666b705.zip`, built from commit `666b705`, the commit that
+completed this item's record, with the ledger not yet flipped. 26,613,074 bytes,
+2,979 entries, accepted by `check_release_zip.py`. No usage override was needed:
+the seven-day bucket had 92% remaining and the five-hour bucket had 75%.
+
+The work itself is in `f4de470`, from 2026-09-26. The record and archive waited
+on J44 and J45, which J44's discovery during a test run put first, so this
+archive also carries both of them. That changes nothing J43 claims: its tests
+pass unchanged at this commit.

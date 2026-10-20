@@ -62,6 +62,7 @@ TAKEN_AT_CLOSE = {
     "J37": "notrios-v1.0-j37-3737bdc.zip",
     "J41": "notrios-v1.0-j41-c71acbb.zip",
     "J42": "notrios-v1.0-j42-36309b6.zip",
+    "J43": "notrios-v1.0-j43-666b705.zip",
     "J44": "notrios-v1.0-j44-4fe08b7.zip",
     "J45": "notrios-v1.0-j45-754acd5.zip",
 }

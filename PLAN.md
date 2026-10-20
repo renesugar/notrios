@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**45 items: 40 complete, 0 in progress, 5 not started, 0 deferred.**
+**45 items: 41 complete, 0 in progress, 4 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -103,7 +103,7 @@ this section is archived when the plan completes and the rules are not.
 | J40. Show ambiguous links, and report them with the notes they might mean | not-started | 0/6 | 6 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
-| J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
+| J43. Rewriting a link should not drop its title | complete | 3/3 | — |
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 
@@ -5275,7 +5275,7 @@ endorsed.
 **Working state.** A link written the documented way to a note whose name has a
 space resolves to that note, and the rows for the shapes around it are pinned.
 
-## J43. Rewriting a link should not drop its title
+## J43. Rewriting a link should not drop its title — complete
 
 **Goal.** A link that carried a title still carries it after an import rewrites
 where it points.
