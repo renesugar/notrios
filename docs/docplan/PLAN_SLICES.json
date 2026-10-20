@@ -1271,6 +1271,28 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J45",
+      "title": "Clear the web UI's dependency advisories",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J45-A",
+          "statement": "npm audit fix, without --force, clears the advisories a lockfile change can, package.json is unchanged, the web tests, type check and build pass, and the record says whether mermaid uses DOMPurify's IN_PLACE mode",
+          "state": "not-started"
+        },
+        {
+          "id": "J45-B",
+          "statement": "katex 0.18.11 and mermaid 12.2.0 are pinned, H2a's probe re-run against mermaid 12.2.0 under the production CSP shows the same containment, math still renders, and the bundle size change is recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "J45-C",
+          "statement": "npm audit is clean in web and docs-site and the release packager produces an archive check_release_zip.py accepts",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

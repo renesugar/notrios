@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**44 items: 38 complete, 0 in progress, 6 not started, 0 deferred.**
+**45 items: 38 complete, 0 in progress, 7 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -105,6 +105,7 @@ this section is archived when the plan completes and the rules are not.
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
 | J44. Keep Recoll's external indexers out of the search sidecar | not-started | 0/3 | 3 |
+| J45. Clear the web UI's dependency advisories | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -5478,3 +5479,63 @@ test run read the owner's data until J44-A and J44-B land.
 
 **Working state.** The sidecar indexes the projection alone whatever Recoll
 ships, and no test can reach the owner's home directory.
+
+## J45. Clear the web UI's dependency advisories
+
+**Goal.** `npm audit` reports nothing in `web/` or `docs-site/`, so the release
+gate in `scripts/package_release.sh` passes again. Each fix is shown to keep the
+preview rendering what it rendered, and sanitising what it sanitised.
+
+**What happened, 2026-10-19.** J44's archive build stopped at `npm audit` in
+`web/`. Six advisories had been published after J42's archive was built, which
+was the last time the gate ran clean. `docs-site/` has none. No archive was
+written.
+
+| package | installed | fixed in | severity | reaches the shipped UI? |
+|---|---|---|---|---|
+| undici | 7.29.0 | 7.29.1 | high | no: only through `jsdom`, a test dependency |
+| source-map-js | 1.2.1 | 1.2.2 | high | no: only through `postcss` under `vite`, and `css-tree` under `jsdom` |
+| markdown-it | 14.3.0 | 14.3.1 | moderate | **yes.** `md-editor-rt` builds its renderer with `linkify: true`, which is the configuration the advisory needs: a few hundred KB of Markdown can block the preview for tens of seconds |
+| dompurify | 3.4.14 | 3.4.16 | low | bundled with mermaid. Both advisories are about `IN_PLACE` mode, and nothing in `web/src` uses it. Whether mermaid does internally is checked in J45-A |
+| katex | 0.16.47 | 0.18.2 | low | yes, as the preview's math renderer |
+| mermaid | 11.17.2 | 12.2.0 | low | yes. It is listed only because its own `katex` range admits no fixed version |
+
+**Scope.**
+
+- **J45-A, the fixes that change only the lockfile.** Run `npm audit fix`, never
+  `--force`. That covers undici, source-map-js, markdown-it and dompurify, and
+  leaves `package.json` alone. Then the web tests, the type check and the build
+  pass, and the audit lists only katex and mermaid. The record also says whether
+  mermaid calls DOMPurify with `IN_PLACE`.
+- **J45-B, katex and mermaid.** Pin `katex` 0.18.11 and `mermaid` 12.2.0.
+  - **katex:** mermaid 12.2.0 asks for `^0.18.0`, so 0.18.11 bundles one copy.
+    0.19.0 would bundle two, and it is no further outside the advisory's range,
+    which ends before 0.18.2.
+  - **mermaid is a major version, and its security posture was measured, not
+    assumed (H2a).** Re-run H2a's probe against 12.2.0, under the production CSP
+    and with H2a's fixtures. The record shows, as H2a's did: CSP violations,
+    `foreignObject` count, cross-origin requests, script execution,
+    event-handler attributes, and the click-link behaviour that
+    `sanitizeDiagramSVG` corrects. Any configuration key 12 renamed or dropped
+    (`htmlLabels`, `suppressErrorRendering`, `maxEdges`, `maxTextSize`) is found
+    and handled.
+  - **What else is measured:** math still renders in the preview, and the
+    bundle size changes by a recorded amount.
+  - **mermaid 12.2.0 was published on 2026-10-13**, six days before this was
+    planned. The record says so; nothing in the repository sets a minimum age.
+- **J45-C, the gate passes.** `npm audit` is clean in both packages, and
+  `scripts/package_release.sh` runs through to a ZIP that `check_release_zip.py`
+  accepts. J44 is then closed from that commit.
+
+**Boundaries.**
+- No `--force`, no `overrides` to force a version under a package that does not
+  ask for it, and no audit level that hides a finding. The gate stays
+  `npm audit`, as it is.
+- No change to the preview's sanitiser, CSP or mermaid configuration, unless
+  mermaid 12 requires one. Any change goes through H2a's measures.
+- Licenses stay MIT/Apache-2.0 compatible. katex and mermaid are both MIT.
+
+**Dependencies.** None. J44's close waits on J45-C.
+
+**Working state.** The release gate passes, and the preview renders and
+sanitises as it did, now on versions with no open advisory.
