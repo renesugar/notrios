@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**45 items: 39 complete, 0 in progress, 6 not started, 0 deferred.**
+**45 items: 40 complete, 0 in progress, 5 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -105,7 +105,7 @@ this section is archived when the plan completes and the rules are not.
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
-| J45. Clear the web UI's dependency advisories | not-started | 0/3 | 3 |
+| J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 
 Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
@@ -5480,7 +5480,7 @@ test run read the owner's data until J44-A and J44-B land.
 **Working state.** The sidecar indexes the projection alone whatever Recoll
 ships, and no test can reach the owner's home directory.
 
-## J45. Clear the web UI's dependency advisories
+## J45. Clear the web UI's dependency advisories — complete
 
 **Goal.** `npm audit` reports nothing in `web/` or `docs-site/`, so the release
 gate in `scripts/package_release.sh` passes again. Each fix is shown to keep the

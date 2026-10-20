@@ -184,3 +184,17 @@ record, which quotes them.
   `invalid` outcome, and those tests cover what the preview does with one.
 - **mermaid 12's other visual changes**, such as the `neo` look and the
   `redux-color` theme default for state diagrams, were not reviewed by eye.
+
+## Archive
+
+`notrios-v1.0-j45-754acd5.zip`, built from commit `754acd5`, the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,609,834 bytes, 2,977 entries, accepted by `check_release_zip.py`. No
+usage override was needed: the seven-day bucket had 93% remaining and the
+five-hour bucket had 76%. Searching every file for elkjs's licence text and
+package names again matched only this record.
+
+The probe results and fixtures here are the measurement files. Everything else
+is in the tests: `web/src/__tests__/elk-refused.test.ts`,
+`mermaid-config.test.ts` and `preview-math.test.tsx`, and
+`performance/v0.7-g20/test_check_dependency_licenses.py` for the gate.
