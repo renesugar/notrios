@@ -5523,6 +5523,15 @@ written.
     bundle size changes by a recorded amount.
   - **mermaid 12.2.0 was published on 2026-10-13**, six days before this was
     planned. The record says so; nothing in the repository sets a minimum age.
+  - **ELK stays out, decided by the owner 2026-10-19.** mermaid 12 depends on
+    `elkjs` 0.9.3, which is EPL-2.0, and bundles it as a 1.47 MB chunk that loads
+    for any diagram asking for an ELK layout. mermaid 11 shipped no ELK. EPL-2.0
+    is weak copyleft, and the rule is MIT/Apache-2.0 compatible. So a Vite alias
+    points `elkjs/lib/elk.bundled.js` at a stub whose `layout` refuses. An ELK
+    diagram then fails like any other diagram that will not render: its source
+    stays visible with a note. Every other diagram renders as it did under 11. A
+    test pins the alias and the refusal, and the record shows the ELK code is
+    gone from the build.
 - **J45-C, the gate passes.** `npm audit` is clean in both packages, and
   `scripts/package_release.sh` runs through to a ZIP that `check_release_zip.py`
   accepts. J44 is then closed from that commit.
@@ -5533,7 +5542,8 @@ written.
   `npm audit`, as it is.
 - No change to the preview's sanitiser, CSP or mermaid configuration, unless
   mermaid 12 requires one. Any change goes through H2a's measures.
-- Licenses stay MIT/Apache-2.0 compatible. katex and mermaid are both MIT.
+- Licenses stay MIT/Apache-2.0 compatible. katex and mermaid are both MIT;
+  mermaid's EPL-2.0 `elkjs` is not shipped.
 
 **Dependencies.** None. J44's close waits on J45-C.
 
