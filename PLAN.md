@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**45 items: 38 complete, 0 in progress, 7 not started, 0 deferred.**
+**45 items: 39 complete, 0 in progress, 6 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -104,7 +104,7 @@ this section is archived when the plan completes and the rules are not.
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | not-started | 0/3 | 3 |
-| J44. Keep Recoll's external indexers out of the search sidecar | not-started | 0/3 | 3 |
+| J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | not-started | 0/3 | 3 |
 
 Nothing is half-finished.
@@ -5358,7 +5358,7 @@ untouched.
 **Working state.** A title survives an import, and a link that never had one is
 written exactly as it is today.
 
-## J44. Keep Recoll's external indexers out of the search sidecar
+## J44. Keep Recoll's external indexers out of the search sidecar — complete
 
 **Goal.** The search sidecar indexes the note projection and nothing else, and no
 test reaches the owner's own data while it runs.

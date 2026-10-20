@@ -129,3 +129,18 @@ There are no measurement directories here. This item's evidence is its tests,
 `internal/recoll/recolltest/recolltest_test.go`,
 `internal/recoll/recoll_test.go` and `internal/service/service_test.go`, the
 opt-in `scripts/check_recoll_isolation.sh`, and the runs recorded above.
+
+## Archive
+
+`notrios-v1.0-j44-4fe08b7.zip`, built from commit `4fe08b7`. 26,609,076 bytes,
+2,977 entries, accepted by `check_release_zip.py`. No usage override was needed:
+the seven-day bucket had 93% remaining and the five-hour bucket had 78%.
+
+**It was built from a later commit than this record, `97ec7e7`.** The first build
+from `97ec7e7` stopped at the packager's `npm audit` step. Six advisories had
+been published in `web/` since J42's archive, and none of them touch this item's
+code. Rather than skip the audit or fold dependency upgrades into this item, the
+owner opened J45 to clear them and asked for this archive to be built from a
+commit that includes J45-A and J45-B. `4fe08b7` is that commit. The build ran the
+scaffold validation and the full test suite with this item's protections in
+place, and no Joplin indexer started.
