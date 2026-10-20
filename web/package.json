@@ -16,10 +16,11 @@
     "@codemirror/view": "6.43.6",
     "@vitejs/plugin-react": "latest",
     "cropperjs": "1.6.2",
+    "elkjs": "file:./elk-refused",
     "highlight.js": "11.11.1",
-    "katex": "0.16.47",
+    "katex": "0.18.11",
     "md-editor-rt": "latest",
-    "mermaid": "11.17.2",
+    "mermaid": "12.2.0",
     "react": "latest",
     "react-dom": "latest",
     "typescript": "latest",
@@ -34,5 +35,8 @@
     "jsdom": "^29.1.1",
     "vitest": "^4.1.11"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "overrides": {
+    "elkjs": "$elkjs"
+  }
 }

@@ -29,6 +29,16 @@ FORBIDDEN = re.compile(r"(?:^|[-+ ])(?:AGPL|GPL|SSPL)(?:[-+ ]|$)|(?:^|[-+ ])UNKN
 #    records what the file actually says and its SHA-256, so this cannot drift
 #    into a blanket exemption: if the package changes its licence text the hash
 #    stops matching and the review has to happen again.
+#
+# 4. A lockfile entry that is a link (`"link": true`) carries no licence of its
+#    own: it points at another entry, named by `resolved`, and that entry is the
+#    package installed. Its licence is the one checked, and a link whose target
+#    the lockfile does not list fails. v1.0 J45 raised it, when mermaid's EPL-2.0
+#    elkjs was replaced at install by web/elk-refused, an Apache-2.0 stub
+#    reached through such a link. It is a rule about what a link is, not an
+#    exemption: the stub is checked like any other package. For the same reason
+#    a link is not counted as a package, so the count agrees with the release
+#    SBOM, which lists packages and skips links (v0.9 I6).
 NO_METADATA_LICENSE = {
     "khroma@2.1.0": {
         "license": "MIT",
@@ -125,10 +135,20 @@ def validate():
         if not path.is_file(): fail(f"missing npm lockfile {rel}")
         if meta.get("sha256") != sha(path): fail(f"{rel}: lockfile hash is stale")
         packages = load(path).get("packages", {})
-        actual = len(packages) - (1 if "" in packages else 0)
+        # A link is not a package: the entry it points at is, and is counted.
+        actual = sum(1 for key, package in packages.items() if key != "" and not package.get("link"))
         if meta.get("packages") != actual: fail(f"{rel}: package count {actual}, inventory says {meta.get('packages')}")
         for key, package in packages.items():
-            if key != "": check_license(f"{rel}:{key}@{package.get('version')}", package.get("license"))
+            if key == "":
+                continue
+            label = f"{rel}:{key}@{package.get('version')}"
+            if package.get("link"):
+                target = packages.get(package.get("resolved") or "")
+                if target is None:
+                    fail(f"{rel}:{key}: link to {package.get('resolved')!r}, which the lockfile does not list")
+                label = f"{rel}:{key} -> {package['resolved']}@{target.get('version')}"
+                package = target
+            check_license(label, package.get("license"))
         verify_no_metadata_overrides(path.parent)
     return len(entries), sum(int(m["packages"]) for m in npm.values())
 

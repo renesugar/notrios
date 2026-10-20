@@ -1,0 +1,9 @@
+{
+  "name": "elkjs",
+  "version": "0.0.0-notrios",
+  "private": true,
+  "description": "Stands in for elkjs, which is EPL-2.0, so no ELK code is installed or shipped (v1.0 J45).",
+  "main": "lib/elk.bundled.js",
+  "types": "lib/elk.bundled.d.ts",
+  "license": "Apache-2.0"
+}

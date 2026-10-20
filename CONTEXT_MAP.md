@@ -398,6 +398,10 @@ Feature contracts, which describe one capability rather than the project:
   highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a),
   and explicitly sets `noMermaid: true` until the planned offline/security-tested
   v0.8 enablement.
+  `elk-refused/` is a local Apache-2.0 package that `package.json` overrides
+  mermaid 12's EPL-2.0 `elkjs` with, so no ELK code is installed or shipped;
+  `src/mermaid-render.ts` lays diagrams out with dagre for the same reason
+  (v1.0 J45).
   `src/html-table-markdown.ts` converts a pasted HTML table into a Markdown pipe
   table and refuses anything a pipe table cannot hold (v0.5 E6b).
   `src/note-query.ts` renders embedded ```note-query blocks after the note has
