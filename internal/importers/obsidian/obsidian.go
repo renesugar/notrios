@@ -332,7 +332,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 			ResourcesSeen: len(inv.Assets), CheckpointStatus: "not-started",
 		},
 	}
-	run.basis = canonicalBasis(canonicalRules, options.CollectionID, run.namespace)
+	run.basis = canonicalBasis(canonicalRules, options.CollectionID, inv)
 	run.applyFolderReport()
 	run.workTotal = len(inv.Folders) + len(inv.Assets) + len(inv.Notes) + len(inv.Notes)
 	if options.PreserveSource {
@@ -687,16 +687,22 @@ func buildLinkNamespace(inv inventory) linkNamespace {
 
 // canonicalBasis hashes what a note's canonical body depends on besides its own
 // bytes and path: the rule version, the collection its links are written into,
-// and the whole link namespace (v1.0 J39).
+// and the link namespace (v1.0 J39).
 //
-// The namespace is every note's path, title, aliases and target ID, and every
-// asset's path and ID: exactly what planObsidianLinks resolves against. So an
-// edit anywhere in the vault that moves none of those leaves every other note's
-// basis as it was, and a skip can trust it; an edit that adds a note, renames
-// one or changes a title or an alias moves every note's basis, and every note is
-// read again. Hashing the namespace rather than the vault is what lets a
+// The namespace is what planObsidianLinks resolves against, and
+// buildLinkNamespace builds it from these inputs and nothing else: every note's
+// path, title, aliases and target ID, and every asset's path and ID. So the
+// inputs are hashed rather than the maps built from them, which repeat each ID
+// under several keys. Equal inputs make an equal namespace; a change to how the
+// namespace is built from them changes what the rules produce, which
+// TestJ39CanonicalRulesArePinned catches.
+//
+// So an edit anywhere in the vault that moves none of those leaves every other
+// note's basis as it was, and a skip can trust it; an edit that adds a note,
+// renames one or changes a title or an alias moves every note's basis, and every
+// note is read again. Hashing the namespace rather than the vault is what lets a
 // reimport with a few edited notes skip the rest.
-func canonicalBasis(rules int, collectionID string, ns linkNamespace) string {
+func canonicalBasis(rules int, collectionID string, inv inventory) string {
 	hash := sha256.New()
 	written := 0
 	separator := []byte{0}
@@ -707,35 +713,19 @@ func canonicalBasis(rules int, collectionID string, ns linkNamespace) string {
 			written += count + 1
 		}
 	}
-	write("rules", strconv.Itoa(rules), "collection", collectionID)
-	single := func(name string, values map[string]string) {
-		write(name, strconv.Itoa(len(values)))
-		for _, key := range sortedKeys(values) {
-			write(key, values[key])
-		}
+	// Notes and Assets are sorted by path when the inventory is read, so the
+	// order is the vault's and not the walk's.
+	write("rules", strconv.Itoa(rules), "collection", collectionID, "notes", strconv.Itoa(len(inv.Notes)))
+	for _, note := range inv.Notes {
+		write(note.RelPath, note.TargetID, note.Title, strconv.Itoa(len(note.Aliases)))
+		write(note.Aliases...)
 	}
-	multiple := func(name string, values map[string][]string) {
-		write(name, strconv.Itoa(len(values)))
-		for _, key := range sortedKeys(values) {
-			write(key, strconv.Itoa(len(values[key])))
-			write(values[key]...)
-		}
+	write("assets", strconv.Itoa(len(inv.Assets)))
+	for _, asset := range inv.Assets {
+		write(asset.RelPath, asset.TargetID)
 	}
-	single("notes_by_path", ns.notesByPath)
-	multiple("notes_by_name", ns.notesByName)
-	single("assets_by_path", ns.assetsByPath)
-	multiple("assets_by_base", ns.assetsByBase)
 	hashmeter.Add(written)
 	return hex.EncodeToString(hash.Sum(nil))
-}
-
-func sortedKeys[V any](values map[string]V) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // cloneStrings copies each string so the slice holds no reference into the
@@ -1084,9 +1074,11 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 					AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
 				})
 			}
-			fingerprint := noteFingerprint(item, notebookID, canonicalSHA)
+			var fingerprint string
 			if len(warnings) == 0 {
 				fingerprint = recordedFingerprint(item, notebookID, canonicalSHA, run.basis, store.ResourceRefsDigest(refs))
+			} else {
+				fingerprint = noteFingerprint(item, notebookID, canonicalSHA)
 			}
 			action := "create"
 			if trashed {

@@ -3,6 +3,8 @@ package store
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 	"testing"
 
@@ -90,6 +92,9 @@ func TestJ39ImportDocumentHeadsAnswersWithoutTheBody(t *testing.T) {
 	}
 	if heads["doc_plain"].ResourceRefsSHA256 != ResourceRefsDigest(nil) {
 		t.Fatalf("a note with no references has the empty digest")
+	}
+	if sum := sha256.Sum256(nil); emptyResourceRefsDigest != hex.EncodeToString(sum[:]) {
+		t.Fatalf("emptyResourceRefsDigest is not the SHA-256 of nothing")
 	}
 
 	if err := st.DetachDocumentResource(ctx, "doc_with_refs", "res_one"); err != nil {

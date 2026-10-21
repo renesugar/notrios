@@ -93,6 +93,10 @@ func (s *SQLiteStore) ExistingDocumentIDs(ctx context.Context, ids []string) (ma
 // declined to write, because its resource is missing, makes them disagree, and
 // that is the safe direction: the note is read again.
 func ResourceRefsDigest(refs []AttachResourceRequest) string {
+	if len(refs) == 0 {
+		// Most notes have none, and each import asks once per note.
+		return emptyResourceRefsDigest
+	}
 	lines := make([]string, 0, len(refs))
 	for _, ref := range refs {
 		ref = NormalizeAttachResourceRequest(ref)
@@ -105,6 +109,10 @@ func ResourceRefsDigest(refs []AttachResourceRequest) string {
 	}
 	return hex.EncodeToString(hash.Sum(nil))
 }
+
+// emptyResourceRefsDigest is ResourceRefsDigest of no references: the SHA-256 of
+// nothing, which TestJ39ImportDocumentHeadsAnswersWithoutTheBody checks.
+const emptyResourceRefsDigest = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 // ImportDocumentHeads reads what an importer needs to decide that a note is
 // still what it last wrote, without reading the note (v1.0 J39).

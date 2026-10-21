@@ -182,6 +182,9 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 		change func(t *testing.T, st *store.SQLiteStore, dir string)
 		// skipped and updated are the reimport's counts.
 		skipped, updated int
+		// stillRead is how many notes the import after the repair reads
+		// beyond those that warned.
+		stillRead int
 		check            func(t *testing.T, st *store.SQLiteStore, report Report)
 	}{
 		{
@@ -283,7 +286,7 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					other := canonicalBasis(canonicalRules+1, "default", run.namespace)
+					other := canonicalBasis(canonicalRules+1, "default", run.inventory)
 					return recordedFingerprint(item, head.NotebookID, head.ContentSHA256, other, head.ResourceRefsSHA256)
 				})
 			},
@@ -308,6 +311,66 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 				}
 				if strings.Contains(doc.Body, store.DocumentURI("default", documentID("sub/beta.md"))) {
 					t.Fatalf("an ambiguous link must not keep its old target:\n%s", doc.Body)
+				}
+			},
+		},
+		{
+			// The note count, the titles, the aliases and the order of the
+			// notes stay the same, so only the paths and IDs in the basis can
+			// notice.
+			name: "a note moved to another folder in the vault",
+			change: func(t *testing.T, _ *store.SQLiteStore, dir string) {
+				if err := os.MkdirAll(filepath.Join(dir, "sub2"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Rename(filepath.Join(dir, "sub", "beta.md"), filepath.Join(dir, "sub2", "beta.md")); err != nil {
+					t.Fatal(err)
+				}
+			},
+			skipped: 0, updated: 2,
+			check: func(t *testing.T, st *store.SQLiteStore, report Report) {
+				if report.NotesImported != 1 {
+					t.Fatalf("the moved note is a new note at its new path: %#v", report)
+				}
+				oldURI := store.DocumentURI("default", documentID("sub/beta.md"))
+				for _, note := range []string{"index.md", "alpha.md"} {
+					doc, err := st.GetDocument(ctx, documentID(note))
+					if err != nil {
+						t.Fatal(err)
+					}
+					if strings.Contains(doc.Body, oldURI) {
+						t.Fatalf("%s still links to the note's old path:\n%s", note, doc.Body)
+					}
+				}
+			},
+		},
+		{
+			// Its notes do not change, and nor do any titles: only the asset's
+			// path and ID in the basis can notice.
+			name: "an asset moved to another folder in the vault",
+			change: func(t *testing.T, _ *store.SQLiteStore, dir string) {
+				if err := os.MkdirAll(filepath.Join(dir, "img"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Rename(filepath.Join(dir, "pic.png"), filepath.Join(dir, "img", "pic.png")); err != nil {
+					t.Fatal(err)
+				}
+			},
+			skipped: 0, updated: 2,
+			// Both notes keep their reference to the picture at its old ID: an
+			// import has never removed a reference it no longer gives. Their
+			// stored references are then not the ones the import gave, so they
+			// are read every time, which is the safe direction.
+			stillRead: 2,
+			check: func(t *testing.T, st *store.SQLiteStore, _ Report) {
+				for _, note := range []string{"index.md", "gamma.md"} {
+					doc, err := st.GetDocument(ctx, documentID(note))
+					if err != nil {
+						t.Fatal(err)
+					}
+					if !strings.Contains(doc.Body, store.ResourceURI("default", resourceID("img/pic.png"))) {
+						t.Fatalf("%s should embed the picture at its new path:\n%s", note, doc.Body)
+					}
 				}
 			},
 		},
@@ -342,7 +405,7 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 			}
 			// Each warning in these vaults comes from a different note, and a
 			// note that warned is read every time.
-			if again := j39Import(t, st, dir, Options{}); again.NotesSkipped != again.MarkdownSeen-len(again.Warnings) {
+			if again := j39Import(t, st, dir, Options{}); again.NotesSkipped != again.MarkdownSeen-len(again.Warnings)-tc.stillRead {
 				t.Fatalf("once repaired, every note that did not warn should be skipped: %#v", again)
 			}
 		})
