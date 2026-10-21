@@ -1645,12 +1645,16 @@ func noteMatches(notePath, raw string, ns linkNamespace) (string, []string) {
 		// The link text stays as it is, which is what Obsidian shows.
 		return "", nil
 	}
-	key := strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
-	ids := ns.notesByName[key]
+	ids := ns.notesByName[nameKey(raw)]
 	if len(ids) == 1 {
 		return ids[0], nil
 	}
 	return "", ids
+}
+
+// nameKey is the key a link's name is looked up by.
+func nameKey(raw string) string {
+	return strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
 }
 
 func resolveAssetID(notePath, raw string, ns linkNamespace) (string, bool) {

@@ -68,17 +68,28 @@ func NamespaceFromProvenance(notes []ProvenanceNote) Namespace {
 	return Namespace{ns: buildLinkNamespace(inv)}
 }
 
-// AmbiguousNotes is every note a link written in the note at notePath could
-// mean, when the import would have found it ambiguous, and nil otherwise. raw
-// is the link's target as the extractor records it, without its anchor.
-func (n Namespace) AmbiguousNotes(notePath, raw string) []string {
+// Ambiguity is a name the import found several notes for.
+type Ambiguity struct {
+	// Name is the name as the import looked it up: lower-cased, without its
+	// folder or extension. Every link that names it has the same notes.
+	Name string
+	// Notes are in ID order and shared with the namespace, so a name a
+	// thousand links use costs one list, not a thousand. A caller must not
+	// modify it.
+	Notes []string
+}
+
+// Ambiguity reports the notes a link written in the note at notePath could
+// mean, when the import would have found it ambiguous. raw is the link's
+// target as the extractor records it, without its anchor.
+func (n Namespace) Ambiguity(notePath, raw string) (Ambiguity, bool) {
 	raw = strings.TrimSpace(raw)
 	if !vaultTarget(raw) || !looksLikeMarkdownNote(raw) {
-		return nil
+		return Ambiguity{}, false
 	}
 	id, matches := noteMatches(notePath, raw, n.ns)
 	if id != "" || len(matches) < 2 {
-		return nil
+		return Ambiguity{}, false
 	}
-	return append([]string(nil), matches...)
+	return Ambiguity{Name: nameKey(decodeVaultTarget(raw)), Notes: matches}, true
 }

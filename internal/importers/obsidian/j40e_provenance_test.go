@@ -94,8 +94,9 @@ func TestJ40EProvenanceAgreesWithTheImport(t *testing.T) {
 		for _, candidate := range markdownlinks.Extract(body) {
 			raw := strings.TrimSpace(candidate.RawTarget)
 			key := fmt.Sprintf("ambiguous Obsidian link %q in %s", raw, rel)
-			matches := ns.AmbiguousNotes(rel, raw)
-			if matches != nil {
+			var matches []string
+			if ambiguity, ok := ns.Ambiguity(rel, raw); ok {
+				matches = ambiguity.Notes
 				derived[key] = matches
 			}
 			if isNote := looksLikeMarkdownNote(raw); isNote && warned[key] != (matches != nil) {
@@ -129,10 +130,17 @@ func TestJ40EProvenanceAgreesWithTheImport(t *testing.T) {
 func TestJ40EAFolderSettlesItsOwnName(t *testing.T) {
 	st, _, _ := j40eImport(t)
 	ns := j40eNamespace(t, st)
-	if got := ns.AmbiguousNotes("a/index.md", "index"); got != nil {
+	if got, ok := ns.Ambiguity("a/index.md", "index"); ok {
 		t.Fatalf("a/index.md's own [[index]] resolves to itself, not to %v", got)
 	}
-	if got := ns.AmbiguousNotes("from.md", "a/index"); got != nil {
+	if got, ok := ns.Ambiguity("from.md", "a/index"); ok {
 		t.Fatalf("a path names one note, not %v", got)
+	}
+	// Every link that names the same thing is told the same name, which is
+	// what lets a report count a shared list once.
+	first, _ := ns.Ambiguity("from.md", "index")
+	second, _ := ns.Ambiguity("other/solo.md", "Index.md")
+	if first.Name != "index" || second.Name != first.Name {
+		t.Fatalf("one name, two keys: %q and %q", first.Name, second.Name)
 	}
 }

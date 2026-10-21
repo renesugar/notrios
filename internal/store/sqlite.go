@@ -2579,48 +2579,56 @@ func resourceIDFromURI(uri string) string {
 // quietly resolving to this library's copy -- and refusing to guess is the
 // behaviour to want there.
 func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (string, bool, error) {
-	name := normalizeLinkName(target)
-	if name == "" {
-		return "", false, nil
-	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQLFor("", collectionID) + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
-	if err != nil {
+	ids, err := s.documentsByLinkTitleLocked(collectionID, target, 2)
+	if err != nil || len(ids) == 0 {
 		return "", false, err
 	}
-	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
-		return "", false, err
-	}
-	ids := []string{}
-	for {
-		rc := C.sqlite3_step(stmt)
-		switch rc {
-		case C.SQLITE_ROW:
-			ids = append(ids, columnText(stmt, 0))
-		case C.SQLITE_DONE:
-			if len(ids) == 0 {
-				return "", false, nil
-			}
-			return ids[0], len(ids) > 1, nil
-		default:
-			return "", false, s.stepErrLocked(rc)
-		}
-	}
+	return ids[0], len(ids) > 1, nil
 }
 
 func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) (string, bool, error) {
+	ids, err := s.resourcesByLinkFilenameLocked(collectionID, target, 2)
+	if err != nil || len(ids) == 0 {
+		return "", false, err
+	}
+	return ids[0], len(ids) > 1, nil
+}
+
+// documentsByLinkTitleLocked is the notes a link's text names by title, in ID
+// order: what the resolver asks, and what a report of an ambiguous link lists
+// (v1.0 J40-C). limit 0 means all of them.
+func (s *SQLiteStore) documentsByLinkTitleLocked(collectionID, target string, limit int) ([]string, error) {
+	name := normalizeLinkName(target)
+	if name == "" {
+		return nil, nil
+	}
+	return s.idsByLinkNameLocked(`SELECT id FROM documents WHERE `+CollectionScopeSQLFor("", collectionID)+
+		` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id`, collectionID, name, limit)
+}
+
+// resourcesByLinkFilenameLocked is the resources a link's text names by file
+// name, in ID order. limit 0 means all of them.
+func (s *SQLiteStore) resourcesByLinkFilenameLocked(collectionID, target string, limit int) ([]string, error) {
 	name := strings.TrimSpace(target)
 	if name == "" {
-		return "", false, nil
+		return nil, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQLFor("", collectionID) + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	return s.idsByLinkNameLocked(`SELECT id FROM resources WHERE `+CollectionScopeSQLFor("", collectionID)+
+		` AND filename = ? COLLATE NOCASE ORDER BY id`, collectionID, name, limit)
+}
+
+func (s *SQLiteStore) idsByLinkNameLocked(query, collectionID, name string, limit int) ([]string, error) {
+	if limit > 0 {
+		query += " LIMIT " + strconv.Itoa(limit)
+	}
+	stmt, err := s.prepareLocked(query)
 	if err != nil {
-		return "", false, err
+		return nil, err
 	}
 	defer C.sqlite3_finalize(stmt)
 	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
-		return "", false, err
+		return nil, err
 	}
 	ids := []string{}
 	for {
@@ -2629,12 +2637,9 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		case C.SQLITE_ROW:
 			ids = append(ids, columnText(stmt, 0))
 		case C.SQLITE_DONE:
-			if len(ids) == 0 {
-				return "", false, nil
-			}
-			return ids[0], len(ids) > 1, nil
+			return ids, nil
 		default:
-			return "", false, s.stepErrLocked(rc)
+			return nil, s.stepErrLocked(rc)
 		}
 	}
 }
