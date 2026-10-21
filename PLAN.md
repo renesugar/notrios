@@ -99,7 +99,7 @@ this section is archived when the plan completes and the rules are not.
 | J36. Resolve Obsidian partial-path links the way Obsidian does | complete | 5/5 | — |
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
-| J39. Skip a note a reimport cannot change | in-progress | 0/4 | 4 |
+| J39. Skip a note a reimport cannot change | in-progress | 3/4 | 1 |
 | J40. Show ambiguous links, and report them with the notes they might mean | not-started | 0/6 | 6 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
@@ -111,10 +111,7 @@ this section is archived when the plan completes and the rules are not.
 
 **J39. Skip a note a reimport cannot change**
 
-- `J39-A` The Obsidian note fingerprint carries the canonical hash, a pinned rule version, the link namespace, the resource references and whether the note warned, and an item recorded without them is not skippable — *not-started*
-- `J39-B` A note is skipped only when its fingerprint, recomputed from the stored revision and references without reading a body, matches, so a diverged note is still repaired — *not-started*
-- `J39-C` A reimport with every note skipped still leaves the library as a fresh import would, with the link pass, item states and checkpoint intact — *not-started*
-- `J39-D` The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains — *not-started*
+- `J39-D` The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains — *in-progress*
 
 ### Not started
 

@@ -1122,22 +1122,25 @@
         {
           "id": "J39-A",
           "statement": "The Obsidian note fingerprint carries the canonical hash, a pinned rule version, the link namespace, the resource references and whether the note warned, and an item recorded without them is not skippable",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
         },
         {
           "id": "J39-B",
           "statement": "A note is skipped only when its fingerprint, recomputed from the stored revision and references without reading a body, matches, so a diverged note is still repaired",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
         },
         {
           "id": "J39-C",
           "statement": "A reimport with every note skipped still leaves the library as a fresh import would, with the link pass, item states and checkpoint intact",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
         },
         {
           "id": "J39-D",
           "statement": "The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains",
-          "state": "not-started"
+          "state": "in-progress"
         }
       ]
     },
