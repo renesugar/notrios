@@ -1353,7 +1353,7 @@
     {
       "id": "J48",
       "title": "Show attachments in the preview: a sanitiser that leaves its own output alone",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J48-A",
@@ -1364,7 +1364,8 @@
         {
           "id": "J48-B",
           "statement": "J47's probe in Chromium shows Markdown and wiki attachment embeds load with no remote request and no CSP violation, J34's unit tests pass unchanged and the CSP is unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j48/README.md"
         }
       ]
     }

@@ -365,6 +365,15 @@
       "sha256": "7d82cdf0d6430510264d229a12458fbe407bab0cc66b42e6409e0ce9e02972e5"
     },
     {
+      "item": "J48",
+      "archive": "notrios-v1.0-j48-74d067f.zip",
+      "commit": "74d067f7fc9a3e6926ab86ab85369d023542d2ab",
+      "taken": "when the slice closed",
+      "bytes": 26741488,
+      "entries": 3024,
+      "sha256": "ea2b11683ed1df44c732228eab8a4d90a702826e77f385573ec09bf3c9c86fe0"
+    },
+    {
       "item": "J5",
       "archive": "notrios-v1.0-j5-fde1330.zip",
       "commit": "fde133078ca467cfd2f9a8a0bf733ab73e6cccd0",
@@ -402,8 +411,8 @@
     }
   ],
   "counts": {
-    "items": 44,
+    "items": 45,
     "retroactive": 0,
-    "total_bytes": 1133557947
+    "total_bytes": 1160299435
   }
 }

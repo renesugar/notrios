@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**48 items: 44 complete, 2 in progress, 2 not started, 0 deferred.**
+**48 items: 45 complete, 1 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -108,17 +108,13 @@ this section is archived when the plan completes and the rules are not.
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | in-progress | 1/2 | 1 |
-| J48. Show attachments in the preview: a sanitiser that leaves its own output alone | in-progress | 1/2 | 1 |
+| J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 
 ### Started and not finished
 
 **J47. Render a working wiki embed in the preview**
 
 - `J47-B` J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged — *not-started*
-
-**J48. Show attachments in the preview: a sanitiser that leaves its own output alone**
-
-- `J48-B` J47's probe in Chromium shows Markdown and wiki attachment embeds load with no remote request and no CSP violation, J34's unit tests pass unchanged and the CSP is unchanged — *not-started*
 
 ### Not started
 
@@ -5793,7 +5789,7 @@ rule.
 **Working state.** A note imported from Obsidian shows its embedded images in
 the preview.
 
-## J48. Show attachments in the preview: a sanitiser that leaves its own output alone
+## J48. Show attachments in the preview: a sanitiser that leaves its own output alone — complete
 
 **Goal.** An attachment embedded in a note, `![](resource://…)` or, since J47,
 `![[resource://…]]`, shows in the preview. A `resource://` link keeps the

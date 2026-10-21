@@ -78,3 +78,10 @@ unchanged, and no Go file changed. The whole web suite passes: 39 files, 362
 tests.
 
 `UI_DESIGN.md` says the sanitiser runs twice and leaves its own output alone.
+
+## Archive
+
+`notrios-v1.0-j48-74d067f.zip`, built from commit `74d067f`, the commit that
+completed this item's record, with the ledger not yet flipped. 26,741,488 bytes,
+3,024 entries, accepted by `check_release_zip.py`. No usage override was needed:
+the seven-day bucket had 83% remaining and the five-hour bucket had 85%.
