@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**46 items: 42 complete, 1 in progress, 3 not started, 0 deferred.**
+**46 items: 43 complete, 0 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -106,17 +106,9 @@ this section is archived when the plan completes and the rules are not.
 | J43. Rewriting a link should not drop its title | complete | 3/3 | — |
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
-| J46. Clear vite's launch-editor advisories | in-progress | 1/2 | 1 |
+| J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 
-### Started and not finished
-
-**J46. Clear vite's launch-editor advisories**
-
-- `J46-B` The release packager produces an archive check_release_zip.py accepts, and J39 is closed from that commit — *not-started*
-
-### Not started
-
-Written and not begun: J9, J10, J40. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5639,7 +5631,7 @@ written.
 **Working state.** The release gate passes, and the preview renders and
 sanitises as it did, now on versions with no open advisory.
 
-## J46. Clear vite's launch-editor advisories
+## J46. Clear vite's launch-editor advisories — complete
 
 **Goal.** `npm audit` reports nothing in `web/` again, so the release gate in
 `scripts/package_release.sh` passes and J39's archive can be built. The fix

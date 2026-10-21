@@ -1310,7 +1310,7 @@
     {
       "id": "J46",
       "title": "Clear vite's launch-editor advisories",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J46-A",
@@ -1321,7 +1321,8 @@
         {
           "id": "J46-B",
           "statement": "The release packager produces an archive check_release_zip.py accepts, and J39 is closed from that commit",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j46/README.md"
         }
       ]
     }
