@@ -1349,6 +1349,23 @@
           "state": "not-started"
         }
       ]
+    },
+    {
+      "id": "J48",
+      "title": "Show attachments in the preview: a sanitiser that leaves its own output alone",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J48-A",
+          "statement": "normalizePreviewHTML is idempotent over J34's media corpus and every routed link form, keeping a resolved attachment URL only beside the data-app-uri it came from and removing a forged pair",
+          "state": "not-started"
+        },
+        {
+          "id": "J48-B",
+          "statement": "J47's probe in Chromium shows Markdown and wiki attachment embeds load with no remote request and no CSP violation, J34's unit tests pass unchanged and the CSP is unchanged",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

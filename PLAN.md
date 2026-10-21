@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**47 items: 44 complete, 1 in progress, 2 not started, 0 deferred.**
+**48 items: 44 complete, 1 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -108,6 +108,7 @@ this section is archived when the plan completes and the rules are not.
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | in-progress | 1/2 | 1 |
+| J48. Show attachments in the preview: a sanitiser that leaves its own output alone | not-started | 0/2 | 2 |
 
 ### Started and not finished
 
@@ -117,7 +118,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J9, J10. Their slices are listed under each item.
+Written and not begun: J9, J10, J48. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5787,3 +5788,51 @@ rule.
 
 **Working state.** A note imported from Obsidian shows its embedded images in
 the preview.
+
+## J48. Show attachments in the preview: a sanitiser that leaves its own output alone
+
+**Goal.** An attachment embedded in a note, `![](resource://…)` or, since J47,
+`![[resource://…]]`, shows in the preview. A `resource://` link keeps the
+download URL it is given. Nothing the preview refuses today becomes loadable.
+
+**Found 2026-10-21, by J47's browser probe.** `PreviewPane` runs
+`normalizePreviewHTML` twice: once as md-editor-rt's `sanitize` prop, and again
+in its own renderer. The first pass turns `resource://` into the local content
+URL `/api/v1/resources/<id>/content` and records the original in
+`data-app-uri`. The second pass sees a relative URL that is neither
+`resource://`, `data:image/` nor remote, and removes it. In Chromium, a Markdown
+attachment embed renders with no `src` and loads nothing. A `resource://` link
+loses its `href` the same way. Its click still works, because the click handler
+reads `data-app-uri`, but it is no longer a link a browser can follow, open in a
+new tab or save. The double pass dates from `c630411`, 2026-07-16.
+
+**The approach.** The sanitiser becomes idempotent rather than run once. Both
+passes stay, so neither path into the page goes unsanitised, but the rule leaves
+its own output as it found it. A local content URL is kept only when it is
+exactly the URL the element's own `data-app-uri` resolves to: the image form for
+media, and the download form for a link. Any other relative URL is removed, as
+now. A note can already write that pair in raw HTML. Keeping it loads nothing a
+`resource://` embed of the same attachment could not.
+
+**Scope.**
+- **J48-A, idempotent.** `normalizePreviewHTML(normalizePreviewHTML(x))` equals
+  `normalizePreviewHTML(x)` for J34's whole media corpus and every link form the
+  preview routes. A resolved attachment URL survives the second pass only beside
+  the `data-app-uri` it came from. A forged pair that names another attachment,
+  another path or another origin is removed.
+- **J48-B, shown in the browser.** J47's probe, run in Chromium, shows the
+  Markdown and wiki attachment embeds load. No request reaches the stand-in
+  remote origin, and there is no CSP violation. J34's unit tests pass unchanged,
+  and the CSP is unchanged. WebKit cannot run on this machine (J47), and the
+  record says so.
+
+**Boundaries.**
+- No relaxation of J34: remote media stays inert, and inline `data:image/…` and
+  SVG keep rendering.
+- Neither sanitising pass is removed.
+- The CSP is unchanged.
+
+**Dependencies.** None. J47's close waits on J48-B.
+
+**Working state.** Attachments show in the preview, and a preview that sanitises
+twice gets the same page as one that sanitises once.
