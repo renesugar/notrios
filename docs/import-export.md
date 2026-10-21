@@ -236,6 +236,14 @@ Behavior:
 - Fingerprints and bounded 1–500 item batches make re-runs idempotent and
   resumable. Dry run uses the same create/update/unchanged classifiers as the
   real import and writes no import checkpoint or content.
+- A re-run does not read a note again when nothing it was built from has
+  changed. That means: its file, the vault's note paths, titles and aliases,
+  its asset paths, and the note as it is stored in Notrios. Such a note counts
+  in `notes_unchanged`, and in `notes_skipped`. Anything else is read and
+  repaired as before, including a note edited, moved or detached from an
+  attachment inside Notrios. A note whose links warned is read on every run, so
+  its warnings are reported every time. The first re-run after upgrading from a
+  build before 1.0 J39 reads every note once.
 
 Limitations: Obsidian canvases and plugin-specific syntax import as ordinary
 non-Markdown source files; frontmatter `tags:` are not yet turned into sidebar

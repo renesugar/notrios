@@ -1664,6 +1664,30 @@ func (s *SQLiteStore) documentExistsLocked(documentID string) (bool, error) {
 	return false, s.stepErrLocked(rc)
 }
 
+// documentLiveLocked answers what getDocumentLocked answers about whether a
+// note can be read: it exists, has a current revision and is not in the trash.
+// It reads no body, for a caller that would discard it (v1.0 J39).
+func (s *SQLiteStore) documentLiveLocked(documentID string) (bool, error) {
+	stmt, err := s.prepareLocked(`SELECT 1 FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.id = ? AND d.deleted_at IS NULL`)
+	if err != nil {
+		return false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return false, err
+	}
+	switch rc := C.sqlite3_step(stmt); rc {
+	case C.SQLITE_ROW:
+		return true, nil
+	case C.SQLITE_DONE:
+		return false, nil
+	default:
+		return false, s.stepErrLocked(rc)
+	}
+}
+
 func (s *SQLiteStore) documentCurrentStateLocked(documentID string) (collectionID string, currentRevisionID string, err error) {
 	stmt, err := s.prepareLocked(`SELECT collection_id, current_revision_id FROM documents WHERE id = ?`)
 	if err != nil {

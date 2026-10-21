@@ -520,6 +520,18 @@ type ImportItemState struct {
 	ProcessedAt  time.Time
 }
 
+// ImportDocumentHead is what an importer can learn about a stored note without
+// reading its body: enough to tell whether the note is still exactly what the
+// last import wrote (v1.0 J39). ResourceRefsSHA256 is ResourceRefsDigest over
+// the note's resource references as the store holds them.
+type ImportDocumentHead struct {
+	CurrentRevisionID  string
+	Title              string
+	NotebookID         string
+	ContentSHA256      string
+	ResourceRefsSHA256 string
+}
+
 // ImportDocumentMutation is one planned canonical document change inside a
 // bounded importer transaction. SkipDocument records only State (used when an
 // externally sourced document is already trashed). Action is create, update,
@@ -951,6 +963,10 @@ type Store interface {
 	// ExistingDocumentIDs answers which of these documents exist without
 	// reading their bodies, for a caller that needs presence alone (J32-H).
 	ExistingDocumentIDs(ctx context.Context, ids []string) (map[string]bool, error)
+	// ImportDocumentHeads answers, for each of these documents, its current
+	// revision's content hash, its title and notebook and the digest of its
+	// resource references, without reading a body (v1.0 J39).
+	ImportDocumentHeads(ctx context.Context, ids []string) (map[string]ImportDocumentHead, error)
 	GetResources(ctx context.Context, ids []string) (map[string]Resource, error)
 	GetDocumentTags(ctx context.Context, ids []string) (map[string][]Tag, error)
 	OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error)

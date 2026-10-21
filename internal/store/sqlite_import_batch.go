@@ -113,8 +113,13 @@ func (s *SQLiteStore) ApplyImportDocumentBatch(ctx context.Context, req ImportDo
 				}
 			}
 		case "unchanged":
-			if _, err := s.getDocumentLocked(document.PreferredID); err != nil {
+			// Presence alone: the body was read only to be discarded, and a
+			// note an importer skipped should not be read here either (v1.0
+			// J39).
+			if live, err := s.documentLiveLocked(document.PreferredID); err != nil {
 				return err
+			} else if !live {
+				return ErrNotFound
 			}
 		default:
 			return fmt.Errorf("%w: unsupported import document action %q", ErrInvalidInput, mutation.Action)

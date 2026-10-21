@@ -213,7 +213,10 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/importers/obsidian/obsidian.go` owns deterministic one-pass vault
   inventory, nested-folder conflict planning, bounded fingerprint/checkpoint
   phases, exact source bundles, canonical alias/relative/embed/anchor
-  resolution, resource refresh, and link rebuild.
+  resolution, resource refresh, and link rebuild. A reimport skips a note
+  whose recorded fingerprint, recomputed from `store.ImportDocumentHeads`
+  without reading a body, still matches (v1.0 J39); `canonicalRules` must move
+  whenever the canonical output does, and `j39_skip_test.go` pins it.
 - `internal/importers/obsidian/obsidian_test.go` covers exact Markdown/binary
   recovery, hierarchy, conflicts/renames, dry-run parity, interruption/resume,
   resource refresh, richer graph edges, Trash, search, and idempotence;

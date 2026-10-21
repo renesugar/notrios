@@ -36,6 +36,19 @@ const (
 	importConfigVersion = 1
 )
 
+// canonicalRules is the version of the rules that turn a vault note into its
+// canonical body: which note or asset a link resolves to, how a link is
+// rewritten, and how the frontmatter and body are assembled. It is part of every
+// note's recorded fingerprint, so a note written under other rules is never
+// skipped and a reimport applies the new rules to it (v1.0 J39). J36 changed
+// where links resolve without touching a vault file; a skip that did not know
+// would have kept the pre-fix links.
+//
+// TestJ39CanonicalRulesArePinned holds the canonical output of a corpus of edge
+// cases beside this number. Changing what the rules produce fails it until
+// both are moved together.
+const canonicalRules = 1
+
 type Options struct {
 	CollectionID   string
 	DryRun         bool
@@ -43,6 +56,9 @@ type Options struct {
 	BatchSize      int
 	SourceKey      string
 	Config         *ImportConfig
+	// readEveryNote turns J39's skip off, so a test can compare a reimport
+	// with skips against one without.
+	readEveryNote bool
 	// AfterBatch is called only after a durable checkpoint. It is useful to
 	// display progress and to test interruption/resume behavior.
 	AfterBatch func(phase string, processed, total int) error
@@ -72,6 +88,7 @@ type Report struct {
 	NotesImported        int           `json:"notes_imported"`
 	NotesUpdated         int           `json:"notes_updated"`
 	NotesUnchanged       int           `json:"notes_unchanged"`
+	NotesSkipped         int           `json:"notes_skipped"` // unchanged and not read at all (v1.0 J39); their links are not in LinksRewritten or AttachmentsCreated
 	NotebooksSeen        int           `json:"notebooks_seen"`
 	NotebooksCreated     int           `json:"notebooks_created"`
 	NotebooksUpdated     int           `json:"notebooks_updated"`
@@ -151,6 +168,9 @@ type importRun struct {
 	folderPlans []folderPlan
 	folderIDs   map[string]string
 	namespace   linkNamespace
+	// basis is what every note's canonical body depends on besides the note
+	// itself: canonicalRules, the collection and the link namespace (v1.0 J39).
+	basis string
 	// noteBytes is the buffer the notes phase reads each note into, reused
 	// between notes and given back when a note is unusually large (v1.0
 	// J32-W2).
@@ -312,6 +332,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 			ResourcesSeen: len(inv.Assets), CheckpointStatus: "not-started",
 		},
 	}
+	run.basis = canonicalBasis(canonicalRules, options.CollectionID, run.namespace)
 	run.applyFolderReport()
 	run.workTotal = len(inv.Folders) + len(inv.Assets) + len(inv.Notes) + len(inv.Notes)
 	if options.PreserveSource {
@@ -664,6 +685,59 @@ func buildLinkNamespace(inv inventory) linkNamespace {
 	return ns
 }
 
+// canonicalBasis hashes what a note's canonical body depends on besides its own
+// bytes and path: the rule version, the collection its links are written into,
+// and the whole link namespace (v1.0 J39).
+//
+// The namespace is every note's path, title, aliases and target ID, and every
+// asset's path and ID: exactly what planObsidianLinks resolves against. So an
+// edit anywhere in the vault that moves none of those leaves every other note's
+// basis as it was, and a skip can trust it; an edit that adds a note, renames
+// one or changes a title or an alias moves every note's basis, and every note is
+// read again. Hashing the namespace rather than the vault is what lets a
+// reimport with a few edited notes skip the rest.
+func canonicalBasis(rules int, collectionID string, ns linkNamespace) string {
+	hash := sha256.New()
+	written := 0
+	separator := []byte{0}
+	write := func(parts ...string) {
+		for _, part := range parts {
+			count, _ := io.WriteString(hash, part)
+			_, _ = hash.Write(separator)
+			written += count + 1
+		}
+	}
+	write("rules", strconv.Itoa(rules), "collection", collectionID)
+	single := func(name string, values map[string]string) {
+		write(name, strconv.Itoa(len(values)))
+		for _, key := range sortedKeys(values) {
+			write(key, values[key])
+		}
+	}
+	multiple := func(name string, values map[string][]string) {
+		write(name, strconv.Itoa(len(values)))
+		for _, key := range sortedKeys(values) {
+			write(key, strconv.Itoa(len(values[key])))
+			write(values[key]...)
+		}
+	}
+	single("notes_by_path", ns.notesByPath)
+	multiple("notes_by_name", ns.notesByName)
+	single("assets_by_path", ns.assetsByPath)
+	multiple("assets_by_base", ns.assetsByBase)
+	hashmeter.Add(written)
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func sortedKeys[V any](values map[string]V) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 // cloneStrings copies each string so the slice holds no reference into the
 // larger string its values were cut from.
 func cloneStrings(values []string) []string {
@@ -920,26 +994,59 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		return run.inventory.Notes[index].SizeBytes
 	}, write, nextPhase, func(start, end int) error {
 		items := run.inventory.Notes[start:end]
-		ids, externalIDs, keys := make([]string, 0, len(items)), make([]string, 0, len(items)), make([]string, 0, len(items))
+		keys := make([]string, 0, len(items))
 		for _, item := range items {
-			ids = append(ids, item.TargetID)
-			externalIDs = append(externalIDs, item.RelPath)
 			keys = append(keys, item.itemKey())
-		}
-		documents, err := run.st.GetDocuments(run.ctx, ids)
-		if err != nil {
-			return err
-		}
-		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, externalIDs)
-		if err != nil {
-			return err
 		}
 		states, err := run.st.GetImportItemStates(run.ctx, sourceSystem, run.report.SourceKey, run.options.CollectionID, keys)
 		if err != nil {
 			return err
 		}
-		mutations := make([]store.ImportDocumentMutation, 0, len(items))
+		// What the store holds for each note, without its body, decides which
+		// notes need reading at all; only those are fetched in full (v1.0 J39).
+		// A note with no recorded state cannot be skipped, so a fresh import
+		// asks for nothing.
+		headIDs := make([]string, 0, len(states))
 		for _, item := range items {
+			if _, ok := states[item.itemKey()]; ok {
+				headIDs = append(headIDs, item.TargetID)
+			}
+		}
+		heads, err := run.st.ImportDocumentHeads(run.ctx, headIDs)
+		if err != nil {
+			return err
+		}
+		skipped := make([]bool, len(items))
+		readIDs, readExternalIDs := make([]string, 0, len(items)), make([]string, 0, len(items))
+		for index, item := range items {
+			state, stateFound := states[item.itemKey()]
+			head, headFound := heads[item.TargetID]
+			if !run.options.readEveryNote && run.skippable(item, run.notebookFor(item), state, stateFound, head, headFound) {
+				skipped[index] = true
+				continue
+			}
+			readIDs = append(readIDs, item.TargetID)
+			readExternalIDs = append(readExternalIDs, item.RelPath)
+		}
+		documents, err := run.st.GetDocuments(run.ctx, readIDs)
+		if err != nil {
+			return err
+		}
+		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, readExternalIDs)
+		if err != nil {
+			return err
+		}
+		mutations := make([]store.ImportDocumentMutation, 0, len(items))
+		for index, item := range items {
+			notebookID := run.notebookFor(item)
+			if skipped[index] {
+				run.report.NotesUnchanged++
+				run.report.NotesSkipped++
+				if write {
+					mutations = append(mutations, run.skippedMutation(item, notebookID, states[item.itemKey()]))
+				}
+				continue
+			}
 			raw, err := run.readNote(item)
 			if err != nil {
 				return err
@@ -948,10 +1055,6 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			run.report.LinksRewritten += rewritten
 			for _, warning := range warnings {
 				run.addWarning(warning)
-			}
-			notebookID := run.folderIDs[item.NotebookPath]
-			if notebookID == "" {
-				notebookID = store.DefaultNotebookID
 			}
 			targetID := item.TargetID
 			current, found := documents[targetID]
@@ -965,7 +1068,15 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			// revision's content_sha256, which the store would otherwise hash
 			// over the same bytes (v1.0 J32-AA).
 			canonicalSHA := syncdelta.SHA256HexString(canonical)
-			fingerprint := noteFingerprint(item, notebookID, canonicalSHA)
+			refs := make([]store.AttachResourceRequest, 0, len(attachments))
+			for _, attachment := range attachments {
+				refs = append(refs, store.AttachResourceRequest{
+					DocumentID: targetID, ResourceID: attachment.ResourceID, RelationType: attachment.RelationType,
+					AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
+				})
+			}
+			fingerprint := recordedFingerprint(noteFingerprint(item, notebookID, canonicalSHA), run.basis,
+				store.ResourceRefsDigest(refs), len(warnings) > 0)
 			action := "create"
 			if trashed {
 				action = "unchanged"
@@ -1014,19 +1125,8 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				mutation.BaseRevisionID = current.CurrentRevisionID
 			}
 			if !trashed {
-				metadata, _ := json.Marshal(map[string]any{
-					"relative_path": item.RelPath, "aliases": item.Aliases,
-					"frontmatter_sha256": item.frontmatterSHAHex(),
-				})
-				mutation.Source = store.SetDocumentSourceRequest{
-					DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
-				}
-				for _, attachment := range attachments {
-					mutation.Resources = append(mutation.Resources, store.AttachResourceRequest{
-						DocumentID: targetID, ResourceID: attachment.ResourceID, RelationType: attachment.RelationType,
-						AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
-					})
-				}
+				mutation.Source = run.noteSource(item, targetID)
+				mutation.Resources = refs
 			}
 			mutations = append(mutations, mutation)
 		}
@@ -1039,6 +1139,73 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		return run.st.ApplyImportDocumentBatch(run.ctx, store.ImportDocumentBatchRequest{Documents: mutations, Checkpoint: checkpoint})
 	})
+}
+
+// notebookFor is the notebook a note lands in.
+func (run *importRun) notebookFor(item vaultFile) string {
+	if notebookID := run.folderIDs[item.NotebookPath]; notebookID != "" {
+		return notebookID
+	}
+	return store.DefaultNotebookID
+}
+
+// noteSource is a note's provenance, which every import writes, so a note whose
+// provenance was lost has it back after one reimport whether or not the note
+// itself was read.
+func (run *importRun) noteSource(item vaultFile, targetID string) store.SetDocumentSourceRequest {
+	metadata, _ := json.Marshal(map[string]any{
+		"relative_path": item.RelPath, "aliases": item.Aliases,
+		"frontmatter_sha256": item.frontmatterSHAHex(),
+	})
+	return store.SetDocumentSourceRequest{
+		DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
+	}
+}
+
+// skippable reports whether a note is already exactly what this import would
+// write, which it can tell without reading the note (v1.0 J39).
+//
+// The note's recorded fingerprint covers its file, its notebook, its canonical
+// body, the run's basis, its resource references and whether it warned. Here it
+// is recomputed from what is true now: the inventory's file hash and this run's
+// notebook and basis, and in place of the canonical body and references, the
+// stored revision's content hash and the digest of the stored references. The
+// two agree only when the file, the rules, the collection and the namespace are
+// as they were when the note was last written, the note did not warn, and the
+// stored note still holds what that import gave it. Anything else -- an edit
+// inside Notrios, a detached or purged resource, a moved note, a new note that
+// makes a link ambiguous -- makes them disagree, and the note is read and
+// repaired exactly as it was before skips existed.
+//
+// Title and notebook are compared directly, as the unchanged test below
+// compares them, because the stored document's can change without its body.
+func (run *importRun) skippable(item vaultFile, notebookID string, state store.ImportItemState, stateFound bool, head store.ImportDocumentHead, headFound bool) bool {
+	if !stateFound || !headFound || state.TargetID != item.TargetID || head.ContentSHA256 == "" {
+		return false
+	}
+	if head.Title != item.Title || head.NotebookID != notebookID {
+		return false
+	}
+	return state.Fingerprint == recordedFingerprint(noteFingerprint(item, notebookID, head.ContentSHA256),
+		run.basis, head.ResourceRefsSHA256, false)
+}
+
+// skippedMutation is what a skipped note still sends: its provenance and its
+// item state, as an unchanged note always has. It carries no body, because the
+// store checks only that an unchanged note is there, and no references, because
+// skippable has just seen that the stored ones are the ones it would attach.
+func (run *importRun) skippedMutation(item vaultFile, notebookID string, recorded store.ImportItemState) store.ImportDocumentMutation {
+	state := run.itemState(item, "unchanged")
+	state.Fingerprint = recorded.Fingerprint
+	return store.ImportDocumentMutation{
+		Action: "unchanged",
+		Document: store.CreateDocumentRequest{
+			PreferredID: item.TargetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
+			Title: item.Title, BodyMIMEType: "text/markdown", Message: "import from Obsidian vault",
+		},
+		Source: run.noteSource(item, item.TargetID),
+		State:  state,
+	}
 }
 
 func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
@@ -1600,6 +1767,27 @@ func (run *importRun) addWarning(message string) {
 // is over a few dozen bytes.
 func noteFingerprint(item vaultFile, notebookID, canonicalSHA string) string {
 	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + canonicalSHA))
+}
+
+// recordedFingerprint is what a note's item state holds since v1.0 J39: the
+// note fingerprint, and beside it everything else the note's canonical body and
+// references were derived from, so that a later import can tell, without
+// reading the note, that it would write exactly what is already stored.
+//
+//   - basis is the run's canonical rule version, collection and link namespace;
+//   - refsSHA is store.ResourceRefsDigest over the references the import gave
+//     the note;
+//   - warned is whether resolving the note's links produced a warning. A note
+//     that warned is never skipped, so its warnings are reported on every
+//     import, as they were before skips existed.
+//
+// Every input is one a skip can supply from the inventory and from
+// store.ImportDocumentHeads: the canonical hash is then the stored revision's
+// content_sha256, and refsSHA the digest of the stored references. A state
+// written before J39 holds noteFingerprint alone, which this never equals, so
+// a library from an older build is read in full until one import has run.
+func recordedFingerprint(noteFingerprint, basis, refsSHA string, warned bool) string {
+	return sha256Hex([]byte("j39\x00" + noteFingerprint + "\x00" + basis + "\x00" + refsSHA + "\x00" + strconv.FormatBool(warned)))
 }
 
 // fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,

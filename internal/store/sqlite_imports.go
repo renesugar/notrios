@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -81,6 +82,96 @@ func (s *SQLiteStore) ExistingDocumentIDs(ctx context.Context, ids []string) (ma
 			return nil, s.stepErrLocked(rc)
 		}
 	}
+}
+
+// ResourceRefsDigest is the SHA-256 of a document's resource references, taken
+// in an order that does not depend on how they were listed (v1.0 J39).
+//
+// An importer takes it over the references it attaches, and ImportDocumentHeads
+// takes it over the rows the store holds, so the two agree exactly when the note
+// still has what the import gave it and nothing besides. A reference the store
+// declined to write, because its resource is missing, makes them disagree, and
+// that is the safe direction: the note is read again.
+func ResourceRefsDigest(refs []AttachResourceRequest) string {
+	lines := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		ref = NormalizeAttachResourceRequest(ref)
+		lines = append(lines, ref.ResourceID+"\x00"+ref.RelationType+"\x00"+strconv.Itoa(ref.Ordinal)+"\x00"+ref.AnchorJSON+"\n")
+	}
+	sort.Strings(lines)
+	hash := sha256.New()
+	for _, line := range lines {
+		_, _ = io.WriteString(hash, line)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// ImportDocumentHeads reads what an importer needs to decide that a note is
+// still what it last wrote, without reading the note (v1.0 J39).
+//
+// The documents it answers for are the ones GetDocuments returns: the same join
+// to the current revision and the same deleted_at filter, so a note in the
+// trash is absent from both. Title and notebook are the document's, as
+// GetDocuments reports them. A revision whose content hash has not been
+// backfilled yet reports it empty, which no importer can match.
+func (s *SQLiteStore) ImportDocumentHeads(ctx context.Context, ids []string) (map[string]ImportDocumentHead, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]ImportDocumentHead, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(ids); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// One statement for the heads and their references: a row per reference,
+	// or one row of NULLs for a note that has none.
+	stmt, err := s.prepareLocked(`SELECT d.id, d.current_revision_id, d.title,
+			COALESCE(d.notebook_id, ''), r.content_sha256,
+			refs.resource_id, refs.relation_type, refs.ordinal, refs.anchor_json
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		LEFT JOIN document_resource_refs refs ON refs.document_id = d.id
+		WHERE d.deleted_at IS NULL AND d.id IN (` + lookupPlaceholders(len(ids)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, ids); err != nil {
+		return nil, err
+	}
+	refs := make(map[string][]AttachResourceRequest, len(ids))
+	for done := false; !done; {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			documentID := columnText(stmt, 0)
+			result[documentID] = ImportDocumentHead{
+				CurrentRevisionID: columnText(stmt, 1),
+				Title:             columnText(stmt, 2),
+				NotebookID:        columnText(stmt, 3),
+				ContentSHA256:     columnText(stmt, 4),
+			}
+			if C.sqlite3_column_type(stmt, 5) != C.SQLITE_NULL {
+				refs[documentID] = append(refs[documentID], AttachResourceRequest{
+					DocumentID: documentID, ResourceID: columnText(stmt, 5), RelationType: columnText(stmt, 6),
+					Ordinal: int(C.sqlite3_column_int(stmt, 7)), AnchorJSON: columnText(stmt, 8),
+				})
+			}
+		case C.SQLITE_DONE:
+			done = true
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+	for id, head := range result {
+		head.ResourceRefsSHA256 = ResourceRefsDigest(refs[id])
+		result[id] = head
+	}
+	return result, nil
 }
 
 func (s *SQLiteStore) GetDocuments(ctx context.Context, ids []string) (map[string]Document, error) {
