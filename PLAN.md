@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**47 items: 43 complete, 1 in progress, 3 not started, 0 deferred.**
+**47 items: 44 complete, 0 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -100,7 +100,7 @@ this section is archived when the plan completes and the rules are not.
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | complete | 4/4 | — |
-| J40. Show ambiguous links, and report them with the notes they might mean | in-progress | 5/6 | 1 |
+| J40. Show ambiguous links, and report them with the notes they might mean | complete | 6/6 | — |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | complete | 3/3 | — |
@@ -109,15 +109,7 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | not-started | 0/2 | 2 |
 
-### Started and not finished
-
-**J40. Show ambiguous links, and report them with the notes they might mean**
-
-- `J40-F` One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete — *not-started*
-
-### Not started
-
-Written and not begun: J9, J10, J47. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5023,7 +5015,7 @@ record. J32's harness and rule.
 link pass, not a full pass over every note, and a diverged note is still
 repaired.
 
-## J40. Show ambiguous links, and report them with the notes they might mean
+## J40. Show ambiguous links, and report them with the notes they might mean — complete
 
 **Goal.** A reader can see in the preview that a link is ambiguous, and the owner
 can get one report of every ambiguous link in the library, each with the notes it

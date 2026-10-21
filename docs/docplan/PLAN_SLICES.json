@@ -1148,7 +1148,7 @@
     {
       "id": "J40",
       "title": "Show ambiguous links, and report them with the notes they might mean",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J40-A",
@@ -1183,7 +1183,8 @@
         {
           "id": "J40-F",
           "statement": "One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         }
       ]
     },

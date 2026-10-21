@@ -433,3 +433,10 @@ from 61 to 60.
 - J4's review.
 
 J9 checks this section; it does not create it (decision 7).
+
+## Archive
+
+`notrios-v1.0-j40-3a56004.zip`, built from commit `3a56004`, the commit that
+completed this item's record, with the ledger not yet flipped. 26,725,022 bytes,
+3,013 entries, accepted by `check_release_zip.py`. No usage override was needed:
+the seven-day bucket had 85% remaining and the five-hour bucket had 99%.
