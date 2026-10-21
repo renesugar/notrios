@@ -1335,7 +1335,7 @@
     {
       "id": "J47",
       "title": "Render a working wiki embed in the preview",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J47-A",
@@ -1346,7 +1346,8 @@
         {
           "id": "J47-B",
           "statement": "J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j47/README.md"
         }
       ]
     },

@@ -113,3 +113,11 @@ measured in Chromium only.
   rewrites every embed it resolves to `resource://`. Rendering a name embed from
   the check would turn text into media after the page is sanitised, which is the
   kind of change J34's rule exists to prevent.
+
+## Archive
+
+`notrios-v1.0-j47-4eaf46f.zip`, built from commit `4eaf46f`, the commit that
+completed this item's record, with the ledger not yet flipped. 26,742,413 bytes,
+3,024 entries, accepted by `check_release_zip.py`. No usage override was needed:
+both the seven-day and five-hour buckets had 83% remaining. The archive also
+carries J48, which this item's working state depended on.

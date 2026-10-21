@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**48 items: 45 complete, 1 in progress, 2 not started, 0 deferred.**
+**48 items: 46 complete, 0 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -107,18 +107,10 @@ this section is archived when the plan completes and the rules are not.
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
-| J47. Render a working wiki embed in the preview | in-progress | 1/2 | 1 |
+| J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 
-### Started and not finished
-
-**J47. Render a working wiki embed in the preview**
-
-- `J47-B` J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged — *not-started*
-
-### Not started
-
-Written and not begun: J9, J10. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5739,7 +5731,7 @@ installed, published on 2026-10-06. It raises vite's own floors to
 **Working state.** The release gate passes on vite 8.1.6, and the bundle the UI
 ships is shown to be what it was, or different only where the record says.
 
-## J47. Render a working wiki embed in the preview
+## J47. Render a working wiki embed in the preview — complete
 
 **Goal.** An embed an Obsidian import resolved, `![[resource://…]]`, shows in the
 preview as the image or attachment it names, the way a Markdown
