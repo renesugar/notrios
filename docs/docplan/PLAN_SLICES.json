@@ -1335,12 +1335,13 @@
     {
       "id": "J47",
       "title": "Render a working wiki embed in the preview",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J47-A",
           "statement": "A working wiki embed renders as the element a Markdown embed of the same target renders as, through the same neutralisation, pinned by tests that compare the two",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j47/README.md"
         },
         {
           "id": "J47-B",

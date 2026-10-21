@@ -10,6 +10,7 @@
 // link resolves to: that stays the service's canonical extractor and resolver.
 import type MarkdownIt from 'markdown-it';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+import type Token from 'markdown-it/lib/token.mjs';
 import type { CheckedLink } from './api';
 import { byteOffsetsToIndices } from './editor-offsets';
 import { describeLinkStatus, isBrokenStatus } from './useLinkIntelligence';
@@ -65,9 +66,27 @@ function wikiLinkRule(state: StateInline, silent: boolean): boolean {
   const target = (pipe < 0 ? inner : inner.slice(0, pipe)).trim();
   const display = pipe < 0 ? target : inner.slice(pipe + 1).trim();
 
+  if (embed && target.startsWith('resource://')) {
+    // An attachment embed is the Markdown embed of the same target: the same
+    // token markdown-it's own image rule emits, so the same renderer and the
+    // same media neutralisation follow by construction (v1.0 J47). The text
+    // after the pipe is the alt text, as the label is for `![shown](...)`.
+    const href = state.md.normalizeLink(target);
+    if (state.md.validateLink(href)) {
+      const children: Token[] = [];
+      state.md.inline.parse(pipe < 0 ? '' : display, state.md, state.env, children);
+      const image = state.push('image', 'img', 0);
+      image.attrs = [['src', href], ['alt', ''], [LINK_SOURCE_ATTR, source]];
+      image.children = children;
+      image.content = pipe < 0 ? '' : display;
+      state.pos = after;
+      return true;
+    }
+  }
   if (embed) {
-    // A working embed is media, which is J47's. Until then it is the text it
-    // always was, wrapped so a broken one can be marked.
+    // Any other embed stays the text it always was, wrapped so a broken one
+    // can be marked: a note embed is transclusion, not media, and a name the
+    // import left as written names nothing certain.
     const tokenOpen = state.push('wikilink_embed_open', 'span', 1);
     tokenOpen.attrs = [[LINK_SOURCE_ATTR, source]];
     state.push('text', '', 0).content = source;

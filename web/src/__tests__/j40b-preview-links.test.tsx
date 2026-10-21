@@ -59,10 +59,10 @@ describe('J40-B: wiki links render', () => {
     expect(onOpenDocument).toHaveBeenCalledWith('doc_x');
   });
 
-  it('leaves a working embed as the text it was, for J47', async () => {
-    const body = 'Picture ![[resource://default/resources/res_z]] here.\n';
+  it('leaves a note embed as the text it was; an attachment embed is J47\'s', async () => {
+    const body = 'Note ![[document://default/documents/doc_z]] here.\n';
     const { root } = preview(body);
-    await rendered(root, 'Picture ![[resource://default/resources/res_z]] here.');
+    await rendered(root, 'Note ![[document://default/documents/doc_z]] here.');
     expect(root().querySelector('img')).toBeNull();
     expect(root().querySelector('a')).toBeNull();
   });

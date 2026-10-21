@@ -355,9 +355,15 @@ Hover over a marked link to see why. A marked link cannot be clicked, and the
 preview never rewrites it. To fix one, edit the link in the editor.
 
 Only an editable note is checked, so a note in Help, Reports or the Trash shows
-no marks. A wiki embed, `![[…]]`, still shows as the text you wrote. Rendering
-it as the image it names is planned as v1.0 J47, and a broken embed is marked
-like a link.
+no marks.
+
+A wiki embed of an attachment, such as `![[resource://default/resources/res_x|A
+heron]]`, shows exactly what `![A heron](resource://default/resources/res_x)`
+shows; the text after the pipe is its alt text. An Obsidian size, as in
+`![[pic.png|300]]`, is read as alt text, because a Markdown embed has no size
+either. An embed of a note, `![[document://…]]`, stays the text you wrote:
+showing another note inside this one is not something the preview does. A
+broken embed is marked like a link.
 
 ### Math and code blocks
 

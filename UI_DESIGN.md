@@ -215,7 +215,8 @@ with a reason. It never repairs one, and it never offers a choice.
 |---|---|
 | `[[document://…]]`, `[[resource://…]]`, `[[notrios://…]]`, each with or without `\|text` | an ordinary link, routed exactly like the Markdown link to the same URI. The text shown is the text after the pipe, or the URI |
 | `[[Name]]` or `[[Name\|text]]` | an `<a>` with no `href`, showing the text after the pipe or the name. It becomes a routed link when the editor's check resolves it, and is marked when the check says it will not open |
-| `![[…]]` | the characters as written, as before. When the check says it will not open, they are marked. A working embed is not rendered as media until J47 |
+| `![[resource://…]]`, with or without `\|alt text` | exactly what `![alt text](resource://…)` renders: markdown-it's own image token, through the same media neutralisation (J47) |
+| any other `![[…]]` | the characters as written. A note embed is transclusion, not media, and stays text. When the check says it will not open, it is marked |
 | `[text](target)` whose target is not a routed scheme | an `<a>` with no `href`, as before, marked when the check says it will not open |
 
 **Where the classification comes from.** It comes from the editor's debounced

@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**47 items: 44 complete, 0 in progress, 3 not started, 0 deferred.**
+**47 items: 44 complete, 1 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -107,9 +107,17 @@ this section is archived when the plan completes and the rules are not.
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
-| J47. Render a working wiki embed in the preview | not-started | 0/2 | 2 |
+| J47. Render a working wiki embed in the preview | in-progress | 1/2 | 1 |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J47. Render a working wiki embed in the preview**
+
+- `J47-B` J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged — *not-started*
+
+### Not started
+
+Written and not begun: J9, J10. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
