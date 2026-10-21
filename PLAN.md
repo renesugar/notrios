@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**46 items: 43 complete, 0 in progress, 3 not started, 0 deferred.**
+**46 items: 43 complete, 1 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -100,7 +100,7 @@ this section is archived when the plan completes and the rules are not.
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | complete | 4/4 | — |
-| J40. Show ambiguous links, and report them with the notes they might mean | not-started | 0/6 | 6 |
+| J40. Show ambiguous links, and report them with the notes they might mean | in-progress | 1/6 | 5 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | complete | 3/3 | — |
@@ -108,7 +108,19 @@ this section is archived when the plan completes and the rules are not.
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J40. Show ambiguous links, and report them with the notes they might mean**
+
+- `J40-B` Ambiguous and unresolved links are marked in the preview in distinct styles by a renderer rule, with no click prompt, to a rendering written into UI_DESIGN.md first — *not-started*
+- `J40-C` A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked — *not-started*
+- `J40-D` The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report — *not-started*
+- `J40-E` Import-time ambiguity reaches the report, by recording candidates at import or by a recorded reason it need not — *not-started*
+- `J40-F` One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete — *not-started*
+
+### Not started
+
+Written and not begun: J9, J10. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete

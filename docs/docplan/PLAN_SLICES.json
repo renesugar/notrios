@@ -1148,12 +1148,13 @@
     {
       "id": "J40",
       "title": "Show ambiguous links, and report them with the notes they might mean",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J40-A",
           "statement": "What the stored row, the editor, Library Health, lint and the preview say is stated as tests for title, vault-name and attachment-name ambiguity",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         },
         {
           "id": "J40-B",
