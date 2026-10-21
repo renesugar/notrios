@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**46 items: 41 complete, 2 in progress, 3 not started, 0 deferred.**
+**46 items: 42 complete, 1 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -99,7 +99,7 @@ this section is archived when the plan completes and the rules are not.
 | J36. Resolve Obsidian partial-path links the way Obsidian does | complete | 5/5 | — |
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
-| J39. Skip a note a reimport cannot change | in-progress | 3/4 | 1 |
+| J39. Skip a note a reimport cannot change | complete | 4/4 | — |
 | J40. Show ambiguous links, and report them with the notes they might mean | not-started | 0/6 | 6 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
@@ -109,10 +109,6 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | in-progress | 1/2 | 1 |
 
 ### Started and not finished
-
-**J39. Skip a note a reimport cannot change**
-
-- `J39-D` The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains — *in-progress*
 
 **J46. Clear vite's launch-editor advisories**
 
@@ -4874,7 +4870,7 @@ depends on this item.
 **Working state.** A Joplin import has been measured, and every J32 finding that
 applies to it has been carried across or rejected with its measurement.
 
-## J39. Skip a note a reimport cannot change
+## J39. Skip a note a reimport cannot change — complete
 
 **Goal.** A reimport of a vault that has not changed does not read, canonicalize
 or hash the notes it is about to leave alone, and a note that *has* diverged is

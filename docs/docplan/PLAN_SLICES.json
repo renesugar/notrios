@@ -1117,7 +1117,7 @@
     {
       "id": "J39",
       "title": "Skip a note a reimport cannot change",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J39-A",
@@ -1140,7 +1140,8 @@
         {
           "id": "J39-D",
           "statement": "The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains",
-          "state": "in-progress"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
         }
       ]
     },

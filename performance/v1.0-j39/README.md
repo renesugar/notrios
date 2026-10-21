@@ -283,3 +283,17 @@ that cost no measurable time. J39-D is done on that decision.
   references it no longer gives is a question about what a reimport repairs,
   and under J8 it is recorded here, not answered.
 - **Only the Obsidian importer skips.**
+
+## Archive
+
+`notrios-v1.0-j39-cd14448.zip`, built from commit `cd14448`, with the ledger not
+yet flipped. 26,659,678 bytes, 2,991 entries, accepted by `check_release_zip.py`.
+No usage override was needed: the seven-day bucket had 94% remaining and the
+five-hour bucket had 100%.
+
+The first build, from `f265415`, the commit that records the owner's decision,
+stopped at `npm audit` in `web/`, on three `launch-editor` advisories against
+vite published the day before. J46 cleared them by moving vite from 8.1.4 to
+8.1.6 in the lockfile, so this archive also carries J46-A. That changes nothing
+J39 claims: J46-A changes no Go code and leaves the built UI byte for byte the
+same, and J39's tests pass unchanged at this commit.
