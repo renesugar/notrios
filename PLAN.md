@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**48 items: 46 complete, 0 in progress, 2 not started, 0 deferred.**
+**48 items: 46 complete, 1 in progress, 1 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -69,7 +69,7 @@ this section is archived when the plan completes and the rules are not.
 | J6. Ship the versioned no-GUI library and header artifacts | complete | 3/3 | — |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
-| J9. Publish the release documentation for the supported matrix | not-started | 0/4 | 4 |
+| J9. Publish the release documentation for the supported matrix | in-progress | 1/4 | 3 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
@@ -110,7 +110,17 @@ this section is archived when the plan completes and the rules are not.
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J9. Publish the release documentation for the supported matrix**
+
+- `J9-B` Installation and support documentation carries exact OS, architecture and runtime rows, checked against a v1.0 matrix — *not-started*
+- `J9-C` Migration, rollback, disaster-recovery and artifact-authenticity instructions are published, each one executed — *not-started*
+- `J9-D` No sentence remains that J1, J2 or J3 made untrue — *not-started*
+
+### Not started
+
+Written and not begun: J10. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete

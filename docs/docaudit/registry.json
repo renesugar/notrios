@@ -3,7 +3,7 @@
   "claims": [
     {
       "id": "product-version-current",
-      "check_anchor": "go:github.com/renesugar/notrios/internal/version#TestVersionIsReleaseCandidate"
+      "check_anchor": "go:github.com/renesugar/notrios/internal/version#TestVersionIsTheRelease"
     },
     {
       "id": "current-schema-status",

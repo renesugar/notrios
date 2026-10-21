@@ -217,12 +217,13 @@
     {
       "id": "J9",
       "title": "Publish the release documentation for the supported matrix",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J9-A",
           "statement": "The product version is 1.0.0, and nothing that compares a version was changed by accident",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         },
         {
           "id": "J9-B",

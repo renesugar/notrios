@@ -134,9 +134,16 @@ func (l Ledger) RoadmapStatusLines() []string {
 // This is that lesson arriving at the front page.
 //
 // The milestone and the product version are printed as two separate facts on
-// purpose. They disagree right now -- the plan is v1.0 and the binaries report
-// 0.8.0 -- because the version is bumped when the release is cut. Hiding that
-// by printing one number would be the same mistake in a new place.
+// purpose. They disagreed through v0.9 and most of v1.0 -- the plan was v1.0
+// and the binaries reported 0.8.0 -- and they will disagree again as soon as
+// the next milestone opens. Hiding that by printing one number would be the
+// same mistake in a new place.
+//
+// The sentence used to say the version is bumped "when the release is cut,
+// which is the last item in the plan". v1.0 J9 bumped it one item early, so the
+// release documentation could be run against the version it describes, and the
+// sentence went false the moment it was generated. It now says only what is
+// true of every milestone.
 func (l Ledger) ReadmeStatusLines(productVersion string, archived []string) []string {
 	counts := map[ItemState]int{}
 	for _, item := range l.Items {
@@ -150,8 +157,8 @@ func (l Ledger) ReadmeStatusLines(productVersion string, archived []string) []st
 			counts[ItemNotStarted], counts[ItemDeferred]),
 		"",
 		fmt.Sprintf("**Product version: %s**, which is what every binary reports and what a "+
-			"release is tagged with. It is not the milestone number: the version is bumped "+
-			"when the release is cut, which is the last item in the plan.", productVersion),
+			"release is tagged with. It is not the milestone number: a milestone is the work "+
+			"in the plan, and the version is what the binaries built from it say they are.", productVersion),
 	}
 	if len(archived) > 0 {
 		lines = append(lines, "",
