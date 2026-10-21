@@ -201,6 +201,55 @@ passing offline-network, CSP, sanitization, malformed/oversized-diagram,
 browser, and Wails tests. “The dependency supports Mermaid” is not evidence that
 the application does.
 
+## Wiki links, and links that will not open (v1.0 J40-B)
+
+Until J40-B the preview had no wiki-link rule. Every link an Obsidian import
+resolved, written `[[document://…|shown]]`, was printed as those characters, and
+a link that would not open looked like prose or like a working link. The preview
+now recognises wiki syntax while it renders, and marks a link that will not open
+with a reason. It never repairs one, and it never offers a choice.
+
+**What renders.**
+
+| Input | Result |
+|---|---|
+| `[[document://…]]`, `[[resource://…]]`, `[[notrios://…]]`, each with or without `\|text` | an ordinary link, routed exactly like the Markdown link to the same URI. The text shown is the text after the pipe, or the URI |
+| `[[Name]]` or `[[Name\|text]]` | an `<a>` with no `href`, showing the text after the pipe or the name. It becomes a routed link when the editor's check resolves it, and is marked when the check says it will not open |
+| `![[…]]` | the characters as written, as before. When the check says it will not open, they are marked. A working embed is not rendered as media until J47 |
+| `[text](target)` whose target is not a routed scheme | an `<a>` with no `href`, as before, marked when the check says it will not open |
+
+**Where the classification comes from.** It comes from the editor's debounced
+buffer check, the same classification behind the editor's wavy underlines and
+broken-link list. Opening or editing a note costs no new request. The renderer
+rule records each link's exact source text on the element it emits, and the
+check reports each link's source span. A link is marked when the two texts are
+equal. Nothing is matched against rendered text, so a phrase that only looks
+like a link is never marked. Two identical links always share a status, because
+a status depends only on the text. A link the check has not classified yet, such
+as one typed since the last check, is left unmarked rather than guessed.
+
+**How a mark looks.** It is a class on the element, so a theme can restyle it.
+
+| Status | Class | Look | Hover text |
+|---|---|---|---|
+| `ambiguous` | `preview-link-ambiguous` | accent-coloured text, dotted underline | "more than one note or resource matches" |
+| `unresolved`, `invalid`, `stale_anchor` | `preview-link-unresolved` | body-coloured text, wavy underline in `--danger`, like the editor's | the editor's text for that status |
+
+A marked link has no `href` and is not a click target. The hover text is the
+editor's fixed wording for the status, set by the GUI, and never text from the
+note. Which notes an ambiguous link might mean is the report's job (J40-C), not
+the preview's.
+
+**Not marked: a read-only note.** The editor's check runs only for an editable
+note, so a note in Help, Reports or the Trash is not classified. Its URI wiki
+links still render as links, but nothing is marked. Help and Reports notes are
+generated with working links, and a note in the Trash is on its way out
+(decision 10).
+
+**Sanitisation is unchanged.** The rule emits `<a>` and `<span>` elements with a
+class and `data-` attributes, escaped by markdown-it. No note text becomes
+markup, and `normalizePreviewHTML` still runs over every element.
+
 ## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.
