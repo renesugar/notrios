@@ -1472,7 +1472,7 @@ func planObsidianLinks(body, notePath, collectionID string, ns linkNamespace) ([
 	warnings := []string{}
 	for _, candidate := range markdownlinks.Extract(body) {
 		raw := strings.TrimSpace(candidate.RawTarget)
-		if raw == "" || isExternal(raw) || strings.HasPrefix(raw, "document://") || strings.HasPrefix(raw, "resource://") || strings.HasPrefix(raw, "mailto:") {
+		if !vaultTarget(raw) {
 			continue
 		}
 		target := ""
@@ -1614,25 +1614,43 @@ func vaultCandidates(noteDir, raw string) [2]string {
 	return [2]string{raw, filepath.ToSlash(filepath.Join(noteDir, raw))}
 }
 
+// vaultTarget reports whether a link's target is one the import resolves
+// against the vault: not empty, not a web or mail address, and not already a
+// Notrios URI.
+func vaultTarget(raw string) bool {
+	return raw != "" && !isExternal(raw) && !strings.HasPrefix(raw, "document://") &&
+		!strings.HasPrefix(raw, "resource://") && !strings.HasPrefix(raw, "mailto:")
+}
+
 func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
+	id, matches := noteMatches(notePath, raw, ns)
+	if id != "" {
+		return id, false
+	}
+	return "", len(matches) > 1
+}
+
+// noteMatches is how a note link resolves: the note it names, or else every
+// note its name could mean. A path that matches nothing names none.
+func noteMatches(notePath, raw string, ns linkNamespace) (string, []string) {
 	raw = decodeVaultTarget(raw)
 	noteDir := folderPath(notePath)
 	for _, candidate := range vaultCandidates(noteDir, raw) {
 		if id := ns.notesByPath[normalizeNotePath(candidate)]; id != "" {
-			return id, false
+			return id, nil
 		}
 	}
 	if pathShapedTarget(raw) {
 		// A path that matches nothing is a broken link, not a name to look up.
 		// The link text stays as it is, which is what Obsidian shows.
-		return "", false
+		return "", nil
 	}
 	key := strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
 	ids := ns.notesByName[key]
 	if len(ids) == 1 {
-		return ids[0], false
+		return ids[0], nil
 	}
-	return "", len(ids) > 1
+	return "", ids
 }
 
 func resolveAssetID(notePath, raw string, ns linkNamespace) (string, bool) {
