@@ -181,6 +181,10 @@ Checked in a real browser against a note containing each case:
 
 Sanitization is Notrios' own `normalizePreviewHTML` (DOMParser-based), passed to
 `md-editor-rt` as its `sanitize` prop, on top of that library's built-in `xss`.
+The preview also runs it a second time in its own renderer, so it is written to
+leave its own output alone. A second pass keeps a resolved attachment URL only
+beside the `resource://` it was resolved from, and changes nothing else. Before
+v1.0 J48 it removed that URL, and no attachment showed.
 `rehype-sanitize` is not involved and could not be: it belongs to a unified
 pipeline this application does not run.
 

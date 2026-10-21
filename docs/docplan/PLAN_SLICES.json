@@ -1353,12 +1353,13 @@
     {
       "id": "J48",
       "title": "Show attachments in the preview: a sanitiser that leaves its own output alone",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J48-A",
           "statement": "normalizePreviewHTML is idempotent over J34's media corpus and every routed link form, keeping a resolved attachment URL only beside the data-app-uri it came from and removing a forged pair",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j48/README.md"
         },
         {
           "id": "J48-B",

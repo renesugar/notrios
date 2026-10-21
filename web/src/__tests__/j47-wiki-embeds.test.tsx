@@ -50,6 +50,8 @@ describe('J47: a wiki embed of an attachment is its Markdown embed', () => {
     const image = root().querySelector('img')!;
     expect(image.getAttribute('data-app-uri')).toBe('resource://default/resources/res_a');
     expect(image.getAttribute('alt')).toBe('A heron');
+    // Its local content URL: since J48 a second sanitising pass keeps it.
+    expect(image.getAttribute('src')).toBe('/api/v1/resources/res_a/content');
   });
 
   it('turns no alt text into markup', async () => {

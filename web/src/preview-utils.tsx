@@ -20,6 +20,10 @@ export function normalizePreviewHTML(html: string): string {
 
   doc.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
     const href = anchor.getAttribute('href') || '';
+    // This rule's own output, from an earlier pass, is left as it is: the
+    // preview sanitises twice, and a second pass that rewrote the first's
+    // destinations removed every attachment link's (v1.0 J48).
+    if (href !== '' && href === resolvedAppURI(anchor.getAttribute('data-app-uri'), true)) return;
     if (href.startsWith('document://')) {
       anchor.setAttribute('data-app-uri', href);
       anchor.setAttribute('href', '#');
@@ -116,10 +120,16 @@ function neutralizeMediaURL(element: Element, attribute: string): 'none' | 'reso
   const value = element.getAttribute(attribute);
   if (value === null) return 'none';
   const url = value.trim();
+  // An earlier pass's own resolution is kept, and only that: the local content
+  // URL that this attribute's recorded resource:// resolves to. Anything else
+  // relative is removed below, as it always was (v1.0 J48).
+  const recorded = appAttribute(attribute);
+  if (url !== '' && url === resolvedAppURI(element.getAttribute(recorded), false)) return 'resource';
   if (url.startsWith('resource://')) {
     const resourceID = parseResourceIDFromURI(url);
     if (resourceID) {
       element.setAttribute('data-app-uri', url);
+      element.setAttribute(recorded, url);
       element.setAttribute(attribute, resourceContentURL(resourceID, false));
       return 'resource';
     }
@@ -133,6 +143,31 @@ function neutralizeMediaURL(element: Element, attribute: string): 'none' | 'reso
     return 'remote';
   }
   return 'removed';
+}
+
+/**
+ * Where a media attribute's original resource:// is recorded: `data-app-src`,
+ * `data-app-poster`, `data-app-xlink-href`. One per attribute, because a
+ * video's source and poster can name two attachments, and `data-app-uri` holds
+ * only the last one written.
+ */
+function appAttribute(attribute: string): string {
+  return `data-app-${attribute.replace(':', '-')}`;
+}
+
+/**
+ * What this sanitiser writes for an app URI it routed, so a second pass can
+ * recognise its own output: a resource's local content URL, as a download for
+ * a link, and `#` for a note or a stable link. Null for anything else.
+ */
+function resolvedAppURI(appURI: string | null, forLink: boolean): string | null {
+  if (!appURI) return null;
+  if (appURI.startsWith('resource://')) {
+    const resourceID = parseResourceIDFromURI(appURI);
+    return resourceID ? resourceContentURL(resourceID, forLink) : null;
+  }
+  if (forLink && (appURI.startsWith('document://') || isStableLink(appURI))) return '#';
+  return null;
 }
 
 export function parseDocumentIDFromURI(uri: string): string | null {
