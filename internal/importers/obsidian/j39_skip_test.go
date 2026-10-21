@@ -185,7 +185,7 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 		// stillRead is how many notes the import after the repair reads
 		// beyond those that warned.
 		stillRead int
-		check            func(t *testing.T, st *store.SQLiteStore, report Report)
+		check     func(t *testing.T, st *store.SQLiteStore, report Report)
 	}{
 		{
 			name: "edited inside Notrios",
@@ -651,5 +651,38 @@ func TestJ39CanonicalRulesArePinned(t *testing.T) {
 		t.Fatalf("the canonical rules' output changed under version %d: pinned %s, now %s.\n"+
 			"If the change is intended, move canonicalRules to %s and pin %s beside it, so libraries "+
 			"imported under the old rules are read again.", canonicalRules, pinned, got, strconv.Itoa(canonicalRules+1), got)
+	}
+}
+
+// TestJ39BasisIsTheHashOfItsParts: canonicalBasis gathers its parts in a buffer
+// it hashes in pieces. What it returns must be the hash of the parts written
+// end to end, however many times the buffer filled, so an inventory larger
+// than the buffer is used.
+func TestJ39BasisIsTheHashOfItsParts(t *testing.T) {
+	inv := inventory{}
+	for index := 0; index < 3000; index++ {
+		path := fmt.Sprintf("folder-%04d/a note with a long enough name %04d.md", index, index)
+		inv.Notes = append(inv.Notes, vaultFile{
+			RelPath: path, TargetID: documentID(path), Title: fmt.Sprintf("Title %d", index),
+			Aliases: []string{"one", strconv.Itoa(index)},
+		})
+	}
+	inv.Assets = append(inv.Assets, vaultFile{RelPath: "pic.png", TargetID: resourceID("pic.png")})
+	parts := []string{"rules", "7", "collection", "default", "notes", strconv.Itoa(len(inv.Notes))}
+	for _, note := range inv.Notes {
+		parts = append(parts, note.RelPath, note.TargetID, note.Title, strconv.Itoa(len(note.Aliases)))
+		parts = append(parts, note.Aliases...)
+	}
+	parts = append(parts, "assets", "1", "pic.png", resourceID("pic.png"))
+	var joined []byte
+	for _, part := range parts {
+		joined = append(append(joined, part...), 0)
+	}
+	if len(joined) <= basisBufferBytes {
+		t.Fatalf("the inventory must be larger than the buffer: %d bytes", len(joined))
+	}
+	sum := sha256.Sum256(joined)
+	if got, want := canonicalBasis(7, "default", inv), hex.EncodeToString(sum[:]); got != want {
+		t.Fatalf("basis %s, want %s", got, want)
 	}
 }

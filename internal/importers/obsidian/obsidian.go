@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/fs"
 	"mime"
@@ -703,29 +704,64 @@ func buildLinkNamespace(inv inventory) linkNamespace {
 // note is read again. Hashing the namespace rather than the vault is what lets a
 // reimport with a few edited notes skip the rest.
 func canonicalBasis(rules int, collectionID string, inv inventory) string {
-	hash := sha256.New()
-	written := 0
-	separator := []byte{0}
-	write := func(parts ...string) {
-		for _, part := range parts {
-			count, _ := io.WriteString(hash, part)
-			_, _ = hash.Write(separator)
-			written += count + 1
-		}
-	}
+	basis := basisHash{hash: sha256.New(), buffer: make([]byte, 0, basisBufferBytes)}
 	// Notes and Assets are sorted by path when the inventory is read, so the
 	// order is the vault's and not the walk's.
-	write("rules", strconv.Itoa(rules), "collection", collectionID, "notes", strconv.Itoa(len(inv.Notes)))
+	basis.add("rules")
+	basis.add(strconv.Itoa(rules))
+	basis.add("collection")
+	basis.add(collectionID)
+	basis.add("notes")
+	basis.add(strconv.Itoa(len(inv.Notes)))
 	for _, note := range inv.Notes {
-		write(note.RelPath, note.TargetID, note.Title, strconv.Itoa(len(note.Aliases)))
-		write(note.Aliases...)
+		basis.add(note.RelPath)
+		basis.add(note.TargetID)
+		basis.add(note.Title)
+		basis.add(strconv.Itoa(len(note.Aliases)))
+		for _, alias := range note.Aliases {
+			basis.add(alias)
+		}
 	}
-	write("assets", strconv.Itoa(len(inv.Assets)))
+	basis.add("assets")
+	basis.add(strconv.Itoa(len(inv.Assets)))
 	for _, asset := range inv.Assets {
-		write(asset.RelPath, asset.TargetID)
+		basis.add(asset.RelPath)
+		basis.add(asset.TargetID)
 	}
-	hashmeter.Add(written)
-	return hex.EncodeToString(hash.Sum(nil))
+	return basis.sum()
+}
+
+// basisBufferBytes is how much of the basis is gathered before it is hashed.
+const basisBufferBytes = 64 << 10
+
+// basisHash feeds canonicalBasis's parts to one hash through one buffer.
+// Writing each part as a string allocated a copy of it, several per note,
+// which was most of what recording the basis cost a fresh import (measured,
+// v1.0 J39-D).
+type basisHash struct {
+	hash    hash.Hash
+	buffer  []byte
+	written int
+}
+
+func (basis *basisHash) add(part string) {
+	if len(basis.buffer)+len(part)+1 > cap(basis.buffer) {
+		basis.flush()
+	}
+	basis.buffer = append(basis.buffer, part...)
+	basis.buffer = append(basis.buffer, 0)
+}
+
+func (basis *basisHash) flush() {
+	_, _ = basis.hash.Write(basis.buffer)
+	basis.written += len(basis.buffer)
+	basis.buffer = basis.buffer[:0]
+}
+
+func (basis *basisHash) sum() string {
+	basis.flush()
+	hashmeter.Add(basis.written)
+	return hex.EncodeToString(basis.hash.Sum(nil))
 }
 
 // cloneStrings copies each string so the slice holds no reference into the

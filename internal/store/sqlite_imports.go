@@ -98,16 +98,23 @@ func ResourceRefsDigest(refs []AttachResourceRequest) string {
 		return emptyResourceRefsDigest
 	}
 	lines := make([]string, 0, len(refs))
+	size := 0
 	for _, ref := range refs {
 		ref = NormalizeAttachResourceRequest(ref)
-		lines = append(lines, ref.ResourceID+"\x00"+ref.RelationType+"\x00"+strconv.Itoa(ref.Ordinal)+"\x00"+ref.AnchorJSON+"\n")
+		line := ref.ResourceID + "\x00" + ref.RelationType + "\x00" + strconv.Itoa(ref.Ordinal) + "\x00" + ref.AnchorJSON + "\n"
+		lines = append(lines, line)
+		size += len(line)
 	}
 	sort.Strings(lines)
-	hash := sha256.New()
+	// One buffer and one sum: a hasher per note, fed a line at a time, was
+	// most of what an import spent recording references (measured, v1.0
+	// J39-D).
+	joined := make([]byte, 0, size)
 	for _, line := range lines {
-		_, _ = io.WriteString(hash, line)
+		joined = append(joined, line...)
 	}
-	return hex.EncodeToString(hash.Sum(nil))
+	sum := sha256.Sum256(joined)
+	return hex.EncodeToString(sum[:])
 }
 
 // emptyResourceRefsDigest is ResourceRefsDigest of no references: the SHA-256 of
