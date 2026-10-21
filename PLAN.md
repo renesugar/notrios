@@ -69,7 +69,7 @@ this section is archived when the plan completes and the rules are not.
 | J6. Ship the versioned no-GUI library and header artifacts | complete | 3/3 | — |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
-| J9. Publish the release documentation for the supported matrix | in-progress | 1/4 | 3 |
+| J9. Publish the release documentation for the supported matrix | in-progress | 3/4 | 1 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
@@ -109,14 +109,12 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
-| J49. Put everything a stranger verifies with into the release set | not-started | 0/3 | 3 |
+| J49. Put everything a stranger verifies with into the release set | not-started | 0/4 | 4 |
 
 ### Started and not finished
 
 **J9. Publish the release documentation for the supported matrix**
 
-- `J9-B` Installation and support documentation carries exact OS, architecture and runtime rows, checked against a v1.0 matrix — *not-started*
-- `J9-C` Migration, rollback, disaster-recovery and artifact-authenticity instructions are published, each one executed — *not-started*
 - `J9-D` No sentence remains that J1, J2 or J3 made untrue — *not-started*
 
 ### Not started
@@ -1114,6 +1112,15 @@ establish that the evidence predates disclosure.
 **One decision arrives here from J2, and the owner has acted on it.** The CI
 secret held the release key's primary, which can certify as well as sign; it was
 replaced on 2026-09-12 with an export narrowed to the signing subkey.
+
+**The documentation describes the release before it exists, from J9.** J9
+wrote the installation page for the 1.0 release set: where to download it, how
+to verify it, and how to upgrade and roll back. The site deploys on every push to
+`main` (`docs.yml`), so J10-A's merge publishes that page before J10-B creates the
+release it describes. J10 decides how that window is handled: the release can be
+created immediately after the merge, the docs deploy can be held until it
+exists, or the page can be accepted as briefly ahead. J10-C then runs the page's
+verification blocks against the published set (`performance/v1.0-j9/run_verification.py`).
 
 **What confirms that, and what cannot.** A GitHub secret is write-only, so the
 value cannot be inspected — and the workflow's existing fingerprint check cannot
@@ -5963,6 +5970,14 @@ updates the instructions it changes.
 - **J49-C, the instructions follow.** J9-C's verification section verifies
   with the bundle as a stranger with no login, and covers the C ABI tarball.
   Each instruction is executed again.
+- **J49-D, the release is built on the supported row.** `release.yml` runs on
+  `ubuntu-latest`. Run 34697727452 got the `ubuntu-24.04` image, but the label
+  moves when GitHub moves it. A package built on a newer Ubuntu computes its
+  `Depends` from that system's libraries (J1 computes them with
+  `dpkg-shlibdeps`), so the release would quietly target a row nobody ran. The
+  job names `ubuntu-24.04`, the matrix's row. A check derives the runner label
+  from the workflow and refuses one the matrix does not support. Found by J9-B
+  on 2026-10-21, while recording the runtime rows.
 
 **Boundaries.**
 - No new third-party action, and the existing ones stay pinned by digest.

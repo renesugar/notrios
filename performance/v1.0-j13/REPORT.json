@@ -3,13 +3,13 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "bc3d72e9bbb6a66ec2ecb14a09c5e1651699fd37",
+  "content_commit": "4001d949f69d28d60e01cc2d7e9e3433917029d8",
   "counts": {
-    "examples": 173,
+    "examples": 178,
     "executed": 71,
     "by_class": {
       "fragment": 3,
-      "recipe": 123,
+      "recipe": 128,
       "synopsis": 46,
       "transcript": 1
     },
@@ -17,7 +17,7 @@
       "fragment/executed": 2,
       "fragment/unverified": 1,
       "recipe/executed": 68,
-      "recipe/unverified": 55,
+      "recipe/unverified": 60,
       "synopsis/unverified": 46,
       "transcript/executed": 1
     }
@@ -48,20 +48,20 @@
     "index-getting-started-example-1",
     "installation-backing-up-and-getting-your-notes-back-example-1",
     "installation-backing-up-and-getting-your-notes-back-example-2",
+    "installation-building-the-package-yourself-example-1",
+    "installation-building-the-package-yourself-example-2",
     "installation-checking-that-a-purge-removed-everything-example-1",
     "installation-checking-that-a-purge-removed-everything-example-2",
     "installation-clone-example-1",
     "installation-going-back-to-an-earlier-version-example-1",
-    "installation-installing-from-a-package-example-1",
-    "installation-installing-from-a-package-example-2",
+    "installation-going-back-to-an-earlier-version-example-2",
+    "installation-going-back-to-an-earlier-version-example-3",
     "installation-installing-from-the-package-example-1",
     "installation-installing-from-the-package-example-2",
     "installation-installing-to-an-end-user-location-example-1",
     "installation-installing-to-an-end-user-location-example-2",
     "installation-prerequisites-for-building-from-source-example-1",
     "installation-removing-notrios-when-you-installed-the-package-example-1",
-    "installation-removing-notrios-when-you-installed-the-package-example-2",
-    "installation-removing-notrios-when-you-installed-the-package-example-3",
     "installation-removing-your-data-as-well-example-1",
     "installation-removing-your-data-as-well-example-2",
     "installation-removing-your-data-as-well-example-3",
@@ -70,6 +70,11 @@
     "installation-upgrading-example-1",
     "installation-upgrading-from-before-08-example-1",
     "installation-verifying-what-you-downloaded-example-1",
+    "installation-verifying-what-you-downloaded-example-2",
+    "installation-verifying-what-you-downloaded-example-3",
+    "installation-verifying-what-you-downloaded-example-4",
+    "installation-verifying-what-you-downloaded-example-5",
+    "installation-verifying-what-you-downloaded-example-6",
     "installation-where-the-interface-files-have-to-be-example-1",
     "operations-commands-that-must-never-touch-protocol-state-example-1",
     "operations-watching-it-example-1",
@@ -189,7 +194,7 @@
     },
     "docs/installation.md": {
       "recipe/executed": 1,
-      "recipe/unverified": 25
+      "recipe/unverified": 30
     },
     "docs/operations.md": {
       "fragment/executed": 1,
@@ -1234,13 +1239,31 @@
       "section": "backing-up-and-getting-your-notes-back",
       "state": "unverified",
       "class": "recipe",
-      "rule": "1 literal command line(s), nothing to substitute",
+      "rule": "2 literal command line(s), nothing to substitute",
       "unrun_reason": "shared-user-state"
     },
     {
       "id": "installation-backing-up-and-getting-your-notes-back-example-2",
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "shared-user-state"
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-1",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-2",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
       "state": "unverified",
       "class": "recipe",
       "rule": "1 literal command line(s), nothing to substitute",
@@ -1283,22 +1306,22 @@
       "unrun_reason": "host-installation"
     },
     {
-      "id": "installation-installing-from-a-package-example-1",
+      "id": "installation-going-back-to-an-earlier-version-example-2",
       "path": "docs/installation.md",
-      "section": "installing-from-a-package",
+      "section": "going-back-to-an-earlier-version",
       "state": "unverified",
       "class": "recipe",
       "rule": "2 literal command line(s), nothing to substitute",
-      "unrun_reason": "host-installation"
+      "unrun_reason": "shared-user-state"
     },
     {
-      "id": "installation-installing-from-a-package-example-2",
+      "id": "installation-going-back-to-an-earlier-version-example-3",
       "path": "docs/installation.md",
-      "section": "installing-from-a-package",
+      "section": "going-back-to-an-earlier-version",
       "state": "unverified",
       "class": "recipe",
-      "rule": "1 literal command line(s), nothing to substitute",
-      "unrun_reason": "shared-user-state"
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "host-installation"
     },
     {
       "id": "installation-installing-from-the-package-example-1",
@@ -1353,24 +1376,6 @@
       "class": "recipe",
       "rule": "1 literal command line(s), nothing to substitute",
       "unrun_reason": "host-installation"
-    },
-    {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-2",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "state": "unverified",
-      "class": "recipe",
-      "rule": "1 literal command line(s), nothing to substitute",
-      "unrun_reason": "shared-user-state"
-    },
-    {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-3",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "state": "unverified",
-      "class": "recipe",
-      "rule": "1 literal command line(s), nothing to substitute",
-      "unrun_reason": "shared-user-state"
     },
     {
       "id": "installation-removing-your-data-as-well-example-1",
@@ -1451,6 +1456,51 @@
       "state": "unverified",
       "class": "recipe",
       "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "artifact-not-in-repository"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-2",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
+      "unrun_reason": "artifact-not-in-repository"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-3",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
+      "unrun_reason": "artifact-not-in-repository"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-4",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "4 literal command line(s), nothing to substitute",
+      "unrun_reason": "artifact-not-in-repository"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-5",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "1 literal command line(s), nothing to substitute",
+      "unrun_reason": "artifact-not-in-repository"
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-6",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "state": "unverified",
+      "class": "recipe",
+      "rule": "2 literal command line(s), nothing to substitute",
       "unrun_reason": "artifact-not-in-repository"
     },
     {

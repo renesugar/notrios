@@ -2246,11 +2246,11 @@
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
       "language": "sh",
-      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
+      "sha256": "72f294bd3fd167fdf4904c40bb3c26df1c73a800b0e2bd695b4e985daa705e08",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7, which deletes the library between them and counts the hits that come back."
+        "detail": "Literal body writes an archive into this user's home directory. Executed as written by J9's scenario 09 in a clean container, and with --db and --asset-store against a disposable copy of a 382,206-note library by performance/v1.0-j7/disaster_recovery.sh (J7-C)."
       }
     },
     {
@@ -2258,11 +2258,35 @@
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
       "language": "sh",
-      "sha256": "935abe66f1840dc1fd90d5b6db5495b00ec7cdcdd5da9164abddcf917ee4e43f",
+      "sha256": "0a69af9d62e351bab847cfca295079d71909e741d7b485daa7b891d9a796319d",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body imports into this user's library. Executed against a disposable profile in performance/v0.9-i7's recovery drill."
+        "detail": "Literal body restores into this user's library. Executed into an emptied disposable library by performance/v1.0-j7/disaster_recovery.sh (J7-C), whose restored content digest and search counts equal the original's, and as written by J9's scenario 09."
+      }
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-1",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
+      "language": "sh",
+      "sha256": "a252ef4f7a47637db8a8354082e682cee69dfd4111cd2e0ddb2565324b5a6324",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body builds a Debian package and installs it system-wide with sudo apt. Covered by evidence in performance/v0.8-h6/, where the package was built and installed with dpkg into a sandbox root rather than onto the build machine."
+      }
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-2",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
+      "language": "sh",
+      "sha256": "b1a0f4db2b8e602e7ffa92a568cd33c82e65d26d2b6a651d3e022eb8f266face",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body enables a systemd user service, which changes what starts on this user's login. The unit ships installed and disabled by design; enabling it is the explicit act this line describes."
       }
     },
     {
@@ -2306,35 +2330,35 @@
       "path": "docs/installation.md",
       "section": "going-back-to-an-earlier-version",
       "language": "sh",
-      "sha256": "876d4ebf6f971f599a6e4324282e2b3047f22a8ae6c621afeae54f28c54ef130",
+      "sha256": "06a5376c594906239a003c717847b25b12765f7833032c883a4de5205f5953e5",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs an older package on the host as root. The refusal and the deliberate downgrade are both executed in performance/v0.9-i3 scenario 04."
+        "detail": "Literal body installs an older package on the host as root. The refusal and the deliberate downgrade, 1.0.0 to 1.0.0~rc1, are executed in scenario 04 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
       }
     },
     {
-      "id": "installation-installing-from-a-package-example-1",
+      "id": "installation-going-back-to-an-earlier-version-example-2",
       "path": "docs/installation.md",
-      "section": "installing-from-a-package",
+      "section": "going-back-to-an-earlier-version",
       "language": "sh",
-      "sha256": "a252ef4f7a47637db8a8354082e682cee69dfd4111cd2e0ddb2565324b5a6324",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "host-installation",
-        "detail": "Literal body builds a Debian package and installs it system-wide with sudo apt. Covered by evidence in performance/v0.8-h6/, where the package was built and installed with dpkg into a sandbox root rather than onto the build machine."
-      }
-    },
-    {
-      "id": "installation-installing-from-a-package-example-2",
-      "path": "docs/installation.md",
-      "section": "installing-from-a-package",
-      "language": "sh",
-      "sha256": "b1a0f4db2b8e602e7ffa92a568cd33c82e65d26d2b6a651d3e022eb8f266face",
+      "sha256": "72f294bd3fd167fdf4904c40bb3c26df1c73a800b0e2bd695b4e985daa705e08",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body enables a systemd user service, which changes what starts on this user's login. The unit ships installed and disabled by design; enabling it is the explicit act this line describes."
+        "detail": "Literal body writes an archive into this user's home directory. Executed as written by scenario 09 (performance/v1.0-j9/scenarios/09-rollback-1.0-to-0.8.sh) of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
+      }
+    },
+    {
+      "id": "installation-going-back-to-an-earlier-version-example-3",
+      "path": "docs/installation.md",
+      "section": "going-back-to-an-earlier-version",
+      "language": "sh",
+      "sha256": "3213b9d7711136ea08387406f8944fb42e7cf48715e5b38c76f74551bcb217ce",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body downgrades a package as root and moves this user's library. Executed as written by scenario 09 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user: 0.8.0 refuses the 1.0 library, restores the 1.0 archive into a new one, and the note comes back."
       }
     },
     {
@@ -2342,11 +2366,11 @@
       "path": "docs/installation.md",
       "section": "installing-from-the-package",
       "language": "sh",
-      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "sha256": "b793feb0fbd44a3b8586d4011bcfe9039d840f68b7830a86c56a86642eba43b0",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs a package on the host as root. The packaged install is executed instead in performance/v0.9-i3, in clean containers, where installing is the thing under test."
+        "detail": "Literal body installs a package on the host as root. The packaged install of 1.0.0 is executed instead in clean containers, where installing is the thing under test: scenario 01 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
       }
     },
     {
@@ -2407,30 +2431,6 @@
       "unrun_reason": {
         "code": "host-installation",
         "detail": "Literal body removes a package from the host as root. Removal, and that it leaves the user's library alone, are executed in performance/v0.9-i3 scenario 05, which removes, checks the library on disk, reinstalls and finds the note again."
-      }
-    },
-    {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-2",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "language": "sh",
-      "sha256": "2f35b981e470a906b15d7584603a81e21d48eb41eb8ac9c9c1a2f85c9ad965e8",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "Literal and read-only, but it reports this machine's resolved roots rather than a fixture's. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl and by performance/v0.9-i3 scenario 06, which asserts the writable roots stay outside /usr."
-      }
-    },
-    {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-3",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "language": "sh",
-      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7's recovery drill."
       }
     },
     {
@@ -2530,11 +2530,11 @@
       "path": "docs/installation.md",
       "section": "upgrading",
       "language": "sh",
-      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "sha256": "b793feb0fbd44a3b8586d4011bcfe9039d840f68b7830a86c56a86642eba43b0",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs a package on the host as root. Upgrading is executed in performance/v0.9-i3 scenario 03, which installs a prerelease, writes a note, upgrades and checks the note survived."
+        "detail": "Literal body installs a package on the host as root. Executed as scenario 08, from the workflow-built 0.8.0 package to 1.0.0, and scenario 03, from 1.0.0~rc1 to 1.0.0, in performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user. Both check the note written before the upgrade survives it."
       }
     },
     {
@@ -2558,7 +2558,67 @@
       "state": "unverified",
       "unrun_reason": {
         "code": "artifact-not-in-repository",
-        "detail": "Literal and correct: `sha256sum -c SHA256SUMS` is exactly what a downloader runs. SHA256SUMS comes from a published release set, which this repository does not contain and deliberately does not fabricate. Recoded from illustrative-placeholder in v1.0 J13-D: nothing in it is a placeholder. The same verification runs against a real set in performance/v0.9-i6/verify_release_set.py."
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-2",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "a2ba761bd0d7c8ac4eb650cfe2e2ce2c73c61b3eb25ad9d391fc9553dcf2c026",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-3",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "1fc5979aea6797a44adf5fcdec3925f8499ca96a8ff84e6acd4a53812ad076c3",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-4",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "9bcf9523fac8c5adcab9833bae5f53d7facce610592f5e601772c5242a02adc8",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-5",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "0bffdcadb5c82e7e142d6fea08053b9a044334573e929fcb23b6a24612039415",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-6",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "8450e9384a52d28433f2db881dc5e7b9af611584d470832401d6668d9d036647",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
       }
     },
     {

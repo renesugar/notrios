@@ -26,10 +26,14 @@ HERE=$ROOT/performance/v0.9-i3
 PKGS=${I3_PACKAGES:-$ROOT/dist/i3-packages}
 RESULTS=${I3_RESULTS:-$HERE/RESULTS.jsonl}
 BASE_IMAGE=ubuntu:24.04
-DEPS_IMAGE=notrios-i3-deps
+DEPS_IMAGE=${I3_DEPS_IMAGE:-notrios-i3-deps}
+# The pair under test. The defaults are the versions I3 recorded; v1.0 J9 sets
+# both to rehearse 1.0.0 with the same scenarios.
+RELEASE_VERSION=${I3_RELEASE_VERSION:-0.8.0}
+PRERELEASE_VERSION=${I3_PRERELEASE_VERSION:-0.8.0~rc1}
 
-RELEASE=$(ls "$PKGS"/notrios_0.8.0-1_amd64.deb)
-PRERELEASE=$(ls "$PKGS"/notrios_0.8.0~rc1-1_amd64.deb)
+RELEASE=$(ls "$PKGS"/notrios_"$RELEASE_VERSION"-1_amd64.deb)
+PRERELEASE=$(ls "$PKGS"/notrios_"$PRERELEASE_VERSION"-1_amd64.deb)
 
 # The unprivileged user every scenario runs the application as.
 USER_SETUP='useradd -m -s /bin/bash tester'
@@ -58,6 +62,7 @@ run_scenario() {
   started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   if docker run --rm --network bridge \
       -v "$PKGS:/pkg:ro" -v "$script:/scenario.sh:ro" \
+      -e RELEASE_VERSION="$RELEASE_VERSION" -e PRERELEASE_VERSION="$PRERELEASE_VERSION" \
       "$image" bash /scenario.sh > "$log" 2>&1; then
     status=pass
   else
@@ -85,7 +90,8 @@ PY
 
 : > "$RESULTS"
 prepare_deps_image
-for script in "$HERE"/scenarios/*.sh; do
+# I3_EXTRA_SCENARIOS adds a directory of scenarios run the same way (v1.0 J9).
+for script in "$HERE"/scenarios/*.sh ${I3_EXTRA_SCENARIOS:+"$I3_EXTRA_SCENARIOS"/*.sh}; do
   id=$(basename "$script" .sh)
   image=$DEPS_IMAGE
   # The fresh install starts from a pristine image on purpose: whether the

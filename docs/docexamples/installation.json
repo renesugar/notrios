@@ -20,18 +20,64 @@
       ]
     },
     {
+      "section": "going-back-to-an-earlier-version",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive-v2",
+          "verify archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl export archive-v2 ~/notrios-backup"
+        },
+        {
+          "run": "notriosctl verify archive-v2 ~/notrios-backup"
+        }
+      ]
+    },
+    {
+      "section": "going-back-to-an-earlier-version",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "restore archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "run": "sudo apt install --allow-downgrades ./notrios_0.8.0-1_amd64.deb"
+        },
+        {
+          "run": "mv ~/.local/share/notrios ~/.local/share/notrios.from-1.0"
+        },
+        {
+          "run": "notriosctl restore archive-v2 --intent adopt ~/notrios-backup"
+        }
+      ]
+    },
+    {
       "section": "backing-up-and-getting-your-notes-back",
       "ordinal": 1,
       "kind": "recipe",
       "language": "sh",
       "uses": {
         "cli": [
-          "export archive"
+          "export archive-v2",
+          "verify archive-v2"
         ]
       },
       "steps": [
         {
-          "run": "notriosctl export archive ~/notrios-backup"
+          "run": "notriosctl export archive-v2 ~/notrios-backup"
+        },
+        {
+          "run": "notriosctl verify archive-v2 ~/notrios-backup"
         }
       ]
     },
@@ -42,44 +88,12 @@
       "language": "sh",
       "uses": {
         "cli": [
-          "import archive"
+          "restore archive-v2"
         ]
       },
       "steps": [
         {
-          "run": "notriosctl import archive ~/notrios-backup"
-        }
-      ]
-    },
-    {
-      "section": "removing-notrios-when-you-installed-the-package",
-      "ordinal": 2,
-      "kind": "recipe",
-      "language": "sh",
-      "uses": {
-        "cli": [
-          "paths"
-        ]
-      },
-      "steps": [
-        {
-          "run": "notriosctl paths --no-redact"
-        }
-      ]
-    },
-    {
-      "section": "removing-notrios-when-you-installed-the-package",
-      "ordinal": 3,
-      "kind": "recipe",
-      "language": "sh",
-      "uses": {
-        "cli": [
-          "export archive"
-        ]
-      },
-      "steps": [
-        {
-          "run": "notriosctl export archive ~/notrios-backup"
+          "run": "notriosctl restore archive-v2 --intent adopt ~/notrios-backup"
         }
       ]
     },

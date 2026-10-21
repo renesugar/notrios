@@ -228,12 +228,14 @@
         {
           "id": "J9-B",
           "statement": "Installation and support documentation carries exact OS, architecture and runtime rows, checked against a v1.0 matrix",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         },
         {
           "id": "J9-C",
           "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published, each one executed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         },
         {
           "id": "J9-D",
@@ -1394,6 +1396,11 @@
         {
           "id": "J49-C",
           "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one executed again",
+          "state": "not-started"
+        },
+        {
+          "id": "J49-D",
+          "statement": "release.yml builds on ubuntu-24.04, the matrix's row, and a check refuses a runner label the matrix does not support",
           "state": "not-started"
         }
       ]

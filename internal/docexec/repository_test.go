@@ -206,7 +206,11 @@ func TestRepositoryExamples(t *testing.T) {
 	// Reports note. The seeded library has no ambiguous link, so the adapter
 	// adds one, and checks the link is quoted with both candidates, the cap
 	// holds, and the note is written without touching the seeded note.
-	if report.Executed != 71 || report.Entries != 173 || len(report.Topics) != 16 {
+	//
+	// 173 -> 178 in v1.0 J9: docs/installation.md's verification and rollback
+	// fences. Executed is unchanged: each needs a published release set or
+	// this user's installation, and runs in performance/v1.0-j9 instead.
+	if report.Executed != 71 || report.Entries != 178 || len(report.Topics) != 16 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

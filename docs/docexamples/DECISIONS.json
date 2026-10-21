@@ -9,9 +9,9 @@
     "generated-region": "the page's own generator owns this block, and two generators must not write one region"
   },
   "totals": {
-    "examples": 173,
+    "examples": 178,
     "tracked": 107,
-    "left": 66
+    "left": 71
   },
   "documents": [
     {
@@ -246,6 +246,14 @@
       "tracked": 11,
       "left": [
         {
+          "id": "installation-building-the-package-yourself-example-1",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-building-the-package-yourself-example-2",
+          "reason": "no-surface"
+        },
+        {
           "id": "installation-checking-that-a-purge-removed-everything-example-2",
           "reason": "no-surface"
         },
@@ -255,14 +263,6 @@
         },
         {
           "id": "installation-going-back-to-an-earlier-version-example-1",
-          "reason": "no-surface"
-        },
-        {
-          "id": "installation-installing-from-a-package-example-1",
-          "reason": "no-surface"
-        },
-        {
-          "id": "installation-installing-from-a-package-example-2",
           "reason": "no-surface"
         },
         {
@@ -299,6 +299,26 @@
         },
         {
           "id": "installation-verifying-what-you-downloaded-example-1",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-verifying-what-you-downloaded-example-2",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-verifying-what-you-downloaded-example-3",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-verifying-what-you-downloaded-example-4",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-verifying-what-you-downloaded-example-5",
+          "reason": "no-surface"
+        },
+        {
+          "id": "installation-verifying-what-you-downloaded-example-6",
           "reason": "no-surface"
         },
         {

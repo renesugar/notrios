@@ -143,10 +143,13 @@ make precheck                # fail if the tree has uncommitted or ignored-but-t
 removes the installed npm dependencies, so the next build has to run `npm ci`
 again; use it when a dependency tree is suspect, not routinely.
 Neither reads or writes `~/.config/notrios`, `~/.local/share/notrios` or
-anything `make install` wrote: deleting those is `make purge` and nothing else.
+anything `make install` wrote: deleting those is `notriosctl purge`, or `make
+purge` from a checkout, and nothing else.
 
-There are no official prebuilt binaries yet; Notrios is built from source on
-Ubuntu Linux, the only tested platform.
+A release publishes one prebuilt binary, the Ubuntu 24.04 amd64 package. It is
+built and attested by the release workflow and signed with the project's key.
+[docs/installation.md](docs/installation.md) says how to verify it, and lists
+every other platform with what ran on it.
 
 ## Configuration
 

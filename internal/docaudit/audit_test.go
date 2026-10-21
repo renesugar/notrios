@@ -149,8 +149,13 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// report against a library the adapter gives an ambiguous link. Executed
 	// 78 -> 79, unverified 361 -> 363 for the two prose sections, and the
 	// denominator 490 -> 493.
+	// 173 -> 178 executables in v1.0 J9: docs/installation.md's verification
+	// section becomes four checks in six fences, and going back from 1.0 to 0.8
+	// gains the archive it needs. They need a published release set or this
+	// user's own installation, so all five are unverified with the place they
+	// were run recorded: unverified 363 -> 368, the denominator 493 -> 498.
 	if report.ManualSections != 290 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 173 || report.Journeys != 9 {
+		report.Executables != 178 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
@@ -210,8 +215,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 363 ||
-		report.Denominator != 493 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 368 ||
+		report.Denominator != 498 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

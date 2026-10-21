@@ -189,6 +189,12 @@ python3 performance/v0.9-i8/validate_evidence.py
 # J3: the packaged-purge record. The drills install and delete; this reads
 # what they recorded.
 python3 performance/v1.0-j3/validate_evidence.py
+# J9: the 1.0 support matrix. The packages and the release set are not in the
+# repository, so this checks the record: every supported row executed, the
+# container run passed at the current version, the verification run is of the
+# blocks the page publishes now, and the installation table is the one the
+# matrix renders.
+python3 performance/v1.0-j9/record_matrix.py
 # J13-A: the example classification. Derived on every run from the documents
 # themselves, so it fails when a document changes and the report does not.
 python3 performance/v1.0-j13/validate_evidence.py

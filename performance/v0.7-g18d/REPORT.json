@@ -1,19 +1,19 @@
 {
   "schema": "notrios.docexec.report.v1",
-  "entries": 173,
+  "entries": 178,
   "executed": 71,
-  "unverified": 102,
+  "unverified": 107,
   "unrun_reasons": {
-    "artifact-not-in-repository": 1,
+    "artifact-not-in-repository": 6,
     "external-network": 9,
-    "host-installation": 17,
+    "host-installation": 18,
     "illustrative-placeholder": 47,
     "incompatible-prerequisites": 1,
     "interactive-or-long-running": 4,
     "privileged-host-change": 2,
-    "shared-user-state": 21
+    "shared-user-state": 20
   },
-  "runtime_ms": 19407,
+  "runtime_ms": 19483,
   "topics": [
     {
       "topic": "api-mcp",
@@ -21,7 +21,7 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 91
+      "runtime_ms": 73
     },
     {
       "topic": "api-rest",
@@ -29,7 +29,7 @@
         "executed": 25,
         "unverified": 1
       },
-      "runtime_ms": 1957
+      "runtime_ms": 1816
     },
     {
       "topic": "archive-v2",
@@ -37,7 +37,7 @@
         "executed": 1,
         "unverified": 1
       },
-      "runtime_ms": 184
+      "runtime_ms": 189
     },
     {
       "topic": "cli",
@@ -53,7 +53,7 @@
         "executed": 5,
         "unverified": 1
       },
-      "runtime_ms": 1055
+      "runtime_ms": 1082
     },
     {
       "topic": "gui",
@@ -61,7 +61,7 @@
         "executed": 4,
         "unverified": 2
       },
-      "runtime_ms": 470
+      "runtime_ms": 446
     },
     {
       "topic": "import-export",
@@ -69,7 +69,7 @@
         "executed": 10,
         "unverified": 2
       },
-      "runtime_ms": 1580
+      "runtime_ms": 1595
     },
     {
       "topic": "index",
@@ -82,9 +82,9 @@
       "topic": "installation",
       "counts": {
         "executed": 1,
-        "unverified": 25
+        "unverified": 30
       },
-      "runtime_ms": 207
+      "runtime_ms": 274
     },
     {
       "topic": "operations",
@@ -92,7 +92,7 @@
         "executed": 12,
         "unverified": 9
       },
-      "runtime_ms": 2341
+      "runtime_ms": 2499
     },
     {
       "topic": "publishing",
@@ -100,21 +100,21 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 482
+      "runtime_ms": 521
     },
     {
       "topic": "query-language",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 302
+      "runtime_ms": 297
     },
     {
       "topic": "selection-planning",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 41
+      "runtime_ms": 45
     },
     {
       "topic": "service",
@@ -122,7 +122,7 @@
         "executed": 1,
         "unverified": 2
       },
-      "runtime_ms": 189
+      "runtime_ms": 217
     },
     {
       "topic": "stable-links",
@@ -130,7 +130,7 @@
         "executed": 3,
         "unverified": 2
       },
-      "runtime_ms": 295
+      "runtime_ms": 308
     },
     {
       "topic": "troubleshooting",

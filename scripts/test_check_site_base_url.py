@@ -71,6 +71,19 @@ class SiteBaseURLTest(unittest.TestCase):
             "c.md": "Open http://127.0.0.1:8080/api/v1/status for the service.\n",
         }), [])
 
+    def test_the_repository_s_own_hosting_is_not_a_site_address(self):
+        """github.com/<owner>/<repo>/releases and raw.githubusercontent.com
+        name where the source and the releases live (v1.0 J9). A Pages address,
+        or another host serving /<repo>/, still fails beside them."""
+        findings = self.findings("https://notrios.com/", {
+            "a.md": "Download from https://github.com/renesugar/notrios/releases.\n",
+            "b.md": "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/keys/release-public.asc\n",
+            "c.md": "Serve it at https://renesugar.github.io/notrios/ instead.\n",
+            "d.md": "Or mirror it at https://github.com.example.net/renesugar/notrios/ for a while.\n",
+            "e.md": "A fork's https://github.com/someone-else/notrios/ is not ours either.\n",
+        })
+        self.assertEqual(sorted(name for name, _, _, _ in findings), ["c.md", "d.md", "e.md"])
+
     def test_a_project_path_build_is_checked_the_other_way(self):
         """The mirror image: with a project-path baseURL, the custom domain is
         the error, and the project path is correct."""

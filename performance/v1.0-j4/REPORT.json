@@ -4,7 +4,7 @@
   "milestone": "v1.0",
   "what_this_is": "What is known about every frozen REST route and MCP tool, derived rather than recalled, so the review of what 1.0 should promise happens against evidence and in a defensible order.",
   "these_are_not_verdicts": "described/documented/exercised/tested are facts about the repository, not judgements about the surface. A route with all four may still be a promise 1.0 should not make; a route with none may be load-bearing and correct. The decisions are recorded separately, by a person, and say so.",
-  "content_commit": "bc3d72e9bbb6a66ec2ecb14a09c5e1651699fd37",
+  "content_commit": "4001d949f69d28d60e01cc2d7e9e3433917029d8",
   "counts": {
     "rest": {
       "members": 115,

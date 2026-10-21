@@ -2027,7 +2027,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "75dfa74bc735694a95e94f684bf1ce8322bdd6eb8c1628909fdb3da29f231035",
+      "sha256": "1b420336fba86d1e3aae8a802de0b5257328eabfa81df9133b88c86433ec63c7",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -2212,9 +2212,9 @@
           "grade": "unverified"
         },
         {
-          "id": "installing-from-a-package",
+          "id": "building-the-package-yourself",
           "level": 3,
-          "title": "Installing from a package",
+          "title": "Building the package yourself",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",

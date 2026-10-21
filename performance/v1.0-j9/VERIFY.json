@@ -1,0 +1,209 @@
+{
+  "schema": "notrios.v10.j9-verification-run.v1",
+  "what_this_is": "The installation page's verification blocks, run as published against a release set, then made to fail once each.",
+  "set": {
+    "package": "notrios_0.8.0-1_amd64.deb",
+    "source": "release workflow run 34697727452 (rehearsal, 0.8.0)",
+    "published_name_replaced": "notrios_1.0.0-1_amd64.deb"
+  },
+  "tools": {
+    "gpg": "gpg (GnuPG) 2.4.8",
+    "openssl": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)",
+    "gh": "gh version 2.103.0 (2026-10-21)",
+    "sha256sum": "sha256sum (uutils coreutils) 0.10.0"
+  },
+  "checks": [
+    {
+      "check": "checksums",
+      "exit": 0,
+      "passed": true,
+      "expect": "every line OK",
+      "block": [
+        "sha256sum -c SHA256SUMS"
+      ],
+      "output_tail": [
+        "notrios_0.8.0-1_amd64.deb: OK",
+        "notrios_0.8.0-1_amd64.deb.asc: OK",
+        "notrios_0.8.0-1_amd64.deb.asc.tsq: OK",
+        "notrios_0.8.0-1_amd64.deb.asc.tsr: OK",
+        "SBOM.cdx.json: OK",
+        "PROVENANCE.json: OK"
+      ]
+    },
+    {
+      "check": "fetch the key and show its fingerprint",
+      "exit": 0,
+      "passed": true,
+      "expect": "primary fingerprint 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
+      "block": [
+        "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/keys/release-public.asc",
+        "gpg --show-keys --with-fingerprint release-public.asc"
+      ],
+      "output_tail": [
+        "pub   rsa4096 2026-09-11 [SCEAR]",
+        "      1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
+        "uid                      Rene Sugar <rene.sugar@gmail.com>",
+        "sub   rsa4096 2026-09-11 [SEA]",
+        "",
+        "gpg: keybox '/tmp/tmpgly3sl1u/gnupg/pubring.kbx' created",
+        "gpg: /tmp/tmpgly3sl1u/gnupg/trustdb.gpg: trustdb created"
+      ]
+    },
+    {
+      "check": "signatures",
+      "exit": 0,
+      "passed": true,
+      "expect": "two good signatures, primary and subkey fingerprints printed",
+      "block": [
+        "gpg --import release-public.asc",
+        "gpg --verify SHA256SUMS.asc SHA256SUMS",
+        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb"
+      ],
+      "output_tail": [
+        "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
+        "gpg: WARNING: This key is not certified with a trusted signature!",
+        "gpg:          There is no indication that the signature belongs to the owner.",
+        "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
+        "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
+        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
+        "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
+        "gpg: WARNING: This key is not certified with a trusted signature!",
+        "gpg:          There is no indication that the signature belongs to the owner.",
+        "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
+        "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C"
+      ]
+    },
+    {
+      "check": "timestamp",
+      "exit": 0,
+      "passed": true,
+      "expect": "Verification: OK",
+      "block": [
+        "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
+        "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
+        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
+        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
+      ],
+      "output_tail": [
+        "Verification: OK",
+        "Using configuration from /usr/lib/ssl/openssl.cnf",
+        "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert"
+      ]
+    },
+    {
+      "check": "the time the timestamp attests",
+      "exit": 0,
+      "passed": true,
+      "expect": "a Time stamp line",
+      "block": [
+        "openssl ts -reply -in notrios_0.8.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'"
+      ],
+      "output_tail": [
+        "Time stamp: Sep 12 13:58:13 2026 GMT",
+        "Using configuration from /usr/lib/ssl/openssl.cnf"
+      ]
+    },
+    {
+      "check": "attestation, logged in",
+      "exit": 0,
+      "passed": true,
+      "expect": "exit 0",
+      "block": [
+        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml"
+      ],
+      "output_tail": []
+    },
+    {
+      "check": "attestation, no login",
+      "exit": 4,
+      "passed": true,
+      "expect": "refused, asking for a login",
+      "block": [
+        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml"
+      ],
+      "output_tail": [
+        "To get started with GitHub CLI, please run:  gh auth login",
+        "Alternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token."
+      ]
+    },
+    {
+      "check": "refusal: checksum of an altered package",
+      "exit": 1,
+      "passed": true,
+      "expect": "the package line FAILED",
+      "block": [
+        "sha256sum -c SHA256SUMS"
+      ],
+      "output_tail": [
+        "notrios_0.8.0-1_amd64.deb: FAILED",
+        "notrios_0.8.0-1_amd64.deb.asc: OK",
+        "notrios_0.8.0-1_amd64.deb.asc.tsq: OK",
+        "notrios_0.8.0-1_amd64.deb.asc.tsr: OK",
+        "SBOM.cdx.json: OK",
+        "PROVENANCE.json: OK",
+        "sha256sum: WARNING: 1 computed checksum did NOT match"
+      ]
+    },
+    {
+      "check": "refusal: signature over an altered package",
+      "exit": 1,
+      "passed": true,
+      "expect": "BAD signature",
+      "block": [
+        "gpg --import release-public.asc",
+        "gpg --verify SHA256SUMS.asc SHA256SUMS",
+        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb"
+      ],
+      "output_tail": [
+        "gpg: Total number processed: 1",
+        "gpg:              unchanged: 1",
+        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
+        "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
+        "gpg: WARNING: This key is not certified with a trusted signature!",
+        "gpg:          There is no indication that the signature belongs to the owner.",
+        "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
+        "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
+        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
+        "gpg: BAD signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]"
+      ]
+    },
+    {
+      "check": "refusal: attestation of an altered package",
+      "exit": 1,
+      "passed": true,
+      "expect": "non-zero exit",
+      "block": [
+        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml"
+      ],
+      "output_tail": [
+        "Error: HTTP 404: Not Found (https://api.github.com/repos/renesugar/notrios/attestations/sha256:077f63a9d3ffae3061e491a467ddb2601a41b209ee8ca7601d6e93b73f4d0986?per_page=30&predicate_type=https%3A%2F%2Fslsa.dev%2Fprovenance%2Fv1)"
+      ]
+    },
+    {
+      "check": "refusal: timestamp over an altered signature",
+      "exit": 1,
+      "passed": true,
+      "expect": "message imprint mismatch, Verification: FAILED",
+      "block": [
+        "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
+        "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
+        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
+        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
+      ],
+      "output_tail": [
+        "Verification: FAILED",
+        "Using configuration from /usr/lib/ssl/openssl.cnf",
+        "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert",
+        "4097CA4E817B0000:error:17800067:time stamp routines:ts_check_imprints:message imprint mismatch:../crypto/ts/ts_rsp_verify.c:508:"
+      ]
+    }
+  ],
+  "passed": 11,
+  "failed": []
+}

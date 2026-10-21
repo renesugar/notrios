@@ -86,8 +86,10 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 172 -> 173 in v1.0 J40-F: docs/operations.md's "Finding ambiguous
     # links" runs the report, capped, and writes its Reports note. It is
     # executed: the adapter gives the seeded library an ambiguous link first.
-    assert len(examples) == report["entries"] == 173
-    assert len({item["id"] for item in examples}) == 173
+    # 173 -> 178 in v1.0 J9: the installation page's verification and
+    # rollback fences, unverified with where each was run recorded.
+    assert len(examples) == report["entries"] == 178
+    assert len({item["id"] for item in examples}) == 178
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -131,7 +133,10 @@ def validate_registry(registry: dict, report: dict) -> None:
     # section on checking a purge. Both report on and then delete this user's
     # installation, so both carry the shared-user-state reason and are drilled
     # against a disposable HOME in performance/v1.0-j11.
-    assert len(unverified) == report["unverified"] == 102
+    # 102 -> 107 in v1.0 J9: docs/installation.md's verification and rollback
+    # fences. Each needs a published release set or this user's installation,
+    # and each records where it was run in performance/v1.0-j9.
+    assert len(unverified) == report["unverified"] == 107
     assert {item["execution"]["surface"] for item in executed} == {
         "cli", "config", "rest", "mcp"
     }
