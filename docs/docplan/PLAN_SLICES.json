@@ -1375,6 +1375,28 @@
           "evidence": "file:performance/v1.0-j48/README.md"
         }
       ]
+    },
+    {
+      "id": "J49",
+      "title": "Put everything a stranger verifies with into the release set",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J49-A",
+          "statement": "The release set carries each artifact's attestation bundle, covered by SHA256SUMS and required by name by the verifier, so provenance checks need no GitHub login",
+          "state": "not-started"
+        },
+        {
+          "id": "J49-B",
+          "statement": "The C ABI tarball is in the release set, signed and timestamped like the package, and required by name by the verifier",
+          "state": "not-started"
+        },
+        {
+          "id": "J49-C",
+          "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one executed again",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }

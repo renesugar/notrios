@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**48 items: 46 complete, 1 in progress, 1 not started, 0 deferred.**
+**49 items: 46 complete, 1 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -109,6 +109,7 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
+| J49. Put everything a stranger verifies with into the release set | not-started | 0/3 | 3 |
 
 ### Started and not finished
 
@@ -120,7 +121,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J10. Their slices are listed under each item.
+Written and not begun: J10, J49. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5925,3 +5926,61 @@ now. A note can already write that pair in raw HTML. Keeping it loads nothing a
 
 **Working state.** Attachments show in the preview, and a preview that sanitises
 twice gets the same page as one that sanitises once.
+
+## J49. Put everything a stranger verifies with into the release set
+
+**Goal.** A stranger with the release set, the committed public key and
+the pinned timestamp authority can check every artifact, with no GitHub login.
+Every artifact that ships is signed.
+
+**Found 2026-10-21, by J9-C running its own instructions** against the
+rehearsal set from run 34697727452:
+- **Checking provenance needs a GitHub login.** `gh attestation verify
+  <deb> --repo renesugar/notrios` with no login stops at "please run: gh auth
+  login" and exits 4. Given the attestation bundle with `--bundle`, the same
+  command verifies logged out. It refuses an altered byte and the wrong
+  repository, and with `--format json` it reports the SLSA predicate, the
+  workflow and the issuer. The release set carries no bundle, so no stranger
+  has one. `gh attestation download` needs a login too.
+- **The C ABI tarball is attested and not signed.** J6 builds it in the
+  release workflow, attests it, and uploads it as a separate run artifact with
+  its own `.sha256`. It is not in the release set, not covered by the signed
+  `SHA256SUMS`, and has no detached signature. J2's goal was to sign what ships.
+
+**Owner decision, 2026-10-21.** Both become this item, before J10, under the J8
+rule. J9 documents the workflow as it is today and records both gaps, and J49
+updates the instructions it changes.
+
+**Scope.**
+- **J49-A, the attestation bundles travel with the release.** Each
+  `attest-build-provenance` step's `bundle-path` output is copied into the
+  release set beside the artifact it attests, and covered by `SHA256SUMS`.
+  `verify_release_set.py` requires a bundle for each artifact by name, and
+  refuses one whose subject digest is not that artifact's.
+- **J49-B, the C ABI tarball is signed.** It joins the release set. It is
+  signed and timestamped like the package, covered by `SHA256SUMS`, and
+  required by name by the verifier.
+- **J49-C, the instructions follow.** J9-C's verification section verifies
+  with the bundle as a stranger with no login, and covers the C ABI tarball.
+  Each instruction is executed again.
+
+**Boundaries.**
+- No new third-party action, and the existing ones stay pinned by digest.
+- The permissions stay where J1 put them.
+- No secret becomes reachable from a `pull_request` trigger.
+- `release.yml` publishes nothing, as before.
+- **What can be proven here, and what cannot.** `release.yml` runs only from
+  `main` or a `v*` tag, under the `production` environment. Without a merge,
+  the changes are proven by `actionlint` and the repository's workflow gates,
+  and the verifier's new requirements by throwaway-key fixtures, as J2 proved
+  its own. A real run requires merging to `main` and dispatching the workflow,
+  which signs with the release key and requests a timestamp. That needs the
+  owner's separate authorization. If it is not given in J49, it is J10-A's
+  rehearsal.
+
+**Dependencies.** J1, J2 and J6 for what it changes. J9-C for the
+instructions it updates.
+
+**Working state.** A release set that a stranger can check completely, with
+no login and nothing outside the set but the public key and the timestamp
+authority's certificates.
