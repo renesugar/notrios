@@ -212,8 +212,10 @@ the test. Attachment names are left to the store, which already finds them
 ambiguous by file name.
 
 A shared candidate list is handed back without copying, with the key it was
-found under. In J32's collision shape, 5,000 notes each link a name that 5,000
-notes share. A copy per link would be 25 million strings.
+found under. In J32's collision shape, 5,000 links each name an alias that 100
+notes share, so a copy per link would be 500,000 strings. The cost of copying
+grows with the square of a shared name's size, since every note that shares the
+name can link it.
 
 The limit is stated wherever it applies. Provenance does not record which vault
 a note came from, so two vaults imported into one collection are one namespace
@@ -337,3 +339,41 @@ of such files, and no item since has added one.
 **Recorded under J8, not fixed here:** H15's crawl never opens Library Health. Its
 controls are not in the inventory: the repair buttons were not, and the new
 report buttons are not. The crawl found the same 89 controls after this slice.
+
+### What the report costs (J40-C)
+
+Measured on J32's collision shape, the worst case for this report. That shape is
+5,500 notes in 5,050 folders. Every `index.md` claims an alias shared by 100
+notes and links it by name, and every note also links a path that resolves
+nowhere.
+
+The run used `measure_collision.sh` at `de29307`, with HOME and XDG in a work
+directory on HD2. It imported the corpus once, then ran the report five times,
+alternating with lint and the graph report, which are the other whole-library
+reads. The results are in `collision-cost.json`. Firefox was running throughout,
+with a load average of 4 to 6, so the absolute times are this machine under that
+load. The neighbouring reports ran under the same load.
+
+| run on the collision library | wall time, median of 5 (range) | peak RSS |
+|---|---:|---:|
+| `notriosctl links report` | 0.92 s (0.83–0.94) | 36.7 MB |
+| `notriosctl lint --quiet` | 0.55 s (0.51–0.67) | 22.6 MB |
+| `notriosctl graph report` | 0.18 s (0.18–0.19) | 20.1 MB |
+| `notriosctl links report --write-note` | 0.96 s | 37.4 MB |
+
+**What it found.** The report found 5,000 ambiguous links in 5,000 notes. Every
+one is an alias the import found 100 notes for (`found_by: import`). It counted
+5,000 other links that open nothing: the corpus's path links, which name no
+file. This matches J39, where 5,000 of the 5,500 notes warned. All five runs gave
+the same digest.
+
+**The note.** Capped at 50 notes and 10 candidates per link, the Reports note is
+54,867 bytes.
+
+**Why it costs a little more than lint.** The report reads what lint reads, and
+also rebuilds the import's namespace from 5,500 provenance rows. Each shared
+candidate list is ordered and hashed once per name rather than once per link. A
+list copied per link would have been 500,000 strings here.
+
+It is a maintenance cost. It runs only when asked, and nothing runs it on a
+timer or on save.

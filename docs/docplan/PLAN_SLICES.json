@@ -1165,17 +1165,20 @@
         {
           "id": "J40-C",
           "statement": "A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         },
         {
           "id": "J40-D",
           "statement": "The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         },
         {
           "id": "J40-E",
           "statement": "Import-time ambiguity reaches the report, its candidates derived from each note's provenance by the importer's own resolution code, with no schema change and the one-namespace-per-collection limit stated",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         },
         {
           "id": "J40-F",
