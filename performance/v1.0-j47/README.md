@@ -70,3 +70,46 @@ decided by the owner on 2026-10-21. J47 closes on top of it, as J39 did on J46.
 - WebKit no longer launches on this machine. Playwright reports the host is
   missing WebKit's system libraries, and installing them needs root. By the
   owner's decision, the probe runs in Chromium only, and this is why.
+
+## J47-B: the preview's posture is unchanged
+
+J47's probe is J34's adapted, run in Chromium on the UI built with J47-A and
+J48. Its output is in `performance/v1.0-j48/AFTER-chromium.json`, and
+`BEFORE-chromium.json` beside it shows the same probe before J48.
+
+| embed | became | loaded |
+|---|---|---|
+| `![markdown attachment](resource://…)` | `img`, `src` the content URL | yes |
+| `![[resource://…\|wiki attachment]]` | the same `img`, with the same `src` and `data-app-uri` | yes |
+| `![markdown remote](http://…)` | `img` with `data-remote-src`, no `src` | no, as J34 intends |
+| `![[http://…]]` | text | — |
+| `![[document://…]]` | text | — |
+
+- **Nothing remote.** The stand-in remote server received no request, and there
+  was no CSP violation.
+- **Nothing beyond Markdown.** A wiki embed loads only what the Markdown embed of
+  the same attachment loads, through the same element and the same rule.
+- **No new route to a remote image.** A wiki embed of a remote URL is not media
+  at all.
+- **J34's probe** matches J34's recorded `AFTER.json` field for field
+  (`performance/v1.0-j48/J34-PROBE-chromium.json`).
+- **The CSP** in `internal/httpapi/server.go` is unchanged. J47 changed no Go
+  file.
+
+The unit tests hold the same line without a browser. Each wiki form's image
+equals its Markdown form's, and every other embed stays text and makes no
+media element (`j47-wiki-embeds.test.tsx`).
+
+WebKit could not be launched on this machine, as recorded above. This was
+measured in Chromium only.
+
+**Recorded under J8, not done here:**
+- **A note embed stays text.** `![[document://…]]` shows another note inside
+  this one in Obsidian, and the preview has no such feature.
+- **An attachment that is not an image** shows as a broken image, as its
+  Markdown embed does.
+- **A name embed stays text even when the editor's check resolves it.** For
+  example `![[pic.png]]`, written in Notrios rather than imported. An import
+  rewrites every embed it resolves to `resource://`. Rendering a name embed from
+  the check would turn text into media after the page is sanitised, which is the
+  kind of change J34's rule exists to prevent.
