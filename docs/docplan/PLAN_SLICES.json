@@ -1117,16 +1117,16 @@
     {
       "id": "J39",
       "title": "Skip a note a reimport cannot change",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J39-A",
-          "statement": "The canonical body hash is recorded per import item, and an item without one is not skippable",
+          "statement": "The Obsidian note fingerprint carries the canonical hash, a pinned rule version, the link namespace, the resource references and whether the note warned, and an item recorded without them is not skippable",
           "state": "not-started"
         },
         {
           "id": "J39-B",
-          "statement": "A note is skipped only when the import fingerprint is unchanged and its recorded hash matches the stored revision's, so a diverged note is still repaired",
+          "statement": "A note is skipped only when its fingerprint, recomputed from the stored revision and references without reading a body, matches, so a diverged note is still repaired",
           "state": "not-started"
         },
         {

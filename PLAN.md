@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**45 items: 41 complete, 0 in progress, 4 not started, 0 deferred.**
+**45 items: 41 complete, 1 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -99,7 +99,7 @@ this section is archived when the plan completes and the rules are not.
 | J36. Resolve Obsidian partial-path links the way Obsidian does | complete | 5/5 | — |
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
-| J39. Skip a note a reimport cannot change | not-started | 0/4 | 4 |
+| J39. Skip a note a reimport cannot change | in-progress | 0/4 | 4 |
 | J40. Show ambiguous links, and report them with the notes they might mean | not-started | 0/6 | 6 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
@@ -107,7 +107,18 @@ this section is archived when the plan completes and the rules are not.
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J39. Skip a note a reimport cannot change**
+
+- `J39-A` The Obsidian note fingerprint carries the canonical hash, a pinned rule version, the link namespace, the resource references and whether the note warned, and an item recorded without them is not skippable — *not-started*
+- `J39-B` A note is skipped only when its fingerprint, recomputed from the stored revision and references without reading a body, matches, so a diverged note is still repaired — *not-started*
+- `J39-C` A reimport with every note skipped still leaves the library as a fresh import would, with the link pass, item states and checkpoint intact — *not-started*
+- `J39-D` The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains — *not-started*
+
+### Not started
+
+Written and not begun: J9, J10, J40. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -4902,9 +4913,59 @@ every note of every existing library look changed on the next import. J32's
 boundaries exclude a new store API for less, so the skip is this item rather
 than a slice of that one.
 
+**Revised 2026-10-20, before any code, with two decisions by the owner.**
+
+- **No schema change.** The premise above, that redefining `fingerprint` would
+  make every note look changed, does not hold for Obsidian notes. `processNotes`
+  calls a note unchanged when its title, body and notebook match what is stored,
+  and the fingerprint test beside that one can only agree with it. So the note
+  fingerprint is redefined and no column is added. A schema-29 column would also
+  have stopped sync between a J39 build and every schema-28 build until both were
+  upgraded, because schema 28's compatible range ends at 28.
+- **The witness is the link namespace, not the whole vault.** A canonical body
+  depends on five things: the note's own bytes, its path, the collection, the
+  rewriting rules, and the namespace its links resolve against. The namespace is
+  every note's path, title, aliases and target ID, and every asset's path and ID.
+  Hashing that namespace, rather than the import fingerprint, lets a reimport
+  with a few edited notes skip the others. That holds as long as no edit moved a
+  title, an alias or a path.
+
+The Obsidian note fingerprint becomes a hash of:
+- the file's hash and the notebook it lands in, as before;
+- the canonical body hash, as before;
+- the basis: the canonical rule version, the collection and the namespace hash;
+- a digest of the resource references the import gave the note;
+- whether resolving its links produced a warning.
+
+A note is skipped when two things hold:
+- **The recomputed fingerprint equals the recorded one.** It is recomputed
+  from the stored revision's `content_sha256`, the digest of the stored
+  references, this run's basis, and "no warning".
+- **The stored title and notebook are what this run would write.**
+
+Every part comes from the inventory, or from a store read that does not touch a
+body.
+- **A note whose links warned is never skipped**, so the report's warnings are
+  those of a full pass.
+- **A library written by an older build holds fingerprints of the old formula**,
+  so it gets no skips until one import has run. That is the safe direction.
+- **A skipped note still sends its provenance and its item state**, as an
+  unchanged note does today. What is skipped is the read, the canonicalization
+  and the hashing.
+
+Obsidian notes never record a conflict, so the condition about a conflict below
+has nothing to act on in this importer. The Joplin importer records no canonical
+hash, so it gets no skips.
+
 **Scope.**
 
-- **J39-A, record the canonical hash per item.** A column on
+- **J39-A, record the canonical hash per item.** *Revised 2026-10-20:* this is
+  the redefined fingerprint above. A store read returns, for each document, its
+  current revision's content hash, its title and notebook, and the digest of its
+  resource references, without a body. A test pins the rule version against the
+  canonical output of a corpus of edge cases, so changing the rules without
+  moving the version fails the build.
+- **J39-A, as first written: record the canonical hash per item.** A column on
   `import_item_states`, written by the importers that compute it — the Obsidian
   importer has it in hand since J32-AA. An item with no recorded hash is not
   skippable, so an existing library gets no skips until one import has run,
@@ -4923,16 +4984,31 @@ than a slice of that one.
   that J36-C measured as the repair. The recorded state needs a rule version
   that moves when link resolution, frontmatter handling or body canonicalisation
   moves, and a note whose recorded version is not this build's is not skippable.
+
+  *Revised 2026-10-20:* the repair cases each get a test. In each one the note
+  is read again:
+  - the note is edited inside Notrios;
+  - a resource is detached from the note;
+  - a resource the note uses is purged;
+  - the note is moved to another notebook;
+  - the rule version changes;
+  - a new note makes one of its links ambiguous;
+  - another note's title changes.
 - **J39-C, what the reimport still has to do.** Even with every note skipped, a
   reimport must still leave the library in the state a fresh import would: the
   final link pass still runs, because a skipped note's *links* may resolve
   differently, and the item states and checkpoint still advance. What the skip
   removes is the read, the canonicalization and the hashing — not the phases.
+  *Revised 2026-10-20:* a test makes the same edits to a vault twice and
+  reimports it once with skips and once without. The two libraries must hold the
+  same bodies, link rows, resource references, provenance and item states.
 - **J39-D, the measurements.** Wall time, hashed bytes and read bytes on
   `obsidian-10k/reimport` and `collision/reimport`, and on a **1%-changed
   reimport**, a scenario the J32 harness does not have and this item adds: a
   skip that helps a no-op reimport must not slow the ordinary case of a few
-  edits. J32's rule applies unchanged.
+  edits. J32's rule applies unchanged. *Revised 2026-10-20:* the harness has no
+  read-bytes metric, so it gains one, the process's `rchar` from
+  `/proc/self/io` around the import.
 
 **Boundaries.**
 - No note is skipped that a fresh import would write differently. The
