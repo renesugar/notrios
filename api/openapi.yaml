@@ -1279,6 +1279,70 @@ paths:
                 $ref: '#/components/schemas/LintReport'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/admin/links/report:
+    get:
+      summary: Every ambiguous link, by location and fingerprint
+      description: >
+        The ambiguous-links report without note content (v1.0 J40-D): a note
+        and each candidate by ID, a link by line, column and the SHA-256 of
+        its target. A link is ambiguous because the library finds several
+        notes by its title or attachments by its file name, or because an
+        Obsidian import found several notes by its name and left it as
+        written. The link as written and every title are in `notriosctl
+        links report` and the Reports note, never here; MCP does not offer
+        the report. Counts and the digest describe the whole library;
+        detail_limit and candidate_limit cap what is listed. It reads the
+        whole library, so it runs only when asked.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          description: Notes listed, and links listed per note.
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+        - name: candidate_limit
+          in: query
+          description: Candidate IDs listed per link.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Content-free ambiguous-links report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkReport'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/links/report/note:
+    post:
+      summary: Regenerate the ambiguous-links report as a read-only note in the Reports notebook
+      description: >
+        Explicit only — never on a schedule and never on write. The note has
+        a stable ID and is overwritten in place; the Reports notebook is
+        read-only, so the note reports `editable: false` and every mutation
+        route refuses it. The note quotes each link and names each candidate
+        by title, and is read like any other note; this response carries
+        only where it is and the content-free report.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+        - name: candidate_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Where the note was written, and the report it was rendered from
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkReportNoteWritten'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/documents/{document_id}/blocks:
     get:
       summary: List a note's addressable blocks
@@ -2903,6 +2967,60 @@ components:
         warnings:
           type: array
           items: { type: string }
+    LinkReport:
+      type: object
+      properties:
+        version: { type: integer }
+        collection_id: { type: string }
+        detail_limit: { type: integer }
+        candidate_limit: { type: integer }
+        notes_with_ambiguous_links: { type: integer, description: "Complete count." }
+        ambiguous_links: { type: integer, description: "Complete count." }
+        found_by_library: { type: integer }
+        found_by_import: { type: integer }
+        unresolved_links:
+          type: integer
+          description: Links that open nothing for another reason; lint locates them.
+        notes:
+          type: array
+          items: { $ref: '#/components/schemas/LinkReportNote' }
+        truncated: { type: boolean }
+        report_sha256:
+          type: string
+          description: Covers every finding, including those the caps hid.
+        warnings:
+          type: array
+          items: { type: string }
+        elapsed_ms: { type: number }
+    LinkReportNote:
+      type: object
+      properties:
+        document_id: { type: string }
+        link_count: { type: integer }
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/LinkReportLink' }
+        truncated: { type: boolean }
+    LinkReportLink:
+      type: object
+      properties:
+        line: { type: integer }
+        column: { type: integer }
+        target_sha256: { type: string }
+        found_by: { type: string, enum: [library, import] }
+        kind: { type: string, enum: [title, attachment, name] }
+        candidate_count: { type: integer }
+        candidate_ids:
+          type: array
+          items: { type: string }
+        truncated: { type: boolean }
+    LinkReportNoteWritten:
+      type: object
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        report: { $ref: '#/components/schemas/LinkReport' }
     DocumentBlock:
       type: object
       properties:

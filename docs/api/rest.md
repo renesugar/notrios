@@ -13,6 +13,7 @@ and store behavior.
 - DELETE /api/v1/sync/carrier/mine/{class}/{name}
 - DELETE /api/v1/trash/{document_id}
 - GET /api/v1/admin/gc/report
+- GET /api/v1/admin/links/report
 - GET /api/v1/admin/lint/report
 - GET /api/v1/collections
 - GET /api/v1/collections/{collection_id}
@@ -64,6 +65,7 @@ and store behavior.
 - PATCH /api/v1/collections/{collection_id}
 - PATCH /api/v1/documents/{document_id}
 - PATCH /api/v1/notebooks/{notebook_id}
+- POST /api/v1/admin/links/report/note
 - POST /api/v1/batch
 - POST /api/v1/collections
 - POST /api/v1/documents
@@ -129,6 +131,7 @@ same method/path set is present in the checked OpenAPI document.
 - DELETE /api/v1/sync/carrier/mine/{class}/{name}
 - DELETE /api/v1/trash/{document_id}
 - GET /api/v1/admin/gc/report
+- GET /api/v1/admin/links/report
 - GET /api/v1/admin/lint/report
 - GET /api/v1/collections
 - GET /api/v1/collections/{collection_id}
@@ -180,6 +183,7 @@ same method/path set is present in the checked OpenAPI document.
 - PATCH /api/v1/collections/{collection_id}
 - PATCH /api/v1/documents/{document_id}
 - PATCH /api/v1/notebooks/{notebook_id}
+- POST /api/v1/admin/links/report/note
 - POST /api/v1/batch
 - POST /api/v1/collections
 - POST /api/v1/documents

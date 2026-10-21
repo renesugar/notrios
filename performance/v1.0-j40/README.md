@@ -189,3 +189,151 @@ The committed inventory differed from the base crawl in other ways too: more
 search cards (328 to 343) and different sample labels. That drift predates this
 item. The signature only moves when a control's markup does, and nothing had
 asked for a re-crawl since H29.
+
+## J40-E: the import's candidates, rebuilt from provenance
+
+`internal/importers/obsidian/provenance.go` rebuilds the import's namespace from
+what the library keeps: each imported note's provenance (`document_sources`)
+holds its vault path and aliases, and its title is the note's. That is
+everything `buildLinkNamespace` reads. The namespace is then asked the import's
+question through the import's own code. `noteMatches` was split out of
+`resolveNoteID`, and the target filter that `planObsidianLinks` applied inline
+became `vaultTarget`, shared by both. Nothing is a second copy of the rules, and
+J39's pinned canonical digest and every importer test pass unchanged. There is
+no schema change.
+
+`j40e_provenance_test.go` imports a vault that holds every kind of note
+ambiguity: file names under headings, an alias two notes claim, a name one note
+has as its file name and another as its title, a folder that settles its own
+`[[index]]`, and a path. For every link in every note, the rebuilt namespace
+calls the link ambiguous exactly when the import warned, and names the notes the
+import held for it. Dropping aliases or titles from the rebuilt namespace fails
+the test. Attachment names are left to the store, which already finds them
+ambiguous by file name.
+
+A shared candidate list is handed back without copying, with the key it was
+found under. In J32's collision shape, 5,000 notes each link a name that 5,000
+notes share. A copy per link would be 25 million strings.
+
+The limit is stated wherever it applies. Provenance does not record which vault
+a note came from, so two vaults imported into one collection are one namespace
+to the report. A title is the note's current one.
+
+## J40-C: the report
+
+`internal/linkreport` sits above the store and the importer: the store cannot
+import the importer, and the report needs both.
+
+**Why a link is ambiguous.** The report gives one of two reasons:
+
+- **The library's (`found_by: library`).** The row says `ambiguous`, and the
+  candidates are what the resolver itself finds: the notes with the link's text
+  as their title, or else the attachments with it as their file name. The
+  resolver's lookups now take a limit and are shared, rather than copied for
+  the report.
+- **The import's (`found_by: import`).** The row says `unresolved`, the note has
+  Obsidian provenance, and the rebuilt namespace finds several notes.
+
+Everything else that opens nothing is only counted, with a pointer to lint
+(decision 2).
+
+**What an entry says.**
+
+- **Each note** with an ambiguous link is named by its title, its `document://`
+  URI and its stable `notrios://` URL.
+- **Each link** is quoted exactly as written, sliced from the body by the row's
+  own byte span, and located by line and column. Lines count from the top of the
+  note as stored, including an import's provenance front matter.
+- **Each candidate** is named the same way as a note. An attachment is named by
+  its file name and its `resource://` URI.
+
+**Order and caps.** Notes are in title order, links in source order, and
+candidates in title order. The caps follow lint's shape (decision 8):
+
+- `--detail-limit` caps the notes shown, and the links shown per note: 50 by
+  default, 1,000 at most.
+- `--candidate-limit` caps the candidates shown per link: 10 by default, 100 at
+  most.
+- The counts are always complete, and a cap that hides something says so.
+- One digest covers every finding, so it is the same under any caps. It moves
+  when a candidate is added, even if no link changed.
+
+A shared candidate list is hashed and ordered once per name, not once per link.
+
+**The tests** are `internal/linkreport/linkreport_test.go`:
+
+- J40-A's library in one vault, plus notes written in Notrios, a note in Reports
+  and a note in the Trash;
+- the counts by reason;
+- each link's text, location, reason and candidates;
+- the stable URLs;
+- the caps, and the digest under them;
+- the digest moving when a third `Twin` is created.
+
+Switching the import's derivation off fails them.
+
+## J40-D: where the report is generated and read
+
+| surface | what it carries |
+|---|---|
+| `notriosctl links report [--collection] [--detail-limit] [--candidate-limit] [--write-note] [--quiet]` | the whole report as JSON: links as written, titles, `document://` and `notrios://` URLs (decision 5) |
+| the **Ambiguous links report** note, `doc_link_report`, in Reports | the same report as Markdown, linking each note and candidate by `document://` |
+| `GET /api/v1/admin/links/report` | IDs, lines, columns, the SHA-256 of each target, the reason and kind, candidate IDs, and the counts. No titles, no link text, no URIs |
+| `POST /api/v1/admin/links/report/note` | writes the note, and returns where it is with the content-free report |
+| MCP | nothing. `get_lint_report` is the content-free form (decision 1) |
+| Library Health | a **Reports to read** section that writes either report, says what it found and opens the note. The graph report had no control before (decision 6) |
+
+**The note.** It is written the way the graph report is: a stable ID,
+overwritten in place, read-only, in the Reports notebook.
+- **Links are quoted, never live.** Each link is quoted with every ASCII
+  punctuation character backslash-escaped. Markdown then shows it verbatim, and
+  neither the extractor nor the preview's rule finds a link in it.
+- **Titles cannot become syntax.** Titles are escaped the same way. A title
+  holding a bracket is written as text beside a short `[open]` link, as the
+  graph report does.
+- **The note is never measured.** The read-only-notebook predicate keeps it out
+  of lint, the graph report, publication handoffs and the next report.
+
+**The tests.**
+
+- `note_test.go` writes the note with a title built to break it:
+  ``a](x) [[Twin]] <script>*b*``. Every link the extractor finds in the note is a
+  `document://` or `resource://` URI the report wrote. Regenerating revises the
+  same note. Neither lint's counts nor the next report's digest move. Quoting
+  unescaped fails the test.
+- `internal/httpapi/link_report_test.go` marks every piece of note text and finds
+  none of the markers in the REST response. It checks that writing is a POST,
+  that the note is not editable and an edit is refused, and that MCP has no such
+  tool.
+- `cmd/notriosctl/links_test.go` runs the built command, checking the quoted
+  link, the stable URLs, the caps, the refusals of bad limits, and
+  `--write-note --quiet`.
+- `j40d-library-health-reports.test.tsx` checks the GUI:
+  - opening the screen writes nothing;
+  - each report is written on request, and the screen says what it found;
+  - the note opens;
+  - a failure shows as a failure.
+
+**What else moved with the new surface.** Each record that counts surfaces was
+updated, and says why:
+- docgen's registry counts: 93 CLI forms, 111 REST operations;
+- G18's route totals;
+- G18f's hashes of the regenerated pages;
+- the G18a inventory;
+- FEATURES.json, under "Keep a library healthy";
+- the atlas entry for `internal/linkreport`;
+- J4's surface review, which finds both routes described, documented and
+  tested;
+- J13's example classification;
+- I8's freeze.
+
+The freeze change is additive: one command and two routes, with nothing
+removed, so it is compatible with every client.
+
+The store's SQL for the report lives in `sqlite_lint_links.go` beside lint's own
+link scan, rather than in a new file that calls the C API. G18 pins the number
+of such files, and no item since has added one.
+
+**Recorded under J8, not fixed here:** H15's crawl never opens Library Health. Its
+controls are not in the inventory: the repair buttons were not, and the new
+report buttons are not. The crawl found the same 89 controls after this slice.

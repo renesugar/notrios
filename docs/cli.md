@@ -32,6 +32,7 @@ nothing checked against the dispatcher. Eight commands were missing from it.
 - notriosctl jobs show [--db ...] [--command] <job-id>
 - notriosctl jobs status [--db ...] [--wait] [--timeout 30m] [--quiet] <job-id>
 - notriosctl link [--db ...] [--anchor slug|^block] [--list-anchors] <document-id>
+- notriosctl links report [--db ...] [--collection id] [--detail-limit 50] [--candidate-limit 10] [--write-note] [--quiet]
 - notriosctl lint [--db ...] [--checks a,b] [--detail-limit 100] [--quiet] [--list-checks] [--collection id]
 - notriosctl localize [--config config.yaml] [--db ...] [--dry-run] [--allow-review] [--base-revision rev] <document-id>
 - notriosctl migrate [--from dir] [--dry-run] [--json]

@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "a7fe95a55fd2d31fca976ae81580fdffa85bbac9a5c2d388e02bc71edd46b9aa",
+      "sha256": "9c94c6bebda79675c6a337e321c6b11fcb00c57b4d988c525dccf8bcd4c99c22",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "9b04f4f47020fc6c212a0142257d6ef59a4d22490edff86c3e2ac402b76c2bdc",
+      "sha256": "02c57415f82f707a34cea99f64024243fe735549d73844a4455681afc6709303",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1155,7 +1155,7 @@
     },
     {
       "path": "docs/features.md",
-      "sha256": "559a0e2034d1accf6a0b3da338b718fff7de98bf1c6d0093c6f7fb0e0a072062",
+      "sha256": "c4e41f6efa13ae174f48f50c28172e76f7ef2dcfc793d1a76b3f0085515d143a",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -3053,7 +3053,7 @@
     },
     {
       "id": "cli_help",
-      "count": 92,
+      "count": 93,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
@@ -3065,7 +3065,7 @@
     },
     {
       "id": "openapi",
-      "count": 109,
+      "count": 111,
       "unit": "operations",
       "operation_ids": 0,
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",

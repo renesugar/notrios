@@ -6,11 +6,11 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "a7fe95a55fd2d31fca976ae81580fdffa85bbac9a5c2d388e02bc71edd46b9aa"
+      "sha256": "9c94c6bebda79675c6a337e321c6b11fcb00c57b4d988c525dccf8bcd4c99c22"
     },
     {
       "path": "docs/cli.md",
-      "sha256": "9b04f4f47020fc6c212a0142257d6ef59a4d22490edff86c3e2ac402b76c2bdc"
+      "sha256": "02c57415f82f707a34cea99f64024243fe735549d73844a4455681afc6709303"
     },
     {
       "path": "docs/gui.md",

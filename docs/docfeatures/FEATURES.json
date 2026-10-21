@@ -220,6 +220,7 @@
       "summary": "Find what has rotted \u2014 broken links, attachments nothing points at, notes referring to things that are gone \u2014 fix what can be fixed mechanically, reclaim the space, and check that this installation is set up the way you think it is.",
       "cli": [
         "notriosctl lint",
+        "notriosctl links report",
         "notriosctl fix",
         "notriosctl gc",
         "notriosctl doctor",
@@ -230,6 +231,8 @@
       ],
       "rest": [
         "GET /api/v1/admin/lint/report",
+        "GET /api/v1/admin/links/report",
+        "POST /api/v1/admin/links/report/note",
         "GET /api/v1/admin/gc/report",
         "GET /api/v1/status",
         "GET /healthz"

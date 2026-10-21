@@ -32,6 +32,10 @@
       "purpose": "Watch and control recorded long-running jobs"
     },
     {
+      "name": "links",
+      "purpose": "Report the links in the library that open nothing certain"
+    },
+    {
       "name": "notebooks",
       "purpose": "Create and list notebooks, including query notebooks"
     },
@@ -187,6 +191,15 @@
       "notes": [],
       "purpose": "import a Notrios archive directory",
       "usage": "[--db ...] [--dry-run] [--write-config path] [--import-config path] <archive-dir> [--collection id]"
+    },
+    {
+      "path": [
+        "links",
+        "report"
+      ],
+      "notes": [],
+      "purpose": "every ambiguous link with the notes it might mean; --write-note overwrites the read-only note in Reports",
+      "usage": "[--db ...] [--collection id] [--detail-limit 50] [--candidate-limit 10] [--write-note] [--quiet]"
     },
     {
       "path": [

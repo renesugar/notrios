@@ -3,7 +3,7 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "8c45cadad81ad748c8d9a8249df3b735ab15f8e1",
+  "content_commit": "c426ee3d05ae8b8e696a6cb848bdecc381b0f851",
   "counts": {
     "examples": 172,
     "executed": 70,
@@ -80,8 +80,8 @@
     "troubleshooting-if-you-installed-the-package-example-1"
   ],
   "commands_with_no_executed_published_example": {
-    "of": 92,
-    "count": 60,
+    "of": 93,
+    "count": 61,
     "means": "No fenced block that this repository executes contains this command. It says nothing about whether the command is tested -- most are, in cmd/notriosctl's tests and in the I4, I7 and J3 drills. It says a reader of docs/ is shown the form and never shown it run.",
     "commands": [
       "collections show",
@@ -91,6 +91,7 @@
       "jobs list",
       "jobs retry",
       "jobs status",
+      "links report",
       "localize",
       "migrate",
       "notebooks create",

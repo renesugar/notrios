@@ -225,6 +225,12 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/jobs/` — a durable job record tied to one long-running operation, with
   two cancellation mechanisms because the operations differ: importers stop at a
   committed batch boundary, and the rest are cancelled through the context.
+- `internal/linkreport/` — the ambiguous-links report (v1.0 J40): every link
+  the library or an Obsidian import found several notes for, quoted, with the
+  candidates by title, for the command and the read-only Reports note; REST
+  gets a content-free form and MCP none. It sits above the store and the
+  importer because the import's candidates are rebuilt from provenance by the
+  importer's own code.
 - `internal/localize/` — remote-media localization behind the domain policy,
   quarantine, exact-hash and dry-run rules in `SECURITY_AND_MEDIA_POLICY.md`.
 - `internal/hashmeter/` — counts the content bytes this process has put through

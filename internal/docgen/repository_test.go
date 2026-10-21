@@ -82,8 +82,12 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// any of make purge's safeguards -- the verified backup, the refusal when
 		// nothing can answer, the symlink protection, the sync-key exclusion --
 		// because they live in scripts/lifecycle.py and the .deb ships no Python.
-		{cliHelpAnchor, 92},
-		{restAnchor, 109},
+		// 92 -> 93 and 109 -> 111 in v1.0 J40-D: `links report`, and its two
+		// REST routes. The report of ambiguous links quotes note content, so the
+		// command prints it and REST carries only its content-free form; the
+		// second route writes it as a read-only note in Reports.
+		{cliHelpAnchor, 93},
+		{restAnchor, 111},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},
 		{mcpScopesAnchor, 4},

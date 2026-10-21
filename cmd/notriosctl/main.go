@@ -104,6 +104,8 @@ func main() {
 		runNotes(os.Args[2:])
 	case "graph":
 		runGraph(os.Args[2:])
+	case "links":
+		runLinks(os.Args[2:])
 	case "jobs":
 		runJobs(os.Args[2:])
 	case "sync":

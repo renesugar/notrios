@@ -863,6 +863,58 @@ type GraphReportNote struct {
 	Report   GraphReport `json:"report"`
 }
 
+// LinkReport is the ambiguous-links report as REST carries it (v1.0 J40-D):
+// IDs, locations and fingerprints, and no note content. The link as written,
+// titles and file names stay in the command's output and the Reports note,
+// on the owner's machine; MCP does not offer the report at all.
+type LinkReport struct {
+	Version                 int              `json:"version"`
+	CollectionID            string           `json:"collection_id"`
+	DetailLimit             int              `json:"detail_limit"`
+	CandidateLimit          int              `json:"candidate_limit"`
+	NotesWithAmbiguousLinks int              `json:"notes_with_ambiguous_links"`
+	AmbiguousLinks          int              `json:"ambiguous_links"`
+	FoundByLibrary          int              `json:"found_by_library"`
+	FoundByImport           int              `json:"found_by_import"`
+	UnresolvedLinks         int              `json:"unresolved_links"`
+	Notes                   []LinkReportNote `json:"notes"`
+	Truncated               bool             `json:"truncated"`
+	ReportSHA256            string           `json:"report_sha256"`
+	Warnings                []string         `json:"warnings"`
+	ElapsedMS               float64          `json:"elapsed_ms"`
+}
+
+// LinkReportNote is one note with an ambiguous link, by ID.
+type LinkReportNote struct {
+	DocumentID string           `json:"document_id"`
+	LinkCount  int              `json:"link_count"`
+	Links      []LinkReportLink `json:"links"`
+	Truncated  bool             `json:"truncated"`
+}
+
+// LinkReportLink is one ambiguous link, located and fingerprinted. Its
+// candidates are named by ID only.
+type LinkReportLink struct {
+	Line           int      `json:"line"`
+	Column         int      `json:"column"`
+	TargetSHA256   string   `json:"target_sha256"`
+	FoundBy        string   `json:"found_by"`
+	Kind           string   `json:"kind"`
+	CandidateCount int      `json:"candidate_count"`
+	CandidateIDs   []string `json:"candidate_ids"`
+	Truncated      bool     `json:"truncated"`
+}
+
+// LinkReportNoteWritten is what regenerating the Reports note returns: where
+// the note is, and the content-free report it was rendered from. The note
+// itself is read like any other.
+type LinkReportNoteWritten struct {
+	DocumentID string     `json:"document_id"`
+	URI        string     `json:"uri"`
+	Title      string     `json:"title"`
+	Report     LinkReport `json:"report"`
+}
+
 // JobStatus is the control-plane view of one long-running operation (v0.6 F6).
 //
 // **It carries no parameters and no bytes.** A job's parameters name places on

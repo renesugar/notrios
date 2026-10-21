@@ -4,14 +4,14 @@
   "milestone": "v1.0",
   "what_this_is": "What is known about every frozen REST route and MCP tool, derived rather than recalled, so the review of what 1.0 should promise happens against evidence and in a defensible order.",
   "these_are_not_verdicts": "described/documented/exercised/tested are facts about the repository, not judgements about the surface. A route with all four may still be a promise 1.0 should not make; a route with none may be load-bearing and correct. The decisions are recorded separately, by a person, and say so.",
-  "content_commit": "edd66640b0f6669f0c409dab7ea82f807a3f20b4",
+  "content_commit": "c426ee3d05ae8b8e696a6cb848bdecc381b0f851",
   "counts": {
     "rest": {
-      "members": 113,
-      "described": 112,
-      "documented": 113,
+      "members": 115,
+      "described": 114,
+      "documented": 115,
       "exercised": 39,
-      "tested": 63
+      "tested": 65
     },
     "mcp": {
       "members": 45,
@@ -168,6 +168,18 @@
         "docs/service.md"
       ],
       "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "GET /api/v1/admin/links/report",
+      "method": "GET",
+      "path": "/api/v1/admin/links/report",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
       "tested": true
     },
     {
@@ -854,6 +866,18 @@
         "docs/operations.md"
       ],
       "exercised": true,
+      "tested": true
+    },
+    {
+      "surface": "rest",
+      "member": "POST /api/v1/admin/links/report/note",
+      "method": "POST",
+      "path": "/api/v1/admin/links/report/note",
+      "described": true,
+      "documented": [
+        "docs/api/rest.md"
+      ],
+      "exercised": false,
       "tested": true
     },
     {

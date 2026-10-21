@@ -6,10 +6,10 @@
   "module_go_version": "1.25.0",
   "host": {"goos": "linux", "goarch": "amd64", "cgo_enabled": true, "sqlite_version": "3.45.1"},
   "routes": {
-    "registered_total_including_head_and_web_root": 113,
+    "registered_total_including_head_and_web_root": 115,
     "registered_head": 3,
-    "registered_non_head_including_web_root": 110,
-    "openapi_normalized_non_head": 109,
+    "registered_non_head_including_web_root": 112,
+    "openapi_normalized_non_head": 111,
     "web_root_excluded_from_openapi": true
   },
   "dependencies": {

@@ -315,7 +315,7 @@ capability's own section.
 | Import from another application | 3 | 6 | — | — | — |
 | Watch and steer long-running work | 3 | 5 | 5 | 4 | — |
 | Link notes to each other | 1 | 4 | 4 | 1 | — |
-| Keep a library healthy | 3 | 8 | 4 | 1 | — |
+| Keep a library healthy | 3 | 9 | 6 | 1 | — |
 | Let an AI assistant use your library | — | — | 2 | — | — |
 | Organise notes into notebooks | 2 | 3 | 9 | 4 | — |
 | Keep separate libraries | 1 | 7 | — | — | — |

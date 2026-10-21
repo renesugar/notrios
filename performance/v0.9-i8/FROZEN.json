@@ -1,5 +1,5 @@
 {
-  "content_commit": "225e1c3896d9d9f852d767a33ba9cc9e04323505",
+  "content_commit": "c426ee3d05ae8b8e696a6cb848bdecc381b0f851",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -61,7 +61,7 @@
       "sha256": "9f9a41d0d6d9cc50ca7676f11487acf25e1148e4681eb28f27e158e3b22051b5"
     },
     "cli": {
-      "count": 92,
+      "count": 93,
       "members": [
         "collections list",
         "collections show",
@@ -86,6 +86,7 @@
         "jobs show",
         "jobs status",
         "link",
+        "links report",
         "lint",
         "localize",
         "migrate",
@@ -156,7 +157,7 @@
         "verify archive-v2",
         "version"
       ],
-      "sha256": "65c0b05e79b7a13426dc13fa6cefe9fe2338b378fc099eadb2fd3dcb1d767d7d"
+      "sha256": "304d910997c7b29c540ad732530edec3b8f4bee8361e9a57a4082cd33005febe"
     },
     "configuration": {
       "count": 64,
@@ -325,7 +326,7 @@
       "sha256": "209410061425bede9c88e3e8bc78fb55a552d5d0926503a92ccdff9901611074"
     },
     "rest": {
-      "count": 113,
+      "count": 115,
       "members": [
         "DELETE /api/v1/documents/{document_id}",
         "DELETE /api/v1/documents/{document_id}/resources/{resource_id}",
@@ -337,6 +338,7 @@
         "DELETE /api/v1/trash/{document_id}",
         "GET /",
         "GET /api/v1/admin/gc/report",
+        "GET /api/v1/admin/links/report",
         "GET /api/v1/admin/lint/report",
         "GET /api/v1/collections",
         "GET /api/v1/collections/{collection_id}",
@@ -391,6 +393,7 @@
         "PATCH /api/v1/collections/{collection_id}",
         "PATCH /api/v1/documents/{document_id}",
         "PATCH /api/v1/notebooks/{notebook_id}",
+        "POST /api/v1/admin/links/report/note",
         "POST /api/v1/batch",
         "POST /api/v1/collections",
         "POST /api/v1/documents",
@@ -441,7 +444,7 @@
         "PUT /api/v1/sync-ui/configuration",
         "PUT /api/v1/sync/carrier/mine/{class}/{name}"
       ],
-      "sha256": "ac82f968c46594d21de1b1b2f7732cfd52221a47e8e97fda8d44db3d992a01c4"
+      "sha256": "67a4f8164d0c3ce51e7af561887bfaf8946a3f4f96599269c6189ef746f9d28e"
     }
   },
   "what_this_is": "The surfaces 1.0 will promise, derived from the source that defines them and recorded so a change has to be deliberate. A freeze is not a promise never to change; it is a promise that changing is visible."

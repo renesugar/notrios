@@ -229,6 +229,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}/content", s.handleResourceContent)
 	s.mux.HandleFunc("GET /api/v1/admin/gc/report", s.handleGarbageCollectionReport)
 	s.mux.HandleFunc("GET /api/v1/admin/lint/report", s.handleLintReport)
+	s.mux.HandleFunc("GET /api/v1/admin/links/report", s.handleLinkReport)
+	s.mux.HandleFunc("POST /api/v1/admin/links/report/note", s.handleWriteLinkReportNote)
 
 	s.mux.HandleFunc("GET /api/v1/notebooks", s.handleListNotebooks)
 	s.mux.HandleFunc("GET /api/v1/notebooks/tree", s.handleNotebookTree)

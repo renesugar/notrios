@@ -1061,7 +1061,7 @@ export function App() {
 
       {showAbout ? <AboutDialog status={status} onClose={() => setShowAbout(false)} /> : null}
 
-      {showHealth ? <LibraryHealth onClose={() => setShowHealth(false)} /> : null}
+      {showHealth ? <LibraryHealth onClose={() => setShowHealth(false)} onOpenDocument={(id) => void openDocumentByID(id)} /> : null}
 
       {renamingTag ? (
         <TagRename

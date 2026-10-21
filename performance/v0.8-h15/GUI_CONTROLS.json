@@ -1,6 +1,6 @@
 {
   "schema": "notrios.h15.gui-controls.v3",
-  "interface_signature": "f2b96b46592846a25ea46a093c5e451faa540eff371bd3e18e0b1d4e604761e8",
+  "interface_signature": "a25818e1baf137bb9447cca7c7b74323e38c89ad313e9330a8f1b541b8ab24a2",
   "summary": {
     "controls": 89,
     "addressable": 82,
@@ -766,9 +766,9 @@
       "role": "",
       "testid": "result-card",
       "examples": [
-        "Written after the drive went away",
-        "Remote media fixture",
-        "Crawl fixture note"
+        "Crawl fixture note",
+        "Job fixture note",
+        "Written after the drive went away"
       ],
       "instances": 343,
       "enabled_instances": 343,
@@ -799,9 +799,9 @@
       "role": "",
       "testid": "result-check",
       "examples": [
-        "Select Written after the drive went away",
-        "Select Remote media fixture",
-        "Select Crawl fixture note"
+        "Select Crawl fixture note",
+        "Select Job fixture note",
+        "Select Written after the drive went away"
       ],
       "instances": 343,
       "enabled_instances": 343,

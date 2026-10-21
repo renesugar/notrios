@@ -976,6 +976,10 @@ type Store interface {
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
 	ResourceReport(ctx context.Context) (ResourceReport, error)
 	LintWorkspace(ctx context.Context, req LintRequest) (LintReport, error)
+	// LinkReportInputs and LinkCandidates are the store's half of the
+	// ambiguous-links report, which internal/linkreport assembles (v1.0 J40-C).
+	LinkReportInputs(ctx context.Context, collectionID, sourceSystem string) (LinkReportInputs, error)
+	LinkCandidates(ctx context.Context, collectionID, rawTarget string) ([]LinkCandidate, error)
 	GarbageCollect(ctx context.Context, req GarbageCollectionRequest) (GarbageCollectionReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
