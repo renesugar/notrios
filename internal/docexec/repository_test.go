@@ -200,7 +200,13 @@ func TestRepositoryExamples(t *testing.T) {
 	// `scripts/check_purged.sh`. Both bodies report on and then delete this
 	// user's own installation, so they carry a reviewed unrun reason and are
 	// drilled against a disposable HOME in performance/v1.0-j11 instead.
-	if report.Executed != 70 || report.Entries != 172 || len(report.Topics) != 16 {
+	//
+	// 172 -> 173 and 70 -> 71 executed in v1.0 J40-F: docs/operations.md's
+	// "Finding ambiguous links" shows `links report`, capped, and writing its
+	// Reports note. The seeded library has no ambiguous link, so the adapter
+	// adds one, and checks the link is quoted with both candidates, the cap
+	// holds, and the note is written without touching the seeded note.
+	if report.Executed != 71 || report.Entries != 173 || len(report.Topics) != 16 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0

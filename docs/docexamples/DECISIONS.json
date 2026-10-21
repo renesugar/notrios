@@ -9,8 +9,8 @@
     "generated-region": "the page's own generator owns this block, and two generators must not write one region"
   },
   "totals": {
-    "examples": 172,
-    "tracked": 106,
+    "examples": 173,
+    "tracked": 107,
     "left": 66
   },
   "documents": [
@@ -310,7 +310,7 @@
     },
     {
       "document": "docs/operations.md",
-      "tracked": 17,
+      "tracked": 18,
       "left": [
         {
           "id": "operations-commands-that-must-never-touch-protocol-state-example-1",

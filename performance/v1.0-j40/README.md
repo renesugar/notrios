@@ -377,3 +377,59 @@ list copied per link would have been 500,000 strings here.
 
 It is a maintenance cost. It runs only when asked, and nothing runs it on a
 timer or on save.
+
+## J40-F: one section that lists every report
+
+`docs/operations.md` now opens with **Reports**, a table of every report Notrios
+produces. Each row says:
+
+- what the report answers;
+- the command, REST route, MCP tool and place in the interface for it, or
+  "none";
+- what it will quote from notes;
+- what it costs, with the timings measured in J40-C for the reports that read
+  every link.
+
+Each row links to the section that explains the report. The table covers
+lint, ambiguous links, the link graph, mechanical repairs, garbage collection,
+resource references, the import report, the installation report and the
+installation check. A new section, **Finding ambiguous links**, explains this
+item's report. It also says plainly what the report quotes and why REST and MCP
+do not carry it.
+
+**The check.** `internal/docfeatures/reports_test.go` has two halves:
+
+- **Every report is listed.** A command, REST route or MCP tool whose name says
+  "report" must appear in the section, written as a reader would type it, such
+  as `notriosctl paths --report`. Ten such surfaces exist today.
+- **Every name is real.** Every command, route and `_report` tool the section
+  names must exist, so a row cannot outlive the report it describes.
+
+Reports with other names, such as lint, fix, gc and doctor, are listed by choice,
+and the second half keeps those rows honest too. Three mutations are each
+caught: dropping a listed route, naming a command that does not exist, and
+naming a route that does not exist.
+
+**The example runs.** The new section's recipe is executed by docexec. The
+seeded library has no ambiguous link, so the adapter gives it one: two notes
+titled `Docexec twin`, and a note linking `[[Docexec twin]]`. It then checks:
+
+- the link is quoted with both candidates;
+- `--candidate-limit 3` holds;
+- `--write-note --quiet` prints nothing and writes the note into Reports;
+- the seeded note is untouched.
+
+Expecting the wrong text fails it. `links report` therefore joins the commands
+with an executed published example. J13's count of commands without one falls
+from 61 to 60.
+
+**What moved with it:**
+- docaudit: 290 sections, 173 executables, 79 executed, 363 unverified,
+  denominator 493;
+- G18a's denominator: 290;
+- G18d's report: 173 entries, 71 executed;
+- the example decisions;
+- J13's classification;
+- J4's review.
+
+J9 checks this section; it does not create it (decision 7).

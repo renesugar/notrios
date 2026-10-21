@@ -1,7 +1,7 @@
 {
   "schema": "notrios.docexec.report.v1",
-  "entries": 172,
-  "executed": 70,
+  "entries": 173,
+  "executed": 71,
   "unverified": 102,
   "unrun_reasons": {
     "artifact-not-in-repository": 1,
@@ -13,7 +13,7 @@
     "privileged-host-change": 2,
     "shared-user-state": 21
   },
-  "runtime_ms": 22664,
+  "runtime_ms": 19407,
   "topics": [
     {
       "topic": "api-mcp",
@@ -21,7 +21,7 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 80
+      "runtime_ms": 91
     },
     {
       "topic": "api-rest",
@@ -29,7 +29,7 @@
         "executed": 25,
         "unverified": 1
       },
-      "runtime_ms": 1965
+      "runtime_ms": 1957
     },
     {
       "topic": "archive-v2",
@@ -37,7 +37,7 @@
         "executed": 1,
         "unverified": 1
       },
-      "runtime_ms": 228
+      "runtime_ms": 184
     },
     {
       "topic": "cli",
@@ -45,7 +45,7 @@
         "executed": 3,
         "unverified": 53
       },
-      "runtime_ms": 677
+      "runtime_ms": 512
     },
     {
       "topic": "configuration",
@@ -53,7 +53,7 @@
         "executed": 5,
         "unverified": 1
       },
-      "runtime_ms": 1317
+      "runtime_ms": 1055
     },
     {
       "topic": "gui",
@@ -61,7 +61,7 @@
         "executed": 4,
         "unverified": 2
       },
-      "runtime_ms": 577
+      "runtime_ms": 470
     },
     {
       "topic": "import-export",
@@ -69,7 +69,7 @@
         "executed": 10,
         "unverified": 2
       },
-      "runtime_ms": 1758
+      "runtime_ms": 1580
     },
     {
       "topic": "index",
@@ -84,15 +84,15 @@
         "executed": 1,
         "unverified": 25
       },
-      "runtime_ms": 239
+      "runtime_ms": 207
     },
     {
       "topic": "operations",
       "counts": {
-        "executed": 11,
+        "executed": 12,
         "unverified": 9
       },
-      "runtime_ms": 2672
+      "runtime_ms": 2341
     },
     {
       "topic": "publishing",
@@ -100,21 +100,21 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 646
+      "runtime_ms": 482
     },
     {
       "topic": "query-language",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 337
+      "runtime_ms": 302
     },
     {
       "topic": "selection-planning",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 49
+      "runtime_ms": 41
     },
     {
       "topic": "service",
@@ -122,7 +122,7 @@
         "executed": 1,
         "unverified": 2
       },
-      "runtime_ms": 246
+      "runtime_ms": 189
     },
     {
       "topic": "stable-links",
@@ -130,7 +130,7 @@
         "executed": 3,
         "unverified": 2
       },
-      "runtime_ms": 373
+      "runtime_ms": 295
     },
     {
       "topic": "troubleshooting",

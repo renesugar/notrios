@@ -2371,7 +2371,7 @@
     },
     {
       "path": "docs/operations.md",
-      "sha256": "f80fd154c072f9b76822fbb5cc24f0c1798f973d7fb104e1b54649c81e850a81",
+      "sha256": "4b063b59843f7073022d3fcfa816560eeb2583344bf93a3d59441291d1abac12",
       "help_note": "doc_help_operations",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
       "sections": [
@@ -2386,9 +2386,29 @@
           "grade": "unverified"
         },
         {
+          "id": "reports",
+          "level": 2,
+          "title": "Reports",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
           "id": "finding-what-has-rotted-workspace-lint",
           "level": 2,
           "title": "Finding what has rotted (workspace lint)",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "finding-ambiguous-links",
+          "level": 2,
+          "title": "Finding ambiguous links",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
@@ -3041,14 +3061,14 @@
       "id": "published_markdown",
       "count": 19,
       "unit": "pages",
-      "sections": 288,
+      "sections": 290,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 19,
       "unit": "mirrored notes",
-      "sections": 288,
+      "sections": 290,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -3145,9 +3165,9 @@
       "executed": 0,
       "generated": 30,
       "claimed": 0,
-      "unverified": 258
+      "unverified": 260
     },
-    "denominator": 288,
+    "denominator": 290,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

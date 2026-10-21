@@ -29,6 +29,28 @@
       ]
     },
     {
+      "section": "finding-ambiguous-links",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "links report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl links report                    # every ambiguous link, with the notes it might mean"
+        },
+        {
+          "run": "notriosctl links report --candidate-limit 3"
+        },
+        {
+          "run": "notriosctl links report --write-note --quiet  # the same, as a read-only note in Reports"
+        }
+      ]
+    },
+    {
       "section": "fixing-what-can-be-fixed-mechanically",
       "ordinal": 1,
       "kind": "recipe",

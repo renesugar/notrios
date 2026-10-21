@@ -83,8 +83,11 @@ def validate_registry(registry: dict, report: dict) -> None:
     # 170 -> 172 in v1.0 J11: docs/installation.md's section on checking that a
     # purge removed everything. Executed is unchanged; both bodies delete this
     # user's installation and are drilled in performance/v1.0-j11 instead.
-    assert len(examples) == report["entries"] == 172
-    assert len({item["id"] for item in examples}) == 172
+    # 172 -> 173 in v1.0 J40-F: docs/operations.md's "Finding ambiguous
+    # links" runs the report, capped, and writes its Reports note. It is
+    # executed: the adapter gives the seeded library an ambiguous link first.
+    assert len(examples) == report["entries"] == 173
+    assert len({item["id"] for item in examples}) == 173
     executed = [item for item in examples if item["state"] == "executed"]
     unverified = [item for item in examples if item["state"] == "unverified"]
     # 63 -> 64 in v0.8 H22: the two discovery commands are literal and run in
@@ -94,7 +97,8 @@ def validate_registry(registry: dict, report: dict) -> None:
     # own YAML: every key it sets must be reported by `config show` with origin
     # `file`, so it cannot claim a key it does not set.
     # 69 -> 70 in v1.0 J28-D, the example above.
-    assert len(executed) == report["executed"] == 70
+    # 70 -> 71 in v1.0 J40-F, the ambiguous-links report above.
+    assert len(executed) == report["executed"] == 71
     # 68 -> 70: both new synopses are bracketed-optional forms, registered as
     # illustrative placeholders like every other synopsis in that document.
     # 70 -> 74 in slice E. Executed stays 63: one is a bracketed synopsis, two

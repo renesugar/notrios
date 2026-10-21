@@ -74,7 +74,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # 287 -> 288 in v1.0 J40-B: docs/gui.md gained "Wiki links, and links
         # that will not open", for the preview that now renders wiki links and
         # marks the ones that will not open.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 288)
+        # 288 -> 290 in v1.0 J40-F: docs/operations.md gained "Reports", the
+        # one section listing every report Notrios produces, and "Finding
+        # ambiguous links", for the report that lists them.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 290)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

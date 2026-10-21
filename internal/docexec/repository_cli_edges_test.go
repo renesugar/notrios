@@ -11,12 +11,16 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/renesugar/notrios/internal/store"
 )
 
 func (h *repositoryExamples) cliEdge(ctx context.Context, invocation Invocation) (AdapterResult, error) {
 	switch invocation.Entry.Registered.Execution.Postcondition.Kind {
 	case "cli-lint":
 		return h.runWorkspaceLint(ctx, invocation)
+	case "cli-links-report":
+		return h.runLinksReport(ctx, invocation)
 	case "cli-gc-dry-run":
 		return h.runGarbageCollectionDryRun(ctx, invocation)
 	case "cli-job-command":
@@ -156,4 +160,75 @@ func (h *repositoryExamples) closeFixture(fixture *repositoryFixture) error {
 		return err
 	}
 	return nil
+}
+
+// runLinksReport executes the ambiguous-links example (v1.0 J40-F). The seeded
+// library has no ambiguous link, so one is added first: two notes sharing a
+// title and a note linking it by that title. The report must quote it, name
+// both candidates, honour the candidate cap, and write the Reports note without
+// touching the seeded note.
+func (h *repositoryExamples) runLinksReport(ctx context.Context, invocation Invocation) (AdapterResult, error) {
+	fixture := h.ensureFixture(invocation.Entry)
+	if err := h.closeFixture(fixture); err != nil {
+		return AdapterResult{}, err
+	}
+	st, closeStore, err := openFixtureStore(fixture)
+	if err != nil {
+		return AdapterResult{}, err
+	}
+	for _, note := range []store.CreateDocumentRequest{
+		{PreferredID: "doc_docexec_twin_one", Title: "Docexec twin", Body: "# Docexec twin\n"},
+		{PreferredID: "doc_docexec_twin_two", Title: "Docexec twin", Body: "# Docexec twin\n"},
+		{PreferredID: "doc_docexec_which", Title: "Docexec which", Body: "Which [[Docexec twin]]?\n"},
+	} {
+		if _, err := st.CreateDocument(ctx, note); err != nil {
+			closeStore()
+			return AdapterResult{}, err
+		}
+	}
+	closeStore()
+
+	lines := runnableLines(invocation.Body)
+	if len(lines) != 3 {
+		return AdapterResult{}, fmt.Errorf("links report example has %d runnable lines, want 3", len(lines))
+	}
+	outputs := make([]string, len(lines))
+	for i, line := range lines {
+		output, status, err := runPinnedShell(ctx, fixture.root, h.cli, line)
+		if err != nil || status != 0 {
+			return AdapterResult{}, fmt.Errorf("links report line %d exit %d: %v\n%s", i+1, status, err, output)
+		}
+		outputs[i] = output
+	}
+	type report struct {
+		CandidateLimit int `json:"candidate_limit"`
+		AmbiguousLinks int `json:"ambiguous_links"`
+		Notes          []struct {
+			DocumentID string `json:"document_id"`
+			Links      []struct {
+				Written        string `json:"written"`
+				CandidateCount int    `json:"candidate_count"`
+			} `json:"links"`
+		} `json:"notes"`
+	}
+	var full, capped report
+	if json.Unmarshal([]byte(outputs[0]), &full) != nil || json.Unmarshal([]byte(outputs[1]), &capped) != nil {
+		return AdapterResult{}, fmt.Errorf("links report did not print JSON: %q", outputs[0])
+	}
+	quoted := false
+	for _, note := range full.Notes {
+		for _, link := range note.Links {
+			quoted = quoted || (note.DocumentID == "doc_docexec_which" && link.Written == "[[Docexec twin]]" && link.CandidateCount == 2)
+		}
+	}
+	st, closeStore, err = openFixtureStore(fixture)
+	if err != nil {
+		return AdapterResult{}, err
+	}
+	defer closeStore()
+	written, noteErr := st.GetDocument(ctx, "doc_link_report")
+	_, seededErr := st.GetDocument(ctx, fixture.documentID)
+	ok := quoted && full.AmbiguousLinks >= 1 && capped.CandidateLimit == 3 && strings.TrimSpace(outputs[2]) == "" &&
+		noteErr == nil && written.NotebookID == store.ReportsNotebookID && seededErr == nil
+	return AdapterResult{Kind: "exit", Status: 0, PostconditionOK: ok, Detail: "the seeded ambiguous link, the candidate cap, or the Reports note contradicted the documented report"}, nil
 }

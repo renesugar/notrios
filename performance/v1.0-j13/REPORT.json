@@ -3,20 +3,20 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "c426ee3d05ae8b8e696a6cb848bdecc381b0f851",
+  "content_commit": "bc3d72e9bbb6a66ec2ecb14a09c5e1651699fd37",
   "counts": {
-    "examples": 172,
-    "executed": 70,
+    "examples": 173,
+    "executed": 71,
     "by_class": {
       "fragment": 3,
-      "recipe": 122,
+      "recipe": 123,
       "synopsis": 46,
       "transcript": 1
     },
     "by_class_and_state": {
       "fragment/executed": 2,
       "fragment/unverified": 1,
-      "recipe/executed": 67,
+      "recipe/executed": 68,
       "recipe/unverified": 55,
       "synopsis/unverified": 46,
       "transcript/executed": 1
@@ -81,7 +81,7 @@
   ],
   "commands_with_no_executed_published_example": {
     "of": 93,
-    "count": 61,
+    "count": 60,
     "means": "No fenced block that this repository executes contains this command. It says nothing about whether the command is tested -- most are, in cmd/notriosctl's tests and in the I4, I7 and J3 drills. It says a reader of docs/ is shown the form and never shown it run.",
     "commands": [
       "collections show",
@@ -91,7 +91,6 @@
       "jobs list",
       "jobs retry",
       "jobs status",
-      "links report",
       "localize",
       "migrate",
       "notebooks create",
@@ -194,7 +193,7 @@
     },
     "docs/operations.md": {
       "fragment/executed": 1,
-      "recipe/executed": 10,
+      "recipe/executed": 11,
       "recipe/unverified": 2,
       "synopsis/unverified": 7
     },
@@ -1497,6 +1496,15 @@
       "state": "executed",
       "class": "fragment",
       "rule": "yaml body: configuration, not a command line",
+      "unrun_reason": ""
+    },
+    {
+      "id": "operations-finding-ambiguous-links-example-1",
+      "path": "docs/operations.md",
+      "section": "finding-ambiguous-links",
+      "state": "executed",
+      "class": "recipe",
+      "rule": "3 literal command line(s), nothing to substitute",
       "unrun_reason": ""
     },
     {

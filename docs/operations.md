@@ -14,6 +14,35 @@ large import or a garbage-collection apply, make a verified backup as described
 in the [service guide](service.md#backup-and-restore).
 
 
+## Reports
+
+Every report Notrios can produce is listed here: what it answers, how to get it
+on each surface, what it will quote from your notes, and what it costs. The
+heading of each row links to the section that explains it. A report reads the
+library and writes nothing. The one exception is a report's own note: a
+command's `--write-note`, or **Write the report** in Library Health, replaces
+that note in the read-only Reports notebook, and only when you ask.
+
+This list is checked when Notrios is built. A command, REST route or MCP tool
+whose name says "report" fails the build until it appears here, and so does a
+row naming one that no longer exists.
+
+| Report | What it answers | Command | REST | MCP | In the interface | What it quotes from notes | Cost |
+|---|---|---|---|---|---|---|---|
+| [Workspace lint](#finding-what-has-rotted-workspace-lint) | What is broken or missing? | `notriosctl lint` | `GET /api/v1/admin/lint/report` | `get_lint_report` | Library Health shows each check's count | Nothing. A finding is a note ID, a line and column, and a SHA-256 of the target | One pass over every link; 0.55 s on a 5,500-note library |
+| [Ambiguous links](#finding-ambiguous-links) | Which links could mean more than one note, and which notes? | `notriosctl links report` | `GET /api/v1/admin/links/report`, `POST /api/v1/admin/links/report/note` | none | Library Health, **Reports to read**; the *Ambiguous links report* note in Reports | The command and the note quote each link and every candidate's title. REST quotes nothing, and MCP has no form of it | One pass over every link, plus each import's provenance; 0.92 s on a 5,500-note library |
+| [Link graph](#seeing-the-shape-of-the-link-graph) | Which notes are hubs, and which does nothing link to? | `notriosctl graph report` | `GET /api/v1/graph/report`, `POST /api/v1/graph/report/note` | `get_graph_report` | Library Health, **Reports to read**; the *Library graph report* note in Reports | Note titles, on every surface | One pass over every link; 0.18 s on a 5,500-note library |
+| [Mechanical repairs](#fixing-what-can-be-fixed-mechanically) | What could be repaired without judgement? | `notriosctl fix`, a dry run unless you add `--apply` | none | none | Library Health, in the desktop app | The text each repair would replace, and what it would write | Reads the notes with findings |
+| [Garbage collection](#garbage-collection) | What attachment storage could be reclaimed? | `notriosctl gc`, a dry run unless you add `--apply` | `GET /api/v1/admin/gc/report` | none | Library Health | Nothing: resource IDs, hashes and sizes | Reads every attachment reference |
+| [Resource references](#inspecting-resource-references) | Which attachments are duplicates, which are unused, and where are they used? | `notriosctl resources report` | `GET /api/v1/resources/reports/reference` | none | none | Attachment file names and notebook names | Reads every attachment |
+| [Import report](#planning-and-resuming-imports) | What did an import do, and what did it warn about? | the import command's own output | none | none | the import dialog's result | Counts, and warnings that name vault paths and link targets | Part of the import |
+| [Installation report](installation.md#checking-that-a-purge-removed-everything) | What does this installation occupy? | `notriosctl paths --report` | none | none | none | No note content: paths, with your home directory shown as `~` unless you pass `--no-redact` | Reads the installation's directories |
+| [Installation check](installation.md#installing-from-the-package) | Is this installation set up the way you think? | `notriosctl doctor` | none | none | none | No note content | A few seconds |
+
+The timings are from J32's collision library, 5,500 notes in 5,050 folders,
+measured in v1.0 J40 with other programs running. They are there to compare
+reports with each other, not to promise a time on your machine.
+
 ## Finding what has rotted (workspace lint)
 
 <!-- notrios:generated:example:operations-finding-what-has-rotted-workspace-lint-example-1:begin -->
@@ -56,6 +85,54 @@ produce the same digest, and a changed digest means something really changed.
 
 `GET /api/v1/admin/lint/report` returns the same report. Like the
 garbage-collection report, there is deliberately no apply endpoint.
+
+## Finding ambiguous links
+
+A link is ambiguous when its text could mean more than one note. Notrios never
+guesses between them: the link stays as you wrote it, opens nothing, and the
+preview marks it with a dotted underline. This report lists every one of them,
+with the notes each might mean, so you can choose at your own pace:
+
+<!-- notrios:generated:example:operations-finding-ambiguous-links-example-1:begin -->
+```sh
+notriosctl links report                    # every ambiguous link, with the notes it might mean
+notriosctl links report --candidate-limit 3
+notriosctl links report --write-note --quiet  # the same, as a read-only note in Reports
+```
+<!-- notrios:generated:example:operations-finding-ambiguous-links-example-1:end -->
+
+A link is listed for one of two reasons, and the report says which:
+
+- **`found_by: library`**: several notes have the link's text as their title,
+  or, when no note has it, several attachments have it as their file name.
+- **`found_by: import`**: an Obsidian import found several notes by that name,
+  as a file name, a title or an alias, and left the link as written. Notrios
+  resolves by title alone, so it records such a link as opening nothing. The
+  import's candidates are worked out again from what each imported note
+  records about where it came from. That record does not say which vault a note
+  came from, so if you imported two vaults into one collection, a list can
+  include a note from the other vault. The report says so whenever it applies.
+
+Each note is named by its title, its `document://` URI and its `notrios://`
+link. Each link is quoted exactly as written, with its line and column, and
+each candidate is named the same way as the note. Choosing one is an ordinary
+edit of the note the link is in. Nothing here repairs anything.
+
+The counts always cover the whole library. `--detail-limit` caps the notes
+listed, and the links listed per note: 50 by default, 1,000 at most.
+`--candidate-limit` caps the candidates listed per link: 10 by default, 100 at
+most. A cap that hides something says so, and `report_sha256` covers every
+finding, so it does not change with the caps. Links that open nothing for any
+other reason are only counted here; `notriosctl lint` locates them.
+
+`--write-note` writes the same report into the Reports notebook, as a read-only
+note you can read and follow links from. **Write the report** in Library Health
+does the same. The note quotes each link as plain text, never as a link, so it
+cannot add an ambiguous link of its own.
+
+Because the report quotes your notes, it stays on your machine. Its REST form,
+`GET /api/v1/admin/links/report`, carries IDs, lines and columns and a SHA-256
+of each target, as lint does, and MCP does not offer it at all.
 
 ## Fixing what can be fixed mechanically
 

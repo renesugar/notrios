@@ -143,14 +143,20 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// 287 -> 288 sections in v1.0 J40-B: docs/gui.md gains "Wiki links, and
 	// links that will not open", prose with no example. Unverified 360 -> 361
 	// and the denominator 489 -> 490 with it.
-	if report.ManualSections != 288 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 172 || report.Journeys != 9 {
+	// 288 -> 290 sections and 172 -> 173 executables in v1.0 J40-F:
+	// docs/operations.md gains "Reports", the one section listing every report
+	// Notrios produces, and "Finding ambiguous links", whose example runs the
+	// report against a library the adapter gives an ambiguous link. Executed
+	// 78 -> 79, unverified 361 -> 363 for the two prose sections, and the
+	// denominator 490 -> 493.
+	if report.ManualSections != 290 || report.Fragments != 21 || report.Claims != 4 ||
+		report.Executables != 173 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
 	// docs/query-language.md, which are literal and run.
 	// 72 -> 73 executed in v0.8 H26: the shell existence check.
-	if report.Counts[GradeExecuted] != 78 ||
+	if report.Counts[GradeExecuted] != 79 ||
 		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
 		// sections and their two registered synopsis examples.
 		// 276 -> 285 unverified in v0.8 H4 slice E: five new sections and four
@@ -204,8 +210,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 361 ||
-		report.Denominator != 490 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 363 ||
+		report.Denominator != 493 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

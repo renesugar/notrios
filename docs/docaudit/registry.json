@@ -2653,6 +2653,29 @@
       }
     },
     {
+      "id": "operations-finding-ambiguous-links-example-1",
+      "path": "docs/operations.md",
+      "section": "finding-ambiguous-links",
+      "language": "sh",
+      "sha256": "5239b857af0d24653e99fa91f979b1e621d42630dbfb29e32f9a8a3405bbf141",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-edge",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-links-report",
+          "detail": "an ambiguous link seeded into the library is reported as written with both candidates, the candidate cap holds, and the Reports note is written while the seeded note is untouched"
+        }
+      }
+    },
+    {
       "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
       "path": "docs/operations.md",
       "section": "finding-what-has-rotted-workspace-lint",
