@@ -5,6 +5,8 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -71,9 +73,11 @@ func TestJ32ImportBench(t *testing.T) {
 	statementsBefore := store.PreparedStatements()
 	commitsBefore := store.Commits()
 	hashedBefore, hashCallsBefore := hashmeter.Bytes(), hashmeter.Calls()
+	readBefore := readChars(t)
 	started := time.Now()
 	runImport(args[1:])
 	wall := time.Since(started)
+	readBytes := readChars(t) - readBefore
 	statements := store.PreparedStatements() - statementsBefore
 	commits := store.Commits() - commitsBefore
 	hashedBytes := hashmeter.Bytes() - hashedBefore
@@ -139,6 +143,7 @@ func TestJ32ImportBench(t *testing.T) {
 		"commits":             commits,
 		"hashed_bytes":        hashedBytes,
 		"hash_calls":          hashCalls,
+		"read_bytes":          readBytes,
 		"go_version":          runtime.Version(),
 		"gomaxprocs":          runtime.GOMAXPROCS(0),
 	}, "", "  ")
@@ -148,4 +153,28 @@ func TestJ32ImportBench(t *testing.T) {
 	if err := os.WriteFile(report, append(body, '\n'), 0o600); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// readChars is the bytes this process has asked the kernel to read, the rchar
+// line of /proc/self/io (v1.0 J39). It counts every read call -- the vault's
+// files, the database, anything else -- whether the page cache served it or the
+// disk did, which is what makes it a measure of the work a change removes rather
+// than of how warm the cache was.
+func readChars(t *testing.T) int64 {
+	t.Helper()
+	raw, err := os.ReadFile("/proc/self/io")
+	if err != nil {
+		t.Fatalf("read bytes are measured from /proc/self/io: %v", err)
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if value, ok := strings.CutPrefix(line, "rchar: "); ok {
+			count, err := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
+			if err != nil {
+				t.Fatalf("parse %q: %v", line, err)
+			}
+			return count
+		}
+	}
+	t.Fatal("/proc/self/io has no rchar line")
+	return 0
 }

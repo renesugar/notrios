@@ -257,6 +257,45 @@ def manifest_of(root: pathlib.Path) -> dict:
     return {"files": files, "bytes": total, "sha256": digest.hexdigest()}
 
 
+CHANGED_EVERY = 100  # one note in a hundred: the 1%-changed reimport (v1.0 J39)
+CHANGED_LINE = "\nEdited for the 1%-changed reimport (v1.0 J39).\n"
+
+
+def changed(work: pathlib.Path, shape: str) -> dict:
+    """A copy of an Obsidian corpus with one note in a hundred edited (v1.0 J39).
+
+    Every hundredth Markdown note, in path order, gains a line at its end. The
+    line is plain text, so no title, alias, path or link moves: the edit is the
+    kind a skip keyed on the link namespace should let every other note skip
+    past. It is written to <work-dir>/corpora/<shape>-changed with a manifest,
+    and rebuilt whenever the corpus it was copied from is.
+    """
+    source = build(work, shape)
+    name = f"{shape}-changed"
+    root = work / "corpora" / name
+    manifest_path = work / "corpora" / f"{name}.MANIFEST.json"
+    if manifest_path.is_file() and root.is_dir():
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if recorded.get("source_content") == source["content"] and recorded["content"] == manifest_of(root):
+            print(f"{name}: present, {recorded['edited']} notes edited", file=sys.stderr)
+            return recorded
+    if root.exists():
+        shutil.rmtree(root)
+    shutil.copytree(work / "corpora" / shape, root)
+    notes = sorted(path for path in root.rglob("*")
+                   if path.is_file() and path.suffix.lower() in (".md", ".markdown"))
+    edited = notes[::CHANGED_EVERY]
+    for path in edited:
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(CHANGED_LINE)
+    recorded = {"shape": name, "kind": source["kind"], "seed": SEED, "source_shape": shape,
+                "source_content": source["content"], "edited": len(edited), "notes": len(notes),
+                "content": manifest_of(root)}
+    manifest_path.write_text(json.dumps(recorded, indent=2) + "\n", encoding="utf-8")
+    print(f"{name}: edited {len(edited)} of {len(notes)} notes", file=sys.stderr)
+    return recorded
+
+
 def build(work: pathlib.Path, shape: str) -> dict:
     kind, generate = SHAPES[shape]
     root = work / "corpora" / shape

@@ -23,6 +23,11 @@ Scenarios:
   reimport  import it again into the library a fresh import produced; that
             library is made once per binary and copied before every run, so
             each measured reimport starts from the same bytes
+  reimport-changed
+            as reimport, but the measured import reads a copy of the corpus
+            with 1% of its notes edited (make_corpus.changed): the ordinary
+            case of a few edits, which v1.0 J39's skip must not slow down.
+            Obsidian corpora only
 
 Before each run the one-minute load average must fall to 1.0 or below (J19
 found concurrent work moved timings by 43%); the runner waits for it and
@@ -52,7 +57,7 @@ LOAD_WAIT_SECONDS = 1800
 METRICS = ("wall_seconds", "process_wall_seconds", "user_seconds", "system_seconds",
            "peak_rss_kib", "total_alloc_bytes", "mallocs", "live_heap_bytes",
            "prepared_statements", "commits", "hashed_bytes", "hash_calls",
-           "notes_per_second")
+           "read_bytes", "notes_per_second")
 
 
 def build(commit: str, work: pathlib.Path, label: str) -> int:
@@ -153,13 +158,22 @@ def summarise(values: list[float]) -> dict:
 
 def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], runs: int) -> int:
     shape, _, scenario = case.partition("/")
-    if shape not in make_corpus.SHAPES or scenario not in ("fresh", "reimport"):
-        print(f"case must be <shape>/<fresh|reimport>; shapes: {', '.join(make_corpus.SHAPES)}",
+    if shape not in make_corpus.SHAPES or scenario not in ("fresh", "reimport", "reimport-changed"):
+        print(f"case must be <shape>/<fresh|reimport|reimport-changed>; shapes: {', '.join(make_corpus.SHAPES)}",
               file=sys.stderr)
         return 2
     manifest = make_corpus.build(work, shape)
     kind = manifest["kind"]
     corpus = work / "corpora" / shape
+    # The seed library is always imported from the corpus itself; only the
+    # measured import of a reimport-changed case reads the edited copy.
+    measured_corpus, measured_manifest = corpus, manifest
+    if scenario == "reimport-changed":
+        if kind != "obsidian":
+            print("reimport-changed edits Markdown notes, so it takes an Obsidian corpus", file=sys.stderr)
+            return 2
+        measured_manifest = make_corpus.changed(work, shape)
+        measured_corpus = work / "corpora" / measured_manifest["shape"]
     binaries = {}
     for label in labels:
         binary = work / "bin" / f"{label}.test"
@@ -174,7 +188,7 @@ def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], run
     scratch.mkdir(parents=True)
 
     seeds = {}
-    if scenario == "reimport":
+    if scenario in ("reimport", "reimport-changed"):
         for label, (binary, _) in binaries.items():
             seed = scratch / f"seed-{label}"
             import_once(binary, kind, corpus, seed)
@@ -188,7 +202,7 @@ def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], run
         if label in seeds:
             shutil.copytree(seeds[label], target / "library")
         load = wait_for_quiet()
-        measured = import_once(binaries[label][0], kind, corpus, target)
+        measured = import_once(binaries[label][0], kind, measured_corpus, target)
         measured["load_average_before"] = load
         shutil.rmtree(target / "library")
         return measured
@@ -206,8 +220,9 @@ def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], run
                   f"rss {measured['peak_rss_kib']} KiB, {measured['prepared_statements']} statements",
                   file=sys.stderr)
 
-    if make_corpus.manifest_of(corpus) != manifest["content"]:
-        raise SystemExit(f"{corpus} changed while it was being measured")
+    for checked, expected in ((corpus, manifest), (measured_corpus, measured_manifest)):
+        if make_corpus.manifest_of(checked) != expected["content"]:
+            raise SystemExit(f"{checked} changed while it was being measured")
     for seed in seeds.values():
         shutil.rmtree(seed.parent)
 
@@ -215,6 +230,7 @@ def run(work: pathlib.Path, out: pathlib.Path, case: str, labels: list[str], run
         "schema": "notrios.j32.bench.v1",
         "case": case,
         "corpus": manifest,
+        **({"measured_corpus": measured_manifest} if measured_corpus != corpus else {}),
         "runs_per_binary": runs,
         "host": {"cpus": os.cpu_count(), "kernel": os.uname().release,
                  "work_filesystem": subprocess.run(["findmnt", "-no", "SOURCE,FSTYPE", "--target", str(work)],
