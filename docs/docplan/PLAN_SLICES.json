@@ -221,16 +221,21 @@
       "slices": [
         {
           "id": "J9-A",
-          "statement": "Installation and support documentation carries exact OS, architecture and runtime rows",
+          "statement": "The product version is 1.0.0, and nothing that compares a version was changed by accident",
           "state": "not-started"
         },
         {
           "id": "J9-B",
-          "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published",
+          "statement": "Installation and support documentation carries exact OS, architecture and runtime rows, checked against a v1.0 matrix",
           "state": "not-started"
         },
         {
           "id": "J9-C",
+          "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published, each one executed",
+          "state": "not-started"
+        },
+        {
+          "id": "J9-D",
           "statement": "No sentence remains that J1, J2 or J3 made untrue",
           "state": "not-started"
         }

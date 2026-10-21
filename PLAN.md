@@ -69,7 +69,7 @@ this section is archived when the plan completes and the rules are not.
 | J6. Ship the versioned no-GUI library and header artifacts | complete | 3/3 | — |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
-| J9. Publish the release documentation for the supported matrix | not-started | 0/3 | 3 |
+| J9. Publish the release documentation for the supported matrix | not-started | 0/4 | 4 |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
@@ -991,6 +991,93 @@ example registry records where each one runs.
 **Working state.** Documentation whose supported rows match
 `performance/v0.9-i7/MATRIX.json`, and no sentence left that the milestone made
 untrue.
+
+**Found 2026-10-21, before the work, by reading.**
+- **Nothing makes the product 1.0.** `internal/version` says `0.8.0`, and
+  `release.yml` refuses a `v1.0.0` tag that disagrees with it (J1). No item owned
+  the change.
+- **The v0.9 matrix has rows a reader cannot check.** "Browsers driven by the
+  journey suite" names no browser and no version. No row names a runtime library,
+  and a package's dependencies are exactly what a stranger installs.
+- **The installation page now contradicts itself.** It says that nothing is
+  signed and that a packaged install cannot delete its data. Lower on the same
+  page, it documents `notriosctl purge`.
+- **Going back a version stopped being harmless when 1.0 moved to schema 28.**
+  The page says a rollback "moves the program, never the notes", and the notes
+  are not moved. But J7-A measured that 0.8.0 and v0.9 refuse a 1.0 library, and
+  0.7.0 opens it and rewrites its `user_version`. Rolling back the program
+  therefore leaves a library the older program will not open.
+- **Other items handed J9 three things to say:**
+  - not to open a 1.0 library with 0.7.0, and that reopening it with 1.0
+    recovers it (J7);
+  - that pre-1.0 and 1.0 replicas do not sync by any path, so every replica
+    upgrades first (J7);
+  - J40-F's Reports section, which J9 checks rather than writes.
+
+**Decisions, by the owner (2026-10-21).**
+1. **The version becomes 1.0.0 in J9, first.** Every instruction then runs
+   against a real 1.0.0 build, and the documentation can name the file it
+   describes. Develop's binaries say 1.0.0 before the release exists, which is
+   ordinary.
+2. **A v1.0 matrix with exact rows.** It is `performance/v1.0-j9/MATRIX.json`,
+   derived from v0.9's:
+   - It names the browser that was driven, and its version.
+   - The runtime libraries come from the built package's `Depends` field rather
+     than being written by hand.
+   - A level changes only where something was executed. WebKit is listed as not
+     run here, because it cannot launch on this machine (J47).
+
+**Slices.**
+- **J9-A, the product is 1.0.0.** This changes `internal/version` and
+  everything that states the current version: the release-candidate claim
+  test, the freeze records, the README status block, and the package name
+  `make deb` produces.
+  - Version strings that mean something else are left alone: schema, sync
+    protocol, archive format, ABI major.
+  - Before the change, every reader of `version.Version` is checked for a
+    comparison, because a version an admission check compares is not a label.
+  - Evidence: a 1.0.0 package built with `make deb`, which says `1.0.0` when
+    run.
+- **J9-B, the supported rows are exact.**
+  - The v1.0 matrix, with a validator that derives the dependency rows from the
+    package and refuses a supported row without executed evidence.
+  - The installation page's table is checked against the matrix, so a row cannot
+    change in one place only.
+  - Windows and macOS stay absent from release claims (decision table above).
+- **J9-C, the instructions a stranger needs, executed.** Each was run, and the
+  example registry records where:
+  - **Verify a download.** `sha256sum -c`, `gpg --verify` against the committed
+    `keys/release-public.asc`, `openssl ts -verify` against the pinned
+    authority, and `gh attestation verify`. They are run against the rehearsal
+    release set from run 34697727452, downloaded the way a stranger downloads
+    it. Each check is also refused once with a deliberately altered byte, as J1
+    and J2 did. That set is 0.8.0: the commands are the ones a reader runs, with
+    the file name changed. J10-C runs them again against the published 1.0.0
+    set, which closes that gap.
+  - **What `gh attestation verify` needs from the reader**, such as whether a
+    GitHub login is required. This is measured, not assumed.
+  - **Upgrade, migration and rollback.** What 1.0 does to a 0.8 library when it
+    opens it, and what rolling back the program requires as a result. That
+    covers the export, or the copy, to keep from before the upgrade, and how to
+    restore it.
+  - **The 0.7.0 caution and the replica rule** that J7 handed over.
+  - **Disaster recovery**, from J7's drills rather than from memory.
+- **J9-D, no sentence the milestone made untrue.**
+  - The sentences J1, J2 and J3 falsified are listed by phrase, and a check
+    refuses them anywhere in the published documentation and the README.
+  - J40-F's Reports section is confirmed complete by its own check.
+  - The sentences about a published download describe the 1.0 release. They
+    reach readers only with it: the site deploys from `main`, which J10
+    synchronises, and the package's built-in help is built at J10 from that
+    `main`. **The gap between J10-A's merge and J10-B's release is J10's to
+    close**, and it is recorded there rather than papered over here.
+
+**Not in scope.**
+- Running the desktop shell, which would raise its level.
+- An arm64 machine.
+- Publishing the site.
+- Dispatching the release workflow, which signs with the release key and
+  requests a timestamp. That is J10's, under the owner's authorization.
 
 ## J10. Publish the user-authorized release
 
