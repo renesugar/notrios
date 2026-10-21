@@ -100,7 +100,7 @@ this section is archived when the plan completes and the rules are not.
 | J37. Decide what a link matched by both patterns should be | complete | 3/3 | — |
 | J38. Carry J32's import findings into the Joplin importer, where they measure | complete | 6/6 | — |
 | J39. Skip a note a reimport cannot change | complete | 4/4 | — |
-| J40. Show ambiguous links, and report them with the notes they might mean | in-progress | 1/6 | 5 |
+| J40. Show ambiguous links, and report them with the notes they might mean | in-progress | 2/6 | 4 |
 | J41. A Markdown link's target may contain balanced parentheses | complete | 3/3 | — |
 | J42. An angle-bracketed link target may contain spaces | complete | 3/3 | — |
 | J43. Rewriting a link should not drop its title | complete | 3/3 | — |
@@ -113,7 +113,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J40. Show ambiguous links, and report them with the notes they might mean**
 
-- `J40-B` A renderer rule renders a working wiki link as a link and marks ambiguous and unresolved links and embeds in distinct styles, with no click prompt and no marking in a read-only note, to a rendering written into UI_DESIGN.md first — *not-started*
 - `J40-C` A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked — *not-started*
 - `J40-D` The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report — *not-started*
 - `J40-E` Import-time ambiguity reaches the report, its candidates derived from each note's provenance by the importer's own resolution code, with no schema change and the one-namespace-per-collection limit stated — *not-started*

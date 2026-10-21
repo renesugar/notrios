@@ -3,7 +3,7 @@
 // editor (source of truth) and preview are independently sized panes.
 // Sanitization and document://+resource:// link interception carry over via
 // the shared preview renderer.
-import { useEffect, useMemo, useRef, type MouseEvent } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { MdPreview, type PreviewRendererProps } from 'md-editor-rt';
 import type { ThemeMode } from '../themes';
 import { normalizePreviewHTML, parseDocumentIDFromURI, parseResourceIDFromURI } from '../preview-utils';
@@ -13,8 +13,20 @@ import { disabledEditorExtensions, installEditorAssets } from '../editor-assets'
 import { renderNoteQueryBlocks } from '../note-query';
 import { openExternalURL } from '../desktop';
 import { renderMermaidBlocks } from '../mermaid-render';
+import { applyLinkMarks, classifyBySource, type LinkClassification } from '../preview-links';
+import type { CheckedLink } from '../api';
 
 installEditorAssets();
+
+// The editor's last buffer check, as the renderer reads it. A context rather
+// than a prop, because the renderer's identity must not change with every check.
+const LinkClassificationContext = createContext<LinkClassification | null>(null);
+
+/** The editor's last buffer check: the body it classified and what it found. */
+export interface PreviewLinkCheck {
+  body: string;
+  links: CheckedLink[];
+}
 
 export interface PreviewPaneProps {
   body: string;
@@ -22,9 +34,18 @@ export interface PreviewPaneProps {
   onOpenDocument: (documentID: string) => void;
   onOpenStableLink: (uri: string) => void;
   onError: (message: string) => void;
+  /**
+   * The editor's last buffer check, which marks the links that will not open.
+   * Absent for a read-only note, which the editor does not check (J40-B).
+   */
+  linkCheck?: PreviewLinkCheck | null;
 }
 
-export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink, onError }: PreviewPaneProps) {
+export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink, onError, linkCheck }: PreviewPaneProps) {
+  const classification = useMemo(
+    () => (linkCheck ? classifyBySource(linkCheck.body, linkCheck.links) : null),
+    [linkCheck],
+  );
   // The renderer identity must be stable across keystrokes; recreate it only
   // when the navigation callbacks change.
   const Renderer = useMemo(() => {
@@ -81,6 +102,12 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
     return function PreviewRenderer({ html, id, className }: PreviewRendererProps) {
       const containerRef = useRef<HTMLDivElement>(null);
       const sanitized = useMemo(() => normalizePreviewHTML(html), [html]);
+      const classification = useContext(LinkClassificationContext);
+      // Marks are applied to what rendered, after it rendered, and again
+      // whenever a newer check arrives for the same HTML.
+      useEffect(() => {
+        if (containerRef.current) applyLinkMarks(containerRef.current, classification);
+      }, [sanitized, classification]);
       // Query blocks are filled in *after* the note has rendered, and the
       // cleanup aborts anything still in flight — a late reply must not write
       // into a preview that has since moved to another note.
@@ -103,16 +130,18 @@ export function PreviewPane({ body, themeBase, onOpenDocument, onOpenStableLink,
   return (
     <section className="pane preview-pane" aria-label="Markdown preview" data-testid="pane-preview">
       <div className="pane-scroll">
-        <MdPreview
-          id="notrios-preview"
-          value={body}
-          theme={themeBase}
-          previewTheme="github"
-          language="en-US"
-          sanitize={normalizePreviewHTML}
-          previewComponent={Renderer}
-          {...disabledEditorExtensions}
-        />
+        <LinkClassificationContext.Provider value={classification}>
+          <MdPreview
+            id="notrios-preview"
+            value={body}
+            theme={themeBase}
+            previewTheme="github"
+            language="en-US"
+            sanitize={normalizePreviewHTML}
+            previewComponent={Renderer}
+            {...disabledEditorExtensions}
+          />
+        </LinkClassificationContext.Provider>
       </div>
     </section>
   );

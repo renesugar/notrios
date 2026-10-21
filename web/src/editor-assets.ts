@@ -21,6 +21,7 @@ import Cropper from 'cropperjs';
 import hljs from 'highlight.js/lib/common';
 import katex from 'katex';
 import { config } from 'md-editor-rt';
+import { previewLinksPlugin } from './preview-links';
 
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github.css';
@@ -71,6 +72,11 @@ export function installEditorAssets(): void {
       // takes image upload with it — trading one working feature for another
       // is not what "work offline" was supposed to mean.
       cropper: { instance: Cropper },
+    },
+    // Wiki links render, and every link records its source text so the
+    // preview can mark one that will not open (v1.0 J40-B).
+    markdownItConfig(md) {
+      md.use(previewLinksPlugin);
     },
   });
 }

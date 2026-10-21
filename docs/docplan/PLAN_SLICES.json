@@ -1159,7 +1159,8 @@
         {
           "id": "J40-B",
           "statement": "A renderer rule renders a working wiki link as a link and marks ambiguous and unresolved links and embeds in distinct styles, with no click prompt and no marking in a read-only note, to a rendering written into UI_DESIGN.md first",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
         },
         {
           "id": "J40-C",

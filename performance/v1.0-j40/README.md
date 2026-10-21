@@ -5,7 +5,8 @@ The plan is in `PLAN.md` under J40, with the owner's decisions of 2026-10-18.
 ## J40-A: what is recorded today (2026-10-21)
 
 The tests are `internal/importers/obsidian/j40a_ambiguity_test.go` for the
-library and `web/src/__tests__/j40a-preview.test.tsx` for the preview. Each case
+library and, until J40-B retired it, `web/src/__tests__/j40a-preview.test.tsx`
+for the preview. Each case
 holds one link and records, for that link, what the note keeps, the stored row,
 the editor's buffer check (`POST /api/v1/links/check`), lint's `ambiguous_link`
 and `broken_document_link` counts, and whether the importer warned.
@@ -89,3 +90,81 @@ The plan records these as decisions 9 to 11.
   decision found that the preview shows every link an import resolved as raw
   text: `[[document://default/documents/doc_x|shown]]` renders as exactly those
   characters inside a `<p>`, and so does `![[resource://…]]`.
+
+## J40-B: the preview renders wiki links, and marks links that will not open
+
+The rendering was written into `UI_DESIGN.md` ("Wiki links, and links that will
+not open") and committed, in `9b63ff1`, before any of it was built. The user
+documentation is in `docs/gui.md`, under the heading of the same name.
+
+**How it is built.**
+
+- **The renderer rule.** `web/src/preview-links.ts` adds a markdown-it rule. It
+  matches what the extractor matches, `(!?)\[\[([^\]\n]+)\]\]`, and splits the
+  text at the first pipe the same way.
+  - A `[[…]]` naming a `document://`, `resource://` or `notrios://` URI becomes
+    an `<a href>`, which the existing sanitiser routes like the Markdown link to
+    the same URI.
+  - A `[[Name]]` becomes an `<a>` with no destination.
+  - A `![[…]]` becomes a `<span>` holding the characters as written.
+  - markdown-it's own link rule is wrapped. Every element either rule emits
+    records the link's exact source text in `data-link-source`.
+- **The marks.** After the HTML is in the page, `applyLinkMarks` looks each
+  element's source text up in the editor's last buffer check. The check's byte
+  offsets are converted into the checked body, and the text is compared whole.
+  - A broken status marks the element. Its destination and any title the author
+    wrote are kept aside, and its hover text is set from the editor's wording.
+  - A name link the check resolved is routed to the URI the check found.
+  - Every pass first undoes the last one. A link the check has not seen is left
+    alone.
+- **Where the check comes from.** EditorPane hands each check up through
+  `onLinksChecked`. App passes it to the preview only for an editable note, and
+  clears it whenever another note is opened, because the same text can have a
+  different status in another note: an anchor-only link, for one.
+
+**What the tests show.** These are `web/src/__tests__/j40b-preview-links.test.tsx`
+(12 tests) and `j40b-editor-check.test.tsx` (2 tests).
+
+- **A URI wiki link** renders and opens like its Markdown form. A working embed
+  stays text.
+- **A wiki link inside a Markdown link's text** stays one Markdown link (J37).
+  The rule declines when markdown-it measures a link's text in silent mode.
+- **Note text never becomes markup.** A wiki link carrying `"><img onerror>` and
+  `<script>` renders those characters as text.
+- **Each status gets its own class and hover text.**
+  - `ambiguous` and `unresolved` links are marked distinctly.
+  - A written-out URI the check calls broken loses its click target.
+  - Code and plain words are never marked, even when the check classified the
+    same text inside a code span. The extractor does classify links in code, and
+    the preview has no element there to mark.
+- **With no check,** as for a read-only note, nothing is marked.
+- **A newer check that disagrees** gives back what a mark took. An author's
+  title survives being marked and unmarked. The undo is also pinned directly on
+  `applyLinkMarks`, because in the pane a newer check usually arrives with a
+  freshly rendered DOM.
+- **Byte offsets after multi-byte text** place the mark correctly.
+- **The editor** hands its check up for an editable note. For a read-only note
+  it hands up only nothing, and asks the service nothing.
+
+**The tests were mutated to show they can fail.**
+
+| mutation | result |
+|---|---|
+| `applyLinkMarks` does nothing after its undo | 7 tests fail |
+| the rule consumes in silent mode | the J37 test fails |
+| the undo restores no stashed attribute | the direct undo test fails, after it was added for this reason |
+
+The J40-A preview test recorded the preview as it was before this slice: a wiki
+link printed as prose. J40-B changes exactly that, so the test was retired in
+this slice. Its observation is in the J40-A table above.
+
+**What it costs.** The built UI grows by 3,455 bytes in total:
+
+| file | before | after |
+|---|---:|---:|
+| entry chunk `index-*.js` | 1,302.20 kB (gzip 429.55 kB) | 1,305.29 kB (gzip 430.61 kB) |
+| `index-*.css` | 130.80 kB (gzip 27.42 kB) | 131.17 kB (gzip 27.49 kB) |
+
+Every other chunk is unchanged in size, and only renamed because the entry
+chunk's hash moved. Opening or editing a note makes no new request. The marks
+reuse the check the editor already makes.

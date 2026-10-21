@@ -181,7 +181,7 @@ Below the menu bar the window is four side-by-side panes, always in this order:
    unit rather than wrapping a button at a time. Every control there acts on the
    note in front of you — starting a *new* note lives in the search panel,
    because it does not. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own. When a note references remote images or media, the inspector also lists each URL with its server-side policy decision (allow/block/review) — a static scan; nothing is downloaded. For editable notes with allowed media, a **Localize allowed media** button downloads those files through the server's quarantine pipeline, stores them as local resources, and rewrites the note to `resource://` links in a new revision (blocked URLs are never fetched).
-4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources.
+4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources. Wiki links render as links, and a link that will not open is marked (see [Wiki links, and links that will not open](#wiki-links-and-links-that-will-not-open)).
 
 Each pane scrolls on its own; the window itself never scrolls.
 
@@ -334,6 +334,30 @@ the note appears, so a slow query never delays reading.
 
 Publishing a note keeps the block's text, not its results. A published note
 therefore cannot leak the notes a query happened to match when you exported it.
+
+### Wiki links, and links that will not open
+
+A wiki link, `[[…]]`, renders as a link. One an Obsidian import wrote, such as
+`[[document://default/documents/doc_x|shown]]`, shows `shown` and opens the
+note, exactly like the Markdown link `[shown](document://default/documents/doc_x)`.
+A link written by name, such as `[[Alpha]]`, becomes a link once the editor's
+link check has found the note it names.
+
+When the check says a link will not open, the preview marks it instead:
+
+- **Ambiguous**, a dotted underline: more than one note or attachment matches
+  the name. The preview does not guess between them, and an import does not
+  either.
+- **Unresolved**, a wavy underline, the same as the editor's: nothing matches,
+  or a section or block the link names is missing.
+
+Hover over a marked link to see why. A marked link cannot be clicked, and the
+preview never rewrites it. To fix one, edit the link in the editor.
+
+Only an editable note is checked, so a note in Help, Reports or the Trash shows
+no marks. A wiki embed, `![[…]]`, still shows as the text you wrote. Rendering
+it as the image it names is planned as v1.0 J47, and a broken embed is marked
+like a link.
 
 ### Math and code blocks
 

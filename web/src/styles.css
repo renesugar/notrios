@@ -1314,6 +1314,23 @@ button.sync-list-row:hover { border-color: var(--accent); }
   padding: 12px 18px;
 }
 
+/* A link the editor's check says will not open (v1.0 J40-B). Neither is a
+   click target, and each reads differently from prose, from a working link and
+   from the other. The unresolved one matches the editor's wavy underline. */
+.preview-pane .preview-link-ambiguous {
+  color: var(--accent);
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  cursor: help;
+}
+
+.preview-pane .preview-link-unresolved {
+  color: inherit;
+  text-decoration: underline wavy var(--danger);
+  text-decoration-thickness: 1px;
+  cursor: help;
+}
+
 /* ---- Theme settings overlay ---- */
 
 .theme-panel {
