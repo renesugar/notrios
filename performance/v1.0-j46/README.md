@@ -56,3 +56,11 @@ runs, so nothing floats today. But any `npm install` that refreshes the lockfile
 moves every `"latest"` dependency to whatever was published last, however new.
 Whether the web workspace should state ranges for its build tools is a separate
 question, and it is not decided here.
+
+## J46-B: the gate passes
+
+`scripts/package_release.sh` ran through from `cd14448`, the J46-A commit, in a
+fresh worktree on HD2. `npm audit` was clean in `web/` and `docs-site/`, every
+validation after it passed, and it wrote `notrios-v1.0-j39-cd14448.zip`:
+26,659,678 bytes, 2,991 entries, accepted by `check_release_zip.py`. J39 was
+closed from that commit, in `aaa101e`.
