@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**45 items: 41 complete, 1 in progress, 3 not started, 0 deferred.**
+**46 items: 41 complete, 1 in progress, 4 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -106,6 +106,7 @@ this section is archived when the plan completes and the rules are not.
 | J43. Rewriting a link should not drop its title | complete | 3/3 | — |
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
+| J46. Clear vite's launch-editor advisories | not-started | 0/2 | 2 |
 
 ### Started and not finished
 
@@ -115,7 +116,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J9, J10, J40. Their slices are listed under each item.
+Written and not begun: J9, J10, J40, J46. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5637,3 +5638,58 @@ written.
 
 **Working state.** The release gate passes, and the preview renders and
 sanitises as it did, now on versions with no open advisory.
+
+## J46. Clear vite's launch-editor advisories
+
+**Goal.** `npm audit` reports nothing in `web/` again, so the release gate in
+`scripts/package_release.sh` passes and J39's archive can be built. The fix
+moves vite only within the minor line it is on, and the shipped bundle is
+compared before and after rather than assumed unchanged.
+
+**What happened, 2026-10-21.** J39's archive build stopped at `npm audit` in
+`web/`, on three advisories published on 2026-10-20 against `launch-editor`,
+which vite bundles. `docs-site/` has none. No archive was written.
+
+| advisory | severity | what it is | patched for the 8.1 line |
+|---|---|---|---|
+| GHSA-587h-7wmj-h5pm | high | `fs.existsSync()` existence check bypassed on Windows | vite 8.1.6 |
+| GHSA-r825-w8mm-5pxw | medium | an editor CLI flag misread, so some editors run a command | vite 8.1.6 |
+| GHSA-698v-4r3x-3vcv | medium | `escapeCmdArgs()` omits `%` escaping on Windows | vite 8.1.6 |
+
+The lockfile has vite 8.1.4. `launch-editor` serves the dev server's
+open-in-editor endpoint, so none of this reaches the built UI, which Notrios
+serves itself. The gate refuses every advisory regardless, and that does not
+change.
+
+`npm audit fix` names vite 8.3.5 and calls it outside the stated range, because
+`package.json` asks for `"latest"`, and 8.3.5 was published on 2026-10-21, the
+morning this was planned. vite 8.1.6 is the patch release on the line already
+installed, published on 2026-10-06. It raises vite's own floors to
+`rolldown ~1.1.5` and `postcss ^8.5.17`. Both are MIT, as is vite.
+
+**Scope.**
+
+- **J46-A, vite 8.1.6 in the lockfile.** The lockfile moves vite from 8.1.4 to
+  8.1.6, with whatever its raised floors pull in. `package.json` is unchanged.
+  The web tests, the type check and the build pass, and `npm audit` is clean in
+  `web/`. G20's licence gate passes on the new lockfile. The built `dist/` is
+  compared file by file with the one 8.1.4 builds from the same source, and the
+  record states every difference. A difference in the bundled code, beyond
+  chunk names, is explained before it is accepted.
+- **J46-B, the gate passes.** `scripts/package_release.sh` runs through to a ZIP
+  that `check_release_zip.py` accepts. J39 is then closed from that commit, and
+  its Archive section says the archive also carries J46.
+
+**Boundaries.**
+- No `--force`, no `overrides` and no audit level that hides a finding. The gate
+  stays `npm audit`, as it is.
+- No move to vite 8.2 or 8.3. Leaving the minor line is a change to the build
+  tool, not a security fix, and it would be its own item.
+- `"latest"` in `package.json` stays as it is. Whether the web workspace should
+  pin its build tools is recorded under J8, not decided here.
+- No change to the preview's sanitiser, CSP or mermaid configuration.
+
+**Dependencies.** None. J39's close waits on J46-B.
+
+**Working state.** The release gate passes on vite 8.1.6, and the bundle the UI
+ships is shown to be what it was, or different only where the record says.

@@ -1305,6 +1305,23 @@
           "evidence": "file:performance/v1.0-j45/README.md"
         }
       ]
+    },
+    {
+      "id": "J46",
+      "title": "Clear vite's launch-editor advisories",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J46-A",
+          "statement": "The lockfile moves vite from 8.1.4 to 8.1.6 with package.json unchanged, the web tests, type check, build and licence gate pass, npm audit is clean in web, and the built dist is compared file by file with 8.1.4's and every difference recorded",
+          "state": "not-started"
+        },
+        {
+          "id": "J46-B",
+          "statement": "The release packager produces an archive check_release_zip.py accepts, and J39 is closed from that commit",
+          "state": "not-started"
+        }
+      ]
     }
   ]
 }
