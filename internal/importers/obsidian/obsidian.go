@@ -1004,11 +1004,12 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		// What the store holds for each note, without its body, decides which
 		// notes need reading at all; only those are fetched in full (v1.0 J39).
-		// A note with no recorded state cannot be skipped, so a fresh import
-		// asks for nothing.
+		// Only a state recorded in skipPrefix form can be skipped, so a fresh
+		// import, a note that warned and a library an older build wrote ask for
+		// nothing.
 		headIDs := make([]string, 0, len(states))
 		for _, item := range items {
-			if _, ok := states[item.itemKey()]; ok {
+			if state, ok := states[item.itemKey()]; mayBeSkipped(state, ok) {
 				headIDs = append(headIDs, item.TargetID)
 			}
 		}
@@ -1017,7 +1018,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			return err
 		}
 		skipped := make([]bool, len(items))
-		readIDs, readExternalIDs := make([]string, 0, len(items)), make([]string, 0, len(items))
+		readIDs := make([]string, 0, len(items))
 		for index, item := range items {
 			state, stateFound := states[item.itemKey()]
 			head, headFound := heads[item.TargetID]
@@ -1026,13 +1027,21 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				continue
 			}
 			readIDs = append(readIDs, item.TargetID)
-			readExternalIDs = append(readExternalIDs, item.RelPath)
 		}
 		documents, err := run.st.GetDocuments(run.ctx, readIDs)
 		if err != nil {
 			return err
 		}
-		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, readExternalIDs)
+		// Provenance is consulted only for a note its deterministic ID did not
+		// find -- a legacy import, or a note in the trash -- so a reimport,
+		// which finds every note, does not ask (v1.0 J39).
+		lookupExternalIDs := make([]string, 0, len(items))
+		for index, item := range items {
+			if _, found := documents[item.TargetID]; !skipped[index] && !found {
+				lookupExternalIDs = append(lookupExternalIDs, item.RelPath)
+			}
+		}
+		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, lookupExternalIDs)
 		if err != nil {
 			return err
 		}
@@ -1075,8 +1084,10 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 					AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
 				})
 			}
-			fingerprint := recordedFingerprint(noteFingerprint(item, notebookID, canonicalSHA), run.basis,
-				store.ResourceRefsDigest(refs), len(warnings) > 0)
+			fingerprint := noteFingerprint(item, notebookID, canonicalSHA)
+			if len(warnings) == 0 {
+				fingerprint = recordedFingerprint(item, notebookID, canonicalSHA, run.basis, store.ResourceRefsDigest(refs))
+			}
 			action := "create"
 			if trashed {
 				action = "unchanged"
@@ -1166,7 +1177,7 @@ func (run *importRun) noteSource(item vaultFile, targetID string) store.SetDocum
 // write, which it can tell without reading the note (v1.0 J39).
 //
 // The note's recorded fingerprint covers its file, its notebook, its canonical
-// body, the run's basis, its resource references and whether it warned. Here it
+// body, the run's basis and its resource references, if it did not warn. Here it
 // is recomputed from what is true now: the inventory's file hash and this run's
 // notebook and basis, and in place of the canonical body and references, the
 // stored revision's content hash and the digest of the stored references. The
@@ -1180,14 +1191,20 @@ func (run *importRun) noteSource(item vaultFile, targetID string) store.SetDocum
 // Title and notebook are compared directly, as the unchanged test below
 // compares them, because the stored document's can change without its body.
 func (run *importRun) skippable(item vaultFile, notebookID string, state store.ImportItemState, stateFound bool, head store.ImportDocumentHead, headFound bool) bool {
-	if !stateFound || !headFound || state.TargetID != item.TargetID || head.ContentSHA256 == "" {
+	if !mayBeSkipped(state, stateFound) || !headFound || state.TargetID != item.TargetID || head.ContentSHA256 == "" {
 		return false
 	}
 	if head.Title != item.Title || head.NotebookID != notebookID {
 		return false
 	}
-	return state.Fingerprint == recordedFingerprint(noteFingerprint(item, notebookID, head.ContentSHA256),
-		run.basis, head.ResourceRefsSHA256, false)
+	return state.Fingerprint == recordedFingerprint(item, notebookID, head.ContentSHA256, run.basis, head.ResourceRefsSHA256)
+}
+
+// mayBeSkipped is skippable's first test, the one that needs no head: a state
+// recorded without skipPrefix -- a note that warned, or one an older build
+// wrote -- is never skipped.
+func mayBeSkipped(state store.ImportItemState, stateFound bool) bool {
+	return stateFound && strings.HasPrefix(state.Fingerprint, skipPrefix)
 }
 
 // skippedMutation is what a skipped note still sends: its provenance and its
@@ -1769,25 +1786,31 @@ func noteFingerprint(item vaultFile, notebookID, canonicalSHA string) string {
 	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + canonicalSHA))
 }
 
-// recordedFingerprint is what a note's item state holds since v1.0 J39: the
-// note fingerprint, and beside it everything else the note's canonical body and
-// references were derived from, so that a later import can tell, without
-// reading the note, that it would write exactly what is already stored.
+// skipPrefix marks a recorded fingerprint a later import may skip on (v1.0
+// J39). It is readable, so a state that cannot be skipped is known by its first
+// bytes alone: no head is fetched for it and nothing is hashed to rule it out.
+const skipPrefix = "j39:"
+
+// recordedFingerprint is what a note's item state holds since v1.0 J39. It
+// covers the note fingerprint's parts -- the file's hash, the notebook and the
+// canonical body's hash -- and beside them everything else the canonical body
+// and references were derived from, so that a later import can tell, without
+// reading the note, that it would write exactly what is already stored:
 //
 //   - basis is the run's canonical rule version, collection and link namespace;
 //   - refsSHA is store.ResourceRefsDigest over the references the import gave
-//     the note;
-//   - warned is whether resolving the note's links produced a warning. A note
-//     that warned is never skipped, so its warnings are reported on every
-//     import, as they were before skips existed.
+//     the note.
 //
 // Every input is one a skip can supply from the inventory and from
 // store.ImportDocumentHeads: the canonical hash is then the stored revision's
-// content_sha256, and refsSHA the digest of the stored references. A state
-// written before J39 holds noteFingerprint alone, which this never equals, so
-// a library from an older build is read in full until one import has run.
-func recordedFingerprint(noteFingerprint, basis, refsSHA string, warned bool) string {
-	return sha256Hex([]byte("j39\x00" + noteFingerprint + "\x00" + basis + "\x00" + refsSHA + "\x00" + strconv.FormatBool(warned)))
+// content_sha256, and refsSHA the digest of the stored references.
+//
+// A note whose links warned records the bare noteFingerprint instead, as every
+// note did before J39. Neither form carries skipPrefix, so such a note is read
+// on every import and its warnings are reported every time, and a library
+// written by an older build is read in full until one import has run.
+func recordedFingerprint(item vaultFile, notebookID, canonicalSHA, basis, refsSHA string) string {
+	return skipPrefix + sha256Hex([]byte(item.fingerprintHex()+"\x00"+notebookID+"\x00"+canonicalSHA+"\x00"+basis+"\x00"+refsSHA))
 }
 
 // fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,

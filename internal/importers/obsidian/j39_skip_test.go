@@ -117,6 +117,11 @@ func TestJ39AStateFromAnOlderBuildIsNotSkipped(t *testing.T) {
 	})
 	before := j39Revisions(t, st)
 
+	for relPath, prefixed := range j39StatePrefixes(t, st, dir) {
+		if prefixed {
+			t.Fatalf("%s: a pre-J39 state is not in the skip form", relPath)
+		}
+	}
 	report := j39Import(t, st, dir, Options{})
 	if report.NotesSkipped != 0 || report.NotesUnchanged != 5 {
 		t.Fatalf("a pre-J39 state must not be skipped: %#v", report)
@@ -279,7 +284,7 @@ func TestJ39BEveryDivergenceIsRead(t *testing.T) {
 						t.Fatal(err)
 					}
 					other := canonicalBasis(canonicalRules+1, "default", run.namespace)
-					return recordedFingerprint(noteFingerprint(item, head.NotebookID, head.ContentSHA256), other, head.ResourceRefsSHA256, false)
+					return recordedFingerprint(item, head.NotebookID, head.ContentSHA256, other, head.ResourceRefsSHA256)
 				})
 			},
 			skipped: 0,
@@ -361,6 +366,37 @@ func TestJ39BANoteThatWarnedIsAlwaysRead(t *testing.T) {
 	if !reflect.DeepEqual(report.Warnings, first.Warnings) {
 		t.Fatalf("a reimport should report what the import before it did: %v, then %v", first.Warnings, report.Warnings)
 	}
+	// The warned note is known by its state alone: it records the bare note
+	// fingerprint, so no head is fetched for it and nothing is hashed to rule
+	// it out. Every other note records the form a skip can match.
+	for relPath, prefixed := range j39StatePrefixes(t, st, dir) {
+		if want := relPath != "alpha.md"; prefixed != want {
+			t.Errorf("%s: skip form recorded = %v, want %v", relPath, prefixed, want)
+		}
+	}
+}
+
+// j39StatePrefixes reports, per note, whether its state is in skipPrefix form.
+func j39StatePrefixes(t *testing.T, st store.Store, dir string) map[string]bool {
+	t.Helper()
+	ctx := context.Background()
+	run, err := newImportRun(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := []string{}
+	for _, item := range run.inventory.Notes {
+		keys = append(keys, item.itemKey())
+	}
+	states, err := st.GetImportItemStates(ctx, sourceSystem, run.report.SourceKey, "default", keys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]bool{}
+	for _, item := range run.inventory.Notes {
+		out[item.RelPath] = strings.HasPrefix(states[item.itemKey()].Fingerprint, skipPrefix)
+	}
+	return out
 }
 
 // j39Library is everything a reimport writes, in a form two libraries can be
