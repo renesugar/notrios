@@ -5750,6 +5750,25 @@ rule.
   wiki embeds: no element loads anything a Markdown embed could not, and the CSP
   is unchanged.
 
+**Settled before the work, 2026-10-21.** Three details were left open:
+- **Alt text.** `![[resource://x|shown]]` renders exactly as `![shown](resource://x)`,
+  and `![[resource://x]]` exactly as `![](resource://x)`, with no alt text. The
+  rule emits markdown-it's own `image` token, so everything after it is the
+  Markdown embed's path by construction rather than by imitation. Obsidian's
+  size form, `![[pic.png|300]]`, is not read as a size. Markdown embeds have no
+  size either, so it becomes alt text, and the record says so.
+- **A note embed stays text.** `![[document://…]]` is Obsidian's transclusion,
+  which shows another note's body inside this one. A Markdown
+  `![](document://…)` renders no media: its source is removed. Rendering
+  another note inline is a feature of its own, not media, so a working note
+  embed stays the text it is, and is recorded under J8. A `notrios://` embed is
+  the same.
+- **An attachment that is not an image** renders as its Markdown embed does: an
+  `img` whose source is the attachment's content URL, which a browser shows as a
+  broken image. The preview cannot tell an image from a PDF without fetching
+  it, and fetching it would be a new loader. That is the Markdown embed's
+  existing behaviour, and the record states it rather than hiding it.
+
 **Boundaries.**
 - Embeds only. Links are J40-B's.
 - No new media type or loader, and no change to J34's policy.
