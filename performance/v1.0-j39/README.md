@@ -261,6 +261,10 @@ None of these moved a wall time beyond its noise. The same kind of trade was put
 to the owner in J32-K, and kept on that basis: bounded batches cost 18% more
 statements on `many-large`, and halved peak RSS.
 
+**Decided 2026-10-21: kept.** The owner kept the fourth form on these numbers,
+as J32-K's trade was kept: a third off every obsidian-10k reimport, for counts
+that cost no measurable time. J39-D is done on that decision.
+
 ## What this does not prove
 
 - **The namespace argument is checked, not proved.** A canonical body is a
