@@ -1523,7 +1523,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "12e245766c1beb41a7a74220f20ef1e7cfd8d328af49795300b3d89d5eecdfb5",
+      "sha256": "661ce153852fcbc80499e98a1db4357bb3b8c7e470f057b257729d96f8c68f84",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1671,6 +1671,16 @@
           "id": "live-query-blocks",
           "level": 3,
           "title": "Live query blocks",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "ts:web/src/App.tsx#App",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "wiki-links-and-links-that-will-not-open",
+          "level": 3,
+          "title": "Wiki links, and links that will not open",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "ts:web/src/App.tsx#App",
@@ -3031,14 +3041,14 @@
       "id": "published_markdown",
       "count": 19,
       "unit": "pages",
-      "sections": 287,
+      "sections": 288,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
       "count": 19,
       "unit": "mirrored notes",
-      "sections": 287,
+      "sections": 288,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
@@ -3135,9 +3145,9 @@
       "executed": 0,
       "generated": 30,
       "claimed": 0,
-      "unverified": 257
+      "unverified": 258
     },
-    "denominator": 287,
+    "denominator": 288,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

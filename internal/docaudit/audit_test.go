@@ -140,7 +140,10 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// denominator 486 -> 489 with them; the two examples report on and then
 	// delete this user's own installation, so they are drilled against a
 	// disposable HOME in performance/v1.0-j11 rather than executed here.
-	if report.ManualSections != 287 || report.Fragments != 21 || report.Claims != 4 ||
+	// 287 -> 288 sections in v1.0 J40-B: docs/gui.md gains "Wiki links, and
+	// links that will not open", prose with no example. Unverified 360 -> 361
+	// and the denominator 489 -> 490 with it.
+	if report.ManualSections != 288 || report.Fragments != 21 || report.Claims != 4 ||
 		report.Executables != 172 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
@@ -201,8 +204,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 360 ||
-		report.Denominator != 489 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 361 ||
+		report.Denominator != 490 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

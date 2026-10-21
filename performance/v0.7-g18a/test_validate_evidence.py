@@ -71,7 +71,10 @@ class G18aEvidenceTests(unittest.TestCase):
         # purge removed everything", where `paths --report` and
         # scripts/check_purged.sh are, for a reader who has just been told how
         # to purge and has no way to tell whether it worked.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 287)
+        # 287 -> 288 in v1.0 J40-B: docs/gui.md gained "Wiki links, and links
+        # that will not open", for the preview that now renders wiki links and
+        # marks the ones that will not open.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 288)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

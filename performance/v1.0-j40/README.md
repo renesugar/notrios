@@ -168,3 +168,24 @@ this slice. Its observation is in the J40-A table above.
 Every other chunk is unchanged in size, and only renamed because the entry
 chunk's hash moved. Opening or editing a note makes no new request. The marks
 reuse the check the editor already makes.
+
+**What the GUI crawl found.** The new file moved H15's interface signature, which
+lists every interface file even when it holds no control. So the control
+inventory was crawled again. The crawl ran with HOME and XDG in a work directory
+on HD2 and DBUS unset, and its replica uses the `development-file` credential
+store. Two runs agreed exactly. It still finds 89 distinct controls.
+
+To separate this slice from anything older, the commit before the code
+(`9b63ff1`) was crawled the same way. Against that, J40-B changes one thing. The
+new-note template's example link,
+`[Related note](document://default/documents/<document-id>)`, names no note. In
+the 12 states where the editor checks it, the preview now marks it unresolved
+and removes its destination. Each of those states therefore counts one fewer
+link, and `shape:a|||` falls from 14 instances to 2. This is the marking working
+as designed, and it is visible: a new note's example link now shows the wavy
+underline until it is replaced.
+
+The committed inventory differed from the base crawl in other ways too: more
+search cards (328 to 343) and different sample labels. That drift predates this
+item. The signature only moves when a control's markup does, and nothing had
+asked for a re-crawl since H29.
