@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**46 items: 43 complete, 1 in progress, 2 not started, 0 deferred.**
+**47 items: 43 complete, 1 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -107,20 +107,21 @@ this section is archived when the plan completes and the rules are not.
 | J44. Keep Recoll's external indexers out of the search sidecar | complete | 3/3 | — |
 | J45. Clear the web UI's dependency advisories | complete | 3/3 | — |
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
+| J47. Render a working wiki embed in the preview | not-started | 0/2 | 2 |
 
 ### Started and not finished
 
 **J40. Show ambiguous links, and report them with the notes they might mean**
 
-- `J40-B` Ambiguous and unresolved links are marked in the preview in distinct styles by a renderer rule, with no click prompt, to a rendering written into UI_DESIGN.md first — *not-started*
+- `J40-B` A renderer rule renders a working wiki link as a link and marks ambiguous and unresolved links and embeds in distinct styles, with no click prompt and no marking in a read-only note, to a rendering written into UI_DESIGN.md first — *not-started*
 - `J40-C` A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked — *not-started*
 - `J40-D` The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report — *not-started*
-- `J40-E` Import-time ambiguity reaches the report, by recording candidates at import or by a recorded reason it need not — *not-started*
+- `J40-E` Import-time ambiguity reaches the report, its candidates derived from each note's provenance by the importer's own resolution code, with no schema change and the one-namespace-per-collection limit stated — *not-started*
 - `J40-F` One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete — *not-started*
 
 ### Not started
 
-Written and not begun: J9, J10. Their slices are listed under each item.
+Written and not begun: J9, J10, J47. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5091,6 +5092,23 @@ reader could find by looking for "reports". J40-F adds one.
   first time the preview says anything about a link that will not open. The
   marking comes from a classification the GUI already makes — the editor's
   debounced buffer check — so opening or editing a note costs no new request.
+
+  **Revised after J40-A, 2026-10-21 (decisions 10 and 11).** The preview has no
+  wiki-link rule, so every link an Obsidian import resolved shows as raw
+  `[[document://…|shown]]` text, and every embed as raw `![[resource://…]]`.
+  This predates J40. The rule J40-B adds therefore renders wiki syntax, and does
+  not only mark it:
+  - A working `[[…]]` becomes an ordinary link, routed as a `document://`,
+    `resource://` or `notrios://` Markdown link already is.
+  - An ambiguous or unresolved `[[…]]` or `![[…]]` is marked. That includes a
+    broken embed such as `![[pic.png]]`, which is J40-A's attachment case.
+  - A working embed stays the text it is today. Rendering it as an image or
+    attachment belongs to J34's media rules, and it is J47.
+
+  The classification comes from the editor's buffer check, which runs only for an
+  editable note. A note in a read-only notebook (Help, Reports, the Trash) is
+  therefore not marked. Its wiki links still render as links. The preview makes
+  no request of its own, and `UI_DESIGN.md` states the exception.
 - **J40-C, the report's content.** One entry per note that has an ambiguous link,
   giving the **note** (its title, linked by `document://`), each **ambiguous
   link as written** in that note, and the **notes it might mean** (each title,
@@ -5123,6 +5141,19 @@ reader could find by looking for "reports". J40-F adds one.
   the name, or derived later. Deriving later needs the source vault, which the
   library does not keep, so recording is the likely answer — but it is a schema
   question and is decided on J40-A's evidence, not in advance.
+
+  **Decided after J40-A, 2026-10-21 (decision 9): derived from provenance, with
+  no schema change.** J40-A confirmed the case: vault names titled by headings,
+  and aliases, are recorded as `unresolved`. It also found that the library does
+  keep what the importer decided from. Each imported note's provenance, which
+  syncs, holds its vault path and its aliases. The report rebuilds the
+  importer's namespace from that provenance, one collection at a time, and asks
+  the importer's own resolution code for every note a link's name matches. It
+  does not keep a second copy of the rules, and its candidates are labelled as
+  the import's ambiguity, not the store's. The limit is stated wherever it
+  applies: provenance does not say which vault a note came from, so two vaults
+  imported into one collection are one namespace to the report, and a candidate
+  list can include a note from the other vault.
 - **J40-F, a Reports section in the documentation.** One clearly identifiable
   section that lists every report Notrios can produce: what question it answers,
   how to generate it on each surface (CLI, REST, MCP, GUI), where its output goes,
@@ -5157,6 +5188,19 @@ recommendation, and the recommendation was taken:
 7. **J40-F is written here**, and J9 checks it rather than creating it.
 8. **The caps follow lint's shape**: a default, a ceiling, a `--detail-limit`
    style flag on the command, and counts that never truncate.
+
+**Decisions after J40-A, accepted by the owner 2026-10-21.**
+
+9. **Import-time candidates are derived from provenance**, not recorded at
+   import, so no schema change breaks sync with schema-28 builds. Recording
+   at import would also have needed one. A report built from rows alone would
+   miss the cases this item exists for.
+10. **A read-only note is not marked.** The editor's check, which the marking
+    comes from, runs only for an editable note, and the preview does not add a
+    request of its own.
+11. **J40-B renders wiki links, and J47 renders embeds.** A working wiki link
+    becomes a link and a broken one is marked. A working embed waits for J47,
+    because it goes through J34's media rules.
 
 **Boundaries.**
 - Nothing is repaired. No prose is rewritten (H14), and the preview's marking
@@ -5697,3 +5741,34 @@ installed, published on 2026-10-06. It raises vite's own floors to
 
 **Working state.** The release gate passes on vite 8.1.6, and the bundle the UI
 ships is shown to be what it was, or different only where the record says.
+
+## J47. Render a working wiki embed in the preview
+
+**Goal.** An embed an Obsidian import resolved, `![[resource://…]]`, shows in the
+preview as the image or attachment it names, the way a Markdown
+`![](resource://…)` already does. It is not printed as text.
+
+**Found 2026-10-21, by J40-A.** The preview has no wiki-link rule. J40-B adds
+one for links, and marks a broken embed. A working embed stays raw text, because
+showing it is media rendering, and media goes through J34's rules, not the link
+rule.
+
+**Scope.**
+- **J47-A, what an embed renders as.** The same element a Markdown embed of the
+  same target renders as, through the same neutralisation. That means the same
+  `resource://` routing, no `srcset`, and the same remote-media placeholder. It
+  is pinned by tests that render both forms and compare them.
+- **J47-B, the preview's posture is unchanged.** J34's measures run again over
+  wiki embeds: no element loads anything a Markdown embed could not, and the CSP
+  is unchanged.
+
+**Boundaries.**
+- Embeds only. Links are J40-B's.
+- No new media type or loader, and no change to J34's policy.
+- The preview stays sanitized. The rule emits an element and attributes, and no
+  note text becomes markup.
+
+**Dependencies.** J40-B, for the wiki-link rule this extends.
+
+**Working state.** A note imported from Obsidian shows its embedded images in
+the preview.

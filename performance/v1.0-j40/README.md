@@ -76,3 +76,16 @@ What provenance does not keep is **which vault** a note came from. Two vaults
 imported into one collection would be one namespace to a derivation, where the
 importer saw two. Item states (`import_item_states`) do record the vault, by
 source key, but they are local, and a library reached by sync has none.
+
+### What the owner decided on this evidence (2026-10-21)
+
+The plan records these as decisions 9 to 11.
+
+- **J40-E derives candidates from provenance,** and records nothing new at
+  import. There is no schema change, and the one-namespace-per-collection limit
+  is stated where it applies.
+- **A read-only note is not marked.** The preview makes no request of its own.
+- **J40-B renders wiki links, and J47 renders embeds.** A probe for this
+  decision found that the preview shows every link an import resolved as raw
+  text: `[[document://default/documents/doc_x|shown]]` renders as exactly those
+  characters inside a `<p>`, and so does `![[resource://…]]`.

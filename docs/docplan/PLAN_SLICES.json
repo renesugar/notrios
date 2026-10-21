@@ -1158,7 +1158,7 @@
         },
         {
           "id": "J40-B",
-          "statement": "Ambiguous and unresolved links are marked in the preview in distinct styles by a renderer rule, with no click prompt, to a rendering written into UI_DESIGN.md first",
+          "statement": "A renderer rule renders a working wiki link as a link and marks ambiguous and unresolved links and embeds in distinct styles, with no click prompt and no marking in a read-only note, to a rendering written into UI_DESIGN.md first",
           "state": "not-started"
         },
         {
@@ -1173,7 +1173,7 @@
         },
         {
           "id": "J40-E",
-          "statement": "Import-time ambiguity reaches the report, by recording candidates at import or by a recorded reason it need not",
+          "statement": "Import-time ambiguity reaches the report, its candidates derived from each note's provenance by the importer's own resolution code, with no schema change and the one-namespace-per-collection limit stated",
           "state": "not-started"
         },
         {
@@ -1324,6 +1324,23 @@
           "statement": "The release packager produces an archive check_release_zip.py accepts, and J39 is closed from that commit",
           "state": "done",
           "evidence": "file:performance/v1.0-j46/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J47",
+      "title": "Render a working wiki embed in the preview",
+      "state": "not-started",
+      "slices": [
+        {
+          "id": "J47-A",
+          "statement": "A working wiki embed renders as the element a Markdown embed of the same target renders as, through the same neutralisation, pinned by tests that compare the two",
+          "state": "not-started"
+        },
+        {
+          "id": "J47-B",
+          "statement": "J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged",
+          "state": "not-started"
         }
       ]
     }
