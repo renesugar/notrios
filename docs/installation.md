@@ -135,7 +135,9 @@ predicate, the workflow, the commit and the issuer. **It needs a GitHub login**
 The C library and header (`notrios-c-abi-1.0.0-linux-amd64.tar.gz`) come with
 a checksum file of their own. They are checked with
 `sha256sum -c notrios-c-abi-1.0.0-linux-amd64.tar.gz.sha256`. They are not
-signed. See [the C ABI](../PACKAGING.md) for what the tarball holds.
+signed. `PACKAGING.md` in the
+[repository](https://github.com/renesugar/notrios/blob/main/PACKAGING.md) says
+what the tarball holds.
 
 ### Upgrading
 
