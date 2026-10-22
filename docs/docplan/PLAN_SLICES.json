@@ -1398,7 +1398,7 @@
         },
         {
           "id": "J49-C",
-          "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one executed again",
+          "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one run against the rehearsal set, and the ones a workflow-built set is needed for named for J10-A",
           "state": "not-started"
         },
         {

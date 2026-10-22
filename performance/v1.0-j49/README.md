@@ -120,3 +120,18 @@ they should.
 The pinned-action count in v0.9 I6's record goes from 24 to 23. The upload
 step for the separate tarball is gone, and the validator derives the count, so
 it refused until the record was corrected.
+
+## The real run is J10-A's, by owner decision (2026-10-21)
+
+The owner closed J49 without a workflow run. A run needs `main` to carry this
+workflow, and merging to `main` also deploys the documentation site, which
+would put the 1.0 installation page live before the release exists. J10-A's
+rehearsal therefore owes these:
+- dispatch `release.yml` from `main` after the merge;
+- check on the runner that `verify_release_set.py` accepts the set: signed,
+  attested, two subjects;
+- run `run_verification.py` against the downloaded set, so that the four C ABI
+  commands in `VERIFY.json`'s `not_run_here` are run, and the list comes back
+  empty.
+
+J10 records each of these.

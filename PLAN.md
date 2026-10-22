@@ -116,7 +116,7 @@ this section is archived when the plan completes and the rules are not.
 
 **J49. Put everything a stranger verifies with into the release set**
 
-- `J49-C` The verification instructions use the bundle and cover the C ABI tarball, each one executed again — *not-started*
+- `J49-C` The verification instructions use the bundle and cover the C ABI tarball, each one run against the rehearsal set, and the ones a workflow-built set is needed for named for J10-A — *not-started*
 
 ### Not started
 
@@ -1113,6 +1113,15 @@ establish that the evidence predates disclosure.
 **One decision arrives here from J2, and the owner has acted on it.** The CI
 secret held the release key's primary, which can certify as well as sign; it was
 replaced on 2026-09-12 with an export narrowed to the signing subkey.
+
+**J49's workflow has not run, by owner decision (2026-10-21).** J49 put the
+attestation bundles and the signed C ABI tarball into the release set, moved
+the release to `ubuntu-24.04`, and proved the verifier with a throwaway key.
+A run needs `main`, so J10-A's rehearsal owes three steps. It dispatches
+`release.yml`. It sees `verify_release_set.py` accept a signed, attested,
+two-subject set on the runner. It runs `performance/v1.0-j9/run_verification.py`
+against the downloaded set until `VERIFY.json`'s `not_run_here` is empty. The
+four C ABI commands are listed there today.
 
 **The documentation describes the release before it exists, from J9.** J9
 wrote the installation page for the 1.0 release set: where to download it, how
