@@ -21,10 +21,12 @@ A release set is these files:
 | File | What it is |
 |---|---|
 | `notrios_1.0.0-1_amd64.deb` | the package |
-| `notrios_1.0.0-1_amd64.deb.asc` | a detached OpenPGP signature over the package |
-| `notrios_1.0.0-1_amd64.deb.asc.tsq`, `.tsr` | an RFC 3161 timestamp request and reply over that signature |
+| `notrios-c-abi-1.0.0-linux-amd64.tar.gz` | the C library and header; `PACKAGING.md` in the [repository](https://github.com/renesugar/notrios/blob/main/PACKAGING.md) says what it holds |
+| `<artifact>.asc` | a detached OpenPGP signature over each of the two |
+| `<artifact>.asc.tsq`, `<artifact>.asc.tsr` | an RFC 3161 timestamp request and reply over each signature |
+| `<artifact>.attestation.jsonl` | each artifact's build attestation, as a sigstore bundle |
 | `SBOM.cdx.json` | the software bill of materials, in CycloneDX |
-| `PROVENANCE.json` | an in-toto statement of how the package was built |
+| `PROVENANCE.json` | an in-toto statement of how the two were built |
 | `SHA256SUMS`, `SHA256SUMS.asc` | the checksum of every file above, and a signature over the checksums |
 
 [Verify the files](#verifying-what-you-downloaded) before you install them. Then
@@ -78,12 +80,13 @@ gpg --show-keys --with-fingerprint release-public.asc
 
 The primary key's fingerprint must be
 `1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E`. If it is, import it and
-check both signatures:
+check the signatures:
 
 ```sh
 gpg --import release-public.asc
 gpg --verify SHA256SUMS.asc SHA256SUMS
 gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb
+gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz
 ```
 
 Each must print `Good signature from "Rene Sugar <rene.sugar@gmail.com>"` and
@@ -104,40 +107,42 @@ curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/cu
 curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem
 openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \
   -CAfile tsa-root.pem -untrusted tsa-untrusted.pem
+openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \
+  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem
 ```
 
-The verification must print `Verification: OK`. It also warns that the
+Each verification must print `Verification: OK`. It also warns that the
 certificate in `tsa-untrusted.pem` `is not a CA cert`. That is expected: the
 file holds the responder's own certificate, not an authority's. A changed
 signature prints `message imprint mismatch` and `Verification: FAILED`, and
 exits non-zero.
 
-The time it attests is in the reply:
+The time each one attests is in its reply:
 
 ```sh
 openssl ts -reply -in notrios_1.0.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'
+openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'
 ```
 
-**Where was it built?** The attestation says the package came out of this
-repository's release workflow, from a named commit, on GitHub's runner. It is
-checked with the [GitHub CLI](https://cli.github.com/):
+**Where was it built?** Each attestation says its artifact came out of this
+repository's release workflow, from a named commit, on GitHub's runner. The
+release set carries them, and the [GitHub CLI](https://cli.github.com/) checks
+them **with no GitHub login**:
 
 ```sh
 gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \
-  --signer-workflow renesugar/notrios/.github/workflows/release.yml
+  --signer-workflow renesugar/notrios/.github/workflows/release.yml \
+  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl
+gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \
+  --signer-workflow renesugar/notrios/.github/workflows/release.yml \
+  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl
 ```
 
-It exits 0 when the attestation verifies, and it can print nothing when it
+Each exits 0 when its attestation verifies, and it can print nothing when it
 does. Add `--format json` to see what it established: the SLSA provenance
-predicate, the workflow, the commit and the issuer. **It needs a GitHub login**
-(`gh auth login`). Without one, it stops and asks for one.
-
-The C library and header (`notrios-c-abi-1.0.0-linux-amd64.tar.gz`) come with
-a checksum file of their own. They are checked with
-`sha256sum -c notrios-c-abi-1.0.0-linux-amd64.tar.gz.sha256`. They are not
-signed. `PACKAGING.md` in the
-[repository](https://github.com/renesugar/notrios/blob/main/PACKAGING.md) says
-what the tarball holds.
+predicate, the workflow, the commit and the issuer. Without `--bundle`, the
+command fetches the attestation from GitHub instead, and that needs
+`gh auth login`.
 
 ### Upgrading
 

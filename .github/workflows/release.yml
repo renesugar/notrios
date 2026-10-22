@@ -35,7 +35,12 @@ env:
 
 jobs:
   package:
-    runs-on: ubuntu-latest
+    # Named, not `ubuntu-latest`. dpkg-shlibdeps computes the package's
+    # Depends from the system it builds on, so a label GitHub moves would
+    # quietly retarget the release at a row nobody ran (v1.0 J49-D). This is
+    # the supported row of performance/v1.0-j9/MATRIX.json, and J49's
+    # validator refuses a label that is not one.
+    runs-on: ubuntu-24.04
     # The environment is what restricts which refs can reach this job at all:
     # `production` admits `main` and tags matching `v*` and nothing else. It
     # holds the release signing key for J2; this job uses no secret, because an
@@ -107,6 +112,7 @@ jobs:
           sha256sum "$deb"
 
       - name: Attest the package
+        id: attest-deb
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: dist/deb/notrios_*_amd64.deb
@@ -128,22 +134,25 @@ jobs:
         run: bash examples/c/run_examples.sh "$(ls dist/abi/notrios-c-abi-*.tar.gz)"
 
       - name: Attest the C ABI artifact
+        id: attest-abi
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
         with:
           subject-path: dist/abi/notrios-c-abi-*.tar.gz
 
-      # A run artifact, not a release asset. Publishing is v1.0 J10's, under
-      # the owner's authorization.
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
-        with:
-          name: notrios-c-abi
-          path: |
-            dist/abi/notrios-c-abi-*.tar.gz
-            dist/abi/notrios-c-abi-*.tar.gz.sha256
-          if-no-files-found: error
-
+      # The C ABI tarball and both attestation bundles travel in the release set
+      # (v1.0 J49), so a stranger holding the set can check provenance with
+      # `gh attestation verify --bundle` and no GitHub login, and the tarball is
+      # signed with everything else. It used to be a run artifact of its own,
+      # attested and unsigned.
       - name: Assemble the release set
-        run: python3 performance/v0.9-i6/build_release_set.py --signed
+        env:
+          DEB_BUNDLE: ${{ steps.attest-deb.outputs.bundle-path }}
+          ABI_BUNDLE: ${{ steps.attest-abi.outputs.bundle-path }}
+        run: |
+          python3 performance/v0.9-i6/build_release_set.py --signed --attested \
+            --deb "$(ls dist/deb/notrios_*_amd64.deb)" \
+            --abi "$(ls dist/abi/notrios-c-abi-*.tar.gz)" \
+            --attestation "deb=$DEB_BUNDLE" --attestation "abi=$ABI_BUNDLE"
 
       # Imported inline rather than through an action.
       #
@@ -202,25 +211,31 @@ jobs:
       - name: Sign the release set
         run: |
           cd dist/release-set
-          deb=$(ls notrios_*_amd64.deb)
-          gpg --batch --yes --armor --detach-sign --output "$deb.asc" "$deb"
+          # Every artifact the set carries: the package and the C ABI tarball
+          # (v1.0 J49). The verifier requires a signature and a timestamp reply
+          # for each subject the provenance names.
+          for artifact in notrios_*_amd64.deb notrios-c-abi-*.tar.gz; do
+            gpg --batch --yes --armor --detach-sign --output "$artifact.asc" "$artifact"
 
-          # RFC 3161 over the signature, from the authority and policy this
-          # project already pins for its evidence reserve -- one verification
-          # story rather than two. A signature says who; a timestamp keeps
-          # saying when after the key expires or is revoked.
-          openssl ts -query -data "$deb.asc" -sha256 -cert -out "$deb.asc.tsq"
-          curl -sSf -H 'Content-Type: application/timestamp-query' \
-               --data-binary "@$deb.asc.tsq" http://timestamp.digicert.com \
-               -o "$deb.asc.tsr"
-          openssl ts -verify -data "$deb.asc" -in "$deb.asc.tsr" \
-               -CAfile "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-root.pem" \
-               -untrusted "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-untrusted.pem"
+            # RFC 3161 over the signature, from the authority and policy this
+            # project already pins for its evidence reserve -- one verification
+            # story rather than two. A signature says who; a timestamp keeps
+            # saying when after the key expires or is revoked.
+            openssl ts -query -data "$artifact.asc" -sha256 -cert -out "$artifact.asc.tsq"
+            curl -sSf -H 'Content-Type: application/timestamp-query' \
+                 --data-binary "@$artifact.asc.tsq" http://timestamp.digicert.com \
+                 -o "$artifact.asc.tsr"
+            openssl ts -verify -data "$artifact.asc" -in "$artifact.asc.tsr" \
+                 -CAfile "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-root.pem" \
+                 -untrusted "$GITHUB_WORKSPACE/evidence/current/TRUST/tsa-untrusted.pem"
+          done
 
           # The checksum file is written last over everything above, then signed:
-          # it cannot cover its own signature.
-          sha256sum notrios_*_amd64.deb notrios_*.asc notrios_*.tsq notrios_*.tsr \
-                    SBOM.cdx.json PROVENANCE.json > SHA256SUMS
+          # it cannot cover its own signature. Over the directory rather than a
+          # list of globs, which named the files the set held when it was written
+          # and would have left any new one out (v1.0 J49).
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS*' -printf '%f\n' | LC_ALL=C sort \
+            | xargs sha256sum > SHA256SUMS
           gpg --batch --yes --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
 
       # The same verification a stranger runs, against the same committed key,

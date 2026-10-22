@@ -14,6 +14,7 @@ a verifier written from the same assumption fail together and look like
 agreement.
 """
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -90,6 +91,40 @@ def verify_signature(signature: pathlib.Path, datum: pathlib.Path,
         raise ReleaseSetError(
             f"{signature.name} is not a good signature over {datum.name} by the published key")
     return fields[-1]
+
+
+SLSA_PROVENANCE = "https://slsa.dev/provenance/v1"
+BUNDLE_SUFFIX = ".attestation.jsonl"
+
+
+def verify_bundle(bundle: pathlib.Path, name: str, digest: str) -> int:
+    """Check an attestation bundle names exactly this artifact's bytes (v1.0 J49).
+
+    What is checked here is the binding: each line is a sigstore bundle whose
+    DSSE payload is an SLSA provenance statement naming `name` with `digest`.
+    The bundle's signature and certificate chain are `gh attestation verify
+    --bundle`'s to check, against sigstore's root, and the installation page
+    tells a reader to run it. A bundle for other bytes -- another artifact's,
+    an older build's -- is refused here, before anyone is told it verifies."""
+    lines = [line for line in bundle.read_text(encoding="utf-8").splitlines() if line.strip()]
+    require(lines, f"{bundle.name} holds no bundle")
+    for number, line in enumerate(lines, 1):
+        try:
+            document = json.loads(line)
+            envelope = document["dsseEnvelope"]
+            statement = json.loads(base64.b64decode(envelope["payload"]))
+        except (ValueError, KeyError, TypeError) as error:
+            raise ReleaseSetError(f"{bundle.name} line {number} is not a sigstore DSSE bundle: {error}")
+        require(document.get("mediaType", "").startswith("application/vnd.dev.sigstore.bundle"),
+                f"{bundle.name} line {number} is not a sigstore bundle")
+        require(envelope.get("payloadType") == "application/vnd.in-toto+json",
+                f"{bundle.name} line {number} does not carry an in-toto statement")
+        require(statement.get("predicateType") == SLSA_PROVENANCE,
+                f"{bundle.name} line {number} is not SLSA provenance")
+        named = [(s.get("name"), s.get("digest", {}).get("sha256")) for s in statement.get("subject", [])]
+        require((name, digest) in named,
+                f"{bundle.name} line {number} attests {named}, not {name} at {digest[:16]}")
+    return len(lines)
 
 
 def licence_ids(expression: str) -> list[str]:
@@ -212,17 +247,42 @@ def main() -> int:
             fingerprint = verify_signature(root / name, root / subject, public_key)
             require(fingerprint == expected,
                     f"{name} was signed by {fingerprint}, not the published key {expected}")
-        # The two that must be signed, named rather than inferred: the artifact
-        # itself, and the file everything else is checked against.
-        for required in (provenance["subject"][0]["name"], "SHA256SUMS"):
+        # The ones that must be signed, named rather than inferred: every
+        # artifact the provenance names, and the file everything else is
+        # checked against. This named the first subject only until v1.0 J49
+        # gave the set a second one, the C ABI tarball, and a set signing only
+        # the package would have passed.
+        for required in [s["name"] for s in provenance["subject"]] + ["SHA256SUMS"]:
             require(f"{required}.asc" in signatures,
                     f"a signed set must carry a signature over {required}")
+        # And a timestamp over each artifact's signature, which keeps saying
+        # when after the key expires or is revoked. The workflow verifies each
+        # reply against the pinned authority before the set leaves the runner.
+        for subject in provenance["subject"]:
+            for suffix in (".asc.tsq", ".asc.tsr"):
+                require((root / f"{subject['name']}{suffix}").is_file(),
+                        f"a signed set must carry {subject['name']}{suffix}")
+
+    attestation = provenance.get("notrios:attestation", {"state": "unattested"})
+    require(attestation["state"] in ("unattested", "attested"), "unknown attestation state")
+    bundles = sorted(path.name for path in root.iterdir() if path.name.endswith(BUNDLE_SUFFIX))
+    attested_lines = 0
+    if attestation["state"] == "unattested":
+        require(not bundles, "the set carries attestation bundles but records itself as unattested")
+    else:
+        expected_bundles = sorted(f"{s['name']}{BUNDLE_SUFFIX}" for s in provenance["subject"])
+        require(bundles == expected_bundles,
+                f"an attested set carries one bundle per subject: want {expected_bundles}, have {bundles}")
+        for subject in provenance["subject"]:
+            attested_lines += verify_bundle(root / f"{subject['name']}{BUNDLE_SUFFIX}",
+                                            subject["name"], listed[subject["name"]])
 
     verified = len(signatures) if signing["state"] == "signed" else 0
     print(f"release set verified: {len(listed)} artifacts, {verified} signatures checked, "
+          f"{len(bundles)} attestation bundles bound to their subjects, "
           f"{len(sbom['components'])} SBOM components matching the licence inventory "
           f"({undeclared} without a declared licence), provenance bound to the bytes, "
-          f"state {signing['state']}")
+          f"state {signing['state']}, {attestation['state']}")
     return 0
 
 

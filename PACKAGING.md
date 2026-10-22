@@ -79,8 +79,10 @@ what a linker records and what an incompatible ABI would change.
 The build refuses to produce an artifact whose exported symbols differ from the
 header, that exports SQLite, that links SQLite dynamically, or that is missing
 its soname. `.github/workflows/release.yml` builds it beside the package,
-attests it with the same action, and uploads it as a run artifact; publishing a
-release asset is v1.0 J10's, under the owner's authorization.
+attests it with the same action, and carries it in the release set, signed and
+timestamped like the package and with its attestation bundle beside it (v1.0
+J49). Publishing a release asset is v1.0 J10's, under the owner's
+authorization.
 
 `examples/c/` holds six programs — lifecycle, handle ownership, threading,
 errors, streams, and compatibility — compiled against the extracted tarball

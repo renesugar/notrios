@@ -3,7 +3,7 @@
   "item": "J13-A",
   "milestone": "v1.0",
   "what_this_is": "Every published fenced block, classified and cross-referenced against the execution registry, so the work that follows can tell a correct synopsis from a recipe nobody ran.",
-  "content_commit": "4001d949f69d28d60e01cc2d7e9e3433917029d8",
+  "content_commit": "0bc4a4702c40a7b58ee98069732b901507231a76",
   "counts": {
     "examples": 178,
     "executed": 71,
@@ -1473,7 +1473,7 @@
       "section": "verifying-what-you-downloaded",
       "state": "unverified",
       "class": "recipe",
-      "rule": "3 literal command line(s), nothing to substitute",
+      "rule": "4 literal command line(s), nothing to substitute",
       "unrun_reason": "artifact-not-in-repository"
     },
     {
@@ -1482,7 +1482,7 @@
       "section": "verifying-what-you-downloaded",
       "state": "unverified",
       "class": "recipe",
-      "rule": "4 literal command line(s), nothing to substitute",
+      "rule": "6 literal command line(s), nothing to substitute",
       "unrun_reason": "artifact-not-in-repository"
     },
     {
@@ -1491,7 +1491,7 @@
       "section": "verifying-what-you-downloaded",
       "state": "unverified",
       "class": "recipe",
-      "rule": "1 literal command line(s), nothing to substitute",
+      "rule": "2 literal command line(s), nothing to substitute",
       "unrun_reason": "artifact-not-in-repository"
     },
     {
@@ -1500,7 +1500,7 @@
       "section": "verifying-what-you-downloaded",
       "state": "unverified",
       "class": "recipe",
-      "rule": "2 literal command line(s), nothing to substitute",
+      "rule": "6 literal command line(s), nothing to substitute",
       "unrun_reason": "artifact-not-in-repository"
     },
     {

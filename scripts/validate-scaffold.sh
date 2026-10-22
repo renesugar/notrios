@@ -195,6 +195,11 @@ python3 performance/v1.0-j3/validate_evidence.py
 # blocks the page publishes now, and the installation table is the one the
 # matrix renders.
 python3 performance/v1.0-j9/record_matrix.py
+# J49: the release is built on a supported row, and the release-set builder
+# and verifier hold their refusals, proven with a throwaway key in a GnuPG home
+# of the test's own.
+python3 performance/v1.0-j49/validate_evidence.py
+python3 performance/v1.0-j49/test_release_set.py
 # J13-A: the example classification. Derived on every run from the documents
 # themselves, so it fails when a document changes and the report does not.
 python3 performance/v1.0-j13/validate_evidence.py

@@ -1382,17 +1382,19 @@
     {
       "id": "J49",
       "title": "Put everything a stranger verifies with into the release set",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J49-A",
           "statement": "The release set carries each artifact's attestation bundle, covered by SHA256SUMS and required by name by the verifier, so provenance checks need no GitHub login",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
         },
         {
           "id": "J49-B",
           "statement": "The C ABI tarball is in the release set, signed and timestamped like the package, and required by name by the verifier",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
         },
         {
           "id": "J49-C",
@@ -1402,12 +1404,14 @@
         {
           "id": "J49-D",
           "statement": "release.yml builds on ubuntu-24.04, the matrix's row, and a check refuses a runner label the matrix does not support",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
         },
         {
           "id": "J49-E",
           "statement": "draft_release.sh uploads every file in the release set, SHA256SUMS.asc among them",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
         }
       ]
     },

@@ -2578,11 +2578,11 @@
       "path": "docs/installation.md",
       "section": "verifying-what-you-downloaded",
       "language": "sh",
-      "sha256": "1fc5979aea6797a44adf5fcdec3925f8499ca96a8ff84e6acd4a53812ad076c3",
+      "sha256": "0dcda501601de961f35066657dc32f106f08cdf33c30aebaeb0b6d5132856da9",
       "state": "unverified",
       "unrun_reason": {
         "code": "artifact-not-in-repository",
-        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
       }
     },
     {
@@ -2590,11 +2590,11 @@
       "path": "docs/installation.md",
       "section": "verifying-what-you-downloaded",
       "language": "sh",
-      "sha256": "9bcf9523fac8c5adcab9833bae5f53d7facce610592f5e601772c5242a02adc8",
+      "sha256": "e2937b1578831f13ee63f43c50635c950ca4cf1536de7b598a2bef2771284742",
       "state": "unverified",
       "unrun_reason": {
         "code": "artifact-not-in-repository",
-        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
       }
     },
     {
@@ -2602,11 +2602,11 @@
       "path": "docs/installation.md",
       "section": "verifying-what-you-downloaded",
       "language": "sh",
-      "sha256": "0bffdcadb5c82e7e142d6fea08053b9a044334573e929fcb23b6a24612039415",
+      "sha256": "9ae9d774f44408c86941d05b7bc825b461d78f3c5d05a78c65290c5af08ac880",
       "state": "unverified",
       "unrun_reason": {
         "code": "artifact-not-in-repository",
-        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
       }
     },
     {
@@ -2614,11 +2614,11 @@
       "path": "docs/installation.md",
       "section": "verifying-what-you-downloaded",
       "language": "sh",
-      "sha256": "8450e9384a52d28433f2db881dc5e7b9af611584d470832401d6668d9d036647",
+      "sha256": "c17ad07f0c272daa5b72d45ef1650c995aa05c41457dbc610b4a531d1cc82d8d",
       "state": "unverified",
       "unrun_reason": {
         "code": "artifact-not-in-repository",
-        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
       }
     },
     {

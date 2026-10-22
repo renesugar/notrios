@@ -2027,7 +2027,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "7bc62dec4999f2ac3059c8dbbc0ed3dd5c14a082e5ad2e19c5a89903352b1739",
+      "sha256": "669f604ea58c56cc2daf0c5afa410967a645f24b403646da43b60b95c043239f",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [

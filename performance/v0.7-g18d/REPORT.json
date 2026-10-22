@@ -13,7 +13,7 @@
     "privileged-host-change": 2,
     "shared-user-state": 20
   },
-  "runtime_ms": 19483,
+  "runtime_ms": 23858,
   "topics": [
     {
       "topic": "api-mcp",
@@ -21,7 +21,7 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 73
+      "runtime_ms": 82
     },
     {
       "topic": "api-rest",
@@ -29,7 +29,7 @@
         "executed": 25,
         "unverified": 1
       },
-      "runtime_ms": 1816
+      "runtime_ms": 2068
     },
     {
       "topic": "archive-v2",
@@ -37,7 +37,7 @@
         "executed": 1,
         "unverified": 1
       },
-      "runtime_ms": 189
+      "runtime_ms": 266
     },
     {
       "topic": "cli",
@@ -45,7 +45,7 @@
         "executed": 3,
         "unverified": 53
       },
-      "runtime_ms": 512
+      "runtime_ms": 641
     },
     {
       "topic": "configuration",
@@ -53,7 +53,7 @@
         "executed": 5,
         "unverified": 1
       },
-      "runtime_ms": 1082
+      "runtime_ms": 1470
     },
     {
       "topic": "gui",
@@ -61,7 +61,7 @@
         "executed": 4,
         "unverified": 2
       },
-      "runtime_ms": 446
+      "runtime_ms": 619
     },
     {
       "topic": "import-export",
@@ -69,7 +69,7 @@
         "executed": 10,
         "unverified": 2
       },
-      "runtime_ms": 1595
+      "runtime_ms": 2046
     },
     {
       "topic": "index",
@@ -84,7 +84,7 @@
         "executed": 1,
         "unverified": 30
       },
-      "runtime_ms": 274
+      "runtime_ms": 308
     },
     {
       "topic": "operations",
@@ -92,7 +92,7 @@
         "executed": 12,
         "unverified": 9
       },
-      "runtime_ms": 2499
+      "runtime_ms": 3065
     },
     {
       "topic": "publishing",
@@ -100,21 +100,21 @@
         "executed": 2,
         "unverified": 1
       },
-      "runtime_ms": 521
+      "runtime_ms": 645
     },
     {
       "topic": "query-language",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 297
+      "runtime_ms": 385
     },
     {
       "topic": "selection-planning",
       "counts": {
         "executed": 1
       },
-      "runtime_ms": 45
+      "runtime_ms": 53
     },
     {
       "topic": "service",
@@ -122,7 +122,7 @@
         "executed": 1,
         "unverified": 2
       },
-      "runtime_ms": 217
+      "runtime_ms": 219
     },
     {
       "topic": "stable-links",
@@ -130,7 +130,7 @@
         "executed": 3,
         "unverified": 2
       },
-      "runtime_ms": 308
+      "runtime_ms": 428
     },
     {
       "topic": "troubleshooting",
