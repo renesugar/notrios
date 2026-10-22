@@ -61,3 +61,11 @@ fixed it. From `978c67c`, in a fresh worktree on HD2,
 `scripts/package_release.sh` ran through and wrote `notrios-v1.0-j9-978c67c.zip`:
 26,783,850 bytes, 3,039 entries, accepted by `check_release_zip.py`. J9 was
 closed from that commit, in `7934ca9`.
+
+## Archive
+
+`notrios-v1.0-j50-1a9cdbe.zip` was built from commit `1a9cdbe`, the commit that
+completed this item's record, with the ledger not yet flipped: 26,784,782 bytes,
+3,039 entries, accepted by `check_release_zip.py`. No usage override was needed.
+The seven-day bucket had 78% remaining and the five-hour bucket 72% when the
+J50 archives began.

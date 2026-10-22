@@ -1409,7 +1409,7 @@
     {
       "id": "J50",
       "title": "Clear vitest's mocker advisories",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J50-A",
@@ -1420,7 +1420,8 @@
         {
           "id": "J50-B",
           "statement": "The release packager produces an archive check_release_zip.py accepts, and J9 is closed from that commit",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j50/README.md"
         }
       ]
     }

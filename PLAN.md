@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**50 items: 47 complete, 1 in progress, 2 not started, 0 deferred.**
+**50 items: 48 complete, 0 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -110,17 +110,9 @@ this section is archived when the plan completes and the rules are not.
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 | J49. Put everything a stranger verifies with into the release set | not-started | 0/4 | 4 |
-| J50. Clear vitest's mocker advisories | in-progress | 1/2 | 1 |
+| J50. Clear vitest's mocker advisories | complete | 2/2 | — |
 
-### Started and not finished
-
-**J50. Clear vitest's mocker advisories**
-
-- `J50-B` The release packager produces an archive check_release_zip.py accepts, and J9 is closed from that commit — *not-started*
-
-### Not started
-
-Written and not begun: J10, J49. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -6001,7 +5993,7 @@ instructions it updates.
 no login and nothing outside the set but the public key and the timestamp
 authority's certificates.
 
-## J50. Clear vitest's mocker advisories
+## J50. Clear vitest's mocker advisories — complete
 
 **Goal.** `npm audit` reports nothing in `web/` again, so the release gate in
 `scripts/package_release.sh` passes and J9's archive can be built. vitest moves
