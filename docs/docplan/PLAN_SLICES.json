@@ -248,12 +248,13 @@
     {
       "id": "J10",
       "title": "Publish the user-authorized release",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J10-A",
           "statement": "develop and main are synchronized, CI and the pre-push evidence gates pass, and the evidence is sealed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         },
         {
           "id": "J10-B",

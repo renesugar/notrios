@@ -93,6 +93,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--set", required=True, type=pathlib.Path)
     parser.add_argument("--out", type=pathlib.Path, default=ROOT / "performance/v1.0-j9/VERIFY.json")
+    parser.add_argument("--source", default="release workflow run 34697727452 (rehearsal, 0.8.0)",
+                        help="where the set came from, as the record names it")
     args = parser.parse_args()
 
     debs = sorted(args.set.glob("notrios_*_amd64.deb"))
@@ -191,7 +193,7 @@ def main():
     args.out.write_text(json.dumps({
         "schema": "notrios.v10.j9-verification-run.v1",
         "what_this_is": "The installation page's verification blocks, run as published against a release set, then made to fail once each.",
-        "set": {"package": deb, "source": "release workflow run 34697727452 (rehearsal, 0.8.0)",
+        "set": {"package": deb, "source": args.source,
                 "published_name_replaced": PUBLISHED_DEB,
                 "abi_artifact": abis[0].name if abis else None},
         "not_run_here": {"commands": skipped_commands,

@@ -54,3 +54,42 @@ entries, and each append left the earlier entries a byte-exact prefix.
 
 The volumes are on the reserve drive only. Burning them to disc is a separate
 step that the owner has not asked for.
+
+## J10-A: main, and the rehearsal J49 left owing
+
+**Synchronized.** `develop` was pushed (`028a4f7..188e190`) and pull request
+#11 opened into `main`. Its checks passed: go, gui-build, smoke and web, on
+both CI runs. It merged with a merge commit, `2aab9a8`. The docs site deployed
+from it (run 39806769137), with the 1.0 installation page ahead of the release,
+as the owner accepted. Then `develop` was fast-forwarded to `2aab9a8`, the way
+earlier milestones were synced, and pushed. The two branches are the same
+commit.
+
+**Dispatched by the owner.** Claude Code's auto-mode classifier refused the
+agent's `gh workflow run release.yml --ref main` as a production deploy, so
+the owner ran it. That was run
+[39807652373](https://github.com/renesugar/notrios/actions/runs/39807652373),
+on `ubuntu-24.04`, green in 4m55s:
+- **The narrowed secret is now proven narrow.** The import step printed
+  `signing key: 1234C691AC0776A18524D55687027B1DD464695E (primary stubbed,
+  signing subkey present)`. That is J2's field-15 gate, running on `main` for
+  the first time. It is the one thing J10's plan said was still owed for the
+  narrowing.
+- **Both artifacts were attested:** attestations 58703929 (the package) and
+  58704349 (the C ABI tarball).
+- **The verifier accepted the set on the runner:** `release set verified: 12
+  artifacts, 3 signatures checked, 2 attestation bundles bound to their
+  subjects, 404 SBOM components matching the licence inventory (1 without a
+  declared licence), provenance bound to the bytes, state signed, attested`.
+
+**Downloaded and checked here.** The set was downloaded into an empty directory
+of its own, and the same verifier, run locally, printed the same line. Then
+`run_verification.py --set <it>` ran the installation page's blocks as
+published: 11 of 11 as expected, including the four refusals. `VERIFY.json`'s
+`not_run_here` is now empty. The C ABI tarball's signature, timestamp, its
+time and its attestation (logged in and with `--bundle`) each ran against the
+real tarball. The runner gained `--source`, so the record names this run
+rather than J9's.
+
+What remains is J10-B, the tag and the release, and it needs the owner's
+authorization.

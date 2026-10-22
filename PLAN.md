@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**50 items: 49 complete, 0 in progress, 1 not started, 0 deferred.**
+**50 items: 49 complete, 1 in progress, 0 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -70,7 +70,7 @@ this section is archived when the plan completes and the rules are not.
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
 | J9. Publish the release documentation for the supported matrix | complete | 4/4 | — |
-| J10. Publish the user-authorized release | not-started | 0/3 | 3 |
+| J10. Publish the user-authorized release | in-progress | 1/3 | 2 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
@@ -112,7 +112,12 @@ this section is archived when the plan completes and the rules are not.
 | J49. Put everything a stranger verifies with into the release set | complete | 5/5 | — |
 | J50. Clear vitest's mocker advisories | complete | 2/2 | — |
 
-Nothing is half-finished.
+### Started and not finished
+
+**J10. Publish the user-authorized release**
+
+- `J10-B` The release is created from reviewed main on the owner's explicit authorization — *not-started*
+- `J10-C` The published tag, notes, installers, checksums, signatures, SBOM, provenance and downloaded bytes are verified after publication — *not-started*
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
