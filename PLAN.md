@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**49 items: 46 complete, 1 in progress, 2 not started, 0 deferred.**
+**50 items: 46 complete, 1 in progress, 3 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -110,6 +110,7 @@ this section is archived when the plan completes and the rules are not.
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 | J49. Put everything a stranger verifies with into the release set | not-started | 0/4 | 4 |
+| J50. Clear vitest's mocker advisories | not-started | 0/2 | 2 |
 
 ### Started and not finished
 
@@ -119,7 +120,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J10, J49. Their slices are listed under each item.
+Written and not begun: J10, J49, J50. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5999,3 +6000,48 @@ instructions it updates.
 **Working state.** A release set that a stranger can check completely, with
 no login and nothing outside the set but the public key and the timestamp
 authority's certificates.
+
+## J50. Clear vitest's mocker advisories
+
+**Goal.** `npm audit` reports nothing in `web/` again, so the release gate in
+`scripts/package_release.sh` passes and J9's archive can be built. vitest moves
+only within the patch line it is on.
+
+**What happened, 2026-10-21.** J9's archive build stopped at `npm audit` in
+`web/`, on two moderate advisories against `@vitest/mocker` `<=4.1.11`, which
+`vitest` depends on at the same version. No archive was written.
+
+| advisory | severity | what it is | patched |
+|---|---|---|---|
+| GHSA-qxg6-89mg-rqv8 | moderate | code injection through unauthenticated manual mock registration | 4.1.12 |
+| GHSA-xp26-3454-mjgp | moderate | a Windows backslash traversal bypasses the mocker's redirect allowlist fix | 4.1.12 |
+
+The lockfile has vitest 4.1.11, with its seven `@vitest/*` packages at the same
+version. `package.json` asks for `^4.1.11`, so 4.1.12, published 2026-10-15, is
+inside the stated range. Every one of these packages is MIT. vitest runs the web
+unit tests and nothing else. It is a dev dependency, and none of it reaches the
+UI Notrios ships. The gate refuses every advisory regardless, and that does not
+change.
+
+**Scope.**
+- **J50-A, vitest 4.1.12 in the lockfile.**
+  - The lockfile moves vitest and its `@vitest/*` packages from 4.1.11 to
+    4.1.12, with whatever their ranges pull in, and `package.json` is
+    unchanged.
+  - The web tests and the build pass, and `npm audit` is clean in `web/`.
+  - G20's licence gate passes on the new lockfile.
+  - The built `dist/` is compared file by file with the one built before the
+    change. vitest is not in the build, so any difference is a finding.
+- **J50-B, the gate passes.** `scripts/package_release.sh` runs through to a ZIP
+  that `check_release_zip.py` accepts. J9 is then closed from that commit, and
+  its Archive section says the archive also carries J50.
+
+**Boundaries.**
+- No `--force`, no `overrides`, and no audit level that hides a finding.
+- No move off the 4.1 line.
+- No change to any test.
+
+**Dependencies.** None. J9's close waits on J50-B.
+
+**Working state.** The release gate passes on vitest 4.1.12, and the bundle the
+UI ships is shown to be what it was.
