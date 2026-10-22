@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**50 items: 46 complete, 2 in progress, 2 not started, 0 deferred.**
+**50 items: 47 complete, 1 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -69,7 +69,7 @@ this section is archived when the plan completes and the rules are not.
 | J6. Ship the versioned no-GUI library and header artifacts | complete | 3/3 | — |
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
-| J9. Publish the release documentation for the supported matrix | in-progress | 3/4 | 1 |
+| J9. Publish the release documentation for the supported matrix | complete | 4/4 | — |
 | J10. Publish the user-authorized release | not-started | 0/3 | 3 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
@@ -117,10 +117,6 @@ this section is archived when the plan completes and the rules are not.
 **J50. Clear vitest's mocker advisories**
 
 - `J50-B` The release packager produces an archive check_release_zip.py accepts, and J9 is closed from that commit — *not-started*
-
-**J9. Publish the release documentation for the supported matrix**
-
-- `J9-D` No sentence remains that J1, J2 or J3 made untrue — *not-started*
 
 ### Not started
 
@@ -980,7 +976,7 @@ and what is owed.
 **Working state.** Recorded findings, each accepted with a reason or deferred to
 a named plan item, and the probes that produced them.
 
-## J9. Publish the release documentation for the supported matrix
+## J9. Publish the release documentation for the supported matrix — complete
 
 **Goal.** The documentation site and the release carry what a stranger needs,
 with exact rows rather than reassuring prose.

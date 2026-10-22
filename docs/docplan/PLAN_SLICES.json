@@ -217,7 +217,7 @@
     {
       "id": "J9",
       "title": "Publish the release documentation for the supported matrix",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J9-A",
@@ -240,7 +240,8 @@
         {
           "id": "J9-D",
           "statement": "No sentence remains that J1, J2 or J3 made untrue",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         }
       ]
     },

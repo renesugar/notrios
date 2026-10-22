@@ -417,11 +417,20 @@
       "bytes": 25556784,
       "entries": 2640,
       "sha256": "0f2dfd761b4bb8da84238ca920adaf1a26a865182101a3ee84870a99b62b1afb"
+    },
+    {
+      "item": "J9",
+      "archive": "notrios-v1.0-j9-978c67c.zip",
+      "commit": "978c67c160126d3e213c35622a4a39da4107bf54",
+      "taken": "when the slice closed",
+      "bytes": 26783850,
+      "entries": 3039,
+      "sha256": "c254b36d9c93d298cc4416d91497647a06e0b3eb2bd965a11eddd375f4c34dcf"
     }
   ],
   "counts": {
-    "items": 46,
+    "items": 47,
     "retroactive": 0,
-    "total_bytes": 1187041848
+    "total_bytes": 1213825698
   }
 }

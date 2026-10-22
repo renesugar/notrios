@@ -250,3 +250,28 @@ name says report is listed, and everything listed exists.
 only with the release: the site deploys from `main`, and the package's
 built-in help is built from `main` at J10. The gap between J10-A's merge and
 J10-B's publication is recorded in J10.
+
+## Archive
+
+`notrios-v1.0-j9-978c67c.zip` was built from commit `978c67c`, with the ledger
+not yet flipped: 26,783,850 bytes, 3,039 entries, accepted by
+`check_release_zip.py`. No usage override was needed. The seven-day bucket had
+78% remaining and the five-hour bucket 72%.
+
+The archive also carries J50-A, vitest 4.1.12, and two J9 fixes that came after
+J9's record commit `7dbede2`. **Three builds stopped first, each refused by a
+gate:**
+- **From `7dbede2`:** `npm audit` in `web/`, on two `@vitest/mocker` advisories
+  published after the record was written. That is J50, and J50-A (`456a6fb`)
+  cleared it.
+- **The same commit also failed validation**, which was not seen until J50's
+  plan commit ran it. Once `VERIFY.json` was tracked, the site-address check
+  read gh's recorded 404 URL on `api.github.com/repos/renesugar/notrios/…` as a
+  project-path base. `0ed193d` exempts the GitHub API's repository URLs, as J9
+  had exempted github.com and raw.githubusercontent.com, with a test on both
+  sides.
+- **From `456a6fb`:** the site check in the packager, `broken link
+  installation.html -> ../PACKAGING.html`. The installation page linked a
+  repository file the site does not publish, and `validate-scaffold.sh` does
+  not build the site, so only the packager could see it. `978c67c` links the
+  file on GitHub instead.
