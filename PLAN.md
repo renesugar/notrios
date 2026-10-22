@@ -1169,6 +1169,23 @@ J10-B tags `v1.0.0` on the merged `main`. The tag's `release.yml` run builds the
 set that is published, and `draft_release.sh --execute` uploads it as a draft
 for the owner to publish. J10-C downloads what was published and verifies it.
 
+**J10-B runs in this order (planned 2026-10-22).** v0.9 I6's draft script makes
+release candidates only: it tags `-rc`, and its notes say the draft is not an
+end-user release. So J10-B has a script of its own,
+`performance/v1.0-j10/draft_release.sh`, and its notes,
+`performance/v1.0-j10/RELEASE_NOTES.md`, which are reviewed before the release
+like any other change.
+1. Create an annotated tag `v1.0.0` at `2aab9a8`, the reviewed `main` that the
+   rehearsal built from, and push it. The tag's `release.yml` run checks that
+   the tag is the product version, then builds, signs, attests and verifies the
+   set.
+2. Download that run's set into an empty directory, and verify it.
+3. Run `draft_release.sh <set> --execute`. It refuses a set unless the commit its
+   provenance names is the commit the tag points at, so the rehearsal's set
+   cannot be uploaded by mistake. It creates the release as a draft, with every
+   file in the set.
+4. The owner reviews the draft and publishes it.
+
 **What confirms that, and what cannot.** A GitHub secret is write-only, so the
 value cannot be inspected — and the workflow's existing fingerprint check cannot
 see the difference either: a `--export-secret-subkeys` export still imports a

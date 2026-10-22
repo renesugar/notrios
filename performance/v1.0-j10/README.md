@@ -93,3 +93,12 @@ rather than J9's.
 
 What remains is J10-B, the tag and the release, and it needs the owner's
 authorization.
+
+## J10-B: prepared
+
+`draft_release.sh` drafts the 1.0 release from the tag's own set, with
+`RELEASE_NOTES.md` as the notes. Every link in the notes was checked against the
+live page, and so was the backup command. 0.8.0 has `export archive-v2` too, so
+the advice to back up before upgrading can be followed. Run dry against J10-A's
+rehearsal set, the script verified the set, then refused it: `tag v1.0.0: not
+on GitHub`.
