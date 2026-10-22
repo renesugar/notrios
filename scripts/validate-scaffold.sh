@@ -200,6 +200,9 @@ python3 performance/v1.0-j9/record_matrix.py
 # of the test's own.
 python3 performance/v1.0-j49/validate_evidence.py
 python3 performance/v1.0-j49/test_release_set.py
+# J10-A: the volumes that seal v1.0's evidence. Derived from the archive
+# manifest, and each sealed volume's committed signatures held against it.
+python3 performance/v1.0-j10/plan_volumes.py
 # J13-A: the example classification. Derived on every run from the documents
 # themselves, so it fails when a document changes and the report does not.
 python3 performance/v1.0-j13/validate_evidence.py

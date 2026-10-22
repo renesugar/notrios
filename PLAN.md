@@ -1124,6 +1124,46 @@ created immediately after the merge, the docs deploy can be held until it
 exists, or the page can be accepted as briefly ahead. J10-C then runs the page's
 verification blocks against the published set (`performance/v1.0-j9/run_verification.py`).
 
+**The owner accepted the page as ahead (2026-10-22).** The site deploys with the
+merge, as it has for every milestone. A required reviewer on the `github-pages`
+environment was offered and declined, because a solo project has no second
+reviewer. What changed at 1.0 is only that the page now names files that do not
+exist until J10-B, so J10 keeps that window short: the release follows the
+rehearsal without other work in between.
+
+**The seal, planned (2026-10-22, authorized by the owner).** Forty-nine v1.0
+archives, 1,267,409,548 bytes, are too many for one 650 MiB volume. So
+`performance/v1.0-j10/plan_volumes.py` derives the split from v1.0's archive
+manifest. It works in item order, uses the fewest volumes, and cuts where the
+larger volume is smallest. `NTR-EV-0005` takes J1 to J26 (25 archives,
+636,677,987 bytes). `NTR-EV-0006` takes J27 to J50 (24 archives, 630,731,561
+bytes). Each keeps over 44 MB under the budget, and each chains onto the volume
+before it. J10's own archive is not a candidate: it is taken at J10's close,
+after the release. The six superseded v0.8 archives stay out, for the reason
+v0.8e recorded. Validation holds `VOLUME_PLAN.json` against the manifest, and
+holds each sealed volume's committed signatures and its catalog entry against
+the plan.
+
+**J10-A runs in this order.** Each step gates the next.
+1. Rehearse the seal end to end with a throwaway key, on a scratch reserve and a
+   scratch copy of the catalog, chaining onto volume-0004. The steps after it
+   are production.
+2. Seal `NTR-EV-0005`, commit its materials and the catalog, then seal
+   `NTR-EV-0006` onto it. The sealer records the commit it ran at, and the
+   pre-push gate requires that commit to be an ancestor of what is pushed.
+3. Run the pre-push evidence gate with
+   `NOTRIOS_EVIDENCE_RESERVE=/run/media/renes/SEAGATE2TB/notrios-evidence`.
+   Its default still names `/media/...`, where the drive no longer mounts. That
+   finding is recorded, and fixing it is not J10's work.
+4. Push `develop`, open the pull request into `main`, see CI pass on it, and
+   merge with a merge commit. The site deploys.
+5. Dispatch `release.yml` from `main` and do the three steps J49 left owing
+   (above).
+
+J10-B tags `v1.0.0` on the merged `main`. The tag's `release.yml` run builds the
+set that is published, and `draft_release.sh --execute` uploads it as a draft
+for the owner to publish. J10-C downloads what was published and verifies it.
+
 **What confirms that, and what cannot.** A GitHub secret is write-only, so the
 value cannot be inspected — and the workflow's existing fingerprint check cannot
 see the difference either: a `--export-secret-subkeys` export still imports a
