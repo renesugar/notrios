@@ -187,3 +187,14 @@ the repository's latest release, and not a prerelease.
 The volume plan now leaves J10 out by name. Its hash is over the candidates,
 rather than over the whole manifest, so J10's own archive entering the manifest
 at its close does not make the sealed plan stale.
+
+## Archive
+
+`notrios-v1.0-j10-6866bfe.zip` was built from commit `6866bfe`, the commit that
+completed this item's record, with the ledger not yet flipped: 26,887,963
+bytes, 3,129 entries, accepted by `check_release_zip.py`. No usage override was
+needed. The five-hour bucket had 83% remaining and the seven-day bucket 98%.
+
+It is not in a reserve volume. The seal had to come before the release, and
+this archive records the release, so it comes after both. It is the first
+candidate for the next volume.

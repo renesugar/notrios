@@ -248,7 +248,7 @@
     {
       "id": "J10",
       "title": "Publish the user-authorized release",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J10-A",
@@ -265,7 +265,8 @@
         {
           "id": "J10-C",
           "statement": "The published tag, notes, installers, checksums, signatures, SBOM, provenance and downloaded bytes are verified after publication",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         }
       ]
     },
