@@ -2,8 +2,8 @@
  "budget_bytes": 681574400,
  "candidate_bytes": 1267409548,
  "candidates": 49,
+ "candidates_sha256": "e024ff32cb4455c2d3ea8f0dc3143d7676f2650b6add2a5d01762538e36df75a",
  "iso_margin_bytes": 8388608,
- "manifest_sha256": "dd59719cb0c580b641b7460856978e5549219e9214ed7c3baefcee59c2af3153",
  "not_a_candidate": {
   "J10": "this item's own archive is taken when J10 closes, after the seal and the release; a volume cannot hold an archive of the commit that records it",
   "superseded v0.8 archives": "the six volume-0002 left out stay out, for the reason performance/v0.8e/SEAL_RESULT.json records"

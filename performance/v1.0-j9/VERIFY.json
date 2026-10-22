@@ -2,19 +2,14 @@
   "schema": "notrios.v10.j9-verification-run.v1",
   "what_this_is": "The installation page's verification blocks, run as published against a release set, then made to fail once each.",
   "set": {
-    "package": "notrios_0.8.0-1_amd64.deb",
-    "source": "release workflow run 34697727452 (rehearsal, 0.8.0)",
+    "package": "notrios_1.0.0-1_amd64.deb",
+    "source": "the published release v1.0.0, downloaded without a login (J10-C)",
     "published_name_replaced": "notrios_1.0.0-1_amd64.deb",
-    "abi_artifact": null
+    "abi_artifact": "notrios-c-abi-1.0.0-linux-amd64.tar.gz"
   },
   "not_run_here": {
-    "commands": [
-      "gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz",
-      "openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \\\n  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem",
-      "openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'",
-      "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\\n  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\\n  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
-    ],
-    "why": "the set carries no C ABI tarball; J10's rehearsal and J10-C run them"
+    "commands": [],
+    "why": ""
   },
   "tools": {
     "gpg": "gpg (GnuPG) 2.4.8",
@@ -35,12 +30,18 @@
         "sha256sum -c SHA256SUMS"
       ],
       "output_tail": [
-        "notrios_0.8.0-1_amd64.deb: OK",
-        "notrios_0.8.0-1_amd64.deb.asc: OK",
-        "notrios_0.8.0-1_amd64.deb.asc.tsq: OK",
-        "notrios_0.8.0-1_amd64.deb.asc.tsr: OK",
+        "PROVENANCE.json: OK",
         "SBOM.cdx.json: OK",
-        "PROVENANCE.json: OK"
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsq: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl: OK",
+        "notrios_1.0.0-1_amd64.deb: OK",
+        "notrios_1.0.0-1_amd64.deb.asc: OK",
+        "notrios_1.0.0-1_amd64.deb.asc.tsq: OK",
+        "notrios_1.0.0-1_amd64.deb.asc.tsr: OK",
+        "notrios_1.0.0-1_amd64.deb.attestation.jsonl: OK"
       ]
     },
     {
@@ -62,25 +63,26 @@
         "uid                      Rene Sugar <rene.sugar@gmail.com>",
         "sub   rsa4096 2026-09-11 [SEA]",
         "",
-        "gpg: keybox '/tmp/tmpv_i_bx_x/gnupg/pubring.kbx' created",
-        "gpg: /tmp/tmpv_i_bx_x/gnupg/trustdb.gpg: trustdb created"
+        "gpg: keybox '/tmp/tmpr0qryz7r/gnupg/pubring.kbx' created",
+        "gpg: /tmp/tmpr0qryz7r/gnupg/trustdb.gpg: trustdb created"
       ]
     },
     {
       "check": "signatures",
       "exit": 0,
       "passed": true,
-      "expect": "2 good signatures, primary and subkey fingerprints printed",
+      "expect": "3 good signatures, primary and subkey fingerprints printed",
       "block": [
         "gpg --import release-public.asc",
         "gpg --verify SHA256SUMS.asc SHA256SUMS",
-        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb",
+        "gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb",
         "gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz"
       ],
       "ran": [
         "gpg --import release-public.asc",
         "gpg --verify SHA256SUMS.asc SHA256SUMS",
-        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb"
+        "gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb",
+        "gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz"
       ],
       "output_tail": [
         "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
@@ -88,7 +90,7 @@
         "gpg:          There is no indication that the signature belongs to the owner.",
         "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
         "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
-        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
         "gpg: WARNING: This key is not certified with a trusted signature!",
@@ -101,11 +103,11 @@
       "check": "timestamp",
       "exit": 0,
       "passed": true,
-      "expect": "Verification: OK, 1 times",
+      "expect": "Verification: OK, 2 times",
       "block": [
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
-        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
+        "openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \\",
         "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem",
         "openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \\",
         "  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
@@ -113,11 +115,16 @@
       "ran": [
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
-        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
-        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
+        "openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \\",
+        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem",
+        "openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \\",
+        "  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
       ],
       "output_tail": [
         "Verification: OK",
+        "Verification: OK",
+        "Using configuration from /usr/lib/ssl/openssl.cnf",
+        "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert",
         "Using configuration from /usr/lib/ssl/openssl.cnf",
         "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert"
       ]
@@ -128,14 +135,17 @@
       "passed": true,
       "expect": "a Time stamp line",
       "block": [
-        "openssl ts -reply -in notrios_0.8.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'",
+        "openssl ts -reply -in notrios_1.0.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'",
         "openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'"
       ],
       "ran": [
-        "openssl ts -reply -in notrios_0.8.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'"
+        "openssl ts -reply -in notrios_1.0.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'",
+        "openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'"
       ],
       "output_tail": [
-        "Time stamp: Sep 12 13:58:13 2026 GMT",
+        "Time stamp: Oct 22 16:36:36 2026 GMT",
+        "Time stamp: Oct 22 16:36:36 2026 GMT",
+        "Using configuration from /usr/lib/ssl/openssl.cnf",
         "Using configuration from /usr/lib/ssl/openssl.cnf"
       ]
     },
@@ -145,17 +155,20 @@
       "passed": true,
       "expect": "exit 0",
       "block": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl",
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
         "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
         "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "ran": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl"
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
+        "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
+        "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "output_tail": []
     },
@@ -165,17 +178,20 @@
       "passed": true,
       "expect": "exit 0, with no GitHub login",
       "block": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl",
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
         "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
         "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "ran": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl"
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
+        "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
+        "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "output_tail": []
     },
@@ -191,12 +207,17 @@
         "sha256sum -c SHA256SUMS"
       ],
       "output_tail": [
-        "notrios_0.8.0-1_amd64.deb: FAILED",
-        "notrios_0.8.0-1_amd64.deb.asc: OK",
-        "notrios_0.8.0-1_amd64.deb.asc.tsq: OK",
-        "notrios_0.8.0-1_amd64.deb.asc.tsr: OK",
         "SBOM.cdx.json: OK",
-        "PROVENANCE.json: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsq: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr: OK",
+        "notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl: OK",
+        "notrios_1.0.0-1_amd64.deb: FAILED",
+        "notrios_1.0.0-1_amd64.deb.asc: OK",
+        "notrios_1.0.0-1_amd64.deb.asc.tsq: OK",
+        "notrios_1.0.0-1_amd64.deb.asc.tsr: OK",
+        "notrios_1.0.0-1_amd64.deb.attestation.jsonl: OK",
         "sha256sum: WARNING: 1 computed checksum did NOT match"
       ]
     },
@@ -208,25 +229,26 @@
       "block": [
         "gpg --import release-public.asc",
         "gpg --verify SHA256SUMS.asc SHA256SUMS",
-        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb",
+        "gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb",
         "gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz"
       ],
       "ran": [
         "gpg --import release-public.asc",
         "gpg --verify SHA256SUMS.asc SHA256SUMS",
-        "gpg --verify notrios_0.8.0-1_amd64.deb.asc notrios_0.8.0-1_amd64.deb"
+        "gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb",
+        "gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz"
       ],
       "output_tail": [
         "gpg: Total number processed: 1",
         "gpg:              unchanged: 1",
-        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
         "gpg: WARNING: This key is not certified with a trusted signature!",
         "gpg:          There is no indication that the signature belongs to the owner.",
         "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
         "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
-        "gpg: Signature made Sat 12 Sep 2026 06:58:13 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: BAD signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]"
       ]
@@ -237,17 +259,20 @@
       "passed": true,
       "expect": "non-zero exit",
       "block": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl",
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
         "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
         "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "ran": [
-        "gh attestation verify notrios_0.8.0-1_amd64.deb --repo renesugar/notrios \\",
+        "gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \\",
         "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
-        "  --bundle notrios_0.8.0-1_amd64.deb.attestation.jsonl"
+        "  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl",
+        "gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \\",
+        "  --signer-workflow renesugar/notrios/.github/workflows/release.yml \\",
+        "  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl"
       ],
       "output_tail": [
         "Error: verifying with issuer \"sigstore.dev\""
@@ -261,7 +286,7 @@
       "block": [
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
-        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
+        "openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \\",
         "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem",
         "openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \\",
         "  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
@@ -269,14 +294,16 @@
       "ran": [
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem",
         "curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem",
-        "openssl ts -verify -data notrios_0.8.0-1_amd64.deb.asc -in notrios_0.8.0-1_amd64.deb.asc.tsr \\",
-        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
+        "openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \\",
+        "  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem",
+        "openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \\",
+        "  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem"
       ],
       "output_tail": [
         "Verification: FAILED",
         "Using configuration from /usr/lib/ssl/openssl.cnf",
         "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert",
-        "40C78E10BB700000:error:17800067:time stamp routines:ts_check_imprints:message imprint mismatch:../crypto/ts/ts_rsp_verify.c:508:"
+        "405767E36C740000:error:17800067:time stamp routines:ts_check_imprints:message imprint mismatch:../crypto/ts/ts_rsp_verify.c:508:"
       ]
     }
   ],

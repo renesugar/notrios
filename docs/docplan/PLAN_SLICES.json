@@ -248,22 +248,25 @@
     {
       "id": "J10",
       "title": "Publish the user-authorized release",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J10-A",
           "statement": "develop and main are synchronized, CI and the pre-push evidence gates pass, and the evidence is sealed",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         },
         {
           "id": "J10-B",
           "statement": "The release is created from reviewed main on the owner's explicit authorization",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         },
         {
           "id": "J10-C",
           "statement": "The published tag, notes, installers, checksums, signatures, SBOM, provenance and downloaded bytes are verified after publication",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         }
       ]
     },
