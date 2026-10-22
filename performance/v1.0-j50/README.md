@@ -51,3 +51,13 @@ hashed with SHA-256 and the two lists compared:
 
 All 285 files are identical, which is what was expected: vitest runs the unit
 tests and is not in the build.
+
+## J50-B: the gate passes
+
+From `456a6fb`, the J50-A commit, `npm audit` was clean in `web/` and
+`docs-site/`. The packager then stopped later, at its site check, on a link J9
+had added to a file the site does not publish. That is J9's, and `978c67c`
+fixed it. From `978c67c`, in a fresh worktree on HD2,
+`scripts/package_release.sh` ran through and wrote `notrios-v1.0-j9-978c67c.zip`:
+26,783,850 bytes, 3,039 entries, accepted by `check_release_zip.py`. J9 was
+closed from that commit, in `7934ca9`.
