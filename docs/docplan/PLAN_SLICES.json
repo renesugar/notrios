@@ -259,7 +259,8 @@
         {
           "id": "J10-B",
           "statement": "The release is created from reviewed main on the owner's explicit authorization",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j10/README.md"
         },
         {
           "id": "J10-C",

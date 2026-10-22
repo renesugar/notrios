@@ -70,7 +70,7 @@ this section is archived when the plan completes and the rules are not.
 | J7. Validate backup, export, restore, sync compatibility and disaster recovery | complete | 3/3 | — |
 | J8. Security review for remote media and MCP | complete | 3/3 | — |
 | J9. Publish the release documentation for the supported matrix | complete | 4/4 | — |
-| J10. Publish the user-authorized release | in-progress | 1/3 | 2 |
+| J10. Publish the user-authorized release | in-progress | 2/3 | 1 |
 | J11. Report the installation's structure and manifest, and verify a purge against it | complete | 3/3 | — |
 | J12. Make the README true, and generate what can be generated | complete | 4/4 | — |
 | J13. Generate the published command-line examples from executed runs | complete | 4/4 | — |
@@ -116,7 +116,6 @@ this section is archived when the plan completes and the rules are not.
 
 **J10. Publish the user-authorized release**
 
-- `J10-B` The release is created from reviewed main on the owner's explicit authorization — *not-started*
 - `J10-C` The published tag, notes, installers, checksums, signatures, SBOM, provenance and downloaded bytes are verified after publication — *not-started*
 <!-- notrios:generated:plan:progress:end -->
 

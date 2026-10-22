@@ -73,7 +73,10 @@ def split(archives: list[dict]) -> list[list[dict]]:
 
 def derive() -> dict:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    archives = sorted(manifest["archives"], key=lambda a: item_number(a["item"]))
+    # J10's archive enters the manifest when J10 closes, after the seal; it is
+    # never a candidate for these volumes (see not_a_candidate below).
+    archives = sorted((a for a in manifest["archives"] if a["item"] != "J10"),
+                      key=lambda a: item_number(a["item"]))
     volumes = []
     predecessor = PREDECESSOR
     for index, group in enumerate(split(archives)):
@@ -96,7 +99,8 @@ def derive() -> dict:
         "what_this_is": ("the volumes that seal v1.0's evidence before the release, derived from "
                          "performance/v1.0/MANIFEST.json. A plan, not a seal: what a sealed volume "
                          "holds is read from its committed signatures."),
-        "manifest_sha256": hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
+        "candidates_sha256": hashlib.sha256(json.dumps(
+            [[a["archive"], a["sha256"]] for a in archives]).encode()).hexdigest(),
         "budget_bytes": BUDGET,
         "iso_margin_bytes": ISO_MARGIN,
         "candidates": len(archives),

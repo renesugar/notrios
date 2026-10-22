@@ -3,7 +3,7 @@
   "what_this_is": "The installation page's verification blocks, run as published against a release set, then made to fail once each.",
   "set": {
     "package": "notrios_1.0.0-1_amd64.deb",
-    "source": "release workflow run 39807652373 (J10-A rehearsal on main, 1.0.0)",
+    "source": "the published release v1.0.0, downloaded without a login (J10-C)",
     "published_name_replaced": "notrios_1.0.0-1_amd64.deb",
     "abi_artifact": "notrios-c-abi-1.0.0-linux-amd64.tar.gz"
   },
@@ -63,8 +63,8 @@
         "uid                      Rene Sugar <rene.sugar@gmail.com>",
         "sub   rsa4096 2026-09-11 [SEA]",
         "",
-        "gpg: keybox '/tmp/tmpe935o47r/gnupg/pubring.kbx' created",
-        "gpg: /tmp/tmpe935o47r/gnupg/trustdb.gpg: trustdb created"
+        "gpg: keybox '/tmp/tmpr0qryz7r/gnupg/pubring.kbx' created",
+        "gpg: /tmp/tmpr0qryz7r/gnupg/trustdb.gpg: trustdb created"
       ]
     },
     {
@@ -90,7 +90,7 @@
         "gpg:          There is no indication that the signature belongs to the owner.",
         "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
         "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
-        "gpg: Signature made Thu 22 Oct 2026 08:49:18 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
         "gpg: WARNING: This key is not certified with a trusted signature!",
@@ -143,8 +143,8 @@
         "openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'"
       ],
       "output_tail": [
-        "Time stamp: Oct 22 15:49:18 2026 GMT",
-        "Time stamp: Oct 22 15:49:18 2026 GMT",
+        "Time stamp: Oct 22 16:36:36 2026 GMT",
+        "Time stamp: Oct 22 16:36:36 2026 GMT",
         "Using configuration from /usr/lib/ssl/openssl.cnf",
         "Using configuration from /usr/lib/ssl/openssl.cnf"
       ]
@@ -241,14 +241,14 @@
       "output_tail": [
         "gpg: Total number processed: 1",
         "gpg:              unchanged: 1",
-        "gpg: Signature made Thu 22 Oct 2026 08:49:18 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: Good signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]",
         "gpg: WARNING: This key is not certified with a trusted signature!",
         "gpg:          There is no indication that the signature belongs to the owner.",
         "Primary key fingerprint: 1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E",
         "     Subkey fingerprint: 348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C",
-        "gpg: Signature made Thu 22 Oct 2026 08:49:18 AM PDT",
+        "gpg: Signature made Thu 22 Oct 2026 09:36:36 AM PDT",
         "gpg:                using RSA key 348B6B873994D1AFF924D7FAF1BF879DCE41EA2C",
         "gpg: BAD signature from \"Rene Sugar <rene.sugar@gmail.com>\" [unknown]"
       ]
@@ -303,7 +303,7 @@
         "Verification: FAILED",
         "Using configuration from /usr/lib/ssl/openssl.cnf",
         "Warning: certificate from 'tsa-untrusted.pem' with subject '/C=US/O=DigiCert, Inc./CN=DigiCert SHA256 RSA4096 Timestamp Responder 2025 1' is not a CA cert",
-        "4067C790E87C0000:error:17800067:time stamp routines:ts_check_imprints:message imprint mismatch:../crypto/ts/ts_rsp_verify.c:508:"
+        "405767E36C740000:error:17800067:time stamp routines:ts_check_imprints:message imprint mismatch:../crypto/ts/ts_rsp_verify.c:508:"
       ]
     }
   ],

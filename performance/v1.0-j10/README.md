@@ -133,3 +133,57 @@ SBOM is identical. Nothing published claims the package is reproducible, and
 each set is consistent with its own signatures, attestations and provenance.
 So it does not block the release. Making the builds reproducible is an item of
 its own, after 1.0.
+
+## J10-B: published by the owner
+
+The owner reviewed the draft and published it with `gh release edit v1.0.0
+--draft=false --latest`, at 2026-10-22T16:47:30Z. It is
+[github.com/renesugar/notrios/releases/tag/v1.0.0](https://github.com/renesugar/notrios/releases/tag/v1.0.0),
+the repository's latest release, and not a prerelease.
+
+## J10-C: what was published, downloaded back and checked
+
+- **The tag.** `v1.0.0` is an annotated tag object (`823d415`) whose message is
+  "Notrios 1.0.0", and it points at commit `2aab9a8`.
+- **The notes** equal `RELEASE_NOTES.md`, except for one trailing newline
+  GitHub adds.
+- **The bytes.** All 14 assets were fetched from their public download URLs
+  without a login, into an empty directory of their own. They equal the set
+  `draft_release.sh` verified, by name, size and SHA-256.
+- **Checksums, signatures, timestamps, attestations, SBOM, provenance.**
+  `verify_release_set.py` accepted the downloaded set: 12 artifacts, 3
+  signatures checked, 2 attestation bundles bound to their subjects, 404 SBOM
+  components, provenance bound to the bytes, signed and attested.
+- **The page's instructions.** `run_verification.py` ran the installation page's
+  blocks as published against the downloaded release: 11 of 11 as expected,
+  four refusals included, and nothing left in `not_run_here`. `VERIFY.json`
+  now names the published release as its source.
+- **The installer.** The published package was installed with `apt` in a clean
+  `ubuntu:24.04` container (`ubuntu@sha256:224a1869…`), as `notrios 1.0.0-1`.
+  `notriosctl version` printed `1.0.0`. `notriosctl doctor` exited 0, required
+  checks passed. `notriosd` served the interface from `/usr/share/notrios/web`,
+  and `GET /` answered 200 with the Notrios page. Removing the package left
+  `deinstall ok config-files`.
+- **Upgrade and rollback, with the published package.** All nine container
+  scenarios ran: I3's seven and J9's two. They used the published
+  `notrios_1.0.0-1_amd64.deb` (`e2a80a22…`), alongside J9's 0.8.0 and
+  1.0.0~rc1 packages, on a dependency image built fresh from the published
+  package's `Depends`. 9 of 9 passed (`I3-RESULTS-published.jsonl`), including
+  `08-upgrade-0.8-to-1.0` and `09-rollback-1.0-to-0.8`. Those two follow the
+  page's upgrade and going-back instructions. J9 had run them on a package built
+  here, before any release existed.
+
+**Findings, recorded and not fixed:**
+- **The builds are not reproducible.** See J10-B: two runs of one commit give
+  different package and tarball bytes.
+- **doctor gives a packaged install a source-checkout instruction.** Its web
+  interface check looks only for `web/dist` under the working directory, so in
+  a packaged install it reports `web/dist missing here; run make web` while
+  `notriosd` serves the interface from `/usr/share/notrios/web`. It is an `info`
+  line and not a failure. The check should use the same lookup the service does.
+- **The pre-push gate's default reserve path.** It still names `/media/...`;
+  J10 ran it with `NOTRIOS_EVIDENCE_RESERVE` set.
+
+The volume plan now leaves J10 out by name. Its hash is over the candidates,
+rather than over the whole manifest, so J10's own archive entering the manifest
+at its close does not make the sealed plan stale.
