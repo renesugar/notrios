@@ -276,3 +276,51 @@ func TestFixValidatesRequests(t *testing.T) {
 		t.Fatalf("oversized bound: %v", err)
 	}
 }
+
+// TestFixKeepsATitle covers the same defect J43 found in the importer, on the
+// repair path: `notriosctl fix` rebuilds a link from a stored row, and the row
+// records the destination alone. The title is recovered from the link's own bytes
+// instead, so a repair no longer costs the author the text they wrote.
+func TestFixKeepsATitle(t *testing.T) {
+	ctx := context.Background()
+	st, target, resource := newFixFixture(t)
+	source, err := st.CreateDocument(ctx, CreateDocumentRequest{
+		PreferredID: "doc_source",
+		Title:       "Source",
+		Body: "See [the plan](Kitchen \"A title\") here.\n\n" +
+			"And [another](Kitchen 'single') here.\n\n" +
+			"And ![](" + ResourceURI("", resource.ID) + " \"Photo title\") here.\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := st.PlanWorkspaceFix(ctx, FixRequest{Kinds: []string{FixNonCanonicalLinkTarget, FixMissingAltText}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Documents) != 1 {
+		t.Fatalf("expected one note: %+v", plan)
+	}
+	wants := map[string]string{
+		"[the plan](Kitchen \"A title\")":                           "[the plan](" + target.URI + " \"A title\")",
+		"[another](Kitchen 'single')":                               "[another](" + target.URI + " 'single')",
+		"![](" + ResourceURI("", resource.ID) + " \"Photo title\")": "![kitchen plan final](" + ResourceURI("", resource.ID) + " \"Photo title\")",
+	}
+	seen := 0
+	for _, edit := range plan.Documents[0].Edits {
+		want, ok := wants[edit.Before]
+		if !ok {
+			t.Errorf("unexpected edit of %q -> %q", edit.Before, edit.After)
+			continue
+		}
+		if edit.After != want {
+			t.Errorf("edit of %q:\n got %q\nwant %q", edit.Before, edit.After, want)
+		}
+		seen++
+	}
+	if seen != len(wants) {
+		t.Errorf("want %d edits, saw %d: %+v", len(wants), seen, plan.Documents[0].Edits)
+	}
+	_ = source
+}

@@ -17,18 +17,97 @@ import (
 	"regexp"
 	"strings"
 
+	"sort"
+
 	"github.com/renesugar/notrios/internal/docplan"
+	"github.com/renesugar/notrios/internal/version"
 )
 
 const (
-	ledgerPath  = "docs/docplan/PLAN_SLICES.json"
-	planPath    = "PLAN.md"
-	roadmapPath = "ROADMAP.md"
-	begin       = "<!-- notrios:generated:plan:progress:begin -->"
-	finish      = "<!-- notrios:generated:plan:progress:end -->"
-	roadBegin   = "<!-- notrios:generated:roadmap:status:begin -->"
-	roadFinish  = "<!-- notrios:generated:roadmap:status:end -->"
+	ledgerPath   = "docs/docplan/PLAN_SLICES.json"
+	planPath     = "PLAN.md"
+	roadmapPath  = "ROADMAP.md"
+	readmePath   = "README.md"
+	begin        = "<!-- notrios:generated:plan:progress:begin -->"
+	finish       = "<!-- notrios:generated:plan:progress:end -->"
+	roadBegin    = "<!-- notrios:generated:roadmap:status:begin -->"
+	roadFinish   = "<!-- notrios:generated:roadmap:status:end -->"
+	readmeBegin  = "<!-- notrios:generated:readme:status:begin -->"
+	readmeFinish = "<!-- notrios:generated:readme:status:end -->"
+	evidBegin    = "<!-- notrios:generated:readme:evidence:begin -->"
+	evidFinish   = "<!-- notrios:generated:readme:evidence:end -->"
 )
+
+// evidenceIndex counts the evidence directories per milestone.
+//
+// The paragraph it replaces named 13 of 77 and stopped at v0.5, so v0.7, v0.8,
+// v0.8e, v0.9 and v1.0 -- the large majority of the evidence in this repository
+// -- went unmentioned. It is a list of directories on disk, which is exactly
+// what should never be maintained by hand.
+//
+// Counts and one example each, not 77 names: a reader wants to know the
+// evidence exists, roughly how much of it there is, and how to find the rest.
+// `ls performance/` does the rest better than a wall of directory names.
+func evidenceIndex(root string) ([]string, int, error) {
+	entries, err := os.ReadDir(filepath.Join(root, "performance"))
+	if err != nil {
+		return nil, 0, err
+	}
+	milestone := regexp.MustCompile(`^(v[0-9]+\.[0-9]+[a-z]?)(?:-.*)?$`)
+	counts := map[string]int{}
+	first := map[string]string{}
+	order := []string{}
+	total := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		match := milestone.FindStringSubmatch(entry.Name())
+		if match == nil {
+			continue
+		}
+		key := match[1]
+		if counts[key] == 0 {
+			order = append(order, key)
+			first[key] = entry.Name()
+		}
+		counts[key]++
+		total++
+	}
+	sort.Strings(order)
+	rows := []string{
+		"| Milestone | Evidence directories | For example |",
+		"|---|---|---|",
+	}
+	for _, key := range order {
+		rows = append(rows, fmt.Sprintf("| %s | %d | `performance/%s/` |",
+			key, counts[key], first[key]))
+	}
+	return rows, total, nil
+}
+
+// archivedMilestones lists the milestone directories under plans/.
+//
+// Derived rather than listed, because a list is the thing that goes stale: this
+// is the same file that spent a milestone and a half announcing v0.8 as current.
+// Only version-shaped names are reported; `plans/scaffold` and `plans/mvp` are
+// records of how the repository started rather than milestones with a number,
+// and the README says so in prose beside the generated block.
+func archivedMilestones(root string) ([]string, error) {
+	entries, err := os.ReadDir(filepath.Join(root, "plans"))
+	if err != nil {
+		return nil, err
+	}
+	shaped := regexp.MustCompile(`^v[0-9]+\.[0-9]+[a-z]?$`)
+	names := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() && shaped.MatchString(entry.Name()) {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+	return names, nil
+}
 
 func main() {
 	root := flag.String("root", ".", "repository root")
@@ -46,6 +125,20 @@ func main() {
 	problems := docplan.Check(*root, ledger, headings)
 	problems = append(problems, docplan.CheckPlanPointer(filepath.Join(*root, planPath))...)
 	problems = append(problems, docplan.CheckRoadmapPointer(filepath.Join(*root, roadmapPath))...)
+	archived, err := archivedMilestones(*root)
+	if err != nil {
+		fail(err)
+	}
+	evidenceRows, evidenceTotal, err := evidenceIndex(*root)
+	if err != nil {
+		fail(err)
+	}
+	evidenceLines := append([]string{
+		fmt.Sprintf("%d evidence directories under [`performance/`](performance/), generated "+
+			"by `go run ./cmd/docplan --write`. Each holds the record for one plan item: what "+
+			"was measured, how, and what was not.", evidenceTotal),
+		"",
+	}, evidenceRows...)
 	if len(problems) > 0 {
 		for _, problem := range problems {
 			fmt.Fprintln(os.Stderr, "plan ledger:", problem)
@@ -62,6 +155,8 @@ func main() {
 	}{
 		{planPath, begin, finish, ledger.ProgressLines()},
 		{roadmapPath, roadBegin, roadFinish, ledger.RoadmapStatusLines()},
+		{readmePath, readmeBegin, readmeFinish, ledger.ReadmeStatusLines(version.Version, archived)},
+		{readmePath, evidBegin, evidFinish, evidenceLines},
 	}
 	for _, target := range targets {
 		full := filepath.Join(*root, target.path)
@@ -85,7 +180,8 @@ func main() {
 		}
 	}
 	if *write {
-		fmt.Printf("progress log and roadmap status written: %d items\n", len(ledger.Items))
+		fmt.Printf("plan, roadmap and README blocks written: %s, %d items, %d archived milestones\n",
+			ledger.Milestone, len(ledger.Items), len(archived))
 		return
 	}
 	fmt.Printf("plan ledger valid: %d items\n", len(ledger.Items))

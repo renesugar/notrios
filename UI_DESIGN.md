@@ -181,6 +181,10 @@ Checked in a real browser against a note containing each case:
 
 Sanitization is Notrios' own `normalizePreviewHTML` (DOMParser-based), passed to
 `md-editor-rt` as its `sanitize` prop, on top of that library's built-in `xss`.
+The preview also runs it a second time in its own renderer, so it is written to
+leave its own output alone. A second pass keeps a resolved attachment URL only
+beside the `resource://` it was resolved from, and changes nothing else. Before
+v1.0 J48 it removed that URL, and no attachment showed.
 `rehype-sanitize` is not involved and could not be: it belongs to a unified
 pipeline this application does not run.
 
@@ -201,6 +205,56 @@ passing offline-network, CSP, sanitization, malformed/oversized-diagram,
 browser, and Wails tests. “The dependency supports Mermaid” is not evidence that
 the application does.
 
+## Wiki links, and links that will not open (v1.0 J40-B)
+
+Until J40-B the preview had no wiki-link rule. Every link an Obsidian import
+resolved, written `[[document://…|shown]]`, was printed as those characters, and
+a link that would not open looked like prose or like a working link. The preview
+now recognises wiki syntax while it renders, and marks a link that will not open
+with a reason. It never repairs one, and it never offers a choice.
+
+**What renders.**
+
+| Input | Result |
+|---|---|
+| `[[document://…]]`, `[[resource://…]]`, `[[notrios://…]]`, each with or without `\|text` | an ordinary link, routed exactly like the Markdown link to the same URI. The text shown is the text after the pipe, or the URI |
+| `[[Name]]` or `[[Name\|text]]` | an `<a>` with no `href`, showing the text after the pipe or the name. It becomes a routed link when the editor's check resolves it, and is marked when the check says it will not open |
+| `![[resource://…]]`, with or without `\|alt text` | exactly what `![alt text](resource://…)` renders: markdown-it's own image token, through the same media neutralisation (J47) |
+| any other `![[…]]` | the characters as written. A note embed is transclusion, not media, and stays text. When the check says it will not open, it is marked |
+| `[text](target)` whose target is not a routed scheme | an `<a>` with no `href`, as before, marked when the check says it will not open |
+
+**Where the classification comes from.** It comes from the editor's debounced
+buffer check, the same classification behind the editor's wavy underlines and
+broken-link list. Opening or editing a note costs no new request. The renderer
+rule records each link's exact source text on the element it emits, and the
+check reports each link's source span. A link is marked when the two texts are
+equal. Nothing is matched against rendered text, so a phrase that only looks
+like a link is never marked. Two identical links always share a status, because
+a status depends only on the text. A link the check has not classified yet, such
+as one typed since the last check, is left unmarked rather than guessed.
+
+**How a mark looks.** It is a class on the element, so a theme can restyle it.
+
+| Status | Class | Look | Hover text |
+|---|---|---|---|
+| `ambiguous` | `preview-link-ambiguous` | accent-coloured text, dotted underline | "more than one note or resource matches" |
+| `unresolved`, `invalid`, `stale_anchor` | `preview-link-unresolved` | body-coloured text, wavy underline in `--danger`, like the editor's | the editor's text for that status |
+
+A marked link has no `href` and is not a click target. The hover text is the
+editor's fixed wording for the status, set by the GUI, and never text from the
+note. Which notes an ambiguous link might mean is the report's job (J40-C), not
+the preview's.
+
+**Not marked: a read-only note.** The editor's check runs only for an editable
+note, so a note in Help, Reports or the Trash is not classified. Its URI wiki
+links still render as links, but nothing is marked. Help and Reports notes are
+generated with working links, and a note in the Trash is on its way out
+(decision 10).
+
+**Sanitisation is unchanged.** The rule emits `<a>` and `<span>` elements with a
+class and `data-` attributes, escaped by markdown-it. No note text becomes
+markup, and `normalizePreviewHTML` still runs over every element.
+
 ## Required behavior (carried over from the web-UI MVP)
 
 - Create, edit, save, and search Markdown notes.
@@ -210,6 +264,7 @@ the application does.
 - Show revision/conflict state using revision IDs or ETags.
 - Sanitize preview HTML.
 - Remote images in preview may show a warning/action but must never be silently localized; localization is a server operation under media policy.
+- Remote media in preview never loads: `img`, `video`/`audio` sources and posters, `track` and SVG references stay inert until localized; inline `data:image/…` images and inline SVG render (J34).
 - The bounded v0.6 F1 batch API implements move, duplicate, trash, tag/untag,
   and stable-link copy semantics, but the current GUI does not yet expose
   multi-select organizer controls. A future client surface must display the

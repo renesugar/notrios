@@ -4,5 +4,5 @@ package version
 //
 //notrios:doc user product-version
 //notrios:help cli version
-//notrios:claim product-version-current go:github.com/renesugar/notrios/internal/version#TestVersionIsReleaseCandidate
-const Version = "0.8.0"
+//notrios:claim product-version-current go:github.com/renesugar/notrios/internal/version#TestVersionIsTheRelease
+const Version = "1.0.0"

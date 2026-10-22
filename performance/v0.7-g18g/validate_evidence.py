@@ -14,7 +14,11 @@ ROOT = HERE.parents[1]
 # time, "somebody" turned out to be nobody for a month. v0.8 H13 moved the
 # gates that need no browser into `make validate`; this one still needs
 # Pagefind and Hugo, so it stays here.
-ROUTES = ["index.html", "installation.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html", "features.html", "journeys-cli.html", "journeys-gui.html"]
+# Public routes, pinned so that a page appearing on the site -- or a published
+# URL quietly disappearing -- is a decision somebody made. "configuration.html"
+# was added in v1.0 J12 with docs/configuration.md; nothing here has ever been
+# removed, because these are addresses other people may have linked to.
+ROUTES = ["index.html", "installation.html", "configuration.html", "service.html", "cli.html", "query-language.html", "selection-planning.html", "archive-v2.html", "stable-links.html", "publishing.html", "gui.html", "import-export.html", "operations.html", "api/rest.html", "api/mcp.html", "troubleshooting.html", "features.html", "journeys-cli.html", "journeys-gui.html"]
 ALIASES = {"service.html#configuration": "service.html#configuration-reference", "stable-links.html#linking-to-a-block-not-just-a-note": "stable-links.html#linking-to-a-section-or-a-block"}
 
 class EvidenceError(ValueError): pass
@@ -45,26 +49,48 @@ def theme_manifest(root):
     for rel,digest,_ in rows: h.update(f"{digest}  {rel}\n".encode())
     return rows,total,h.hexdigest()
 
-def validate_theme_pair(production, frozen, provenance):
+# The G18b snapshot as v0.7 reviewed it. These numbers never move: they are the
+# record of what was selected, not a description of what ships today.
+FROZEN_THEME = (44, 173947, "2897566a3861c1a92f6f83d2606d8605c085d4b63d3f67adbef4954c55880025")
+
+def validate_frozen_theme(frozen):
+    """The frozen G18b prototype snapshot, byte for byte as v0.7 left it."""
+    rows, total, manifest = theme_manifest(frozen)
+    require((len(rows), total, manifest) == FROZEN_THEME, "frozen theme manifest drift")
+    return rows
+
+def validate_production_theme(production, frozen_rows, provenance):
+    """The vendored theme under docs-site/, against its own provenance.
+
+    Until v1.0 J31 this required the production copy to be byte-identical to the
+    frozen snapshot, which meant the vendored theme could never take an upstream
+    fix without rewriting v0.7's record of what it had reviewed. The two are
+    separate now: the frozen snapshot is still checked exactly (above), and the
+    production copy has to be what `docs-site/THEME_PROVENANCE.json` says it is
+    -- a named upstream commit, and the file count, byte count and manifest hash
+    of these bytes. The *file list* must still be the reviewed runtime set, so a
+    file appearing in the vendored theme is a decision somebody made.
+    """
     require(production.is_dir(), "production docs-site theme missing")
-    frozen_rows, frozen_total, frozen_manifest = theme_manifest(frozen)
-    production_rows, production_total, production_manifest = theme_manifest(production)
-    require(len(frozen_rows)==44 and frozen_total==173947 and frozen_manifest=="2897566a3861c1a92f6f83d2606d8605c085d4b63d3f67adbef4954c55880025", "frozen theme manifest drift")
-    require(frozen_rows == production_rows, "production theme differs from frozen snapshot file or hash")
-    require(production_manifest == frozen_manifest and production_total == frozen_total, "production theme manifest drift")
+    rows, total, manifest = theme_manifest(production)
     require((production/"LICENSE").is_file(), "production theme LICENSE missing")
     require(provenance.get("schema")=="notrios.g18g.theme-provenance.v1", "production theme provenance schema")
-    require(provenance.get("upstream_commit")=="f9d28ea297427890ecffa31fa74caa9ee385d9f5", "production theme upstream commit drift")
-    require((provenance.get("file_count"),provenance.get("byte_count"),provenance.get("manifest_sha256"))==(44,173947,frozen_manifest), "production theme provenance hash values")
+    commit = provenance.get("upstream_commit")
+    require(isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit), "production theme upstream commit must be a full commit id")
+    require([row[0] for row in rows] == [row[0] for row in frozen_rows], "production theme file list differs from the reviewed runtime snapshot")
+    require((provenance.get("file_count"), provenance.get("byte_count"), provenance.get("manifest_sha256")) == (len(rows), total, manifest), "production theme provenance does not describe the production theme")
 
 def source_checks(root=ROOT, bundle=HERE):
     def read(name): return json.loads((bundle/name).read_text(encoding="utf-8"))
     t=read("THEME_PROVENANCE.json"); r=read("ROUTES.json"); b=read("BUILD_CONTRACT.json"); m=read("MUTATION_MATRIX.json"); report=read("REPORT.json")
     require(t.get("schema")=="notrios.g18g.theme-provenance.v1", "theme schema")
+    # G18g's own bundle records the commit G18b selected and G18g materialized.
+    # It is v0.7 evidence and stays as it was; what ships is checked separately.
     require(t.get("upstream_commit")=="f9d28ea297427890ecffa31fa74caa9ee385d9f5", "theme upstream commit drift")
     frozen=root / "performance/v0.7-g18b/prototype/themes/hugo-theme-ledger"
     production=root / "docs-site/themes/hugo-theme-ledger"
-    validate_theme_pair(production, frozen, json.loads((production.parent.parent/"THEME_PROVENANCE.json").read_text(encoding="utf-8")))
+    frozen_rows = validate_frozen_theme(frozen)
+    validate_production_theme(production, frozen_rows, json.loads((production.parent.parent/"THEME_PROVENANCE.json").read_text(encoding="utf-8")))
     require(r.get("schema")=="notrios.g18g.routes.v1" and r.get("preserved_routes")==ROUTES, "preserved route set drift")
     require(r.get("legacy_fragment_aliases")==ALIASES and r.get("g18a_section_count")==267 and r.get("required_alias_count")==2, "route/alias contract drift")
     require(b.get("schema")=="notrios.g18g.build-contract.v1" and b.get("builder")=="scripts/build_docs_site.sh" and b.get("production_source")=="docs-site/" and b.get("output_argument")=="first positional argument", "build contract drift")
@@ -204,7 +230,10 @@ def validate_site(site):
                 continue
             errors.append(f"remote asset {route} -> {asset}")
     html=list(site.rglob("*.html")); indexed=sum(page(x).body for x in html)
-    if indexed != 18: errors.append(f"Pagefind body pages {indexed} != 18")
+    # 18 -> 19 in v1.0 J12: docs/configuration.md. A page on the site that
+    # Pagefind does not index is a page the offline search cannot find, which is
+    # the failure this count exists to catch.
+    if indexed != 19: errors.append(f"Pagefind body pages {indexed} != 19")
     for excluded in ("api/index.html","search/index.html"):
         p=site/excluded
         if p.is_file() and page(p).body: errors.append(f"generated page indexed {excluded}")

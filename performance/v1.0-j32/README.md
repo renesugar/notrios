@@ -1,0 +1,1265 @@
+# v1.0 J32 — import performance, measured before it is changed
+
+J32 investigates the findings in `performance-code-review.md` (2026-09-17), and
+keeps a change only if a benchmark written before it shows that it is faster.
+The rule for "faster", fixed before any candidate was measured, is in PLAN.md.
+
+This file is J32's record. J32-A built the harness and measured the baseline
+below. Each later slice adds its hypothesis, declared metric, result and
+disposition, and J32-M completes the table of findings.
+
+## The harness (J32-A)
+
+| file | what it does |
+|---|---|
+| `make_corpus.py` | generates the six synthetic corpora from a fixed seed, each with a manifest hash |
+| `run_bench.py` | builds a harness binary at a commit; measures one case for one or two binaries |
+| `run_matrix.sh` | runs every case, one after another |
+| `compare.py` | applies PLAN.md's rule to a baseline and a candidate, per metric |
+| `summarize.py` | prints the table below from result files |
+| `cmd/notriosctl/j32_import_bench_test.go` | the measured process: the CLI's own `import`, in-process |
+| `store.PreparedStatements()` | process-wide count of statements prepared, incremented at the store's only prepare site |
+
+**One import per process.** Peak RSS is a per-process maximum, so each measured
+import is a fresh process of a test binary compiled once per commit. The
+process runs the CLI's `import` command, so flag parsing, configuration and the
+job wrapper are all measured, and it reports:
+- wall time around the command;
+- bytes and objects allocated;
+- the live heap after a forced GC;
+- the prepared-statement count.
+
+`/usr/bin/time` around the process supplies peak RSS and CPU. No flag or
+environment variable reaches the shipped CLI: the test binary reads its
+arguments from its own environment and is skipped by an ordinary `go test`.
+
+**Isolation.** Each run has its own directory holding HOME, every XDG root and
+TMPDIR, and `DBUS_SESSION_BUS_ADDRESS` is unset, so no owner configuration,
+keychain or shared temp directory is touched. The corpus manifest is checked
+before and after each case, so a case that read different bytes, or wrote into
+its corpus, is refused.
+
+**Scenarios.**
+- `fresh`: imports into an empty library.
+- `reimport`: imports the same corpus again into the library a fresh import
+  made. That library is built once per binary and copied before every measured
+  run, so every reimport starts from the same bytes. Nothing changes, so a
+  reimport measures what an unchanged vault still costs.
+
+**Runs.**
+- One unmeasured warm-up per binary, then five measured runs.
+- With two binaries, the order alternates run by run.
+- Before each run the one-minute load average must be at or below 1.0, and the
+  value is recorded.
+
+The desktop's system monitor holds the load near 0.9 on this machine, so the
+60 measured runs started at loads between 0.79 and 1.00. The gate costs minutes between runs while
+the load decays from the previous import.
+
+### The corpora
+
+| shape | kind | content | why |
+|---|---|---|---|
+| `joplin-10k` | Joplin RAW | TestJoplinImporterProfile's shape, 10,000 notes, tags and resources | the ordinary corpus |
+| `obsidian-10k` | Obsidian | TestObsidianImporterProfile's shape, 10,000 notes, aliases, links, assets | the ordinary corpus |
+| `link-dense` | Obsidian | 4 notes of 1 MiB, a link every ~350 bytes, 2 of them one line | F8, §3.1A |
+| `collision` | Obsidian | 5,000 `index.md` in separate folders, aliases shared by 100 notes each | F9 |
+| `near-limit-obsidian` | Obsidian | 4 notes of 60 MiB among 200 small ones | F5 |
+| `near-limit-joplin` | Joplin RAW | the same, as RAW items | F5 |
+
+`link-dense` was 20 notes at first. One unmeasured import of those took 1,300 s,
+with 149 MiB peak RSS, which would have made each candidate comparison several
+hours long. The cost grows within a note, so four notes show it as well as
+twenty (generator version 2). Five times the notes took 6.7 times as long,
+so the cost also grows with the number of notes. The other five corpora are
+byte-identical between the two generator versions: their manifest hashes match
+the ones recorded in the baseline files.
+
+### Reproducing
+
+```sh
+W=/path/outside/the/checkout
+python3 performance/v1.0-j32/make_corpus.py "$W"
+python3 performance/v1.0-j32/run_bench.py build <commit> "$W" baseline
+bash performance/v1.0-j32/run_matrix.sh "$W" "$W/results/baseline" baseline
+# a candidate, alternating with the baseline, on the case its slice declares:
+python3 performance/v1.0-j32/run_bench.py build <candidate-commit> "$W" candidate
+python3 performance/v1.0-j32/run_bench.py run "$W" "$W/out.json" link-dense/fresh baseline,candidate
+python3 performance/v1.0-j32/compare.py "$W/out.json" baseline candidate wall_seconds
+```
+
+Run it with nothing else on the machine: no tests, builds or other imports.
+
+## The baseline (J32-A)
+
+Commit `bfcb372` (the harness commit), built with go1.27.0 linux/amd64. It ran
+2026-09-22 from 02:42 to 10:21 UTC, on 8 CPUs, with the work directory on an
+ext4 SSD (HD2). Page caches were warm; there is no passwordless sudo here to
+drop them. Each cell is the median of five runs ± the range (maximum minus
+minimum), which is the noise a candidate has to beat. The records are in
+`baseline/`, with the work directory's path replaced by `<work>`.
+
+| case | notes | wall s | notes/s | peak RSS MiB | allocated MiB | allocations k | statements |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| collision/fresh | 5,500 | 93.2 ± 4.7 | 59.0 ± 2.9 | 36.5 ± 0.8 | 183.6 ± 1.3 | 2,370.6 ± 0.7 | 220,561 ± 2 |
+| collision/reimport | 5,500 | 46.5 ± 1.8 | 118.3 ± 4.5 | 37.7 ± 3.1 | 165.2 ± 0.5 | 2,121.8 ± 0.2 | 108,428 ± 0 |
+| obsidian-10k/fresh | 10,000 | 88.1 ± 0.6 | 113.6 ± 0.7 | 43.7 ± 0.7 | 367.8 ± 0.6 | 4,791.6 ± 0.6 | 381,524 ± 0 |
+| obsidian-10k/reimport | 10,000 | 52.5 ± 1.2 | 190.4 ± 4.3 | 43.5 ± 0.6 | 311.0 ± 0.4 | 4,061.5 ± 0.4 | 211,483 ± 0 |
+| joplin-10k/fresh | 10,000 | 81.3 ± 1.4 | 123.0 ± 2.1 | 33.4 ± 1.3 | 337.0 ± 0.4 | 4,226.7 ± 0.1 | 301,812 ± 2 |
+| joplin-10k/reimport | 10,000 | 30.1 ± 0.5 | 331.8 ± 5.4 | 31.8 ± 0.4 | 301.6 ± 0.4 | 3,735.4 ± 0.3 | 131,768 ± 2 |
+| link-dense/fresh | 4 | 193.1 ± 1.4 | 0.021 ± 0.000 | 73.0 ± 13.1 | 11,019.3 ± 0.2 | 378.8 ± 0.2 | 56,024 ± 0 |
+| link-dense/reimport | 4 | 121.7 ± 0.7 | 0.033 ± 0.000 | 68.9 ± 8.9 | 10,942.9 ± 0.1 | 264.5 ± 0.1 | 28,031 ± 0 |
+| near-limit-obsidian/fresh | 204 | 525.6 ± 6.2 | 0.388 ± 0.004 | 997.5 ± 112.4 | 6,939.9 ± 0.2 | 74.9 ± 0.2 | 6,051 ± 4 |
+| near-limit-obsidian/reimport | 204 | 320.8 ± 7.5 | 0.636 ± 0.015 | 1,046.3 ± 1.0 | 5,527.1 ± 0.1 | 66.8 ± 0.1 | 3,176 ± 6 |
+| near-limit-joplin/fresh | 204 | 396.6 ± 6.3 | 0.514 ± 0.008 | 1,445.9 ± 60.2 | 6,039.1 ± 0.1 | 49.0 ± 0.1 | 3,566 ± 2 |
+| near-limit-joplin/reimport | 204 | 195.8 ± 3.9 | 1.042 ± 0.021 | 1,590.0 ± 1.5 | 4,626.9 ± 0.1 | 49.7 ± 0.1 | 1,303 ± 2 |
+
+**Reading it.**
+- **Wall-time noise** is 1–5% of the median on every case, so a candidate has
+  to beat the baseline by about that much.
+- **Peak RSS is noisier.** On `link-dense` and `near-limit-obsidian` fresh
+  imports its range is 11–18% of the median.
+- **The statement count varies by 2 to 6** between runs of some cases, even
+  though the corpus is identical. That is a few statements from work whose
+  count depends on timing, not on content. The rule treats the range as noise
+  for counts as well, so a count win has to exceed it.
+- **Four costs stand out:**
+  - **Link-dense allocation.** A fresh import of four 1 MiB notes allocates
+    11 GB. The review's §3.1A (replacements spliced one at a time) and F8
+    (link coordinates rescanned per link) both predict a cost that grows
+    within a note. J32-D and J32-E are measured on this case.
+  - **No-op reimports still do most of the work.** An unchanged `link-dense`
+    corpus takes 63% of its fresh-import time, and `collision` takes 50%.
+    J32-I and J32-J are about this.
+  - **Near-limit memory.** Four 60 MiB notes take a fresh Obsidian import to
+    about 1 GB peak RSS, and a no-op Joplin reimport to 1.59 GB. J32-K (F5)
+    is measured on these cases.
+  - **Prepared statements.** The ordinary Obsidian corpus prepares about 38
+    statements per note on a fresh import, and 21 on a no-op reimport. J32-B
+    (F1) is measured by this count and by wall time.
+
+## J32-B — F1, reuse the block and link insert statements: **kept**
+
+`rebuildDocumentBlocksLocked` and `rebuildDocumentLinksLocked` called
+`execPreparedLocked` once per block and once per link, and that prepares and
+finalizes a statement every call. Each now prepares one statement before its
+loop and rebinds it per row (`repeatedStatement` in `internal/store/sqlite.go`),
+finalized on every exit. Nothing is cached across a transaction, so no
+statement outlives a migration or a restore.
+
+Declared before the change: prepared-statement count and wall time on
+`obsidian-10k/fresh`, with `link-dense/fresh` as the scaling case that must not
+regress. Baseline `bfcb372`, candidate `c1a7cc5`, five runs each, alternating.
+Records in `j32b/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | prepared statements | 381,522 | 281,520 | 2 | −26.2% | better |
+| obsidian-10k/fresh | wall s | 84.32 | 80.01 | 3.17 | −5.1% | better |
+| obsidian-10k/fresh | allocations | 4,791,440 | 4,731,560 | 348 | −1.3% | better |
+| link-dense/fresh | prepared statements | 56,022 | 30,576 | 0 | −45.4% | better |
+| link-dense/fresh | wall s | 185.44 | 183.71 | 0.33 | −0.9% | better |
+
+Nothing regressed beyond noise on either case: peak RSS, bytes allocated, live
+heap and system time all stayed within the baseline's range.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. `j17_compare.py` between a library the baseline
+binary imported and one the candidate imported reports every table identical,
+including all 40,000 block rows and 30,000 link rows; the four differing tables
+differ only in volatile identifier columns (`database_id`, `replica_id`,
+revision `id`, `current_revision_id`, job `id`), which are random per import.
+
+The baseline's own medians in this comparison differ from the recorded
+baseline above (84.3 s against 88.1 s on `obsidian-10k/fresh`), because the
+machine was in a different state hours later. That is why a candidate is
+compared only with a baseline measured beside it, run by run.
+
+## J32-C — §3.1B, build `PropertyOrder` only when source is preserved: **kept**
+
+`readInventory` parsed each note's frontmatter property order and kept a slice
+of it for the whole import, although the only reader is the source-bundle
+phase, which runs only under `--preserve-source`. Joplin's scan already gated
+the same field. It is now behind the `retainFiles` parameter `readInventory`
+already takes, and a test pins both directions and that the inventory
+fingerprint does not change either way.
+
+Declared before the change: live heap and peak RSS on a property-rich vault.
+Baseline `7e272f3` (which includes J32-B), candidate `4464a75`, five runs each,
+alternating. `property-rich` is 10,000 notes with about 25 frontmatter
+properties each; it was added for this slice, so it has no row in the J32-A
+table. Records in `j32c/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| property-rich/fresh | peak RSS KiB | 59,248 | 40,924 | 1,204 | −30.9% | better |
+| property-rich/fresh | allocations | 3,717,540 | 3,408,890 | 183 | −8.3% | better |
+| property-rich/fresh | allocated bytes | 515.9 M | 493.1 M | 380 K | −4.4% | better |
+| property-rich/fresh | live heap bytes | 645,080 | 643,632 | 117,360 | −0.2% | within noise |
+| property-rich/fresh | wall s | 68.00 | 68.50 | 0.99 | +0.7% | within noise |
+| obsidian-10k/fresh | peak RSS KiB | 44,540 | 43,184 | 1,196 | −3.0% | better |
+| obsidian-10k/fresh | wall s | 80.50 | 80.50 | 0.62 | 0.0% | within noise |
+
+**Of the two declared metrics, one was the wrong one.** Peak RSS improved by
+31% on the property-rich vault, far beyond its noise, and by 3% on the ordinary
+corpus. Live heap did not move, and could not have: it is read after the
+command returns, when the inventory has already been released. What this change
+removes is held *during* the import, which is what peak RSS measures and live
+heap cannot. The slice is kept on peak RSS; live heap is recorded as unchanged
+with that reason rather than treated as a failure to improve.
+
+Wall time is unchanged on both cases, within noise. Parsing that no longer
+happens is a small part of an import dominated by other work.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. The property-rich vault imported with
+`--preserve-source` by each binary produces libraries whose
+`source_bundle_items` table — the 10,000 rows that carry the recorded property
+order — is identical; only the volatile identifier columns differ.
+
+## J32-D — §3.1A, assemble a rewritten body in one pass: **kept**
+
+`rewriteObsidianLinks` spliced each replacement into the body on its own
+(`body[:start] + text + body[end:]`), so a note with thousands of links copied
+itself thousands of times. `applyReplacements` now walks the body once into a
+builder sized in advance.
+
+Overlapping replacements keep the old splices. Two can overlap only when a
+Markdown match encloses a wiki link *and* both resolve, which needs a vault
+file whose name is itself a wiki link (`[[Target]].md`); a one-pass assembly
+cannot reproduce what descending splices did to those bytes, and this slice
+changes assembly, not meaning. The one case the old loop never decided —
+two replacements starting at the same byte, which its sort ordered arbitrarily
+— is now decided (widest first) and a test says so.
+
+Pinned first, in `j32d_rewrite_test.go`: ten bodies byte for byte against the
+old code (nested, adjacent, repeated, both ends, multi-byte, anchors, display
+text, unresolved), a 400-link body, and `applyReplacements` held to the splice
+loop itself across eight replacement sets.
+
+Declared before the change: allocations and wall time on `link-dense/fresh`.
+Baseline `100e3f8` (which includes J32-B and J32-C), candidate `bf33641`, five
+runs each, alternating. Records in `j32d/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| link-dense/fresh | allocated bytes | 11.55 G | 270.4 M | 157 K | −97.7% | better |
+| link-dense/fresh | wall s | 184.14 | 180.94 | 2.62 | −1.7% | better |
+| link-dense/fresh | system s | 12.54 | 10.24 | 0.92 | −18.3% | better |
+| link-dense/fresh | peak RSS KiB | 76,940 | 75,112 | 12,304 | −2.4% | within noise |
+| obsidian-10k/fresh | allocated bytes | 384.4 M | 379.1 M | 507 K | −1.4% | better |
+| obsidian-10k/fresh | wall s | 79.84 | 80.01 | 1.21 | +0.2% | within noise |
+
+**11.55 GB becomes 270 MB**: the copying was 98% of everything the import
+allocated on this corpus. Wall time falls only 1.7%, because the remaining cost
+on these notes is elsewhere — the per-link coordinate rescans J32-E measures.
+The ordinary corpus, where notes hold three links each, gains 1.4% of
+allocations and nothing measurable in time, and regresses nowhere.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `documents`, `document_blocks` and `document_links` — 40,000 blocks
+and 30,000 links on the ordinary corpus, 12,677 links on the link-dense one —
+with only volatile identifier columns differing.
+
+## J32-E — F8, one-pass link coordinates: **kept**
+
+`decorateCandidate` called `lineColumn`, which decodes the body from byte zero
+for every candidate, so a note with thousands of links decoded itself thousands
+of times and a note that is one long line was the worst case. Each extraction
+pass now carries a `lineCursor` forward. Asked for an offset behind it, the
+cursor starts over, so an answer never depends on the order it is asked in.
+`lineColumn` stays as the reference the tests compare against.
+
+Declared before the change: wall time on `link-dense/fresh`. Baseline
+`81d44ee` (which includes J32-B through J32-D), candidate `821e82c`, five runs
+each, alternating. Records in `j32e/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| link-dense/fresh | wall s | 179.98 | 32.90 | 1.42 | **−81.7%** | better |
+| link-dense/fresh | user s | 170.50 | 22.47 | 1.12 | −86.8% | better |
+| link-dense/fresh | notes/s | 0.022 | 0.122 | 0.000 | ×5.5 | better |
+| link-dense/fresh | peak RSS KiB | 74,464 | 75,440 | 4,548 | +1.3% | within noise |
+| obsidian-10k/fresh (9 runs) | wall s | 80.18 | 80.56 | 2.54 | +0.5% | within noise |
+| obsidian-10k/fresh (9 runs) | system s | 5.99 | 5.97 | 0.18 | −0.3% | within noise |
+
+**The corpus imports 5.5× faster.** With J32-D's assembly already in, what was
+left on these notes was this rescanning: 170 s of user CPU becomes 22 s.
+
+**One flagged regression did not survive a second look.** At five runs the
+ordinary corpus showed system time 5.99 → 6.19 s against a range of 0.15,
+which the rule counts as worse. A change that only removes user-space decoding
+has no reason to spend more kernel time, so the case was measured again at nine
+runs per binary: 5.99 → 5.97 s, and every other metric within noise. The
+five-run range was simply narrower than the metric's own spread. Both records
+are kept in `j32e/`; the nine-run one is the result.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_links` — 30,000 rows on the ordinary corpus and 12,677 on
+the link-dense one, which is where byte offsets, rune columns and contexts are
+stored — and identical blocks and documents, with only volatile identifier
+columns differing.
+
+## J32-F — F9, collision-heavy namespace construction: **rejected, no change**
+
+F9 said `appendUnique`'s linear scans cost on a vault where many notes share a
+name. They do not, at this size:
+
+- a CPU profile of a fresh collision import
+  (`j32n/collision-fresh-before.pprof`) puts `buildLinkNamespace` and
+  `appendUnique` below the profiler's 0.38 s threshold, under 0.5% of 77 s of
+  samples;
+- `BenchmarkBuildLinkNamespaceCollision` builds the namespace for the corpus's
+  shape (5,000 notes named `index.md`, 50 aliases shared by 100 notes each) in
+  **213 ms**, against **223 ms** for the same 5,000 notes with no shared alias.
+  Colliding names make it slightly cheaper: fewer distinct map keys offset the
+  scans.
+
+A set would replace 0.2% of an import with the memory the slice was written to
+avoid, so nothing ships. The benchmark stays, as the evidence and as the thing
+that would notice if this ever became a cost.
+
+## J32-N — the collection scope defeated the title index: **kept**
+
+Found while measuring J32-F. Every link resolved by title ran
+
+```sql
+collection_id = COALESCE(NULLIF(?, ''), collection_id)
+```
+
+which is not a constant SQLite can seek with, so the plan was
+`SCAN documents USING COVERING INDEX documents_title_idx` plus a temp B-tree
+for the ordering — a full index scan per link, and one that grows with the
+library rather than with the import. It was 46% of a fresh collision import,
+35 s of 77 s of samples, at 5,500 notes.
+
+`CollectionScopeSQLFor` writes `collection_id = ?` when the caller has a
+collection and keeps today's predicate when it does not, so an empty collection
+still means every collection and the bound parameter is unchanged. Both
+link-resolution lookups use it: documents by title, and resources by filename.
+
+Declared before the change: wall time on `collision/fresh`. Baseline `15ee070`,
+candidate `6bb843f`, five runs each, alternating. Records in `j32n/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| collision/fresh | wall s | 87.20 | 52.43 | 2.81 | −39.9% | better |
+| collision/fresh | user s | 73.56 | 38.43 | 1.63 | −47.8% | better |
+| collision/fresh | notes/s | 63.1 | 104.9 | 2.05 | +66.3% | better |
+| obsidian-10k/fresh | wall s | 80.15 | 80.02 | 1.45 | −0.2% | within noise |
+| obsidian-10k/fresh | user s | 76.36 | 75.30 | 0.83 | −1.4% | better |
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_links` — 16,000 rows on the collision corpus and 30,000 on
+the ordinary one, including every row's resolution status and target — and the
+importer reports the same warnings, all 101 ambiguity warnings included. A
+scope test pins the rendered predicate for a named collection, an empty one and
+a blank one, with and without a table alias.
+
+## J32-G — §3.1C, hash Markdown from the bytes already read: **reverted**
+
+`readInventory` streams each file to a hash and then reads it again to take its
+title and aliases, so every Markdown note is read twice — 240 MB of second
+reads for the four notes of the near-limit corpus. The candidate read a note
+once, bounded one byte past the 64 MiB limit, and hashed those bytes.
+
+Declared before the change: wall time on `near-limit-obsidian/fresh`, where the
+second read is largest. Baseline `948260f`, five runs each, alternating.
+Records in `j32g/`.
+
+| attempt | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| `io.ReadAll` (`d7a7cf4`) | wall s | 498.66 | 500.93 | 4.21 | +0.5% | within noise |
+| `io.ReadAll` | allocated bytes | 7.28 G | 7.54 G | 215 K | +3.6% | worse |
+| stat-sized buffer (`82ab0af`) | wall s | 495.87 | 497.60 | 6.20 | +0.3% | within noise |
+| stat-sized buffer | allocated bytes | 7.28 G | 7.78 G | 146 K | +6.9% | worse |
+| ordinary corpus | wall s | 80.01 | 80.27 | 0.46 | +0.3% | within noise |
+| ordinary corpus | allocated bytes | 379.2 M | 375.0 M | 336 K | −1.1% | better |
+
+**Why it does not pay.** The second read comes from the page cache, which is
+warm, so removing it saves almost nothing. Meanwhile holding a 60 MiB note in
+one buffer allocates more than the streaming hash's 32 KiB buffer plus
+`os.ReadFile`'s stat-sized one: `io.ReadAll` grows by doubling, and
+`bytes.Buffer.ReadFrom` grows past a capacity hint as well, so the second
+attempt was worse than the first. Both are kept in `j32g/`.
+
+**What is not shown.** Caches cannot be dropped on this machine (no
+passwordless sudo, as J20 recorded), so the cold-cache case — where halving the
+bytes read from disk would matter — was not measured. That is a limit of the
+measurement, not evidence either way, and it is why the finding is recorded as
+reverted here rather than closed as wrong.
+
+The ordinary corpus did gain 1.1% of allocations, which is not the declared
+metric and is not worth a second way to read a file.
+
+## J32-Q — a block's text, copied three times: **kept**
+
+The allocation profile of a fresh near-limit import
+(`j32r/near-limit-before.allocs`) put 3.31 GB of 6.95 GB in block extraction.
+It was three copies, not one:
+
+- `identify` joined its five parts with `strings.Join` and converted the result
+  with `[]byte(...)`: two whole copies of a block's text per block;
+- `normalize` split the text into lines and joined them back even when no line
+  had trailing whitespace and there was no carriage return;
+- each block's text was collected as a `[]string` of its lines and joined.
+
+Now: a block's text is written once into a builder grown from the block's own
+extent, or is the line itself when the block has one line; `identify` appends
+into a scratch buffer the next block reuses; `normalize` returns what it was
+given when nothing would change.
+
+**Two attempts measured worse and were replaced, not kept.**
+
+| attempt | one large note | many small blocks |
+|---|---|---|
+| before the slice | 175.5 MB, 121 allocs | 56.3 MB, 147,949 allocs |
+| builder grown by doubling | 206.1 MB, 140 allocs | — |
+| streaming `sha256.New` per block | — | 55.8 MB, 214,604 allocs |
+| what shipped | **103.4 MB, 86 allocs** | **54.7 MB, 111,286 allocs** |
+
+A builder left to double allocates about twice a block's size, which is worse
+than the join it replaced; and `sha256.New` returns an interface, so handing it
+the digest array makes that array escape once per block. Both are why the
+shipped version hashes through a reused buffer instead of streaming.
+
+Declared before the change: allocated bytes on `near-limit-obsidian/fresh`.
+Baseline `e8469f8`, candidate `994894e`, five runs each, alternating. Records
+in `j32q/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 7.28 G | 5.85 G | 272 K | −19.6% | better |
+| near-limit-obsidian/fresh | allocations | 73,984 | 70,477 | 245 | −4.7% | better |
+| near-limit-obsidian/fresh | wall s | 520.97 | 508.68 | 32.38 | −2.4% | within noise |
+| link-dense/fresh | allocated bytes | 269.6 M | 254.7 M | 216 K | −5.6% | better |
+| obsidian-10k/fresh | allocated bytes | 379.0 M | 348.8 M | 589 K | −8.0% | better |
+| obsidian-10k/fresh | allocations | 4,661,580 | 4,401,560 | 340 | −5.6% | better |
+
+Wall time moves within noise everywhere: this is allocation, and the import is
+bound by other work. Nothing regressed on any case.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Reference implementations of `identify` and
+`normalize` — the code this replaced — are kept in the tests and compared
+against the new code across sixteen texts and five block kinds. Both corpora
+imported by each binary produce identical `document_blocks`, 40,000 rows and
+54, with every ID, hash, slug, ordinal and offset equal, and identical
+`document_links`.
+
+## J32-S — eleven allocations per block: **kept**
+
+`MaxBlocksPerDocument` caps a note at 10,000 blocks, so the many-blocks
+benchmark's 111,000 allocations were about eleven per block: a regexp replace
+to strip each list marker (and a `sync.Pool` entry per call), the occurrence
+built as a string only to be hashed, the hash and the ID allocated twice each,
+and `Slugify` lowercasing a whole heading into a copy before collecting runes
+into a slice to convert once more.
+
+Now the list marker, heading and table-row shapes are matched by hand, the
+occurrence is appended as digits, the hash and ID are written into stack arrays
+and converted once each — two strings are stored, so two allocations are the
+floor — and `Slugify` writes bytes into a buffer sized from its input.
+
+**The regexps stay in the package** as the reference the tests hold the
+matchers to, across 4,050 lines covering every marker shape, each whitespace
+byte, both digit terminators and the near-misses (`- `, `1.`, `1 item`,
+`--`, `#######`, `|`, `x|`). What is recognised cannot drift without the tests
+saying so.
+
+| shape | before J32-Q | after J32-Q | after J32-S |
+|---|---|---|---|
+| one large note | 175.5 MB, 121 allocs | 103.4 MB, 86 allocs | 103.4 MB, 80 allocs |
+| many small blocks | 56.3 MB, 147,949 allocs, 324 ms | 54.7 MB, 111,286 allocs, 274 ms | **52.9 MB, 36,843 allocs, 196 ms** |
+
+Declared before the change: allocations on `obsidian-10k/fresh`, where a note
+has few blocks and the per-block cost is the whole cost. Baseline `9ade826`,
+candidate `0377418`, five runs each, alternating. Records in `j32s/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocations | 4,401,480 | 4,081,300 | 347 | −7.3% | better |
+| obsidian-10k/fresh | allocated bytes | 348.6 M | 337.2 M | 116 K | −3.3% | better |
+| obsidian-10k/fresh | wall s | 82.49 | 79.96 | 12.12 | −3.1% | within noise |
+| near-limit-obsidian/fresh | allocations | 70,470 | 65,358 | 146 | −7.3% | better |
+| near-limit-obsidian/fresh | wall s | 502.87 | 501.16 | 8.11 | −0.3% | within noise |
+
+Wall time stays within noise, and the ordinary corpus's range was unusually
+wide this run (12.1 s against the 0.5–2.8 s of earlier runs), which is its own
+reminder that a 3% wall-time move here would not have been a result.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. Both corpora imported by each binary produce
+identical `document_blocks` — 40,000 rows and 16,500 — with every ID, hash,
+slug, ordinal and offset equal.
+
+## J32-T — block storage reused across notes: **kept, after a capped second attempt**
+
+`Extract` allocated a block slice, a line table and two maps for every note,
+and an import parses every note in a library. An `Extractor` keeps them; the
+store holds one and resets it after each note is written. `Extract` remains for
+callers that keep blocks around, since the reused buffers are valid only until
+the next call.
+
+**The first attempt improved allocations and regressed live heap by 77 MB.**
+`Reset` cleared what the buffers referred to and kept their capacity — which is
+the point of reuse — but a 60 MiB note's line table is about four million
+entries, so after one such note the process held 77 MB for good:
+
+| attempt | case | allocated bytes | live heap | verdict |
+|---|---|---:|---:|---|
+| uncapped (`e2d08ad`) | near-limit | 5.85 G → 4.95 G (−15.4%) | 639 KB → **77.0 MB** | worse |
+| capped (`eb9cd33`) | near-limit | 5.849 G → 5.848 G (−0.02%) | 644 KB → 641 KB | within noise |
+
+`Reset` now gives back a line table, block slice or scratch buffer past its cap
+(65,536 lines, 4,096 blocks, 1 MiB). **The near-limit byte gain went with it**,
+and that is the honest reading: on that corpus the 15% came from retaining the
+table, which is the thing that cannot be kept. What remains there is the
+allocation count.
+
+Declared before the change: allocated bytes and allocations. Baseline
+`370cd02`, candidate `eb9cd33`, five runs each, alternating. Both records are
+in `j32t/`, the first attempt's under `-uncapped`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocated bytes | 337.0 M | 283.8 M | 572 K | −15.8% | better |
+| obsidian-10k/fresh | allocations | 4,081,170 | 3,800,920 | 229 | −6.9% | better |
+| obsidian-10k/fresh | live heap bytes | 1.155 M | 1.152 M | 14 K | −0.3% | within noise |
+| near-limit-obsidian/fresh | allocations | 65,323 | 60,106 | 76 | −8.0% | better |
+| near-limit-obsidian/fresh | peak RSS KiB | 1,140,580 | 1,088,960 | 123,176 | −4.5% | within noise |
+
+Across 200 notes the parser's own benchmark goes from 15.5 MB and 76,246
+allocations to 2.6 MB and 66,210, and from 137 ms to 113 ms.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. A reuse test runs notes of decreasing block
+count through one `Extractor` and compares every block with what a fresh
+`Extract` returns; a reset test proves the buffers refer to nothing afterwards;
+a third proves a note past the caps hands its buffers back while an ordinary
+one still reuses. Both corpora imported by each binary produce identical
+`document_blocks`, 40,000 rows and 616.
+
+## J32-U — is an edit script the right model? **Yes, and it was already half-built**
+
+The owner's question: import *compiles* a note, so should everything done to the
+body before writing — canonicalizing newlines, rewriting link ranges,
+prepending frontmatter, trimming — be collected as edits against the original
+bytes and applied once, the way a text editor's rope handles edits?
+
+**The answer has two halves.**
+
+*A rope, no.* A rope pays for itself when a program makes many small edits to
+one large text and keeps it live between them. An import makes one pass and
+writes the result once, and J32-D already turned that pass into a single
+assembly. The remaining copies were not edits but *re-materializations* — the
+same bytes converted between `[]byte` and `string`, split and rejoined. A rope
+would add a structure over the text without removing one conversion, and would
+have to flatten itself for the database write. Go already gives the operation a
+rope would provide: a string slice shares its bytes and copies nothing.
+
+*An edit list, yes — and J32-D had already made one.* `rewriteObsidianLinks`
+produced a list of replacements and applied it in one pass, then
+`augmentFrontmatter` copied the result again to rebuild the frontmatter around
+it. So the edit script was there; it just stopped short of the last stage.
+`planObsidianLinks` now returns the edits, and `canonicalBodyOnce` writes the
+frontmatter and the edited body together, locating the frontmatter by offset
+instead of copying it out. The staged path remains for what the one pass
+declines: a rewrite straddling the frontmatter delimiters, or overlapping
+replacements.
+
+**No separate intermediate representation was needed**, and that is the
+result: a general edit DSL would have been a new IR on the import path, and the
+measurement below was obtained by extending the list the code already had.
+
+Declared: allocated bytes. Baseline `bae3c0b`, candidate `09e2cbe`, five runs
+each, alternating; the near-limit case re-measured at nine. Records in `j32u/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| obsidian-10k/fresh | allocated bytes | 283.7 M | 268.8 M | 379 K | −5.2% | better |
+| obsidian-10k/fresh | allocations | 3,801,040 | 3,720,910 | 309 | −2.1% | better |
+| obsidian-10k/fresh | user s | 74.10 | 73.58 | 0.23 | −0.7% | better |
+| near-limit-obsidian/fresh (9 runs) | allocated bytes | 5.85 G | 5.09 G | 237 K | −12.9% | better |
+| near-limit-obsidian/fresh (9 runs) | live heap bytes | 641,344 | 641,560 | 1,952 | +0.03% | within noise |
+
+At five runs the near-limit live heap was flagged worse — 641,080 → 643,384
+against a range of 1,512 — so the case was re-measured at nine runs per binary:
+a 216-byte difference against a 1,952-byte range. The narrow range was the
+artefact, as in J32-E. Both records are kept.
+
+**What it means for the two slices it was measured against.**
+- **J32-P (assemble the canonical body once) is withdrawn**: this *is* that
+  change, arrived at from the other direction.
+- **J32-O stands, with its target now exact.** The profile taken after this
+  change (`j32u/near-limit-after.allocs`) still shows 480 MB in
+  `splitFrontmatter`, all of it from `markdownTitle`, which converts a whole
+  note to `[]byte` and back to find its frontmatter while building the
+  inventory. `frontmatterRegion` already answers that by offset.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. The one-pass assembly is held to the staged
+path byte for byte across eight note shapes, 3,000 randomly assembled notes and
+three note paths, and `frontmatterRegion` is held to the splitter that returns
+the bytes. Both corpora imported by each binary produce identical `documents`
+and `document_revisions` apart from the volatile identifier columns, so every
+canonical body is unchanged.
+
+**Where the 6.95 GB stands.** After J32-Q, S, T and U a fresh near-limit import
+allocates **4.85 GB**, down 30%. What is left: the body read back out of SQLite
+(721 MB, J32-R), string conversions (720 MB), the line table (497 MB),
+`markdownTitle`'s frontmatter split (480 MB, J32-O), block identity (480 MB),
+and the note read twice (480 MB, which J32-G measured and did not pay for).
+
+## J32-O — read a note's title without copying the note: **kept**
+
+J32-U's profile put 480 MB of a 4.85 GB near-limit import in `splitFrontmatter`,
+all of it from `markdownTitle`. That function copied a whole note twice to
+inspect a handful of its bytes:
+
+- `splitFrontmatter` converted the body to `[]byte`, split it, and converted
+  both halves back;
+- `strings.Split(body, "\n")` built a slice of every line — about four million
+  for a 60 MiB note — to find the first `# ` heading.
+
+Both are now slices of the body the caller already holds: the frontmatter is
+located by offset with `frontmatterRegion` (added by J32-U), and the lines are
+walked one at a time with `strings.Cut`.
+
+On a 7.5 MB note the function goes from **18.19 MB and 5 allocations to 32
+bytes and 1**, and runs 2.9× faster.
+
+Declared: allocated bytes on `near-limit-obsidian/fresh`. Baseline `09e2cbe`,
+candidate `11faa99`, five runs each, alternating. Records in `j32o/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 5.09 G | 4.56 G | 76 K | −10.5% | better |
+| near-limit-obsidian/fresh | allocations | 58,719 | 58,037 | 99 | −1.2% | better |
+| near-limit-obsidian/fresh | wall s | 502.95 | 496.51 | 13.66 | −1.3% | within noise |
+| obsidian-10k/fresh | allocated bytes | 268.6 M | 262.8 M | 353 K | −2.1% | better |
+| obsidian-10k/fresh | allocations | 3,720,870 | 3,680,800 | 365 | −1.1% | better |
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh`
+passes with no temp entry left. A note is addressed by its title, so the old
+reading is kept in the tests and compared against the new one across twenty
+shapes, 3,000 randomly assembled bodies and four note paths — including
+unclosed frontmatter, CRLF, an empty title key, `#` without a space, and an
+indented heading. Both corpora imported by each binary produce identical
+`documents` and `document_links` apart from the volatile identifier columns.
+
+## J32-V — a block's text, copied twice more: **kept**
+
+Counting what a near-limit import allocates named two copies the earlier slices
+had left: `joinLines` rebuilt a block from its trimmed lines even when trimming
+changed nothing — and then the text is exactly the bytes between the block's
+offsets, which a slice already names — and `identify` copied that same text
+again into the hash scratch. On this corpus a note is one enormous paragraph, so
+each was the whole note.
+
+Now a block's text is `body[from:to]` whenever nothing was trimmed and no
+carriage return was stripped, and a block past 64 KiB is hashed by streaming it
+through a hasher the `Extractor` keeps, while smaller ones keep the scratch,
+which costs no allocation at all.
+
+**Two mistakes the benchmarks caught.** The digit buffer for the occurrence,
+shared between the streaming and scratch branches, escaped for *every* block
+because one branch hands it to an interface: 6,674 extra allocations on a
+10,000-block note. It now lives inside the streaming branch. And the large-note
+benchmark's lines ended in a space, so it never met the case being measured;
+trimmed, as the corpus writes them, it shows the change.
+
+| shape | before | after |
+|---|---|---|
+| one large note | 103.15 MB, 84 allocs | **77.54 MB, 91 allocs** |
+| many small blocks | 52.85 MB, 36,848 allocs | **52.74 MB, 33,516 allocs** |
+
+## J32-W1 — hash a body without copying it: **kept**
+
+`insertRevisionLocked` and `noteFingerprint` each converted a whole note from
+`string` to `[]byte` only to hash it. `SHA256HexString` hashes through a 32 KiB
+window instead: a 68 MiB body costs **160 bytes and three allocations rather
+than 72 MB and five**, and runs 15% faster. The bytes hashed are the same
+bytes, so the hash is the same hash.
+
+### What the two measured, together
+
+Both were measured in one window against a common baseline, `11faa99` (J32-O),
+five runs each, three binaries alternating. Records in `j32v/` and `j32w1/`.
+
+| case | metric | J32-O | J32-V | J32-W1 | baseline range |
+|---|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | allocated bytes | 4.56 G | 4.05 G (−11.1%) | **3.55 G (−12.4%)** | 131 K / 173 K |
+| near-limit-obsidian/fresh | peak RSS KiB | 1,021,840 | 889,960 (−12.9%) | 842,996 | 53,696 |
+| near-limit-obsidian/fresh | wall s | 493.36 | 492.94 | 491.19 | 6.02 / 8.62 |
+| obsidian-10k/fresh | allocated bytes | 262.7 M | 253.4 M (−3.6%) | 253.4 M (unchanged) | 754 K / 471 K |
+
+**W1 does nothing on the ordinary corpus, and that is the expected result**, not
+a disappointment: those notes are a few hundred bytes, so converting one to hash
+it was never a cost. Its declared case is the near-limit corpus, where a note is
+60 MiB. Wall time is within noise on both, as it has been throughout the
+allocation series.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left for both. Three corpora — ordinary, collision and
+near-limit — imported by the baseline and by the J32-W1 binary produce identical
+`document_blocks` (40,000, 16,500 and 616 rows) and identical
+`document_revisions`, which is where the content hash W1 computes differently is
+stored; only the volatile identifier columns differ. `SHA256HexString` is also
+held to `SHA256Hex` at every size around the chunk boundary, including empty,
+embedded nulls and multi-byte text.
+
+**Where the 6.95 GB stands.** A fresh near-limit import allocated 6.95 GB when
+the counting began and now allocates **3.55 GB, down 49%**. What is left, by the
+profile at `a3d0bef` plus these two changes: two existence checks reading whole
+bodies back out of SQLite (480 MB, J32-H), the link-rebuild read-back (240 MB,
+J32-I), the note read from disk twice (480 MB), the two `string(raw)`
+conversions (480 MB, J32-W), the line table (502 MB, headers rather than
+copies), and the canonical body itself, which is the result.
+
+## J32-H — F3, ask which documents exist instead of reading them: **kept**
+
+`currentDocumentIDs` and `processLinkRebuild` called `GetDocuments` and looked
+only at whether each id came back, so every body crossed the cgo boundary as a
+Go string to be discarded: 480 MB of a near-limit import, and a cost that grows
+with the size of a library's notes rather than with the import.
+`ExistingDocumentIDs` selects `d.id` alone, with the same join to the current
+revision and the same `deleted_at IS NULL`, so a deleted document and one whose
+revision row is missing are absent exactly as they were. The notes phase keeps
+`GetDocuments`, because it compares bodies.
+
+Declared: allocated bytes on `near-limit-obsidian/fresh`. Baseline `806730e`
+with the corrected harness, candidate `58e4002`, five runs each, alternating.
+Records in `j32h/`.
+
+| case | metric | baseline | candidate | baseline range | change | verdict |
+|---|---|---:|---:|---:|---:|---|
+| near-limit-obsidian/fresh | allocated bytes | 3.55 G | 3.05 G | 127 K | −14.2% | better |
+| near-limit-obsidian/fresh | allocations | 57,528 | 50,925 | 56 | −11.5% | better |
+| near-limit-obsidian/fresh | system s | 16.91 | 15.23 | 0.19 | **−9.9%** | better |
+| near-limit-obsidian/fresh | wall s | 490.19 | 487.16 | 5.82 | −0.6% | within noise |
+| obsidian-10k/fresh | allocated bytes | 253.4 M | 232.3 M | 432 K | −8.3% | better |
+| obsidian-10k/fresh | allocations | 3,640,670 | 3,320,800 | 188 | −8.8% | better |
+
+System time falling by 10% is the first kernel-time move of the allocation
+series, and it fits what changed: this removes work from the cgo boundary rather
+than from the heap.
+
+### The live-heap metric was wrong, and this is how that surfaced
+
+At five runs, and again at nine, `live_heap_bytes` looked **worse** on both
+corpora — about +80 KB against a range of 7 KB. It was not the change. The
+nine-run values were bimodal (three runs at the baseline's level, six 70–150 KB
+above it) with no relation to wall time, and the runs that read high were the
+runs with **fewer GC cycles**: 34–36 against the baseline's 37–38, because the
+candidate allocates 8% less.
+
+`HeapAlloc` counts reachable objects *and* unreachable ones the collector has
+not swept yet, and `runtime.GC` completes the mark while leaving the sweep lazy.
+So the metric was reading "what is held, plus whatever this run had not got
+around to freeing", which moves with how many collections a run happened to do.
+The harness now collects twice, and the same comparison reports live heap within
+noise: 628,248 → 628,280 bytes on the near-limit corpus, 1.147 M → 1.145 M on
+the ordinary one.
+
+The nine-run record taken with the unswept metric is kept in `j32h/` as
+`…-unswept-metric.json`. **No earlier slice was decided on live heap** — J32-C
+recorded it explicitly as the wrong metric for a transient retention, and every
+other verdict rested on allocated bytes, wall time, peak RSS or a count — but
+every live-heap figure in the sections above carries this noise, and the ones
+that mattered have been re-read since.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. A test holds `ExistingDocumentIDs` to `GetDocuments` on
+present, deleted, revisionless and never-existed ids, on an empty list and on a
+cancelled context. Both corpora imported by each binary produce identical
+`document_links` and `index_outbox` rows and identical
+`link_indexes_refreshed` counts, so the presence check selects exactly the notes
+the full read selected.
+
+## J32-I — F2, the final link pass repeated itself: **kept, and the largest win**
+
+A CPU profile of a fresh near-limit import (`j32i/near-limit-before.cpu`, 516 s
+of samples) found where the import actually spends its time, and it was not
+where the allocation slices had been working:
+
+| work | share |
+|---|---:|
+| `rebuildDocumentLinksLocked`, both callers | **67.2%** (346.9 s) |
+| — when each note is written | 173.7 s |
+| — the final pass, over the same body | **173.2 s** |
+| of which `markdownlinks.Extract` (regexps) | 256.8 s |
+| the importer's own `planObsidianLinks` | 129.4 s |
+| SQLite, all of it (`cgocall`) | **4.3%** (22 s) |
+
+A note's links were parsed three times and its blocks twice. The final pass
+exists for a real reason — a note may link to one imported later, so its links
+must be resolved again once every note exists — but *parsing* cannot change
+between the passes: the body is the same bytes. Only resolution can.
+`document_links` already stores every part of a candidate, so the pass now
+re-resolves each row and writes back only what a resolution decides. It parses
+nothing, rebuilds no blocks, and asks for the collection alone rather than
+reading a body it will not parse.
+
+**The correction this carries.** An earlier profile of the `collision` corpus
+put 89% of samples in `cgocall`, and that was generalized too far: 5,500 small
+notes are bound by per-row SQLite work, four 60 MiB notes by parsing. Same
+importer, opposite bottleneck. It is why nine slices of allocation work halved
+allocated bytes and moved wall time by a tenth — and why this slice, which
+deletes duplicated work rather than shaving allocations, moves it by a third.
+
+Declared: wall time on `near-limit-obsidian/fresh`. Baseline `9f5aead`,
+candidate `fed52e8`, five runs each, alternating. Records in `j32i/`.
+
+| case | wall s before | wall s after | baseline range | change |
+|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 490.43 | **337.92** | 49.37 | **−31.1%** |
+| obsidian-10k/fresh | 77.39 | 69.73 | 1.99 | −9.9% |
+| collision/fresh | 51.50 | 48.12 | 1.30 | −6.6% |
+| collision/reimport | 19.77 | 17.24 | 1.19 | −12.8% |
+
+Allocated bytes fell with it: −35.6% on the near-limit corpus, −6.2%, −6.0% and
+−5.7% on the others. Every case improved and none regressed — the first slice in
+the item for which that is true.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Three tests state the invariant: re-resolution produces
+what reparsing produced across resolved, unresolved, external, anchor-only and
+resource links; a target imported later becomes resolved while every field the
+body decided stays byte-identical; and a document with no block rows is declined
+so the old parse still runs for anything this path cannot vouch for — a note
+with text always produces at least one block, so blocks are the signal that the
+current path wrote the rows.
+
+Both corpora imported by each binary produce identical `document_blocks` and,
+in `document_links`, **every column except the autoincrement `id`**: 30,000 and
+16,000 rows, hash-identical when that column is excluded. The ids differ because
+the old pass deleted and re-inserted every row while this one updates in place,
+so the rows keep the numbers the write gave them. Nothing depends on the value:
+links are ordered by `source_line, source_column, id`, so position in the body
+decides, and links are neither exported in an archive nor journaled for sync —
+they are derived from the body and rebuilt whenever it changes.
+
+## J32-Y — match links without a regexp engine: **kept, and the fastest slice**
+
+The same profile that found J32-I found this: 89.6% of a near-limit import's
+samples were regexp matching, 256.8 s of it inside `markdownlinks.Extract`.
+Neither link pattern needs an engine. Both character classes exclude the
+terminator that ends them — `[^\]\n]*` stops at the `]` it is looking for — so
+each match is found by scanning forward once, with no backtracking and no
+alternatives to weigh.
+
+Declared: wall time on `near-limit-obsidian/fresh` and `link-dense/fresh`.
+Baseline `fed52e8` (J32-I), candidate `094c3c0`, five runs each, alternating.
+Records in `j32y/`.
+
+| case | wall s before | wall s after | baseline range | change | allocated bytes |
+|---|---:|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 336.64 | **83.98** | 2.69 | **−75.1%** | −0.01% |
+| link-dense/fresh | 25.50 | 20.87 | 0.67 | −18.2% | −5.5% |
+| obsidian-10k/fresh | 69.96 | 66.36 | 3.38 | −5.1% | −3.6% |
+| collision/fresh | 47.70 | 46.81 | 1.25 | −1.9%, within noise | −3.1% |
+
+On the parser's own benchmark, a link-dense body goes from **1,220 ms and
+37.6 MB to 133 ms and 28.4 MB — 9.2× faster**.
+
+**The first form regressed, and was replaced rather than excused.** It collected
+each pass's matches into a slice that grows once per note, and measured **0.7%
+more allocated bytes** than the regexps on the two small-note corpora — past
+their range, so a regression by the rule, even beside a 75% wall-time win.
+Handing each match to a visitor removes the intermediate: the slice form was
+146 ms and 34.3 MB on the benchmark, the visitor form 133 ms and 28.4 MB, and
+every corpus now improves or holds with no regression anywhere. Both
+measurements are kept in `j32y/`, the first as `…-span-slice.json`.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. `markdownLinkRE` and `wikiLinkRE` stay in the package
+as the reference: the tests compare the scanners' offsets and capture groups
+against them on **20,048 bodies** — 48 written for the edges, 20,000 generated
+from brackets, bangs, newlines, pipes, anchors and multi-byte text — and hold
+`Extract` field for field against a copy of its old self. Three corpora imported
+by each binary produce identical `document_links`: 30,000, 16,000 and 12,677
+rows, with every offset, rune column, anchor and context equal.
+
+**A latent bug found, recorded rather than fixed.** The de-duplication between
+the two passes could never fire: the Markdown pass stored keys shaped
+`markdown:target:display` while the wiki pass looked up the raw matched text, so
+no lookup ever matched and a link both patterns find has always been reported
+twice. J32-Y removed the dead map and `candidateKey` with it — dead code should
+not sit in a parser pretending to guard something — but removing it decided
+nothing, so what the guard was reaching for is now **J37**: a wiki link inside a
+Markdown link's target produces two `document_links` rows over overlapping bytes,
+and which one should survive is a decision about meaning, not performance.
+
+### Where the import stands after J32-I and J32-Y
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **84.0 s** | **−84.0%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 837 MB | −16.1% |
+
+The clock moved when the work went away, not when the copies did: eleven slices
+of allocation work took wall time down about a tenth, and two slices that
+deleted duplicated *parsing* took it down by a further factor of four.
+
+## J32-K — F5, byte-bounded batches: **kept, with its cost stated**
+
+A batch was windowed by note count alone — a hundred by default, five hundred at
+most — while the notes phase keeps every canonical body of a batch until it is
+written. A batch's memory was the sum of its notes' sizes with nothing bounding
+that sum: a hundred notes of 60 MiB would ask for 6 GB. A window now ends at the
+count limit or once it holds 64 MiB of notes, the size one note may already
+reach, so a large note becomes a batch of its own and nothing legal is refused.
+The sizes come from the inventory, so no file is read to decide a window.
+
+**The corpus had to be built for it.** `near-limit-obsidian` holds four large
+notes among two hundred small ones, so a hundred-note batch happened to hold
+only those four, and the bound had little to separate. `many-large` is twelve
+notes of 60 MiB and nothing else — the shape a count-bounded batch holds all of
+at once.
+
+Declared: peak RSS. Baseline `094c3c0`, candidate `21df22f`, five runs each,
+alternating. Records in `j32k/`.
+
+| case | peak RSS before | after | baseline range | change | wall s |
+|---|---:|---:|---:|---:|---:|
+| many-large/fresh | 1.88 G | **917 M** | 25 M | **−51.3%** | −1.3% |
+| near-limit-obsidian/fresh | 838 M | 784 M | 1.5 M | −6.5% | unchanged |
+| obsidian-10k/fresh | 42.8 M | 43.1 M | 0.7 M | within noise | unchanged |
+| near-limit-joplin/fresh | 1.39 G | 1.39 G | 121 M | **nothing** | unchanged |
+
+**What it costs, and why that is the mechanism rather than a side effect.** On
+`many-large`: 4,923 → 5,826 allocations (+18.3%) and 300 → 355 prepared
+statements (+18.3%), both past their range. Bounding a batch *means* more
+batches, and each batch commits and prepares statements. The absolute price is
+903 allocations and 55 statements against halving peak RSS from 1.88 GB to
+917 MB, and wall time improved rather than paying for it. Under J32's rule that
+is a trade-off for the owner and not a ship: it was put to the owner with these
+numbers and kept on that basis, 2026-09-26.
+
+**Joplin shows nothing because Joplin was not changed.** Its importer batches in
+its own code, and its near-limit peak — 1.39 GB — is higher than Obsidian's was.
+Carrying this across is J38-C.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Tests state the window rule — count decides for small
+notes, one note past the budget stands alone, the budget closes a window early —
+and that a byte-bounded import interrupted between batches and resumed produces
+the library an uninterrupted one produces. Both corpora imported by each binary
+produce identical `document_blocks`, `document_links` and `documents`.
+
+One field of the import report changes, and it is the change itself:
+`batches_completed` on `many-large` goes from 2 to 7. The other 26 fields of the
+report, and every content row, are identical.
+
+## J32-J — checkpoint consolidation: **reverted, and the premise was wrong**
+
+The notes and link-rebuild phases pass their checkpoint to the store with the
+batch, so it commits atomically with the rows it describes — and the walker then
+wrote the same checkpoint again, computed by the same rule. That looked like two
+commits per batch where one was already correct, so the walker was changed to
+write a checkpoint only for phases whose batch does not carry one.
+
+**A counter was added to measure the declared metric, and it disproved the
+premise.** `store.Commits()` counts committed transactions the way
+`store.PreparedStatements()` counts prepared statements. Against a baseline
+rebuilt with the counter (`21df22f` plus the counter, so the only difference is
+the change itself):
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| obsidian-10k/fresh | **commits** | 223 | **223** | 0 | none |
+| obsidian-10k/fresh | prepared statements | 271,516 | 271,314 | 2 | −202 |
+| obsidian-10k/fresh | wall s | 66.72 | 66.16 | 1.70 | within noise |
+| obsidian-10k/reimport | commits | 222 | 222 | 0 | none |
+| obsidian-10k/reimport | wall s | 38.34 | 37.36 | 1.51 | within noise |
+
+`PutImportCheckpoint` is an autocommitted statement, not a `BEGIN`/`COMMIT`
+pair, so the second write was never a second transaction. What the change
+removed is 200 prepared statements and 200 small autocommitted writes per
+10,000-note import — and the clock did not move on a fresh import, a no-op
+reimport, or the collision reimport.
+
+So the finding is not a performance finding, and J32's rule is that a change
+whose measurement shows no gain is reverted rather than kept, as J32-G was. The
+walker is back as it was.
+
+**What is kept from the slice:** the commit counter, because measurement
+infrastructure that corrects a premise has earned its place and J38-C will
+need it, and the test that resumes an import whose *progress publication* fails
+after a batch has committed — the failure the plan named, which is about resume
+rather than about how many times a checkpoint is written.
+
+**The other half of J32-J is not done.** The slice covers checkpoint
+consolidation *and* stable-note skips: skipping a note whose source hash is
+unchanged before reading and parsing it, measured on a no-op and a 1%-changed
+reimport. The harness has no 1%-changed scenario yet, and the skip is where that
+metric belongs.
+
+## J32-Z — a block's marker, read from its tail: **kept**
+
+Re-profiling after J32-I and J32-Y showed an import that looked nothing like the
+one those slices were chosen against, and the leader was a function that had
+been invisible: `splitMarker`, 47.1% of an 84 s import, where
+`markdownlinks.Extract` had been 74.8% of a 525 s one.
+
+`markerRE` is `\s\^([A-Za-z0-9_-]{1,128})\s*$`, anchored at the end of a block,
+but `FindStringSubmatchIndex` scans forward from byte zero: a 60 MiB paragraph
+ran the regexp engine over 60 MiB to inspect its last hundred and thirty bytes.
+What the pattern says reads backwards instead — trailing whitespace, then marker
+bytes, then a caret, then the whitespace before it — in time proportional to the
+marker rather than to the block.
+
+**On a 62 MB block: 9.30 s becomes 576 ns.** Extracting a large note's blocks
+falls from 4,585 ms to 678 ms.
+
+Declared: wall time on `near-limit-obsidian/fresh`. Baseline `ef633c7`,
+candidate `49e60c7`, five runs each, alternating. Records in `j32z/`.
+
+| case | wall s before | wall s after | baseline range | change |
+|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | 82.80 | **45.50** | 1.36 | **−45.1%** |
+| link-dense/fresh | 20.76 | 19.92 | 0.92 | −4.0%, within noise |
+| collision/fresh | 47.80 | 46.37 | 2.23 | −3.0%, within noise |
+| obsidian-10k/fresh | 66.74 | 65.66 | 1.84 | −1.6%, within noise |
+
+User CPU on the near-limit corpus fell 53.7%. Allocations are slightly better on
+all four cases, prepared statements identical, and nothing regressed.
+
+**The first measurement of this slice used the wrong baseline, and is kept to say
+so.** It compared against the binary built from `d2593ae` — the checkpoint
+consolidation that J32-J then reverted — so every case showed prepared
+statements and allocations "worse", which was the consolidation reappearing
+rather than anything this change did. The correct baseline is the revert commit.
+Those records are in `j32z/` as `…-wrong-baseline.json`; the lesson is that a
+binary label does not say whether it is still the tip of the kept work.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. `markerRE` stays in the package as the reference, and
+the tests hold the tail scan to it over **20,036 texts**: markers of every length
+including one past the 128-byte limit, no space before the caret, a caret with
+nothing after it, each kind of trailing whitespace, two marker-shaped tails,
+characters the class excludes, multi-byte text before the marker, and a block
+that is only a marker. The scan reads bytes, which is safe because the marker
+class and Go's `\s` are both ASCII: a UTF-8 continuation byte is neither, so the
+scan stops at it. Both corpora imported by each binary produce identical
+`document_blocks` — 40,000 and 16,500 rows, every marker, hash, slug and offset
+equal — and identical `document_links`.
+
+### Where the import stands
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **45.5 s** | **−91.3%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 762 MB | −23.6% |
+
+An import that took eight and a half minutes takes forty-five seconds. Of the
+three findings that account for almost all of it — the final pass reparsing, the
+link regexps, and a marker pattern scanned from the wrong end — none was in the
+review this item set out to investigate, and all three were found by profiling
+after the review's own candidates had been measured.
+
+## J32-AA — hash a body once, not twice: **kept**
+
+The profile of the 45 s import put SHA-256 at 33.3% of it, spread over four
+sites I could name — and the arithmetic did not fit four. **So the passes were
+counted before anything was changed.** `internal/hashmeter` records the content
+bytes this process hashes and how many times, beside the prepared-statement and
+commit counters, and the answer was **1.26 GB for a 252 MB corpus: exactly 5.0
+passes over every byte**, in 9,318 calls.
+
+| pass | what it hashes | removable |
+|---|---|---|
+| the inventory scan | the source file | no, it is the fingerprint |
+| the read's verification | the source file again | no, it is the guard against a note changing mid-import |
+| `noteFingerprint` | the canonical body | no |
+| **the revision insert** | **the canonical body again** | **yes** |
+| block identity | each block's text | no |
+
+That sized the slice at one pass of five, about 6.6%, before it was built. The
+importer now hashes the canonical body once and uses the value twice: for the
+fingerprint that decides whether the note changed, and as the mutation's
+`ContentSHA256`, which the store writes instead of hashing the body itself. Both
+come from the same local variable in the same function, so "the hash passed is
+the hash of the body passed" holds by construction. Every other caller of
+`insertRevisionLocked` passes nothing and the store hashes as before.
+
+Declared: wall time on `near-limit-obsidian/fresh`, with the hashed-byte count as
+the check that the pass went away rather than moved. Baseline `e607c39`,
+candidate `4ac8e48`, five runs each, alternating. Records in `j32aa/`.
+
+| case | metric | baseline | candidate | baseline range | change |
+|---|---|---:|---:|---:|---:|
+| near-limit-obsidian/fresh | **hashed bytes** | 1.258 G | **1.007 G** | 0 | **−20.0%** |
+| near-limit-obsidian/fresh | wall s | 45.54 | 43.30 | 1.81 | −4.9% |
+| near-limit-obsidian/fresh | user s | 32.24 | 29.33 | 0.36 | −9.0% |
+| obsidian-10k/fresh | hashed bytes | 18.96 M | 14.41 M | 0 | −24.0% |
+| obsidian-10k/fresh | allocated bytes | 203.1 M | 196.7 M | 358 K | −3.2% |
+| obsidian-10k/fresh | wall s | 66.16 | 66.10 | 1.78 | within noise |
+
+Exactly one pass of five went away, which is what the count says and what the
+prediction was: −20.0% of hashed bytes for a predicted 6.6% of wall time, and
+4.9% measured. The ordinary corpus is unchanged in time, because a note of a few
+hundred bytes is not bound by hashing.
+
+**The counter also settled a question the profile could not.** The implied
+throughput is 87 MB/s, which is slow even for a CPU without SHA extensions —
+this one is Coffee Lake, so AVX2 software SHA-256 is the fast path. That is this
+laptop downclocking under hours of sustained AVX2, not anything the code does,
+and it means hashing's *share* here is flattered compared with a desktop.
+
+**Correctness.** The full `go test` through `scripts/check_temp_leaks.sh` passes
+with no temp entry left. Both corpora imported by each binary produce
+`document_revisions` differing only in the random revision `id` — so every
+`content_sha256` is the same value it was — and identical `import_item_states`,
+10,041 and 10,550 rows, so the fingerprints that decide whether a note changed
+are unchanged. `noteFingerprint` now takes the body's hash rather than the body;
+J19's streamed-fingerprint evidence test follows that signature and still
+compares the streamed composition against the current one over the same bytes.
+
+## J32-L — the smaller candidates: **dispositioned, nothing left to ship here**
+
+The slice collected the review's remaining candidates. Re-profiling the import
+at 45 s decided where each belongs.
+
+| candidate | disposition |
+|---|---|
+| F10, the list-prefix match | **done in J32-S**: `listItemRE.ReplaceAllString` per list item became a hand-written matcher, and the block parser's many-blocks shape went from 36,848 allocations and 324 ms to 33,516 and 196 ms |
+| F10, title splitting | **done in J32-O**: `markdownTitle` stopped copying a whole note twice to read its title — 18.19 MB and 5 allocations became 32 bytes and 1 |
+| F7, Joplin's duplicate ID map | **moved to J38** |
+| §3.2B, cached Joplin notebook paths | **moved to J38** |
+| §3.2A, compact Joplin resource representations | **moved to J38** |
+| `cache_size`, `temp_store`, indexes after inserts, on disposable databases | **moved to J38**, because the disposable database is Joplin's: `store.ImportManifest` is opened by `internal/importers/joplinraw` and by nothing in the Obsidian path, so it does not appear in an Obsidian profile at all |
+
+### Where an Obsidian import's remaining time goes, and why J32 stops here
+
+The 43 s import, by profile (`j32z/near-limit-after-j32z.cpu`, taken at 45 s
+before J32-AA removed a hashing pass):
+
+| work | share | why it stays |
+|---|---:|---|
+| `insertDocumentFTSLocked` — full-text tokenization | 10.40 s, **24%** | the full-text index is inline by the owner's decision in J19; making it not inline is a design change, not a tweak |
+| SHA-256, four remaining passes | ~12 s, 28% | the file's hash, the read's verification, the fingerprint and block identity — J32-AA removed the fifth, and each of these four is the only copy of its answer |
+| `COMMIT` — fsync | 4.79 s, 11% | `synchronous` is never relaxed on a canonical library, which is this item's own boundary and J19's owner decision |
+| other SQLite inserts | ~5.4 s, 12% | the revision, the source row, the document |
+| parsing | ~3 s, 7% | after J32-Q, S, T, Y and Z |
+
+Everything above the line is work being done once, for a reason. The three
+findings that took this import from 525.6 s to 43.3 s were all *repeated* work —
+a pass that reparsed what another had just parsed, a regexp engine run over a
+whole note to read its last bytes, a body hashed twice. The remaining costs are
+each the only time the import does that thing, and the two largest are governed
+by decisions the owner has already made rather than by how the code is written.
+
+## J32-M — the record
+
+`performance-code-review.md` is a dated snapshot (2026-09-17) that measured
+nothing: it says so itself, and its numbers come from J17, J19 and J20. This
+section supersedes it by reference and does not edit it.
+
+### Every finding the review made
+
+| finding | disposition | measurement |
+|---|---|---|
+| **F1** repeated SQL preparation | **kept** (J32-B) | prepared statements 381,522 → 281,520 on the ordinary corpus, −26.2%; wall −5.1% |
+| **F2** blocks and links derived twice | **kept** (J32-I) | the final pass re-resolves from stored rows instead of reparsing: near-limit wall 490.4 → 337.9 s, −31.1%, and every corpus improved |
+| **F3** body-bearing queries used only for existence | **kept** (J32-H) | `ExistingDocumentIDs`: −14.2% bytes and −9.9% system time on near-limit, −8.3% bytes on the ordinary corpus |
+| **F4** phases bounded in scheduling, not in writes | **not investigated** | excluded by this item's scope as a new store API; the part that was reachable shipped as F5's byte bound |
+| **F5** count-bounded batches are not byte-bounded | **kept** (J32-K) | peak RSS 1.88 GB → 917 MB on a corpus of twelve 60 MiB notes, −51.3%; the cost, 903 allocations and 55 statements, was put to the owner and accepted |
+| **F6** resources incur multiple hash and read passes | **not investigated** | excluded with F4 as a new store API. The note-body half of the same idea was measured: J32-G reverted the single read, and J32-AA removed one of five hashing passes |
+| **F7** Joplin retains duplicate ID maps | **moved to J38** | Joplin is profiled first there, because this item's history says the analogy is a worse guide than the measurement |
+| **F8** coordinate decoration is O(K·B) | **kept** (J32-E) | a cursor per pass: link-dense wall 180.0 → 32.9 s, −81.7% |
+| **F9** alias collisions make namespace construction quadratic | **rejected** (J32-F) | 213 ms at the collision shape against 223 ms with no shared alias: collisions make it *cheaper*, and the profiler cannot see it at all |
+| **F10** redundant parsing and allocation | **kept** (J32-S, J32-O) | the list-prefix match by hand, the title read without copying the note: 18.19 MB and 5 allocations became 32 bytes and 1 |
+| **§3.1A** assemble rewritten text once | **kept** (J32-D) | 11.55 GB allocated becomes 270 MB on the link-dense corpus, −97.7% |
+| **§3.1B** property order only when source is preserved | **kept** (J32-C) | peak RSS −30.9% on a property-rich vault; live heap, the other declared metric, was the wrong one and is recorded as such |
+| **§3.1C** hash Markdown from the inventory read | **reverted** (J32-G) | wall time within noise twice, allocations worse both times; the warm cache makes the second read nearly free, and a cold cache could not be measured here |
+| **§3.1D** checkpoint consolidation and stable-note skips | **half reverted, half deferred** | the consolidation removed 202 statements and no commits at all — the duplicate write was autocommitted, not a transaction — and the skip needs a schema addition, so it is J39 |
+| **§3.1E** disk-backed inventory | **not investigated** | excluded by scope, and the profile never asked for it |
+| **§3.2A, §3.2B** compact Joplin representations, cached notebook paths | **moved to J38** | |
+| **§4.4** parallel parse pipeline | **not investigated** | excluded by scope |
+
+### What the review did not find, which was almost all of it
+
+Three changes took a near-limit import from **525.6 s to 43.3 s**. None was in
+the review:
+
+| change | share it removed | how it was found |
+|---|---|---|
+| J32-I, the final link pass reparsing | 31% of the import | profiling after the review's candidates were measured |
+| J32-Y, links matched without a regexp engine | 75% of what remained | the same profile |
+| J32-Z, a marker pattern scanned from the wrong end | 45% of what remained after that | re-profiling once the earlier leaders were gone |
+
+The review read the code carefully and pointed at the wrong things, because it
+never ran anything: two of its own candidates turned out not to be costs at all
+(F9, §3.1C), and the three largest costs were invisible to reading. Its value was
+in the candidates it named precisely enough to *test* — F1, F2, F3, F5, F8, F10
+and §3.1A all shipped.
+
+### Where the import ended up
+
+| near-limit-obsidian/fresh | at J32-A | now | change |
+|---|---:|---:|---|
+| wall time | 525.6 s | **43.3 s** | **−91.8%** |
+| bytes allocated | 6.94 GB | 1.84 GB | −73.5% |
+| peak RSS | 997.5 MB | 762 MB | −23.6% |
+| hashed bytes | 5.0 passes | 4.0 passes | −20% |
+
+`obsidian-10k/fresh` went from 88.1 s to 66.1 s, `collision/fresh` from 93.2 s to
+46.4 s, `link-dense/fresh` from 193.1 s to 19.9 s, and a corpus of twelve 60 MiB
+notes from 1.88 GB of peak RSS to 917 MB.
+
+### Correctness defects found along the way, none fixed here
+
+J8's rule is that a defect found while measuring becomes its own item.
+
+| defect | item |
+|---|---|
+| Obsidian partial-path links (`[[topic-00001/index]]`) are reported ambiguous although one file ends with the path | **J36** |
+| A link both patterns match is recorded twice, and the de-duplication that was meant to stop it could never fire | **J37** |
+
+### Work this item defined and did not do
+
+| work | item | why |
+|---|---|---|
+| skip a note a reimport cannot change | **J39** | needs a canonical hash recorded per item, which is a schema addition this item's boundaries exclude |
+| carry these findings into the Joplin importer | **J38** | most of J32 already reaches it through shared code; what does not is its batching, its reads and what it asks the store for |
+
+### How the rule behaved
+
+The rule — declared metric, five runs, median beating the baseline's own range,
+nothing else worse — was worth having. It rejected three changes that looked
+right (F9, §3.1C, the consolidation), and it forced four re-measurements that
+changed an answer: J32-E's flagged system time, J32-H's live heap, J32-T's
+retention, J32-Y's allocation. Two of those re-measurements found a defect in the
+harness rather than in the code: `live_heap_bytes` was reading unswept garbage,
+and a binary label does not say whether it is still the tip of the kept work.
+
+Where a measurement was ambiguous the record says so, and where a metric was
+declared wrongly — J32-C's live heap, J32-W2's near-limit target — the record
+says that too rather than quietly choosing the metric that flattered the change.
+
+## Found along the way
+
+- **J36, Obsidian partial-path links.** A link such as `[[topic-00001/index]]`
+  is reported as ambiguous, and left unresolved, although exactly one file ends
+  with that path. The cause is that `resolveNoteID` and `resolveAssetID` have
+  no suffix step. Under the J8 rule this is a plan item of its own, not a J32
+  change. The `collision` corpus exercises it, so whichever of J32-F and J36
+  lands second is measured against a baseline that includes the other.
+
+## Archive
+
+`notrios-v1.0-j32-2937c76.zip`, built from commit `2937c76` — the commit that
+completed this item's work, with the record above in it and the ledger not yet
+flipped. 26,311,272 bytes, 2,907 entries.
+
+The measurement records are in this directory: `baseline/` holds the twelve
+cases J32-A measured before any candidate, and one directory per slice holds
+what that slice measured, including the runs that were taken with the wrong
+baseline or the wrong metric and are kept so the record says which.

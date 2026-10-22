@@ -23,6 +23,10 @@ DOC_OWNERS = {
     "docs/api/rest.md": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
     "docs/archive-v2.md": "go:github.com/renesugar/notrios/internal/archivev2#Export",
     "docs/cli.md": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
+    # Owned by the function that supplies every default the page documents,
+    # rather than by the Config type that docs/service.md already owns: the
+    # page's claim is "this is the default", and Default is what makes it true.
+    "docs/configuration.md": "go:github.com/renesugar/notrios/internal/config#Default",
     "docs/features.md": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
     "docs/journeys-cli.md": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
     "docs/journeys-gui.md": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",

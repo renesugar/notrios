@@ -52,6 +52,7 @@ keeping it current, are in `AGENTS.md`.
 - `PROJECT_DECISIONS.md` — decisions that have been accepted, and the reason each was accepted
 - `PROMPT.md` — the cold-start prompt handed to an agent that has no history
 - `SECURITY_REVIEW.md` — what the security posture was at a named release, and what was still open
+- `performance-code-review.md` — the dated 2026-09-17 Joplin and Obsidian import performance review and its evidence limits
 
 Feature contracts, which describe one capability rather than the project:
 
@@ -80,9 +81,35 @@ Feature contracts, which describe one capability rather than the project:
   in-memory committed-Markdown freshness gate.
 - `cmd/docjourney/` and `internal/docjourney/` — the GUI journey manifest and
   its source and test anchors, for the documented steps a browser can reach.
+- `scripts/check_python_hygiene.py` — two checks, kept separate on purpose.
+  `--sources` is a gate in `make validate`: every tracked shell script that
+  invokes Python, the Makefile, and every workflow must export
+  `PYTHONDONTWRITEBYTECODE` and `PYTHONUNBUFFERED`, because twenty scripts were
+  edited by hand to add that line and the twenty-first is where it gets
+  forgotten. `--byproducts` is a report behind `make bytecode`: leftover
+  `__pycache__` is untidy rather than wrong, and a gate refusing a commit over a
+  git-ignored byproduct would be switched off inside a week.
+- `cmd/docexamples/` and `docs/docexamples/<document>.json` — the tracked
+  use-case examples for a page, and the generator that publishes them. An entry
+  names the *intent* — the keys that must be set together, the command that
+  checks them — and the generator renders both the configuration file and the
+  command, so the fence sets exactly the keys the source names by construction.
+  It also moves the fence's hash in `docs/docaudit/registry.json`, which was
+  done by hand twice in J13-C and was one keystroke from wrong both times; the
+  edit is textual so five hashes do not rewrite 169 entries. Its tests refuse a
+  hand-edited fence, an unregistered example, and an example with neither a
+  check nor a reason. One file per document: a single file every page depends on
+  is a merge conflict with a schedule.
+- `cmd/docconfig/` — generates the key table at the end of
+  `docs/configuration.md` by reflecting over `internal/config.Config` and
+  `config.Default()`, so the documented default for a key is the default the
+  service applies. It owns one marked block; the task-shaped prose above it is
+  written by a person. Its test is the gate: a new key not in the table, or a
+  table edited by hand, fails.
 - `cmd/docplan/`, `internal/docplan/`, and `docs/docplan/PLAN_SLICES.json` —
-  the plan's slice ledger, the generated progress log in `PLAN.md`, and the
-  generated status sentence in `ROADMAP.md`.
+  the plan's slice ledger, the generated progress log in `PLAN.md`, the
+  generated status sentence in `ROADMAP.md`, and the generated project-status
+  block in `README.md`.
 - `cmd/docrules/`, `internal/docrules/`, and `docs/docrules/DOCUMENTS.json` —
   the root-document inventory: what each document is the home for, the pointer
   each carries to `AGENTS.md`, and the check that a new root document declares
@@ -109,6 +136,11 @@ Feature contracts, which describe one capability rather than the project:
 
 ## Packages
 
+- `internal/addressrange/` — the reserved address ranges remote media refuses
+  (J28): the dated default set, parsing and validation of the
+  `security.remote_media` block, the embedded-IPv4 rule, and the one `Check`
+  both the static URL check and the connect-time dial check call. A leaf
+  package so the configuration loader can reject malformed entries.
 - `internal/api/` — shared API request/response models.
 - `internal/api/types.go` mirrors the current REST DTO shapes.
 - `internal/application/` — the transport-neutral application facade H0 chose as
@@ -163,6 +195,11 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/importers/chatgpt/` — ChatGPT `conversations.json` importer (mapping tree, current-node main path, system/tool skip).
 - `internal/importers/claude/` — Claude `conversations.json` importer (flat chat_messages, content blocks).
 - `internal/importers/joplinraw` and `internal/importers/obsidian` record provenance rows on every import run (re-running an import backfills existing notes).
+- `internal/installreport/` — what an installation occupies: every directory and
+  file under the resolved roots, every registered profile including the
+  libraries kept outside those roots, and the program files the installer
+  recorded. It records paths and opens nothing. Taken before a purge, its
+  `--paths` form is the manifest `scripts/check_purged.sh` reads afterwards.
 - `internal/importers/joplinraw/` — hardened Joplin RAW importer: canonical
   first-line titles, CR/LF-only physical parsing (including OCR controls), one
   ordered future/duplicate-property parse, deterministic inventory, nested
@@ -176,7 +213,10 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/importers/obsidian/obsidian.go` owns deterministic one-pass vault
   inventory, nested-folder conflict planning, bounded fingerprint/checkpoint
   phases, exact source bundles, canonical alias/relative/embed/anchor
-  resolution, resource refresh, and link rebuild.
+  resolution, resource refresh, and link rebuild. A reimport skips a note
+  whose recorded fingerprint, recomputed from `store.ImportDocumentHeads`
+  without reading a body, still matches (v1.0 J39); `canonicalRules` must move
+  whenever the canonical output does, and `j39_skip_test.go` pins it.
 - `internal/importers/obsidian/obsidian_test.go` covers exact Markdown/binary
   recovery, hierarchy, conflicts/renames, dry-run parity, interruption/resume,
   resource refresh, richer graph edges, Trash, search, and idempotence;
@@ -185,8 +225,19 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/jobs/` — a durable job record tied to one long-running operation, with
   two cancellation mechanisms because the operations differ: importers stop at a
   committed batch boundary, and the rest are cancelled through the context.
+- `internal/linkreport/` — the ambiguous-links report (v1.0 J40): every link
+  the library or an Obsidian import found several notes for, quoted, with the
+  candidates by title, for the command and the read-only Reports note; REST
+  gets a content-free form and MCP none. It sits above the store and the
+  importer because the import's candidates are rebuilt from provenance by the
+  importer's own code.
 - `internal/localize/` — remote-media localization behind the domain policy,
   quarantine, exact-hash and dry-run rules in `SECURITY_AND_MEDIA_POLICY.md`.
+- `internal/hashmeter/` — counts the content bytes this process has put through
+  SHA-256, and how many times (v1.0 J32-AA). An import hashes a note more than
+  once, a CPU profile could not say how many passes that was, and a counter that
+  every hashing path can reach cannot live in any of them. Content-free: a
+  length and a call, never a byte of what was hashed.
 - `internal/markdownblocks/` — deterministic block splitter behind schema-v14
   addressable blocks and schema-v15 heading slugs; block identity is
   content-derived and scoped to the document, and `Slugify` is the shared
@@ -204,6 +255,13 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/paths/` — the single answer to "where does this file go?". H3 found
   the question answered in twenty-five places and the interesting defects were
   all disagreements between two of them rather than mistakes inside any one.
+- `internal/purge/` — the decision procedure for "may Notrios delete this
+  path?", and the backup that must succeed before it does. A port of H3's
+  reference oracle, made because the safeguards lived in `scripts/lifecycle.py`
+  and a packaged installation ships no Python, so the user most in need of them
+  could not reach them. Two implementations of a deletion rule is the worst
+  possible duplication, so `oracle_test.go` drives H3's own thirty fixtures and
+  fails if the two ever disagree.
 - `internal/profiles/` — the explicit local registry mapping a logical database
   ID to a database on this machine plus G3 runtime-profile config/identity and
   process-isolation validation; stable links resolve only unambiguous matches
@@ -222,6 +280,7 @@ Feature contracts, which describe one capability rather than the project:
   `notebook:`, tags, provenance/time fields, literal unknown-colon fallback,
   URLs/hyphens/emoji, and Trash scope.
 - `internal/recoll/` — external-process Recoll sidecar: generated config (fields prefixes, `publishedts` range slot, `underscoreasletter`), the embedded from-scratch `notrios_md_handler.py` front-matter handler, `recollindex`/`recollq` invocation, query compilation, and result parsing. GPL boundary: binaries are user-installed and never linked or vendored.
+- `internal/recoll/recolltest/` — test support for anything that runs a real Recoll binary: `Isolate` moves `HOME` and every XDG directory under the test's own temporary directory, and `AssertNoExternalIndexers` fails a test whose sidecar configuration declares a Recoll external indexer. `TestEveryLiveRecollTestIsolates` fails the build if a live-Recoll test skips `Isolate` (v1.0 J44). Imported by tests only.
 - `internal/service/` — activates optional Recoll: startup reconciliation and
   index, 30-second bounded drain, 10-minute reconciliation, runtime status,
   cancellation, and stable deduplicated merged search.
@@ -235,6 +294,28 @@ Feature contracts, which describe one capability rather than the project:
 - `internal/stablelink/` — strict parser/formatter for the external
   `notrios://databases/{database_id}/documents/{document_id}` link, with typed
   rejections (foreign scheme, malformed, over-limit, unsupported route).
+- `internal/importers/archivesource/` — one reader for a downloaded export
+  archive (J25, shared in J26). A Source reads an extracted folder or the ZIP
+  as downloaded, in place, and `Nested` reads a ZIP held inside a ZIP (the
+  OpenAI Privacy Portal's shape), spooling it into the instance temp space when
+  large. It bounds entry counts and file sizes, refuses names that escape the
+  archive, and streams JSON arrays with `DecodeArray` rather than reading a data
+  file whole. Each importer supplies a `Spec`: which files mark its data
+  directory, and its own wording when a file is not one of its archives.
+- `internal/importers/conversationnote/` — renders one exported conversation as
+  Markdown (J26). Code and execution output become fenced blocks and
+  attachments are named; thinking, reasoning recaps and tool plumbing are
+  counted rather than written, by owner decision, so what was left out is
+  visible in the import report.
+- `internal/tempspace/` — each instance's own temp directory (J22). Several
+  Notrios instances can run on one machine, so temporary work goes in
+  `data.temp_dir`, one flock-held `p-<id>` subdirectory per process, never in
+  the shared system temp root. Opening a Space removes only the same instance's
+  unlocked leftovers from crashed processes. A nil Space means no instance, and
+  uses a private system temp directory its caller removes.
+  `store.OpenInstanceSQLite` attaches one to a store, and `store.TempSpaceOf`
+  hands it to import manifests, archive verification, export, restore and the
+  Joplin inventory.
 - `internal/store` now exposes update, soft-delete, revision list/read, and revision restore operations with optimistic concurrency.
 - `internal/store` now streams resource bytes into the configured asset store and deduplicates exact blobs by SHA-256.
 - `internal/store` rebuilds `document_links` rows transactionally on document create/update/restore and clears outgoing links on soft delete.
@@ -326,6 +407,10 @@ Feature contracts, which describe one capability rather than the project:
   highlight.js, and cropper locally so nothing is fetched from a CDN (v0.5 E6a),
   and explicitly sets `noMermaid: true` until the planned offline/security-tested
   v0.8 enablement.
+  `elk-refused/` is a local Apache-2.0 package that `package.json` overrides
+  mermaid 12's EPL-2.0 `elkjs` with, so no ELK code is installed or shipped;
+  `src/mermaid-render.ts` lays diagrams out with dagre for the same reason
+  (v1.0 J45).
   `src/html-table-markdown.ts` converts a pasted HTML table into a Markdown pipe
   table and refuses anything a pipe table cannot hold (v0.5 E6b).
   `src/note-query.ts` renders embedded ```note-query blocks after the note has
@@ -350,8 +435,8 @@ Feature contracts, which describe one capability rather than the project:
 - `.github/workflows/docs.yml` — GitHub Pages deployment for the docs site.
 - `docs-site/`, `scripts/build_docs_site.sh`, and `.github/workflows/docs.yml` —
   G18g's production Hugo/Ledger source, exact Apache-2.0 theme provenance,
-  pinned local Pagefind dependency, temporary raw-doc staging, `/notrios/`
-  route adapters, offline policy, and Pages build.
+  pinned local Pagefind dependency, temporary raw-doc staging, route adapters
+  for the configured `baseURL`, offline policy, and Pages build.
 - `docs-site/` + `scripts/build_docs_site.sh` — pinned Hugo/Ledger source and
   temporary raw-Markdown staging followed by a local Pagefind static index.
 - `docs/` — user documentation (published to GitHub Pages and seeded into the Help notebook).
@@ -365,7 +450,8 @@ Feature contracts, which describe one capability rather than the project:
 - `scripts/check_agent_usage.py`, `scripts/agent_usage_preflight.sh`, and
   `skills/agent-usage-preflight/` — model-free Codex rolling-window probe,
   cache-only Claude probe, adaptive operation reserve, and durable-boundary
-  workflow used before long local profiles. CI tests parsing but never queries
+  workflow used before long local profiles. The preflight checks only the
+  agent running it, found from process ancestry (`--agent self`, J24). CI tests parsing but never queries
   a developer account.
 - `scripts/check_release_zip.py` — catches missing `web/dist`, accidental `web/node_modules`, and runtime data in ZIPs.
 - `scripts/check_required_files.py` — verifies required scaffold files exist.

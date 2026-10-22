@@ -1,0 +1,94 @@
+{
+  "schema": "notrios.j40.collision-cost.v1",
+  "commit": "de29307",
+  "corpus": "J32's collision shape (performance/v1.0-j32/make_corpus.py collision): 5,500 notes in 5,050 folders",
+  "load_average_at_start_and_end": [
+    "4.00 5.85 5.98",
+    "6.11 6.53 6.20"
+  ],
+  "load_note": "Firefox was running throughout and used about 1.7 cores; lint and the graph report ran alternately with the report, under the same load, as context.",
+  "import": {
+    "peak_rss_kib": 36904,
+    "wall_s": 50.3
+  },
+  "report_counts": {
+    "notes_with_ambiguous_links": 5000,
+    "ambiguous_links": 5000,
+    "found_by_library": 0,
+    "found_by_import": 5000,
+    "unresolved_links": 5000,
+    "truncated": true
+  },
+  "report_sha256_distinct_across_runs": 1,
+  "links_report": [
+    {
+      "peak_rss_kib": 36448,
+      "wall_s": 0.92
+    },
+    {
+      "peak_rss_kib": 36428,
+      "wall_s": 0.92
+    },
+    {
+      "peak_rss_kib": 36436,
+      "wall_s": 0.94
+    },
+    {
+      "peak_rss_kib": 36672,
+      "wall_s": 0.86
+    },
+    {
+      "peak_rss_kib": 36420,
+      "wall_s": 0.83
+    }
+  ],
+  "lint": [
+    {
+      "peak_rss_kib": 22456,
+      "wall_s": 0.67
+    },
+    {
+      "peak_rss_kib": 22608,
+      "wall_s": 0.57
+    },
+    {
+      "peak_rss_kib": 22536,
+      "wall_s": 0.54
+    },
+    {
+      "peak_rss_kib": 22312,
+      "wall_s": 0.55
+    },
+    {
+      "peak_rss_kib": 21824,
+      "wall_s": 0.51
+    }
+  ],
+  "graph_report": [
+    {
+      "peak_rss_kib": 20124,
+      "wall_s": 0.19
+    },
+    {
+      "peak_rss_kib": 19008,
+      "wall_s": 0.19
+    },
+    {
+      "peak_rss_kib": 18644,
+      "wall_s": 0.18
+    },
+    {
+      "peak_rss_kib": 18664,
+      "wall_s": 0.18
+    },
+    {
+      "peak_rss_kib": 18672,
+      "wall_s": 0.18
+    }
+  ],
+  "links_report_write_note": {
+    "peak_rss_kib": 37440,
+    "wall_s": 0.96,
+    "note_bytes": 54867
+  }
+}

@@ -65,6 +65,7 @@ ID; merge is an import into the existing target replica.
 
 ## Writing an archive
 
+<!-- notrios:generated:example:archive-v2-writing-an-archive-example-1:begin -->
 ```bash
 # Complete database backup, verified before the command reports success.
 notriosctl export archive-v2 /backups/notrios-2026-08-04
@@ -73,6 +74,7 @@ notriosctl export archive-v2 /backups/notrios-2026-08-04
 notriosctl export archive-v2 --target subset_transfer \
   --notebooks nb_research --tags shared /transfer/research
 ```
+<!-- notrios:generated:example:archive-v2-writing-an-archive-example-1:end -->
 
 `full_archive` is the default and is the only mode that claims to be a complete
 backup: it includes trashed notes, every saved revision, provenance, private
@@ -145,6 +147,7 @@ semantic fallback rather than treating it as archive-v3.
 
 ## Reading an archive back
 
+<!-- notrios:generated:example:archive-v2-reading-an-archive-back-example-1:begin -->
 ```bash
 # Read-only: report what the archive contains and prove it is intact.
 notriosctl verify archive-v2 /backups/notrios-2026-08-05
@@ -153,6 +156,7 @@ notriosctl verify archive-v2 /backups/notrios-2026-08-05
 notriosctl restore archive-v2 --intent adopt --db ./restored/notes.sqlite \
   /backups/notrios-2026-08-05
 ```
+<!-- notrios:generated:example:archive-v2-reading-an-archive-back-example-1:end -->
 
 `verify` never writes. `restore` finishes verifying the whole archive before it
 writes its first row, so a damaged archive cannot leave a half-restored library

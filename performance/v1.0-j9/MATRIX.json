@@ -1,0 +1,201 @@
+{
+  "schema": "notrios.v10.j9-support-matrix.v1",
+  "item": "J9",
+  "milestone": "v1.0",
+  "product_version": "1.0.0",
+  "frozen_on": "2026-10-21",
+  "derived_from": "performance/v0.9-i7/MATRIX.json",
+  "what_this_is": "What Notrios 1.0 supports, limited to what was executed at 1.0.0. It is v0.9 I7's matrix with each row made exact: the browser and its version, the operating system release, and the libraries each binary needs, taken from the built package rather than written by hand. A level changed only where something was executed.",
+  "the_rule_this_matrix_follows": "A platform is supported when it has been installed and executed and somebody commits to keeping it working. Everything else is named with its level and its blocker. Windows and macOS are absent from release claims rather than listed as forthcoming.",
+  "claim_ladder": "performance/v0.8-h6a/FINDINGS.json -- 1 generated, 2 structurally inspected, 3 natively installed and executed, 4 supported (3 plus a maintainer's commitment)",
+  "hosts": {
+    "workstation": "The development machine. It ran Ubuntu 24.04 until 2026-09-29, when it was upgraded to 26.04 (the upgrade log reads 'Upgrading from noble to resolute'), and runs Ubuntu 26.04.1 LTS since. Evidence recorded on it before that date is 24.04 evidence; evidence after it is 26.04 evidence.",
+    "containers": "Clean ubuntu:24.04 containers with no source tree, Go, Node or compiler, run as an unprivileged user (v0.9 I3's harness). Reported by the image as Ubuntu 24.04.4 LTS, glibc 2.39.",
+    "release_runner": "GitHub's hosted runner. Run 34697727452, the rehearsal J1 and J2 verified, ran on the ubuntu-24.04 image."
+  },
+  "runtime": {
+    "derived_by": "python3 performance/v1.0-j9/record_matrix.py derive --package <deb> --workflow-package <deb> --abi-artifact <tar.gz>",
+    "package": "notrios_1.0.0-1_amd64.deb",
+    "depends": [
+      "libc6 (>= 2.34)",
+      "libgdk-pixbuf-2.0-0 (>= 2.22.0)",
+      "libglib2.0-0t64 (>= 2.16.0)",
+      "libgtk-3-0t64 (>= 3.21.4)",
+      "libjavascriptcoregtk-4.1-0",
+      "libsoup-3.0-0 (>= 2.4.0)",
+      "libwebkit2gtk-4.1-0 (>= 2.39.91)"
+    ],
+    "binaries": {
+      "notrios": {
+        "needed": [
+          "libm.so.6",
+          "libwebkit2gtk-4.1.so.0",
+          "libgtk-3.so.0",
+          "libgdk-3.so.0",
+          "libgdk_pixbuf-2.0.so.0",
+          "libsoup-3.0.so.0",
+          "libgio-2.0.so.0",
+          "libjavascriptcoregtk-4.1.so.0",
+          "libgobject-2.0.so.0",
+          "libglib-2.0.so.0",
+          "libc.so.6"
+        ],
+        "depends": [
+          "libc6 (>= 2.34)",
+          "libgdk-pixbuf-2.0-0 (>= 2.22.0)",
+          "libglib2.0-0t64 (>= 2.16.0)",
+          "libgtk-3-0t64 (>= 3.21.4)",
+          "libjavascriptcoregtk-4.1-0",
+          "libsoup-3.0-0 (>= 2.4.0)",
+          "libwebkit2gtk-4.1-0 (>= 2.39.91)"
+        ],
+        "newest_glibc_symbol": "GLIBC_2.34"
+      },
+      "notriosctl": {
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ],
+        "depends": [
+          "libc6 (>= 2.34)"
+        ],
+        "newest_glibc_symbol": "GLIBC_2.34"
+      },
+      "notriosd": {
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ],
+        "depends": [
+          "libc6 (>= 2.34)"
+        ],
+        "newest_glibc_symbol": "GLIBC_2.34"
+      },
+      "libnotrios.so.1": {
+        "needed": [
+          "libm.so.6",
+          "libc.so.6"
+        ],
+        "depends": [
+          "libc6 (>= 2.34)"
+        ],
+        "newest_glibc_symbol": "GLIBC_2.34"
+      }
+    },
+    "workflow_package": "notrios_0.8.0-1_amd64.deb",
+    "workflow_package_depends_identical": true,
+    "newest_glibc_symbol": "GLIBC_2.34",
+    "abi_artifact": "notrios-c-abi-1.0.0-linux-amd64.tar.gz"
+  },
+  "surfaces": [
+    {
+      "surface": "command line and background service",
+      "platform": "Ubuntu 24.04 amd64",
+      "claim_level": 3,
+      "executed": true,
+      "supported": true,
+      "evidence": "performance/v1.0-j9/I3-RESULTS.jsonl",
+      "how": "v0.9 I3's seven scenarios at 1.0.0 in clean ubuntu:24.04 containers, plus J9's upgrade from the workflow-built 0.8.0 and rollback to it",
+      "status": "installed and run at 1.0.0",
+      "runtime_of": [
+        "notriosctl",
+        "notriosd"
+      ]
+    },
+    {
+      "surface": "C library and header (libnotrios.so.1)",
+      "platform": "Ubuntu 24.04 amd64",
+      "claim_level": 3,
+      "executed": true,
+      "supported": true,
+      "evidence": "performance/v1.0-j9/ABI-EXAMPLES-ubuntu-24.04.log",
+      "how": "J6's six C examples compiled with gcc 13.3 against the extracted notrios-c-abi-1.0.0-linux-amd64.tar.gz and run, in a clean ubuntu:24.04 container",
+      "status": "built, compiled against and run at 1.0.0",
+      "runtime_of": [
+        "libnotrios.so.1"
+      ]
+    },
+    {
+      "surface": "web interface",
+      "platform": "Google Chrome 156.0.8078.47 on Ubuntu 26.04.1 amd64",
+      "claim_level": 3,
+      "executed": true,
+      "supported": true,
+      "evidence": "performance/v1.0-j9/GUI_CONTROLS-chrome-156.json",
+      "how": "v0.8 H15's control crawl against the 1.0.0 service, driving every control it inventories (89), headless through Playwright 1.61.1; and the web unit tests CI runs on every push",
+      "status": "every control driven at 1.0.0",
+      "runtime_note": "a browser on the same machine as the service, which binds loopback"
+    },
+    {
+      "surface": "web interface",
+      "platform": "WebKit 26.5 (Playwright 1.61.1's build)",
+      "claim_level": 2,
+      "executed": true,
+      "supported": false,
+      "evidence": "performance/v1.0-j34/AFTER.json",
+      "how": "J34's preview probe ran in WebKit before the workstation's upgrade, at a version it did not record. The control crawl drives Chromium only, so no full pass has run in WebKit at 1.0.0.",
+      "blocked_on": "the control crawl drives Chromium only. WebKit launches on the workstation since the host libraries it needs were installed on 2026-10-21; it could not earlier that day (J47).",
+      "status": "preview only, not claimed"
+    },
+    {
+      "surface": "desktop shell (Wails v2, GTK3 / webkit2gtk-4.1)",
+      "platform": "Ubuntu 24.04 amd64",
+      "claim_level": 1,
+      "executed": false,
+      "supported": false,
+      "evidence": "performance/v0.9-i7/MATRIX.json",
+      "how": "CI compiles it, and the release workflow refuses a package without it (J1). Nothing has opened its window.",
+      "why_it_matters": "The command line and the service reached level 3 in the same containers, and it would be easy to let the desktop inherit that. It cannot: compiling a GUI proves it links, not that it runs.",
+      "status": "compiled and packaged, never run",
+      "runtime_of": [
+        "notrios"
+      ]
+    },
+    {
+      "surface": "command line and background service",
+      "platform": "Ubuntu 26.04.1 amd64",
+      "claim_level": 2,
+      "executed": false,
+      "supported": false,
+      "evidence": "performance/v1.0-j9/README.md",
+      "how": "The workstation has run Ubuntu 26.04.1 since 2026-09-29, and every test since then ran on it from source. The 1.0.0 package was built and unpacked there and its binaries run, but it has not been installed there.",
+      "blocked_on": "no package install on 26.04, and no commitment to the row. The release is built on 24.04 (J49-D).",
+      "status": "built and tested from source, package not installed"
+    },
+    {
+      "surface": "command line and background service",
+      "platform": "Ubuntu 24.04 arm64",
+      "claim_level": 2,
+      "executed": false,
+      "supported": false,
+      "evidence": "performance/v0.9-i7/MATRIX.json",
+      "how": "H6a structurally inspected the arm64 package; no arm64 machine has run it",
+      "blocked_on": "no arm64 machine. Signing an artifact nobody has run would attest its origin and say nothing about whether it works.",
+      "status": "built, never run"
+    },
+    {
+      "surface": "all",
+      "platform": "Windows",
+      "claim_level": 1,
+      "executed": false,
+      "supported": false,
+      "absent_from_release_claims": true,
+      "evidence": "performance/v0.9-i7/MATRIX.json",
+      "how": "H6a: a cross-built artifact is not native evidence and nothing here can execute it",
+      "blocked_on": "an OV or EV code-signing certificate, and a native runner",
+      "status": "not built, not claimed"
+    },
+    {
+      "surface": "all",
+      "platform": "macOS",
+      "claim_level": 0,
+      "executed": false,
+      "supported": false,
+      "absent_from_release_claims": true,
+      "evidence": "performance/v0.9-i7/MATRIX.json",
+      "how": "H6a: nothing about macOS can be established on this machine",
+      "blocked_on": "Apple Developer Program membership, an owner account, and native hardware",
+      "status": "not built, not claimed"
+    }
+  ]
+}

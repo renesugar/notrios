@@ -25,6 +25,7 @@ import {
 import { spansToEditorRanges } from '../editor-offsets';
 import { disabledEditorExtensions, installEditorAssets } from '../editor-assets';
 import { NotebookPicker } from './NotebookPicker';
+import type { PreviewLinkCheck } from './PreviewPane';
 import { TagEditor } from './TagEditor';
 import type { NotebookOption } from '../sidebar';
 
@@ -99,6 +100,12 @@ export interface EditorPaneProps {
   onRestore: () => void;
   /** Permanently delete the open trashed note. */
   onPurge: () => void;
+  /**
+   * Called with each buffer check that returns, and with null when there is
+   * none, so the preview can mark the same links the editor underlines (v1.0
+   * J40-B).
+   */
+  onLinksChecked?: (check: PreviewLinkCheck | null) => void;
 }
 
 export function EditorPane(props: EditorPaneProps) {
@@ -133,10 +140,16 @@ export function EditorPane(props: EditorPaneProps) {
     onDelete,
     onRestore,
     onPurge,
+    onLinksChecked,
   } = props;
 
   const editorRef = useRef<ExposeParam>(null);
   const bufferLinks = useBufferLinks(body, selectedDocument?.id, editable);
+
+  // The preview marks from the same check, so it is handed up as it lands.
+  useEffect(() => {
+    onLinksChecked?.(bufferLinks.checked ? { body: bufferLinks.checkedBody, links: bufferLinks.links } : null);
+  }, [onLinksChecked, bufferLinks.checked, bufferLinks.checkedBody, bufferLinks.links]);
 
   // Resolved link spans in editor coordinates, for Ctrl-click. They are derived
   // from the body the service checked, not the current one, which is why the

@@ -3,7 +3,7 @@
   "claims": [
     {
       "id": "product-version-current",
-      "check_anchor": "go:github.com/renesugar/notrios/internal/version#TestVersionIsReleaseCandidate"
+      "check_anchor": "go:github.com/renesugar/notrios/internal/version#TestVersionIsTheRelease"
     },
     {
       "id": "current-schema-status",
@@ -306,8 +306,8 @@
       "sha256": "4ad40fe16331cfcba9bc9cdf865ae749ecd55730d190c4ca486666013b2666de",
       "state": "unverified",
       "unrun_reason": {
-        "code": "illustrative-placeholder",
-        "detail": "final illustrative-placeholder: one literal $DOC is required in both active and trashed prerequisite states, which are incompatible in a single scratch fixture"
+        "code": "incompatible-prerequisites",
+        "detail": "Literal after substitution, and unrunnable as one block: the same $DOC must be both active (to be filed and tagged) and in Trash (to be restored and purged), and one scratch fixture cannot hold both states at once. Recoded from illustrative-placeholder in v1.0 J13-D, which was the wrong category for a literal block -- the reason is a fixture that cannot be in two states, not notation a reader must substitute. Every route in it is executed individually elsewhere in this page."
       }
     },
     {
@@ -1087,11 +1087,11 @@
       "path": "docs/cli.md",
       "section": "import-chatgpt-import-claude",
       "language": "sh",
-      "sha256": "b259d209397daad98f554562808f09a48914b68e085ed8b65a4bbac7891605fe",
+      "sha256": "e6a3bee6192db08e5a858a393f1fa0ea7a646b420e125304bcf921746a400af9",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <conversations.json|export-dir> is an input alternative/metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <export.zip|export-dir|conversations.json> is an input alternative/metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
       }
     },
     {
@@ -1123,11 +1123,11 @@
       "path": "docs/cli.md",
       "section": "import-twitter",
       "language": "sh",
-      "sha256": "df9abea606a9c2bdf252c397d27e796940fc6ebfaf4740f6f13ee08ad4a8a03f",
+      "sha256": "e80668e3f6dcad0f8f4054ba50f398e4d2406d19f273106bb1533bcf826b436d",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <extracted-archive-dir> is an input-directory metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
+        "detail": "Non-literal command synopsis: bracketed flags are optional-argument notation and <twitter-archive.zip | extracted-archive-dir> is an input-path metavariable; nearest executed concrete example: import-export-2-dry-run-example-1."
       }
     },
     {
@@ -1138,8 +1138,8 @@
       "sha256": "b60d7206cee05d06c303223bc88096d45a1da703047e3f92c15727e4d2f994a4",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl jobs list   [--db path] [--kind k] [--state s] [--limit 50]"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: [--db path], [--kind k], [--state s] and [--limit 50] are optional-argument notation. The previous reason said \"literal body starts or controls a daemon\", which described a different block -- these commands report on jobs and start nothing. v1.0 J13-A found the mismatch by classifying the block."
       }
     },
     {
@@ -1334,8 +1334,8 @@
       "sha256": "1a5f27d7349df03ee2761a18ee8064b4b71dbbfae796ce0d376bbc3a28c15d41",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl profile create --name <profile> [--listen 127.0.0.1:8080]"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: <profile> is a profile-name metavariable and [--listen ...] is optional-argument notation. `profile start` does launch a service, which is what the previous reason described, but this block cannot run for the earlier reason that it is a synopsis."
       }
     },
     {
@@ -1466,8 +1466,8 @@
       "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
       "state": "unverified",
       "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "The peer listing plus revoke/epoch-advance recipe requires a deliberately enrolled second signing key and mutates persistent trust and group-key state; the literal key ID is a reviewed operator substitution."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the signer key id is an operator-selected trust identity rather than a repository constant. It would also mutate persistent trust and group-key state, which is why no fixture is offered for it -- but a synopsis cannot be run whatever the state, and that is the reason that applies first."
       }
     },
     {
@@ -1487,7 +1487,7 @@
       "path": "docs/cli.md",
       "section": "seeing-and-ending-trust",
       "language": "sh",
-      "sha256": "37fd05998ba824b3e59dc561b1a8abd9c280dd85f0782450d05881146c6a0033",
+      "sha256": "3d439bbb80741d48de0ccadf1b7caf2b70ddff44895568c82a7b5f041b49ad27",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -1622,6 +1622,128 @@
       "unrun_reason": {
         "code": "shared-user-state",
         "detail": "Literal body moves this library's sync key material into the operating system's credential store, which is shared user state. Both commands are executed against a sandboxed library by cmd/notriosctl TestMigrateCredentialsRoundTrip and TestMigrateCredentialsRequiresConfirmation."
+      }
+    },
+    {
+      "id": "configuration-remote-media-example-1",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "language": "bash",
+      "sha256": "aae2ccb722da450ea3466b400f72d76e72c6b3f9bb21ecc51902804f5a4b5032",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-remote-media-example-2",
+      "path": "docs/configuration.md",
+      "section": "remote-media",
+      "language": "bash",
+      "sha256": "6c3db992105ec5507aa906316a54ab3d3e91ec8b89d0fd01a1c48e71b994e0e2",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-search-example-1",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "language": "yaml",
+      "sha256": "a67ddbe4e9a59da5898627a2046e8582998730ccca868a785eceead879afffe2",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "illustrative-placeholder",
+        "detail": "A configuration fragment with no command beside it, because `config show` reports 20 of the 53 keys and search.default_limit and search.max_limit are not among them, while `notriosctl search` takes --db and not --config. The effect is visible through /api/v1/status; the page says so rather than showing a command that appears to check what it cannot."
+      }
+    },
+    {
+      "id": "configuration-search-example-2",
+      "path": "docs/configuration.md",
+      "section": "search",
+      "language": "bash",
+      "sha256": "1e34c9379d709b0a7594af35cca86fb13285ef0da51b795016f6b240c43ccaec",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-serving-the-api-and-the-interface-example-1",
+      "path": "docs/configuration.md",
+      "section": "serving-the-api-and-the-interface",
+      "language": "bash",
+      "sha256": "d590399f2996d29485c871e3f900f5dcef5cc1226638361d6e8a7c0f03f1dc06",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
+      }
+    },
+    {
+      "id": "configuration-where-your-notes-are-stored-example-1",
+      "path": "docs/configuration.md",
+      "section": "where-your-notes-are-stored",
+      "language": "bash",
+      "sha256": "fd347ca0cd3099551df73951f5a19fc576193285ee0d0ad6d50cbf60adbb1737",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-shell",
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "config-show-origin-file",
+          "detail": "every key the fence's own YAML sets is reported by `config show` with origin `file` and the documented value"
+        }
       }
     },
     {
@@ -1824,11 +1946,11 @@
       }
     },
     {
-      "id": "import-export-chatgpt-data-export-example-1",
+      "id": "import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1",
       "path": "docs/import-export.md",
-      "section": "chatgpt-data-export",
+      "section": "chatgpt-data-export-and-the-openai-privacy-portal-export",
       "language": "sh",
-      "sha256": "61e09babcb9621c6ec92d7f3acf3b20f3d02e06d1fe61234134ffd3db2051a71",
+      "sha256": "3877c02afac7b03c245441c4ff8a1850def796e969633c7e67a73f0671102d6a",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -1841,12 +1963,12 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/export/conversations.json",
-            "source": "import.chatgpt_file"
+            "token": "/path/to/chatgpt-export.zip",
+            "source": "import.chatgpt_zip"
           },
           {
-            "token": "/path/to/export-dir",
-            "source": "import.chatgpt_dir"
+            "token": "/path/to/OpenAI-export.zip",
+            "source": "import.chatgpt_portal_zip"
           }
         ],
         "expected": {
@@ -1855,7 +1977,7 @@
         },
         "postcondition": {
           "kind": "cli-import-chatgpt",
-          "detail": "dry run and apply parse the same bounded conversation fixture and create one searchable note"
+          "detail": "dry run of the ChatGPT export ZIP and apply of the OpenAI Privacy Portal ZIP, whose conversations are a ZIP inside the ZIP, both read in place into one searchable note"
         }
       }
     },
@@ -1864,7 +1986,7 @@
       "path": "docs/import-export.md",
       "section": "claude-data-export",
       "language": "sh",
-      "sha256": "27618fcd32ef5de537bea210d3f34c403f2457147924150fd45f014da40ccecc",
+      "sha256": "aa44e614a66c8a7b8cdd4768d366e104a7777022d9ae071f57828a640ba9e584",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -1877,11 +1999,11 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/conversations.json",
-            "source": "import.claude_file"
+            "token": "/path/to/claude-data-export.zip",
+            "source": "import.claude_zip"
           },
           {
-            "token": "/path/to/export-dir",
+            "token": "/path/to/export-folder",
             "source": "import.claude_dir"
           }
         ],
@@ -1891,7 +2013,7 @@
         },
         "postcondition": {
           "kind": "cli-import-claude",
-          "detail": "dry run and apply parse the bounded Claude export and create one searchable note"
+          "detail": "dry run of the Claude export ZIP and apply of its extracted folder, both read in place into one searchable note"
         }
       }
     },
@@ -2064,11 +2186,11 @@
       }
     },
     {
-      "id": "import-export-twitter-x-extracted-archive-example-1",
+      "id": "import-export-twitter-x-archive-example-1",
       "path": "docs/import-export.md",
-      "section": "twitter-x-extracted-archive",
+      "section": "twitter-x-archive",
       "language": "sh",
-      "sha256": "bca26de1e562c66c0d4aa7c9c59f5fa3cc30d6894c5a5d5135793e7971e556a8",
+      "sha256": "9952dedee363098e5a6fa36cacb2cbaa7101561a05539da10781362ef5ba00c4",
       "state": "executed",
       "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
       "execution": {
@@ -2081,8 +2203,8 @@
             "source": "cli.binary"
           },
           {
-            "token": "/path/to/twitter-archive",
-            "source": "import.twitter_dir"
+            "token": "/path/to/twitter-archive.zip",
+            "source": "import.twitter_zip"
           }
         ],
         "expected": {
@@ -2091,7 +2213,7 @@
         },
         "postcondition": {
           "kind": "cli-import-twitter",
-          "detail": "dry run and apply parse one bounded extracted tweet into a searchable note"
+          "detail": "dry run and apply read one bounded post from the archive ZIP as downloaded, in place, into a searchable note"
         }
       }
     },
@@ -2124,11 +2246,11 @@
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
       "language": "sh",
-      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
+      "sha256": "72f294bd3fd167fdf4904c40bb3c26df1c73a800b0e2bd695b4e985daa705e08",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7, which deletes the library between them and counts the hits that come back."
+        "detail": "Literal body writes an archive into this user's home directory. Executed as written by J9's scenario 09 in a clean container, and with --db and --asset-store against a disposable copy of a 382,206-note library by performance/v1.0-j7/disaster_recovery.sh (J7-C)."
       }
     },
     {
@@ -2136,11 +2258,59 @@
       "path": "docs/installation.md",
       "section": "backing-up-and-getting-your-notes-back",
       "language": "sh",
-      "sha256": "935abe66f1840dc1fd90d5b6db5495b00ec7cdcdd5da9164abddcf917ee4e43f",
+      "sha256": "0a69af9d62e351bab847cfca295079d71909e741d7b485daa7b891d9a796319d",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body imports into this user's library. Executed against a disposable profile in performance/v0.9-i7's recovery drill."
+        "detail": "Literal body restores into this user's library. Executed into an emptied disposable library by performance/v1.0-j7/disaster_recovery.sh (J7-C), whose restored content digest and search counts equal the original's, and as written by J9's scenario 09."
+      }
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-1",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
+      "language": "sh",
+      "sha256": "a252ef4f7a47637db8a8354082e682cee69dfd4111cd2e0ddb2565324b5a6324",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body builds a Debian package and installs it system-wide with sudo apt. Covered by evidence in performance/v0.8-h6/, where the package was built and installed with dpkg into a sandbox root rather than onto the build machine."
+      }
+    },
+    {
+      "id": "installation-building-the-package-yourself-example-2",
+      "path": "docs/installation.md",
+      "section": "building-the-package-yourself",
+      "language": "sh",
+      "sha256": "b1a0f4db2b8e602e7ffa92a568cd33c82e65d26d2b6a651d3e022eb8f266face",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body enables a systemd user service, which changes what starts on this user's login. The unit ships installed and disabled by design; enabling it is the explicit act this line describes."
+      }
+    },
+    {
+      "id": "installation-checking-that-a-purge-removed-everything-example-1",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
+      "language": "sh",
+      "sha256": "0b7820f6a6129b9bc0daacb2ca256a39473a0f4a697e2b621f450adbc4c643e6",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Reports on, and then deletes, this user's own installation. Covered by executed runs in performance/v1.0-j11/capture_clean_install.sh, which installs into a disposable HOME, takes the manifest, purges, and runs the check both ways."
+      }
+    },
+    {
+      "id": "installation-checking-that-a-purge-removed-everything-example-2",
+      "path": "docs/installation.md",
+      "section": "checking-that-a-purge-removed-everything",
+      "language": "sh",
+      "sha256": "7a39ddde5a626a432428c064b341a2277e2af3a9cfff3b3ab0ff04a9d77502ff",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Reports on, and then deletes, this user's own installation. Covered by executed runs in performance/v1.0-j11/capture_clean_install.sh, which installs into a disposable HOME, takes the manifest, purges, and runs the check both ways."
       }
     },
     {
@@ -2160,35 +2330,35 @@
       "path": "docs/installation.md",
       "section": "going-back-to-an-earlier-version",
       "language": "sh",
-      "sha256": "876d4ebf6f971f599a6e4324282e2b3047f22a8ae6c621afeae54f28c54ef130",
+      "sha256": "06a5376c594906239a003c717847b25b12765f7833032c883a4de5205f5953e5",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs an older package on the host as root. The refusal and the deliberate downgrade are both executed in performance/v0.9-i3 scenario 04."
+        "detail": "Literal body installs an older package on the host as root. The refusal and the deliberate downgrade, 1.0.0 to 1.0.0~rc1, are executed in scenario 04 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
       }
     },
     {
-      "id": "installation-installing-from-a-package-example-1",
+      "id": "installation-going-back-to-an-earlier-version-example-2",
       "path": "docs/installation.md",
-      "section": "installing-from-a-package",
+      "section": "going-back-to-an-earlier-version",
       "language": "sh",
-      "sha256": "a252ef4f7a47637db8a8354082e682cee69dfd4111cd2e0ddb2565324b5a6324",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "host-installation",
-        "detail": "Literal body builds a Debian package and installs it system-wide with sudo apt. Covered by evidence in performance/v0.8-h6/, where the package was built and installed with dpkg into a sandbox root rather than onto the build machine."
-      }
-    },
-    {
-      "id": "installation-installing-from-a-package-example-2",
-      "path": "docs/installation.md",
-      "section": "installing-from-a-package",
-      "language": "sh",
-      "sha256": "b1a0f4db2b8e602e7ffa92a568cd33c82e65d26d2b6a651d3e022eb8f266face",
+      "sha256": "72f294bd3fd167fdf4904c40bb3c26df1c73a800b0e2bd695b4e985daa705e08",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
-        "detail": "Literal body enables a systemd user service, which changes what starts on this user's login. The unit ships installed and disabled by design; enabling it is the explicit act this line describes."
+        "detail": "Literal body writes an archive into this user's home directory. Executed as written by scenario 09 (performance/v1.0-j9/scenarios/09-rollback-1.0-to-0.8.sh) of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
+      }
+    },
+    {
+      "id": "installation-going-back-to-an-earlier-version-example-3",
+      "path": "docs/installation.md",
+      "section": "going-back-to-an-earlier-version",
+      "language": "sh",
+      "sha256": "3213b9d7711136ea08387406f8944fb42e7cf48715e5b38c76f74551bcb217ce",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "host-installation",
+        "detail": "Literal body downgrades a package as root and moves this user's library. Executed as written by scenario 09 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user: 0.8.0 refuses the 1.0 library, restores the 1.0 archive into a new one, and the note comes back."
       }
     },
     {
@@ -2196,11 +2366,11 @@
       "path": "docs/installation.md",
       "section": "installing-from-the-package",
       "language": "sh",
-      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "sha256": "b793feb0fbd44a3b8586d4011bcfe9039d840f68b7830a86c56a86642eba43b0",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs a package on the host as root. The packaged install is executed instead in performance/v0.9-i3, in clean containers, where installing is the thing under test."
+        "detail": "Literal body installs a package on the host as root. The packaged install of 1.0.0 is executed instead in clean containers, where installing is the thing under test: scenario 01 of performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user."
       }
     },
     {
@@ -2264,31 +2434,19 @@
       }
     },
     {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-2",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "language": "sh",
-      "sha256": "2f35b981e470a906b15d7584603a81e21d48eb41eb8ac9c9c1a2f85c9ad965e8",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "Literal and read-only, but it reports this machine's resolved roots rather than a fixture's. Covered by executed tests in go:github.com/renesugar/notrios/cmd/notriosctl and by performance/v0.9-i3 scenario 06, which asserts the writable roots stay outside /usr."
-      }
-    },
-    {
-      "id": "installation-removing-notrios-when-you-installed-the-package-example-3",
-      "path": "docs/installation.md",
-      "section": "removing-notrios-when-you-installed-the-package",
-      "language": "sh",
-      "sha256": "1c3db906af94b0a27a8a13657ddfa066127bb24869c484d2c229f68874bee820",
-      "state": "unverified",
-      "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "Literal body writes an archive into this user's home directory. Export and re-import are executed against a disposable profile in performance/v0.9-i7's recovery drill."
-      }
-    },
-    {
       "id": "installation-removing-your-data-as-well-example-1",
+      "path": "docs/installation.md",
+      "section": "removing-your-data-as-well",
+      "language": "sh",
+      "sha256": "89890ffa372f4b4caecdc612369f41ad9c9646a4fb4ed5b9ce5eca8b6f31a556",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "shared-user-state",
+        "detail": "Literal body deletes this user's notes, configuration, profiles and sync keys. Covered by executed drills in performance/v1.0-j3/command_drills.sh, which run the command against a disposable HOME."
+      }
+    },
+    {
+      "id": "installation-removing-your-data-as-well-example-2",
       "path": "docs/installation.md",
       "section": "removing-your-data-as-well",
       "language": "sh",
@@ -2300,11 +2458,11 @@
       }
     },
     {
-      "id": "installation-removing-your-data-as-well-example-2",
+      "id": "installation-removing-your-data-as-well-example-3",
       "path": "docs/installation.md",
       "section": "removing-your-data-as-well",
       "language": "sh",
-      "sha256": "01e6f4a0d7d56aa666a464931affc4fb10c6211e225c4c13bb91b6ebbfa024d1",
+      "sha256": "a24b596c8c7cf92bb2736c51510b7e89d2d42863ac5ee55096cc6e2142158e7c",
       "state": "unverified",
       "unrun_reason": {
         "code": "shared-user-state",
@@ -2372,11 +2530,11 @@
       "path": "docs/installation.md",
       "section": "upgrading",
       "language": "sh",
-      "sha256": "955410c3bc040dccc04ab5f3c6787653c5e2766adc05cae63eb1717f9efd5c7a",
+      "sha256": "b793feb0fbd44a3b8586d4011bcfe9039d840f68b7830a86c56a86642eba43b0",
       "state": "unverified",
       "unrun_reason": {
         "code": "host-installation",
-        "detail": "Literal body installs a package on the host as root. Upgrading is executed in performance/v0.9-i3 scenario 03, which installs a prerelease, writes a note, upgrades and checks the note survived."
+        "detail": "Literal body installs a package on the host as root. Executed as scenario 08, from the workflow-built 0.8.0 package to 1.0.0, and scenario 03, from 1.0.0~rc1 to 1.0.0, in performance/v1.0-j9/I3-RESULTS.jsonl, I3's harness run at 1.0.0 in clean ubuntu:24.04 containers as an unprivileged user. Both check the note written before the upgrade survives it."
       }
     },
     {
@@ -2399,8 +2557,68 @@
       "sha256": "1c3a5379c3697b98c9d81c5f5acb32d321db9786ce6fa28fadcc15bac246769d",
       "state": "unverified",
       "unrun_reason": {
-        "code": "illustrative-placeholder",
-        "detail": "Literal shell, but SHA256SUMS stands for a file from a downloaded release set that this repository does not contain. The same verification is executed against a real set by performance/v0.9-i6/verify_release_set.py."
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-2",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "a2ba761bd0d7c8ac4eb650cfe2e2ce2c73c61b3eb25ad9d391fc9553dcf2c026",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). J10-C runs it against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-3",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "0dcda501601de961f35066657dc32f106f08cdf33c30aebaeb0b6d5132856da9",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-4",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "e2937b1578831f13ee63f43c50635c950ca4cf1536de7b598a2bef2771284742",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-5",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "9ae9d774f44408c86941d05b7bc825b461d78f3c5d05a78c65290c5af08ac880",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
+      }
+    },
+    {
+      "id": "installation-verifying-what-you-downloaded-example-6",
+      "path": "docs/installation.md",
+      "section": "verifying-what-you-downloaded",
+      "language": "sh",
+      "sha256": "c17ad07f0c272daa5b72d45ef1650c995aa05c41457dbc610b4a531d1cc82d8d",
+      "state": "unverified",
+      "unrun_reason": {
+        "code": "artifact-not-in-repository",
+        "detail": "Literal and correct, and needs a published release set, which this repository does not contain and deliberately does not fabricate. Run as published by performance/v1.0-j9/run_verification.py, which reads this block out of the page, against the release set from workflow run 34697727452 with only the file name replaced, and then makes the check fail once (performance/v1.0-j9/VERIFY.json). Commands naming the C ABI tarball are recorded there as not run, because no workflow has yet built an attested, signed tarball; J10's rehearsal and J10-C run them, and J10-C runs the whole block against the published 1.0.0 set."
       }
     },
     {
@@ -2423,8 +2641,8 @@
       "sha256": "1f90411b0f4e15b5982b1c6a29861448d6d3006ff447817a4d9e991b2e33f2c5",
       "state": "unverified",
       "unrun_reason": {
-        "code": "external-network",
-        "detail": "Literal body requires a remote Git/HTTPS/SSH/rclone peer: # One exchange. Run it by hand, from cron, or after an import."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the carrier directory is an operator path. It would also require a remote Git/HTTPS/SSH/rclone peer, which the previous reason named; the synopsis is the earlier blocker. The concrete exchange is executed against a local carrier in performance/v0.7-g10."
       }
     },
     {
@@ -2495,6 +2713,29 @@
       }
     },
     {
+      "id": "operations-finding-ambiguous-links-example-1",
+      "path": "docs/operations.md",
+      "section": "finding-ambiguous-links",
+      "language": "sh",
+      "sha256": "5239b857af0d24653e99fa91f979b1e621d42630dbfb29e32f9a8a3405bbf141",
+      "state": "executed",
+      "check_anchor": "go:github.com/renesugar/notrios/internal/docexec#TestRepositoryExamples",
+      "execution": {
+        "surface": "cli",
+        "fixture": "seeded-cli",
+        "case": "cli-edge",
+        "substitutions": [],
+        "expected": {
+          "kind": "exit",
+          "status": 0
+        },
+        "postcondition": {
+          "kind": "cli-links-report",
+          "detail": "an ambiguous link seeded into the library is reported as written with both candidates, the candidate cap holds, and the Reports note is written while the seeded note is untouched"
+        }
+      }
+    },
+    {
       "id": "operations-finding-what-has-rotted-workspace-lint-example-1",
       "path": "docs/operations.md",
       "section": "finding-what-has-rotted-workspace-lint",
@@ -2545,11 +2786,11 @@
       "path": "docs/operations.md",
       "section": "garbage-collection",
       "language": "sh",
-      "sha256": "2b6334c29c39103160a68c1c875164f20cb07728b9c7cfffae4bd07869d287f6",
+      "sha256": "368ae77d7ad3ad4f1f419e211a43847b6b4f50032d42a3f32ce8df968f8c38e2",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
-        "detail": "Composite operator recipe mixes the safe default with illustrative /safe/snapshot paths, an explicit destructive apply, and a separately running REST service; the concrete dry-run behavior is executed by operations-fixing-what-can-be-fixed-mechanically-example-1."
+        "detail": "Command synopsis since v1.0 J13-D: the snapshot path was written as /safe/snapshot, which reads like a path somebody could type and is not one, and is now <snapshot-dir>. The block also carries an explicit destructive --apply and a REST call needing a running service; the concrete dry-run behaviour is executed by operations-fixing-what-can-be-fixed-mechanically-example-1."
       }
     },
     {
@@ -2557,7 +2798,7 @@
       "path": "docs/operations.md",
       "section": "garbage-collection",
       "language": "sh",
-      "sha256": "bde6201e3fe38e88ee8bea7145f199e0a112eec35f65623e80f92b8f8cbbc082",
+      "sha256": "3cf0b86438222aa7e7286d63727d1477c73b99f2d54f5513a754a6fc0f90aad8",
       "state": "unverified",
       "unrun_reason": {
         "code": "illustrative-placeholder",
@@ -2572,8 +2813,8 @@
       "sha256": "bbf1937ea9b197dc277b231c24f876ab1d522e262fb5fe69f7da1a19fddf8e76",
       "state": "unverified",
       "unrun_reason": {
-        "code": "shared-user-state",
-        "detail": "This lost-device response intentionally lists and revokes a real enrolled signer, then advances the shared group-key epoch; signer-key-id is an operator-selected trust identity, not a repository constant."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: signer-key-id is an operator-selected trust identity, not a repository constant. The recipe would also revoke a real enrolled signer and advance the shared group-key epoch, which is why it is not fixtured; the synopsis is why it cannot run at all."
       }
     },
     {
@@ -2732,8 +2973,8 @@
       "sha256": "481c6c37effeeea55fdebbf1f350f0f55a4ca3adf505739b4df11947489d61dc",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "This is the full-corpus capacity profiling workflow: <label> and /path/to/raw select an operator dataset and the script intentionally runs a long measured import, not a bounded example fixture."
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: <label> and /path/to/raw select an operator dataset. The workflow does run a long measured import, which the previous reason named, and scripts/run_real_joplin_profile.sh is where that happens -- but this block is a synopsis before it is long-running."
       }
     },
     {
@@ -2818,8 +3059,8 @@
       "sha256": "45f4858a169a40ae927e16dc65cc6e7d359c280b2fc42bcbc2d47454f7f68cbc",
       "state": "unverified",
       "unrun_reason": {
-        "code": "interactive-or-long-running",
-        "detail": "Literal body starts or controls a daemon/GUI/waiting operation: notriosctl jobs list"
+        "code": "illustrative-placeholder",
+        "detail": "Command synopsis: the job identifier is a metavariable. Watching a running job is long-running, which the previous reason named; a synopsis cannot be run either way."
       }
     },
     {

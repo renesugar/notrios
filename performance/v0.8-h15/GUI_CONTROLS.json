@@ -1,6 +1,6 @@
 {
   "schema": "notrios.h15.gui-controls.v3",
-  "interface_signature": "2b8155912de5ae3465b4da3dea63aa4d83b068bab35367cb5349b425ec2d0c75",
+  "interface_signature": "a25818e1baf137bb9447cca7c7b74323e38c89ad313e9330a8f1b541b8ab24a2",
   "summary": {
     "controls": 89,
     "addressable": 82,
@@ -10,13 +10,13 @@
     {
       "id": "start",
       "reached": true,
-      "controls": 109,
+      "controls": 111,
       "steps": []
     },
     {
       "id": "all-notes",
       "reached": true,
-      "controls": 109,
+      "controls": 110,
       "steps": [
         "testid=sidebar-row-snb_all_notes"
       ]
@@ -24,7 +24,7 @@
     {
       "id": "help",
       "reached": true,
-      "controls": 102,
+      "controls": 103,
       "steps": [
         "testid=sidebar-row-nb_help"
       ]
@@ -32,7 +32,7 @@
     {
       "id": "trash",
       "reached": true,
-      "controls": 68,
+      "controls": 67,
       "steps": [
         "testid=sidebar-row-snb_trash"
       ]
@@ -40,7 +40,7 @@
     {
       "id": "new-note",
       "reached": true,
-      "controls": 109,
+      "controls": 110,
       "steps": [
         "testid=new-note-button"
       ]
@@ -48,7 +48,7 @@
     {
       "id": "note-open",
       "reached": true,
-      "controls": 113,
+      "controls": 115,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Crawl fixture note#0"
@@ -66,7 +66,7 @@
     {
       "id": "note-remote-media",
       "reached": true,
-      "controls": 115,
+      "controls": 117,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-card text~Remote media fixture#0"
@@ -75,7 +75,7 @@
     {
       "id": "selection",
       "reached": true,
-      "controls": 69,
+      "controls": 71,
       "steps": [
         "testid=sidebar-row-snb_all_notes",
         "css=.result-check#0"
@@ -84,7 +84,7 @@
     {
       "id": "sync-overview",
       "reached": true,
-      "controls": 125,
+      "controls": 126,
       "steps": [
         "testid=sync-header-button"
       ]
@@ -92,7 +92,7 @@
     {
       "id": "sync-setup",
       "reached": true,
-      "controls": 124,
+      "controls": 125,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-setup"
@@ -101,7 +101,7 @@
     {
       "id": "sync-peers",
       "reached": true,
-      "controls": 124,
+      "controls": 125,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-peers"
@@ -110,7 +110,7 @@
     {
       "id": "sync-retention",
       "reached": true,
-      "controls": 118,
+      "controls": 119,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-retention"
@@ -119,7 +119,7 @@
     {
       "id": "sync-attachments",
       "reached": true,
-      "controls": 118,
+      "controls": 119,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-resources"
@@ -128,7 +128,7 @@
     {
       "id": "sync-conflicts",
       "reached": true,
-      "controls": 118,
+      "controls": 119,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-conflicts"
@@ -137,7 +137,7 @@
     {
       "id": "sync-backup",
       "reached": true,
-      "controls": 129,
+      "controls": 130,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-backup"
@@ -146,7 +146,7 @@
     {
       "id": "sync-repairs",
       "reached": true,
-      "controls": 118,
+      "controls": 119,
       "steps": [
         "testid=sync-header-button",
         "testid=sync-tab-repairs"
@@ -162,23 +162,11 @@
       "examples": [
         "Related note"
       ],
-      "instances": 14,
-      "enabled_instances": 14,
+      "instances": 2,
+      "enabled_instances": 2,
       "states": [
         "start",
-        "all-notes",
-        "help",
-        "trash",
-        "new-note",
-        "note-remote-media",
-        "sync-overview",
-        "sync-setup",
-        "sync-peers",
-        "sync-retention",
-        "sync-attachments",
-        "sync-conflicts",
-        "sync-backup",
-        "sync-repairs"
+        "note-remote-media"
       ],
       "always_disabled": false
     },
@@ -778,12 +766,12 @@
       "role": "",
       "testid": "result-card",
       "examples": [
-        "Written after the drive went away",
         "Crawl fixture note",
-        "Remote media fixture"
+        "Job fixture note",
+        "Written after the drive went away"
       ],
-      "instances": 328,
-      "enabled_instances": 328,
+      "instances": 343,
+      "enabled_instances": 343,
       "states": [
         "start",
         "all-notes",
@@ -811,12 +799,12 @@
       "role": "",
       "testid": "result-check",
       "examples": [
-        "Select Written after the drive went away",
         "Select Crawl fixture note",
-        "Select Remote media fixture"
+        "Select Job fixture note",
+        "Select Written after the drive went away"
       ],
-      "instances": 328,
-      "enabled_instances": 328,
+      "instances": 343,
+      "enabled_instances": 343,
       "states": [
         "start",
         "all-notes",

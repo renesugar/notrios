@@ -1,0 +1,14 @@
+{
+  "name": "h2a12",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "elkjs": "file:./elk-refused",
+    "mermaid": "^12.2.0",
+    "playwright": "^1.62.0",
+    "vite": "^8.1.4"
+  },
+  "overrides": {
+    "elkjs": "$elkjs"
+  }
+}

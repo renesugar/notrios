@@ -6,6 +6,7 @@
 #
 # Usage: bash scripts/run_editor_profile.sh [output.json] [note-kilobytes]
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 OUTPUT=${1:-/tmp/notrios-editor-profile.json}

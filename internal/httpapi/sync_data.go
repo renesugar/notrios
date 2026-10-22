@@ -99,8 +99,15 @@ func (s *Server) dataRoutes() {
 	s.mux.HandleFunc("GET /api/v1/sync/carrier/{namespace}/{class}", s.requirePeer(s.handleCarrierList))
 	s.mux.HandleFunc("GET /api/v1/sync/carrier/{namespace}/{class}/{name}", s.requirePeer(s.handleCarrierRead))
 	s.mux.HandleFunc("HEAD /api/v1/sync/carrier/{namespace}/{class}/{name}", s.requirePeer(s.handleCarrierRead))
-	s.mux.HandleFunc("PUT /api/v1/sync/carrier/{class}/{name}", s.requirePeer(s.handleCarrierPublish))
-	s.mux.HandleFunc("DELETE /api/v1/sync/carrier/{class}/{name}", s.requirePeer(s.handleCarrierRemove))
+	// Writes live under the literal segment `mine`, not a parameter (v1.0 J16).
+	// The namespace is still derived from the authenticated principal and never
+	// read from the URL -- that is the security property, and it is unchanged.
+	// What changed is the shape: the write used to be two segments after
+	// `carrier`, the same shape as the namespace/class listing, so OpenAPI could
+	// only describe both as {segment1}/{segment2}, a parameter whose meaning
+	// depended on the verb. `mine` gives every carrier path one meaning.
+	s.mux.HandleFunc("PUT /api/v1/sync/carrier/mine/{class}/{name}", s.requirePeer(s.handleCarrierPublish))
+	s.mux.HandleFunc("DELETE /api/v1/sync/carrier/mine/{class}/{name}", s.requirePeer(s.handleCarrierRemove))
 	s.mux.HandleFunc("POST /api/v1/sync/backups", s.requirePeer(s.handleBackupCreate))
 	s.mux.HandleFunc("GET /api/v1/sync/backups/{backup_id}", s.requirePeer(s.handleBackupDownload))
 	s.mux.HandleFunc("HEAD /api/v1/sync/backups/{backup_id}", s.requirePeer(s.handleBackupDownload))

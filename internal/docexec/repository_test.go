@@ -170,7 +170,47 @@ func TestRepositoryExamples(t *testing.T) {
 	// checkout the reader does not have either. Topics go 14 -> 15 with it:
 	// docs/troubleshooting.md had no example at all until now, which is its own
 	// small comment on who that page was written for. executedTopics stays 13.
-	if report.Executed != 65 || report.Entries != 163 || len(report.Topics) != 15 {
+	//
+	// 163 -> 164: v1.0 J3. The installation page's removal section now shows
+	// `notriosctl purge` first and `make purge` second, because the packaged
+	// reader -- the one the previous note added a section for -- has a command
+	// now rather than a paragraph explaining that they do not. It is unrun for
+	// the same reason the two beside it are: the literal body deletes this
+	// user's library. It runs in performance/v1.0-j3's drills against a
+	// disposable HOME, and the reason says so.
+	//
+	// 164 -> 169 and 65 -> 69 executed in v1.0 J13-C, with topics 15 -> 16:
+	// docs/configuration.md had 53 documented keys and no command lines at all,
+	// so a reader learned that an option exists and not what to run or what
+	// else to set with it. Four use-case examples now write a small file and
+	// point `config show` at it, and each is checked against its own YAML --
+	// every key it sets must come back with origin `file`. The fifth is a bare
+	// fragment: `config show` summarises 20 of the 53 and the two search limits
+	// are not among them, so that one says where the effect *is* visible rather
+	// than showing a command that appears to check what it cannot.
+	//
+	// 169 -> 170 and 69 -> 70 executed in v1.0 J28-D: docs/configuration.md's
+	// remote-media section shows security.remote_media stating a refused set
+	// and an exception. `config show` reports both lists, so the check compares
+	// their members, which is why heredocLeafKeys now reads list values and one
+	// more level of nesting.
+	//
+	// 170 -> 172 entries in v1.0 J11, executed unchanged at 70:
+	// docs/installation.md's new section shows `paths --report` and
+	// `scripts/check_purged.sh`. Both bodies report on and then delete this
+	// user's own installation, so they carry a reviewed unrun reason and are
+	// drilled against a disposable HOME in performance/v1.0-j11 instead.
+	//
+	// 172 -> 173 and 70 -> 71 executed in v1.0 J40-F: docs/operations.md's
+	// "Finding ambiguous links" shows `links report`, capped, and writing its
+	// Reports note. The seeded library has no ambiguous link, so the adapter
+	// adds one, and checks the link is quoted with both candidates, the cap
+	// holds, and the note is written without touching the seeded note.
+	//
+	// 173 -> 178 in v1.0 J9: docs/installation.md's verification and rollback
+	// fences. Executed is unchanged: each needs a published release set or
+	// this user's installation, and runs in performance/v1.0-j9 instead.
+	if report.Executed != 71 || report.Entries != 178 || len(report.Topics) != 16 {
 		t.Fatalf("unexpected G18d coverage: %+v", report)
 	}
 	executedTopics := 0
@@ -186,7 +226,10 @@ func TestRepositoryExamples(t *testing.T) {
 	// example because it had nothing runnable to show -- the page documented
 	// terms that name a notebook or a collection and no way to find out which
 	// ones exist.
-	if executedTopics != 13 {
+	// 13 -> 14 in v1.0 J13-C: configuration is a new topic and it has executed
+	// examples from the start, which is the point of doing J13-C before the
+	// generator rather than after it.
+	if executedTopics != 14 {
 		t.Fatalf("executed topic coverage = %d, want 13 plus reviewed index exception: %+v", executedTopics, report.Topics)
 	}
 	assertRepositoryCoverageContracts(t, manifest)
@@ -266,30 +309,34 @@ func (h *repositoryExamples) close() {
 func (h *repositoryExamples) resolve(entry ManifestEntry, source string) (string, bool) {
 	fixture := h.ensureFixture(entry)
 	values := map[string]string{
-		"loopback.base_url":      fixtureURL(fixture),
-		"cli.binary":             h.cli,
-		"daemon.binary":          h.daemon,
-		"archive.full_dir":       filepath.Join(fixture.root, "backups", "full"),
-		"archive.subset_dir":     filepath.Join(fixture.root, "transfer", "research"),
-		"import.joplin_dir":      fixture.imports.Joplin,
-		"import.obsidian_dir":    fixture.imports.Obsidian,
-		"import.twitter_dir":     fixture.imports.Twitter,
-		"import.chatgpt_dir":     fixture.imports.ChatGPT,
-		"import.chatgpt_file":    filepath.Join(fixture.imports.ChatGPT, "conversations.json"),
-		"import.claude_dir":      fixture.imports.Claude,
-		"import.claude_file":     filepath.Join(fixture.imports.Claude, "conversations.json"),
-		"import.archive_v1_dir":  fixture.imports.ArchiveV1,
-		"import.joplin_plan":     filepath.Join(fixture.root, "joplin-plan.json"),
-		"import.obsidian_plan":   filepath.Join(fixture.root, "obsidian-plan.json"),
-		"seed.document_id":       fixture.documentID,
-		"seed.other_document_id": fixture.otherID,
-		"seed.notebook_id":       fixture.notebookID,
-		"seed.resource_id":       fixture.resourceID,
-		"seed.job_id":            fixture.jobID,
-		"seed.database_id":       fixture.databaseID,
-		"seed.revision_id":       fixture.revisionID,
-		"seed.template_id":       fixture.templateID,
-		"graph.output_dir":       filepath.Join(fixture.root, "graph"),
+		"loopback.base_url":         fixtureURL(fixture),
+		"cli.binary":                h.cli,
+		"daemon.binary":             h.daemon,
+		"archive.full_dir":          filepath.Join(fixture.root, "backups", "full"),
+		"archive.subset_dir":        filepath.Join(fixture.root, "transfer", "research"),
+		"import.joplin_dir":         fixture.imports.Joplin,
+		"import.obsidian_dir":       fixture.imports.Obsidian,
+		"import.twitter_dir":        fixture.imports.Twitter,
+		"import.twitter_zip":        fixture.imports.TwitterZip,
+		"import.chatgpt_zip":        fixture.imports.ChatGPTZip,
+		"import.chatgpt_portal_zip": fixture.imports.ChatGPTPortalZip,
+		"import.claude_zip":         fixture.imports.ClaudeZip,
+		"import.chatgpt_dir":        fixture.imports.ChatGPT,
+		"import.chatgpt_file":       filepath.Join(fixture.imports.ChatGPT, "conversations.json"),
+		"import.claude_dir":         fixture.imports.Claude,
+		"import.claude_file":        filepath.Join(fixture.imports.Claude, "conversations.json"),
+		"import.archive_v1_dir":     fixture.imports.ArchiveV1,
+		"import.joplin_plan":        filepath.Join(fixture.root, "joplin-plan.json"),
+		"import.obsidian_plan":      filepath.Join(fixture.root, "obsidian-plan.json"),
+		"seed.document_id":          fixture.documentID,
+		"seed.other_document_id":    fixture.otherID,
+		"seed.notebook_id":          fixture.notebookID,
+		"seed.resource_id":          fixture.resourceID,
+		"seed.job_id":               fixture.jobID,
+		"seed.database_id":          fixture.databaseID,
+		"seed.revision_id":          fixture.revisionID,
+		"seed.template_id":          fixture.templateID,
+		"graph.output_dir":          filepath.Join(fixture.root, "graph"),
 	}
 	value, ok := values[source]
 	return value, ok
@@ -748,6 +795,16 @@ func (h *repositoryExamples) cliShell(ctx context.Context, invocation Invocation
 		ok = strings.Count(output, fixture.documentID) >= 4 && strings.Contains(output, "agenda")
 	case "cli-open":
 		ok = strings.Contains(output, fixture.documentID) && strings.Contains(output, "http://127.0.0.1")
+	case "config-show-origin-file":
+		var reason string
+		ok, reason = configShowSetEveryKey(invocation.Body, output)
+		if !ok {
+			// Reported rather than collapsed into a bare false: which key, and
+			// whether it came back with the wrong origin or the wrong value, is
+			// the whole difference between a fixable failure and a puzzle.
+			return AdapterResult{Kind: "exit", Status: status, PostconditionOK: false,
+				Detail: reason}, nil
+		}
 	default:
 		if handled, importOK, importDetail := checkDocumentationImportPostcondition(ctx, fixture, invocation.Entry.Registered.Execution.Postcondition.Kind, output); handled {
 			ok = importOK
@@ -775,6 +832,181 @@ func openFixtureStore(fixture *repositoryFixture) (*store.SQLiteStore, func(), e
 	return st, func() { _ = st.Close() }, nil
 }
 
+// configShowSetEveryKey checks a configuration example against its own YAML.
+//
+// v1.0 J13-C. The examples on docs/configuration.md answer "what do I use this
+// for, and what else must be set with it" by writing a small file and pointing
+// `config show` at it. The check is derived from the fence rather than restated
+// per example: every leaf key the heredoc sets must come back reported with
+// origin `file` and the value the example wrote. So an example cannot claim a
+// key it does not set, and cannot quietly stop setting one.
+//
+// `origin` is the column that matters. A value alone could be the compiled
+// default agreeing by accident -- `server.listen_addr: 127.0.0.1:8080` in the
+// proxy example *is* the default -- and `file` is what says the file did it.
+//
+// It refuses an example that checks nothing. `config show` summarises 20 of the
+// 53 keys, so a fence setting only unreported keys would pass with zero
+// assertions, which is the shape of gate this repository keeps finding: one
+// that stopped running rather than started failing.
+func configShowSetEveryKey(body, output string) (bool, string) {
+	wanted, err := heredocLeafKeys(body)
+	if err != nil {
+		return false, err.Error()
+	}
+	if len(wanted) == 0 {
+		return false, "the example sets no configuration key, so nothing was checked"
+	}
+
+	var shown struct {
+		Settings []struct {
+			Key    string `json:"key"`
+			Origin string `json:"origin"`
+			Value  string `json:"value"`
+		} `json:"settings"`
+	}
+	start := strings.Index(output, "{")
+	if start < 0 {
+		return false, "config show printed no JSON"
+	}
+	if err := json.Unmarshal([]byte(output[start:]), &shown); err != nil {
+		return false, fmt.Sprintf("config show output is not the JSON this check expects: %v", err)
+	}
+	reported := map[string]struct{ origin, value string }{}
+	for _, setting := range shown.Settings {
+		reported[setting.Key] = struct{ origin, value string }{setting.Origin, setting.Value}
+	}
+
+	checked := 0
+	for key, value := range wanted {
+		got, present := reported[key]
+		if !present {
+			// Not summarised by `config show`; the page says which keys are and
+			// are not. Skipped rather than failed, and the count below is what
+			// stops every key being skipped.
+			continue
+		}
+		checked++
+		if got.origin != "file" {
+			return false, fmt.Sprintf("%s is reported with origin %q, so the example's file did not set it",
+				key, got.origin)
+		}
+		if got.value != value {
+			return false, fmt.Sprintf("%s is %q and the example set %q", key, got.value, value)
+		}
+	}
+	if checked == 0 {
+		return false, fmt.Sprintf("none of the %d key(s) this example sets is reported by "+
+			"config show, so it asserts nothing", len(wanted))
+	}
+	return true, ""
+}
+
+// heredocLeafKeys reads the dotted leaf keys out of the YAML a fence writes.
+//
+// A deliberately small reader for a deliberately small shape: two-space
+// indentation, `key: value`, and list items under a key. Anything else in a
+// published configuration example is a sign the example has grown past what a
+// reader can take in, so this refuses rather than guessing.
+func heredocLeafKeys(body string) (map[string]string, error) {
+	lines := strings.Split(body, "\n")
+	start, end := -1, -1
+	for index, line := range lines {
+		if start < 0 && strings.Contains(line, "<<'YAML'") {
+			start = index + 1
+			continue
+		}
+		if start >= 0 && strings.TrimSpace(line) == "YAML" {
+			end = index
+			break
+		}
+	}
+	if start < 0 || end < 0 {
+		return nil, fmt.Errorf("the example has no <<'YAML' heredoc to check against")
+	}
+
+	body_lines := lines[start:end]
+	keys := map[string]string{}
+	// section is the key at indent 0 and group the one at indent 2, for the
+	// one deeper shape J28 publishes: security.remote_media.<list>.
+	section, group := "", ""
+	keyAt := func(indent int, name string) (string, error) {
+		switch {
+		case indent == 0:
+			return name, nil
+		case indent == 2:
+			return section + "." + name, nil
+		case indent == 4 && group != "":
+			return section + "." + group + "." + name, nil
+		}
+		return "", fmt.Errorf("%q nests deeper than these examples are meant to", name)
+	}
+	for index, line := range body_lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		trimmed := strings.TrimRight(line, " ")
+		indent := len(trimmed) - len(strings.TrimLeft(trimmed, " "))
+		content := strings.TrimSpace(trimmed)
+		if strings.HasPrefix(content, "- ") {
+			continue // a list member, read with its key below
+		}
+		name, value, found := strings.Cut(content, ":")
+		if !found {
+			return nil, fmt.Errorf("cannot read %q as a configuration key", content)
+		}
+		name, value = strings.TrimSpace(name), strings.TrimSpace(value)
+		if position := strings.Index(value, "#"); position >= 0 {
+			value = strings.TrimSpace(value[:position])
+		}
+		if indent <= 2 {
+			group = ""
+		}
+		if value != "" {
+			key, err := keyAt(indent, name)
+			if err != nil {
+				return nil, err
+			}
+			keys[key] = value
+			continue
+		}
+
+		// An empty value is either a section or a list, and which one decides
+		// how to read on. The next non-blank lines say: `- item` makes it a list,
+		// read as its members joined the way `config show` joins a list value
+		// (a list `config show` does not report is skipped by the caller);
+		// anything else starts a section, and nesting past the one deeper shape
+		// above is refused rather than guessed at, so a check cannot silently
+		// stop checking.
+		var members []string
+		for _, following := range body_lines[index+1:] {
+			if strings.TrimSpace(following) == "" {
+				continue
+			}
+			member, isMember := strings.CutPrefix(strings.TrimSpace(following), "- ")
+			if !isMember {
+				break
+			}
+			members = append(members, strings.Trim(strings.TrimSpace(member), `"`))
+		}
+		switch {
+		case len(members) > 0:
+			key, err := keyAt(indent, name)
+			if err != nil {
+				return nil, err
+			}
+			keys[key] = strings.Join(members, ", ")
+		case indent == 0:
+			section, group = name, ""
+		case indent == 2:
+			group = name
+		default:
+			return nil, fmt.Errorf("%q nests deeper than these examples are meant to", content)
+		}
+	}
+	return keys, nil
+}
+
 func runPinnedShell(ctx context.Context, root, cli, body string) (string, int, error) {
 	bin := filepath.Join(root, "fixture-bin")
 	if err := os.MkdirAll(bin, 0o755); err != nil {
@@ -788,6 +1020,19 @@ func runPinnedShell(ctx context.Context, root, cli, body string) (string, int, e
 		return "", -1, err
 	}
 	if err := symlinkCommand(curl, filepath.Join(bin, "curl")); err != nil {
+		return "", -1, err
+	}
+	// `cat` joins the fixture's PATH for v1.0 J13-C. The configuration examples
+	// write a small YAML file with a heredoc and then point a command at it,
+	// which is how somebody actually writes a config file -- and the choice was
+	// between adding one coreutil to the fixture or contorting the published
+	// example into `printf` calls to suit the harness. The fixture should
+	// support the idiom the documentation needs.
+	catBinary, err := exec.LookPath("cat")
+	if err != nil {
+		return "", -1, err
+	}
+	if err := symlinkCommand(catBinary, filepath.Join(bin, "cat")); err != nil {
 		return "", -1, err
 	}
 	jq := filepath.Join(bin, "jq")

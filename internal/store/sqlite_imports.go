@@ -14,9 +14,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/markdownlinks"
 )
 
 const maxImportLookupItems = 500
@@ -30,6 +33,160 @@ func validateLookupItems(values []string) error {
 		return fmt.Errorf("%w: lookup contains %d items; maximum is %d", ErrInvalidInput, len(values), maxImportLookupItems)
 	}
 	return nil
+}
+
+// ExistingDocumentIDs reports which of these document IDs exist, without
+// reading what they contain (v1.0 J32-H).
+//
+// An importer asking "which of these notes are already here" used GetDocuments
+// and looked only at whether each ID came back, so every body crossed the cgo
+// boundary as a Go string to be discarded: 480 MB of a near-limit import, and
+// a cost that grows with the size of a library's notes rather than with the
+// import.
+//
+// The rows it counts are the rows GetDocuments returns: the same join to the
+// current revision, so a document without one is absent here too, and the same
+// deleted_at filter, so a note in the trash is absent from both.
+func (s *SQLiteStore) ExistingDocumentIDs(ctx context.Context, ids []string) (map[string]bool, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(ids); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	stmt, err := s.prepareLocked(`SELECT d.id
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.deleted_at IS NULL AND d.id IN (` + lookupPlaceholders(len(ids)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, ids); err != nil {
+		return nil, err
+	}
+	for {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			result[columnText(stmt, 0)] = true
+		case C.SQLITE_DONE:
+			return result, nil
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+}
+
+// ResourceRefsDigest is the SHA-256 of a document's resource references, taken
+// in an order that does not depend on how they were listed (v1.0 J39).
+//
+// An importer takes it over the references it attaches, and ImportDocumentHeads
+// takes it over the rows the store holds, so the two agree exactly when the note
+// still has what the import gave it and nothing besides. A reference the store
+// declined to write, because its resource is missing, makes them disagree, and
+// that is the safe direction: the note is read again.
+func ResourceRefsDigest(refs []AttachResourceRequest) string {
+	if len(refs) == 0 {
+		// Most notes have none, and each import asks once per note.
+		return emptyResourceRefsDigest
+	}
+	lines := make([]string, 0, len(refs))
+	size := 0
+	for _, ref := range refs {
+		ref = NormalizeAttachResourceRequest(ref)
+		line := ref.ResourceID + "\x00" + ref.RelationType + "\x00" + strconv.Itoa(ref.Ordinal) + "\x00" + ref.AnchorJSON + "\n"
+		lines = append(lines, line)
+		size += len(line)
+	}
+	sort.Strings(lines)
+	// One buffer and one sum: a hasher per note, fed a line at a time, was
+	// most of what an import spent recording references (measured, v1.0
+	// J39-D).
+	joined := make([]byte, 0, size)
+	for _, line := range lines {
+		joined = append(joined, line...)
+	}
+	sum := sha256.Sum256(joined)
+	return hex.EncodeToString(sum[:])
+}
+
+// emptyResourceRefsDigest is ResourceRefsDigest of no references: the SHA-256 of
+// nothing, which TestJ39ImportDocumentHeadsAnswersWithoutTheBody checks.
+const emptyResourceRefsDigest = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+// ImportDocumentHeads reads what an importer needs to decide that a note is
+// still what it last wrote, without reading the note (v1.0 J39).
+//
+// The documents it answers for are the ones GetDocuments returns: the same join
+// to the current revision and the same deleted_at filter, so a note in the
+// trash is absent from both. Title and notebook are the document's, as
+// GetDocuments reports them. A revision whose content hash has not been
+// backfilled yet reports it empty, which no importer can match.
+func (s *SQLiteStore) ImportDocumentHeads(ctx context.Context, ids []string) (map[string]ImportDocumentHead, error) {
+	ctx = contextOrBackground(ctx)
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	result := make(map[string]ImportDocumentHead, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if err := validateLookupItems(ids); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// One statement for the heads and their references: a row per reference,
+	// or one row of NULLs for a note that has none.
+	stmt, err := s.prepareLocked(`SELECT d.id, d.current_revision_id, d.title,
+			COALESCE(d.notebook_id, ''), r.content_sha256,
+			refs.resource_id, refs.relation_type, refs.ordinal, refs.anchor_json
+		FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		LEFT JOIN document_resource_refs refs ON refs.document_id = d.id
+		WHERE d.deleted_at IS NULL AND d.id IN (` + lookupPlaceholders(len(ids)) + `)`)
+	if err != nil {
+		return nil, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, ids); err != nil {
+		return nil, err
+	}
+	refs := make(map[string][]AttachResourceRequest, len(ids))
+	for done := false; !done; {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			documentID := columnText(stmt, 0)
+			result[documentID] = ImportDocumentHead{
+				CurrentRevisionID: columnText(stmt, 1),
+				Title:             columnText(stmt, 2),
+				NotebookID:        columnText(stmt, 3),
+				ContentSHA256:     columnText(stmt, 4),
+			}
+			if C.sqlite3_column_type(stmt, 5) != C.SQLITE_NULL {
+				refs[documentID] = append(refs[documentID], AttachResourceRequest{
+					DocumentID: documentID, ResourceID: columnText(stmt, 5), RelationType: columnText(stmt, 6),
+					Ordinal: int(C.sqlite3_column_int(stmt, 7)), AnchorJSON: columnText(stmt, 8),
+				})
+			}
+		case C.SQLITE_DONE:
+			done = true
+		default:
+			return nil, s.stepErrLocked(rc)
+		}
+	}
+	for id, head := range result {
+		head.ResourceRefsSHA256 = ResourceRefsDigest(refs[id])
+		result[id] = head
+	}
+	return result, nil
 }
 
 func (s *SQLiteStore) GetDocuments(ctx context.Context, ids []string) (map[string]Document, error) {
@@ -598,4 +755,122 @@ func (s *SQLiteStore) OpenSourceBundleItem(ctx context.Context, sourceSystem, so
 		return SourceBundleItem{}, nil, err
 	}
 	return item, file, nil
+}
+
+// documentCollectionLocked reads a live document's collection without reading
+// its body, for a caller that needs only the scope a resolution happens in
+// (v1.0 J32-I).
+func (s *SQLiteStore) documentCollectionLocked(documentID string) (string, bool, error) {
+	stmt, err := s.prepareLocked(`SELECT collection_id FROM documents WHERE id = ? AND deleted_at IS NULL`)
+	if err != nil {
+		return "", false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return "", false, err
+	}
+	switch rc := C.sqlite3_step(stmt); rc {
+	case C.SQLITE_ROW:
+		return columnText(stmt, 0), true, nil
+	case C.SQLITE_DONE:
+		return "", false, nil
+	default:
+		return "", false, s.stepErrLocked(rc)
+	}
+}
+
+// reresolveDocumentLinksLocked resolves a document's links again from the rows
+// it already has, without parsing its body (v1.0 J32-I).
+//
+// The import writes every note's links when the note is written, and then runs
+// a final pass over every note because a note may link to one imported later.
+// That pass used to parse each body a second time, which a profile put at
+// 173 s of a 516 s import -- an identical parse over identical bytes, since a
+// body does not change between the two passes. What can change is the
+// resolution, and `document_links` already stores every part of the candidate a
+// resolution is computed from.
+//
+// It reports false when it will not vouch for the rows: a document with no
+// block rows was not written by this path, so the caller parses it as before. A
+// note with text always produces at least one block, so a document with blocks
+// and no links genuinely has none.
+func (s *SQLiteStore) reresolveDocumentLinksLocked(documentID, collectionID string) (bool, error) {
+	hasBlocks, err := s.countLocked(`SELECT COUNT(*) FROM (SELECT 1 FROM document_blocks WHERE document_id = ? LIMIT 1)`, documentID)
+	if err != nil {
+		return false, err
+	}
+	if hasBlocks == 0 {
+		return false, nil
+	}
+
+	type row struct {
+		id        int64
+		candidate markdownlinks.Candidate
+	}
+	// Read every row before updating any: an update while the select is still
+	// stepping would be a scan reading its own writes.
+	stmt, err := s.prepareLocked(`SELECT id, relation_type, source_format, raw_target,
+			COALESCE(display_text, ''), COALESCE(anchor_type, ''), COALESCE(anchor_value, ''),
+			COALESCE(context, ''), COALESCE(source_start_byte, 0), COALESCE(source_end_byte, 0),
+			COALESCE(source_line, 0), COALESCE(source_column, 0)
+		FROM document_links WHERE source_document_id = ? ORDER BY id`)
+	if err != nil {
+		return false, err
+	}
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		C.sqlite3_finalize(stmt)
+		return false, err
+	}
+	rows := []row{}
+	for stepping := true; stepping; {
+		switch rc := C.sqlite3_step(stmt); rc {
+		case C.SQLITE_ROW:
+			rows = append(rows, row{
+				id: int64(C.sqlite3_column_int64(stmt, 0)),
+				candidate: markdownlinks.Candidate{
+					RelationType: columnText(stmt, 1),
+					SourceFormat: columnText(stmt, 2),
+					RawTarget:    columnText(stmt, 3),
+					DisplayText:  columnText(stmt, 4),
+					AnchorType:   columnText(stmt, 5),
+					AnchorValue:  columnText(stmt, 6),
+					Context:      columnText(stmt, 7),
+					StartByte:    int(C.sqlite3_column_int64(stmt, 8)),
+					EndByte:      int(C.sqlite3_column_int64(stmt, 9)),
+					Line:         int(C.sqlite3_column_int64(stmt, 10)),
+					Column:       int(C.sqlite3_column_int64(stmt, 11)),
+				},
+			})
+		case C.SQLITE_DONE:
+			stepping = false
+		default:
+			err := s.stepErrLocked(rc)
+			C.sqlite3_finalize(stmt)
+			return false, err
+		}
+	}
+	C.sqlite3_finalize(stmt)
+	if len(rows) == 0 {
+		return true, nil
+	}
+
+	// Only what a resolution decides is written back. The candidate's own
+	// fields -- what was written, where it sits in the body -- cannot change
+	// while the body does not.
+	update, err := s.prepareRepeatedLocked(`UPDATE document_links
+		SET target_document_id = NULLIF(?, ''), target_resource_id = NULLIF(?, ''),
+			target_uri = NULLIF(?, ''), resolution_status = ?
+		WHERE id = ?`)
+	if err != nil {
+		return false, err
+	}
+	defer update.close()
+	for _, current := range rows {
+		link := s.resolveLinkCandidateLocked(documentID, collectionID, current.candidate)
+		if err := update.exec(link.TargetDocumentID, link.TargetResourceID, link.TargetURI,
+			link.ResolutionStatus, strconv.FormatInt(current.id, 10)); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
 }

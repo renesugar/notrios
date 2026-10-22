@@ -42,7 +42,7 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 	if options.BatchSize <= 0 {
 		options.BatchSize = defaultRestoreBatch
 	}
-	if _, err := VerifyDirectory(root, options.Limits); err != nil {
+	if _, err := VerifyDirectoryIn(store.TempSpaceOf(target), root, options.Limits); err != nil {
 		return store.RestoreSummary{}, fmt.Errorf("archive failed verification; nothing was written: %w", err)
 	}
 	manifest, err := readManifestFile(root, options.Limits)
@@ -98,7 +98,7 @@ func Restore(ctx context.Context, target store.RestoreTarget, root string, optio
 		return store.RestoreSummary{}, err
 	}
 	defer run.closeObjectIndex()
-	admitted, err := store.OpenImportManifest()
+	admitted, err := store.OpenImportManifestIn(store.TempSpaceOf(target))
 	if err != nil {
 		return store.RestoreSummary{}, err
 	}
@@ -674,7 +674,7 @@ func (r *restoreRun) readBlobText(reference BlobReference) (string, error) {
 // attachment corpus — and it made restore unusable at real scale while looking
 // deceptively "bounded" because it held no map.
 func (r *restoreRun) buildObjectIndex(ctx context.Context) error {
-	spool, err := store.OpenImportManifest()
+	spool, err := store.OpenImportManifestIn(store.TempSpaceOf(r.target))
 	if err != nil {
 		return err
 	}

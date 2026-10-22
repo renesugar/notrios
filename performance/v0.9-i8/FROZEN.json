@@ -1,5 +1,5 @@
 {
-  "content_commit": "2b7ccd2baf9361b9ffe190988f7823016526e5c3",
+  "content_commit": "c426ee3d05ae8b8e696a6cb848bdecc381b0f851",
   "frozen_on": "2026-09-10",
   "how_to_change_one": "Change the surface, run build_freeze.py, and say in the commit message what moved and whether it is compatible. The gate exists to make that sentence get written.",
   "not_frozen_here": [
@@ -13,7 +13,7 @@
       "count": 27,
       "members": [
         "README.md:ca4b2c9f7c3b71c3",
-        "contract.json:41f6e47474c8491e",
+        "contract.json:9e19cc3a55e66fac",
         "fixtures/README.md:6ebfdc6f93d44ff2",
         "fixtures/fixture-matrix.json:cc65f497c9480bd8",
         "fixtures/loose-schema12/manifest.json:5162c68006d5f6ae",
@@ -25,7 +25,7 @@
         "fixtures/packed-schema12/manifest.json:2d438c482006a000",
         "fixtures/packed-schema12/objects/sha256/28/7c/287cc19436247b2e5aa9f2002e79aae9f275f4d4af341fc55fa7850ef1be5835:287cc19436247b2e",
         "fixtures/packed-schema12/objects/sha256/ca/e9/cae9e9f30049f7a3b3e897d54aebffc88e2f00d4d448c12a7b50dbe44f4d13e6:cae9e9f30049f7a3",
-        "fixtures/physical-refusal/manifest.json:44aba336b017af92",
+        "fixtures/physical-refusal/manifest.json:09f2f35981d874b7",
         "fixtures/previous-explicit-zero-record-counts/index-entry.json:18a5345de1a66a04",
         "fixtures/sync-era-schema27-packed/manifest.json:a4079a5b68c0e6e9",
         "fixtures/sync-era-schema27-packed/objects/sha256/28/7c/287cc19436247b2e5aa9f2002e79aae9f275f4d4af341fc55fa7850ef1be5835:287cc19436247b2e",
@@ -40,7 +40,7 @@
         "sync-wire/golden-inputs.json:48a34203af078103",
         "sync-wire/goldens.json:f6a77d5f4f9aa515"
       ],
-      "sha256": "a440d2003fe002273bb9a071a93ce3d646fe4f4007133ab5d75152e6186274dc"
+      "sha256": "b5b2e0f1be18d64226bb0bfa5eb84dde0eb2a5db8cda3e8eaaa4bab06e5c9f91"
     },
     "c_abi": {
       "count": 12,
@@ -61,7 +61,7 @@
       "sha256": "9f9a41d0d6d9cc50ca7676f11487acf25e1148e4681eb28f27e158e3b22051b5"
     },
     "cli": {
-      "count": 91,
+      "count": 93,
       "members": [
         "collections list",
         "collections show",
@@ -86,6 +86,7 @@
         "jobs show",
         "jobs status",
         "link",
+        "links report",
         "lint",
         "localize",
         "migrate",
@@ -117,6 +118,7 @@
         "publish profile list",
         "publish profile save",
         "publish run",
+        "purge",
         "register-url-handler",
         "resources add",
         "resources get",
@@ -155,10 +157,10 @@
         "verify archive-v2",
         "version"
       ],
-      "sha256": "8b58c88240106dbddfd981662293ffa394f257c72bbfc7c6beb85850e3e863c6"
+      "sha256": "304d910997c7b29c540ad732530edec3b8f4bee8361e9a57a4082cd33005febe"
     },
     "configuration": {
-      "count": 60,
+      "count": 64,
       "members": [
         "allow_private_networks",
         "allowed_domains",
@@ -193,11 +195,13 @@
         "max_results",
         "mcp",
         "name",
+        "permitted_address_ranges",
         "profile",
         "projection_dir",
         "public_base_url",
         "purged_resource_days",
         "quarantine_dir",
+        "refused_address_ranges",
         "registry_path",
         "remote_media",
         "requests_per_minute",
@@ -209,6 +213,7 @@
         "runtime_dir",
         "search",
         "search_sidecar",
+        "security",
         "server",
         "state_dir",
         "sync",
@@ -216,19 +221,23 @@
         "sync_peer_warning_days",
         "sync_scope",
         "target",
+        "temp_dir",
         "tls_cert_file",
         "tls_key_file",
         "unreferenced_resource_days",
         "web_dir"
       ],
-      "sha256": "d799622e4bb3bf5cda64c25e9803e7b564d1f210ff63ffef2b89cd4ac8533e31"
+      "sha256": "c4d25bf1834e9c2e7bda6c3f706376e647bff1ace3d6053294340a6d5c3bebf3"
     },
     "make_lifecycle": {
-      "count": 34,
+      "count": 39,
       "members": [
+        "abi-artifact",
+        "abi-examples",
         "build",
         "build-cli",
         "build-service",
+        "bytecode",
         "clean",
         "clobber",
         "deb",
@@ -237,6 +246,7 @@
         "doccheck",
         "docgen",
         "docs",
+        "docs-stale",
         "doctor",
         "evidence-pre-push",
         "g18e-validate",
@@ -255,13 +265,14 @@
         "seed-help",
         "serve",
         "smoke",
+        "temp-leak-check",
         "test",
         "uninstall",
         "uninstall-dry-run",
         "validate",
         "web"
       ],
-      "sha256": "35417a32e15bd03bdd1e99addf842374ce719dc68dba2ca19d4f9465676e6605"
+      "sha256": "2b9041be856e22a214baf2477dfb69be9fbad59e3b17bbce9bbe0f4a3a2f35c3"
     },
     "mcp": {
       "count": 45,
@@ -315,7 +326,7 @@
       "sha256": "209410061425bede9c88e3e8bc78fb55a552d5d0926503a92ccdff9901611074"
     },
     "rest": {
-      "count": 113,
+      "count": 115,
       "members": [
         "DELETE /api/v1/documents/{document_id}",
         "DELETE /api/v1/documents/{document_id}/resources/{resource_id}",
@@ -323,10 +334,11 @@
         "DELETE /api/v1/notebooks/{notebook_id}",
         "DELETE /api/v1/resources/{resource_id}",
         "DELETE /api/v1/search-notebooks/{search_notebook_id}",
-        "DELETE /api/v1/sync/carrier/{class}/{name}",
+        "DELETE /api/v1/sync/carrier/mine/{class}/{name}",
         "DELETE /api/v1/trash/{document_id}",
         "GET /",
         "GET /api/v1/admin/gc/report",
+        "GET /api/v1/admin/links/report",
         "GET /api/v1/admin/lint/report",
         "GET /api/v1/collections",
         "GET /api/v1/collections/{collection_id}",
@@ -381,6 +393,7 @@
         "PATCH /api/v1/collections/{collection_id}",
         "PATCH /api/v1/documents/{document_id}",
         "PATCH /api/v1/notebooks/{notebook_id}",
+        "POST /api/v1/admin/links/report/note",
         "POST /api/v1/batch",
         "POST /api/v1/collections",
         "POST /api/v1/documents",
@@ -429,9 +442,9 @@
         "POST /mcp",
         "PUT /api/v1/documents/{document_id}",
         "PUT /api/v1/sync-ui/configuration",
-        "PUT /api/v1/sync/carrier/{class}/{name}"
+        "PUT /api/v1/sync/carrier/mine/{class}/{name}"
       ],
-      "sha256": "85fee1980900714198502b653f2c59af6dbcc5f4eaa4b924258bb1f1b22f0816"
+      "sha256": "67a4f8164d0c3ce51e7af561887bfaf8946a3f4f96599269c6189ef746f9d28e"
     }
   },
   "what_this_is": "The surfaces 1.0 will promise, derived from the source that defines them and recorded so a change has to be deliberate. A freeze is not a promise never to change; it is a promise that changing is visible."

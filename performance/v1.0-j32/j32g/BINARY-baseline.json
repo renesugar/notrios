@@ -1,0 +1,6 @@
+{
+  "label": "base-g",
+  "commit": "948260fcdfa5adc5bda1dda179fd6f08d0b48dc3",
+  "built_at": "2026-09-23T03:35:29Z",
+  "go": "go version go1.27.0 linux/amd64"
+}

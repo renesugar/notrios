@@ -85,7 +85,7 @@ import { PaneSplitter } from './components/PaneSplitter';
 import { SidebarPane } from './components/SidebarPane';
 import { SearchPane } from './components/SearchPane';
 import { EditorPane } from './components/EditorPane';
-import { PreviewPane } from './components/PreviewPane';
+import { PreviewPane, type PreviewLinkCheck } from './components/PreviewPane';
 import { SelectionPanel } from './components/SelectionPanel';
 import { SyncCenter } from './components/SyncCenter';
 import { LibraryTransfer, transferBridge } from './components/LibraryTransfer';
@@ -114,6 +114,15 @@ export function App() {
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null);
   const [title, setTitle] = useState(NEW_NOTE_TITLE);
   const [body, setBody] = useState(defaultBody);
+  // The editor's last buffer check, which the preview marks links from (J40-B).
+  const [linkCheck, setLinkCheck] = useState<PreviewLinkCheck | null>(null);
+  // A check belongs to the note it was made for. Another note's statuses can
+  // differ for the same text, an anchor-only link above all, so the preview
+  // marks nothing until the new note's own check arrives.
+  const selectedDocumentID = selectedDocument?.id;
+  useEffect(() => {
+    setLinkCheck(null);
+  }, [selectedDocumentID]);
   const [resources, setResources] = useState<ResourceReference[]>([]);
   // The open note's tags. Held here rather than inside the toolbar control
   // because the same list is what a later sidebar count would read, and two
@@ -1052,7 +1061,7 @@ export function App() {
 
       {showAbout ? <AboutDialog status={status} onClose={() => setShowAbout(false)} /> : null}
 
-      {showHealth ? <LibraryHealth onClose={() => setShowHealth(false)} /> : null}
+      {showHealth ? <LibraryHealth onClose={() => setShowHealth(false)} onOpenDocument={(id) => void openDocumentByID(id)} /> : null}
 
       {renamingTag ? (
         <TagRename
@@ -1224,6 +1233,7 @@ export function App() {
           onDelete={() => void onDeleteDocument()}
           onRestore={() => void onRestoreDocument()}
           onPurge={() => void onPurgeDocument()}
+          onLinksChecked={setLinkCheck}
         />
         )}
         {checked.size === 0 && (
@@ -1242,6 +1252,7 @@ export function App() {
             onOpenDocument={(id) => void openDocumentByID(id)}
             onOpenStableLink={(uri) => void openStableLink(uri)}
             onError={setError}
+            linkCheck={editable ? linkCheck : null}
           />
         )}
       </div>

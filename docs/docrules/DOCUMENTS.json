@@ -153,6 +153,12 @@
       "kind": "snapshot",
       "home": "what the security posture was at a named release, and what was still open",
       "not_here": "edits that quietly make an old review describe a newer product; date it and supersede it"
+    },
+    {
+      "path": "performance-code-review.md",
+      "kind": "snapshot",
+      "home": "the dated 2026-09-17 Joplin and Obsidian import performance review and its evidence limits",
+      "not_here": "live performance guarantees or implementation status; supersede the snapshot and track approved work in PLAN.md"
     }
   ],
   "exempt": [

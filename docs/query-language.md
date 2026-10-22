@@ -26,11 +26,13 @@ One query language works everywhere: the GUI search box, the REST/MCP search API
 **Finding the values.** `notebook:` and `collection:` take identifiers, and you
 have to know which ones exist before you can narrow anything with them:
 
+<!-- notrios:generated:example:query-language-search-query-language-example-1:begin -->
 ```sh
 notriosctl notebooks list      # ids and names; --json for a script
 notriosctl collections list    # ids, names, and how many notes name each
 notriosctl tags list           # every tag with its note count
 ```
+<!-- notrios:generated:example:query-language-search-query-language-example-1:end -->
 
 `notriosctl tags list --prefix shopping` narrows to one branch of the tag
 hierarchy, and `notriosctl tags show --tag todo` answers whether a single tag

@@ -34,11 +34,12 @@
     "cross_checked_against": "performance/v0.7-g20/DEPENDENCY_LICENSES.json",
     "note_on_sha256sums": "SHA256SUMS covers the other artifacts and is itself one of them, so the record carries its hash separately. Reading the artifact list *from* that file forgets the file -- which this milestone did twice, once in the draft script's upload list and once here, and the validator caught the second.",
     "sbom": {
-      "components": 400,
+      "components": 404,
       "format": "CycloneDX 1.5",
       "go_modules": 39,
-      "npm_packages": 361,
-      "without_declared_licence": 1
+      "npm_packages": 365,
+      "without_declared_licence": 1,
+      "counts_note": "npm 361 -> 365 and components 400 -> 404 on 2026-10-19: v1.0 J45 moved the web UI to mermaid 12.2.0 and katex 0.18.11, which added chevrotain and four @chevrotain packages and dropped fastdom and strictdom, and replaced mermaid's EPL-2.0 elkjs with a local stub. The stub is one package, reached through a lockfile link that the SBOM skips and the licence inventory no longer counts. These are the counts build_release_set.py emits from the lockfiles today. The artifact hashes above are still those of the set built for this record; the set was not rebuilt."
     },
     "sha256": {
       "PROVENANCE.json": "31df26b9693cfafc6538dcaa30a38e302b2ff3db4354af405e35d82a786289f4",
@@ -52,8 +53,8 @@
   "what_this_is": "The artifacts and evidence a release would carry, generated and then verified by code that recomputes rather than reads back, plus the workflow hardening that keeps CI's supply chain and permissions from decaying quietly.",
   "why_cross_checking": "A generator and a verifier written from the same assumption fail together and look like agreement. The SBOM is produced from the lockfiles and checked against an inventory G20 derives for its own reasons, so a disagreement between them is visible.",
   "workflow_hardening": {
-    "actions_pinned_by_digest": 22,
+    "actions_pinned_by_digest": 23,
     "permissions": "ci.yml declared none and so inherited the repository default, which can be read/write on every scope, for a workflow that only builds and tests. It declares contents: read now.",
-    "why": "actions/checkout@v4 is a tag, and a tag is a pointer somebody else can move: whoever controls it chooses what runs in this repository's CI with this repository's token. Pinning to a digest makes an upgrade a reviewable commit here. The tag is kept as a trailing comment so a reader can still tell which version a digest is. Count 17 -> 22 on 2026-09-11: v1.0 J1 added .github/workflows/release.yml, which builds the package and attests it. The validator derives this number from the workflows, so adding them made the record false and the gate refused it until it was corrected -- which is the point of deriving rather than restating."
+    "why": "actions/checkout@v4 is a tag, and a tag is a pointer somebody else can move: whoever controls it chooses what runs in this repository's CI with this repository's token. Pinning to a digest makes an upgrade a reviewable commit here. The tag is kept as a trailing comment so a reader can still tell which version a digest is. Count 17 -> 22 on 2026-09-11: v1.0 J1 added .github/workflows/release.yml, which builds the package and attests it. The validator derives this number from the workflows, so adding them made the record false and the gate refused it until it was corrected -- which is the point of deriving rather than restating. Count 22 -> 24 on 2026-09-19: v1.0 J6 added the C ABI artifact's attestation and its run-artifact upload to the same workflow, both pinned by digest like the rest. Count 24 -> 23 on 2026-10-21: v1.0 J49 removed that run-artifact upload, because the C ABI tarball now travels in the release set, signed, with its attestation bundle."
   }
 }

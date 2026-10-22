@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Check the local agent's remaining usage before a long, non-checkpointed run.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "usage: $0 <operation> [history-path]" >&2
@@ -35,7 +36,9 @@ if [[ -n ${NOTRIOS_AGENT_USAGE_COMMAND:-} ]]; then
 else
   checker=(python3 "$ROOT/scripts/check_agent_usage.py")
 fi
-args=(--operation "$operation" --agent all --minimum-remaining "$minimum" --model "$model" --effort "$effort" --json)
+# --agent self checks only the agent that launched this run, found from the
+# process ancestry, and falls back to NOTRIOS_AGENT_USAGE_AGENT, then to all.
+args=(--operation "$operation" --agent self --minimum-remaining "$minimum" --model "$model" --effort "$effort" --json)
 [[ -n $history ]] && args+=(--history "$history")
 
 set +e

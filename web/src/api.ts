@@ -473,6 +473,47 @@ export async function getLintReport(): Promise<LintReport> {
   return parseJSON<LintReport>(await fetch('/api/v1/admin/lint/report'));
 }
 
+/** Where a regenerated Reports note is, and the counts it was written from. */
+export interface WrittenReportNote {
+  document_id: string;
+  title: string;
+  /** One line for the person who asked: what the note now says, in counts. */
+  summary: string;
+}
+
+/**
+ * Regenerates the ambiguous-links report note in the Reports notebook (v1.0
+ * J40-D). The response carries IDs and counts only; the link text and titles
+ * are in the note, which is read like any other.
+ */
+export async function writeLinkReportNote(): Promise<WrittenReportNote> {
+  const written = await parseJSON<{
+    document_id: string;
+    title: string;
+    report: { ambiguous_links: number; notes_with_ambiguous_links: number };
+  }>(await fetch('/api/v1/admin/links/report/note', { method: 'POST' }));
+  const { ambiguous_links: links, notes_with_ambiguous_links: notes } = written.report;
+  return {
+    document_id: written.document_id,
+    title: written.title,
+    summary: links === 0 ? 'No link is ambiguous.' : `${links} ambiguous ${links === 1 ? 'link' : 'links'} in ${notes} ${notes === 1 ? 'note' : 'notes'}.`,
+  };
+}
+
+/** Regenerates the graph report note in the Reports notebook. */
+export async function writeGraphReportNote(): Promise<WrittenReportNote> {
+  const written = await parseJSON<{
+    document: { id: string; title: string };
+    report: { document_count: number; orphan_count: number };
+  }>(await fetch('/api/v1/graph/report/note', { method: 'POST' }));
+  const { document_count: measured, orphan_count: orphans } = written.report;
+  return {
+    document_id: written.document.id,
+    title: written.document.title,
+    summary: `${measured} ${measured === 1 ? 'note' : 'notes'} measured, ${orphans} with nothing linking to them.`,
+  };
+}
+
 /**
  * Reads what garbage collection would reclaim.
  *

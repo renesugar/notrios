@@ -16,6 +16,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/query"
+	"github.com/renesugar/notrios/internal/recoll/recolltest"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -54,12 +55,7 @@ func TestRecollHardeningProfile(t *testing.T) {
 	if err != nil || count != 100 && count != 100_000 {
 		t.Fatalf("NOTRIOS_RECOLL_PROFILE must be 100 or 100000; got %q", value)
 	}
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "xdg-config"))
-	t.Setenv("XDG_RUNTIME_DIR", filepath.Join(dir, "xdg-runtime"))
-	if err := os.MkdirAll(os.Getenv("XDG_RUNTIME_DIR"), 0o700); err != nil {
-		t.Fatal(err)
-	}
+	dir := recolltest.Isolate(t)
 	sidecar := New(filepath.Join(dir, "conf"), filepath.Join(dir, "projection"), "recollindex")
 	if !sidecar.Available() {
 		t.Skip("recollindex/recollq not installed")

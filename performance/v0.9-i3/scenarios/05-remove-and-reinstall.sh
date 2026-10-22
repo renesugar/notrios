@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-RELEASE=/pkg/notrios_0.8.0-1_amd64.deb
-PRERELEASE=/pkg/notrios_0.8.0~rc1-1_amd64.deb
+# The versions default to the pair I3 recorded; v1.0 J9 runs the same
+# scenarios against 1.0.0 by passing RELEASE_VERSION and PRERELEASE_VERSION.
+RV=${RELEASE_VERSION:-0.8.0}
+PV=${PRERELEASE_VERSION:-0.8.0~rc1}
+RELEASE=/pkg/notrios_${RV}-1_amd64.deb
+PRERELEASE=/pkg/notrios_${PV}-1_amd64.deb
 id tester >/dev/null 2>&1 || useradd -m -s /bin/bash tester
 as_tester() { su - tester -c "$1"; }
 # Nothing here parses JSON with a scripting language: a clean ubuntu:24.04 has

@@ -264,7 +264,13 @@ func (s *SQLiteStore) DeleteNotebook(ctx context.Context, id string) error {
 		}
 	}()
 
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id IN (SELECT id FROM documents WHERE notebook_id IN `+in+` AND deleted_at IS NULL)`, ids...); err != nil {
+	// Through the rowid mapping: the inner select is unchanged, but the
+	// index is addressed by rowid rather than by a column FTS5 does not
+	// index (v1.0 J18). The mapping rows go with it.
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE rowid IN (SELECT fts_rowid FROM documents_fts_rowid WHERE document_id IN (SELECT id FROM documents WHERE notebook_id IN `+in+` AND deleted_at IS NULL))`, ids...); err != nil {
+		return err
+	}
+	if err := s.execPreparedLocked(`DELETE FROM documents_fts_rowid WHERE document_id IN (SELECT id FROM documents WHERE notebook_id IN `+in+` AND deleted_at IS NULL)`, ids...); err != nil {
 		return err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO index_outbox(object_type, object_id, operation)
@@ -933,10 +939,7 @@ func (s *SQLiteStore) restoreDocumentBodyLocked(id, title, body, collectionID st
 	if err := s.execPreparedLocked(`UPDATE documents SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id); err != nil {
 		return err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, id); err != nil {
-		return err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, id, collectionID, title, body); err != nil {
+	if err := s.replaceDocumentFTSLocked(id, collectionID, title, body); err != nil {
 		return err
 	}
 	if err := s.rebuildDocumentLinksLocked(id, collectionID, body); err != nil {
@@ -992,7 +995,10 @@ func (s *SQLiteStore) PurgeDocument(ctx context.Context, id string) error {
 		`DELETE FROM document_links WHERE source_document_id = ?`,
 		`DELETE FROM document_blocks WHERE document_id = ?`,
 		`UPDATE document_links SET target_document_id = NULL, resolution_status = 'target_deleted' WHERE target_document_id = ?`,
-		`DELETE FROM documents_fts WHERE document_id = ?`,
+		// Deleted by recorded rowid: `document_id` is UNINDEXED in FTS5, so
+		// matching on it scans the whole index (v1.0 J18).
+		`DELETE FROM documents_fts WHERE rowid = (SELECT fts_rowid FROM documents_fts_rowid WHERE document_id = ?)`,
+		`DELETE FROM documents_fts_rowid WHERE document_id = ?`,
 		`DELETE FROM document_revisions WHERE document_id = ?`,
 	}
 	for _, statement := range statements {

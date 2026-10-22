@@ -9,6 +9,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/config"
 	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/media"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -136,7 +137,7 @@ func localizeRemoteMedia(ctx context.Context, cfg config.Config, st *store.SQLit
 		report["truncated"] = true
 	}
 
-	localizer := localize.New(cfg.RemoteMedia, st)
+	localizer := localize.New(cfg.RemoteMedia, st, media.WithAddressRanges(cfg.Security.RemoteMedia))
 	documents := []map[string]any{}
 	for _, target := range targets {
 		result, err := localizer.LocalizeDocument(ctx, localize.Options{

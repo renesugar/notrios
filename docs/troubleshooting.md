@@ -7,9 +7,11 @@ Verified symptoms and fixes, grouped by activity. `notriosctl doctor` diagnoses 
 Start here, before anything else on this page — the rest of it assumes a
 checkout you do not have.
 
+<!-- notrios:generated:example:troubleshooting-if-you-installed-the-package-example-1:begin -->
 ```sh
 notriosctl doctor
 ```
+<!-- notrios:generated:example:troubleshooting-if-you-installed-the-package-example-1:end -->
 
 It prints one line per check and exits non-zero if a required one failed. Two
 answers are worth knowing in advance:
@@ -74,15 +76,20 @@ your home directory by default.
 | log: `search sidecar enabled but "recollindex"/recollq not found; continuing with FTS5 only` | Recoll isn't installed — `sudo apt install recoll` — or set `search_sidecar.binary` to its full path. Everything still works via FTS5 |
 | log: `recollindex failed; continuing with FTS5 only` | run `recollindex -c <search_sidecar.index_dir>` manually to see Recoll's own error; deleting the index directory forces a clean rebuild on next start |
 | field queries (`tag:`, `author:`) miss notes that plain search finds | the sidecar may still be indexing (it syncs ~every 30s) or is disabled; FTS5 alone doesn't index tags-as-fields |
+| you ran a build from before 1.0 J44 with Recoll 1.44 and a Joplin desktop library on the same account | the search index may hold copies of your Joplin notes: older builds let Recoll install its Joplin indexer into the sidecar. They never appear in Notrios results, and the current build stops adding them, but restarting does not remove them, because Recoll leaves an external indexer's documents to that indexer. They take up places in the sidecar's result window, so a search matching many Joplin notes can show fewer Recoll-only matches. To check, run `recollq -c <search_sidecar.index_dir> -Q rclbes:JOPLIN`: it prints a count, and `0 results` means there is nothing to do. To remove them, stop the service, delete the index directory, and start the service again. The first start rebuilds the index from your notes. `notriosctl config show` names the directory |
 | desktop status shows Recoll `degraded` or a retry backlog | inspect `curl -s localhost:8080/api/v1/status \| jq .search_sidecar`; failed projection jobs back off without blocking later work, and startup/periodic reconciliation repairs drift |
 
 ## Importing
 
 | Symptom | Fix |
 |---|---|
-| `no tweets.js/tweet.js found under ...` | point `import twitter` at the **extracted** archive directory (the one containing `data/`), not the ZIP |
+| localization reports `address … is in refused range …` or `resolved address … is in refused range …` | the URL, or what its host name resolves to, is in a refused address range. For media on your own network, add that range to `security.remote_media.permitted_address_ranges` (see [configuration](configuration.md#remote-media)); loopback cannot be permitted |
+| localization reports `payload sniffed as "…" does not match the claimed content type "…"` | the server labelled the file as media its bytes are not. For SVG, TIFF, AVIF, HEIC, MOV, MP3 and FLAC the file's own signature must be present; other types must be recognisable from their bytes (see `SECURITY_AND_MEDIA_POLICY.md`) |
+| the service will not start: `security.remote_media.… is not a valid address or CIDR range`, `has host bits set`, or `has no value and no items` | fix the named entry; a range must be written as its network (`10.0.0.0/8`, not `10.0.0.1/8`), and an empty list is `[]` |
+| `no tweets.js, tweets-partN.js or tweet.js found under` … | the path is not a Twitter/X archive. Give `import twitter` the ZIP as you downloaded it — it is read in place — or a folder you extracted it to (the one containing `data/`) |
 | `not a Notrios archive (missing manifest.json)` | `import archive` needs a directory produced by `export archive` |
-| `read ChatGPT export: ... no such file` | pass the `conversations.json` file or the directory that directly contains it |
+| `is neither a ChatGPT export ZIP nor an extracted export folder` | give `import chatgpt` the ZIP as you downloaded it, from ChatGPT or from the OpenAI Privacy Portal, an extracted folder, or a path straight to a `conversations.json` |
+| `no conversations.json in` … `expected a Claude export ZIP` | give `import claude` the ZIP as you downloaded it, or a folder holding its `…-batch-0000.zip` files |
 | Joplin import reports `resources_skipped` with warnings | those attachments were missing from the export's `resources/` directory; re-export from Joplin if they matter |
 | `notebook name "X" conflicts with a notebook bound to another data source` | run the archive import's `--dry-run`, edit the generated `import-config.json` renames, then import with `--import-config` |
 | import seems to “miss” notes on re-run | notes you moved to the Trash are deliberately not resurrected; unchanged notes count as `notes_unchanged` |

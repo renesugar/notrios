@@ -10,19 +10,209 @@ import (
 	"unicode/utf8"
 )
 
+// The two matchers below replace the regexps they are named after, which a CPU
+// profile put at 256.8 s of a 516 s import -- 89.6% of all samples were regexp
+// matching (v1.0 J32-Y). The regexps stay in the package as the reference the
+// tests hold these to, body for body, so what is recognised cannot drift.
+//
+// Neither pattern needs a regexp engine: both character classes exclude the
+// terminator that ends them, so each match is found by scanning forward once,
+// with no backtracking and no alternatives to weigh.
+//
+// Each match is handed to a visitor as it is found, rather than collected into
+// a slice first: a slice that grows once per note cost 0.7% more allocated
+// bytes than the regexps did on a corpus of small notes (measured, v1.0 J32-Y).
+//
+// span is one match and its groups, holding the byte offsets
+// FindAllStringSubmatchIndex would have reported.
+type span struct {
+	start, end           int
+	bangStart, bangEnd   int
+	firstStart, firstEnd int // a Markdown link's text, a wiki link's inner
+	targetStart          int // a Markdown link's target; zero for a wiki link
+	targetEnd            int
+}
+
+// scanMarkdownLinks finds `(!?)\[([^\]\n]*)\]\(([^)\n]+)\)`, leftmost first
+// and non-overlapping, as FindAllStringSubmatchIndex does.
+//
+// A `!` belongs to a match only when it sits at or after the point the scan
+// resumed from: one already inside the previous match was consumed by it.
+func scanMarkdownLinks(body string, visit func(span)) {
+	resume := 0
+	for index := resume; index < len(body); {
+		offset := strings.IndexByte(body[index:], '[')
+		if offset < 0 {
+			break
+		}
+		open := index + offset
+		text := open + 1
+		for text < len(body) && body[text] != ']' && body[text] != '\n' {
+			text++
+		}
+		if text >= len(body) || body[text] != ']' || text+1 >= len(body) || body[text+1] != '(' {
+			index = open + 1
+			continue
+		}
+		target, ok := targetEnd(body, text+2)
+		if !ok || target == text+2 {
+			index = open + 1
+			continue
+		}
+		found := span{
+			start: open, end: target + 1,
+			bangStart: open, bangEnd: open,
+			firstStart: open + 1, firstEnd: text,
+			targetStart: text + 2, targetEnd: target,
+		}
+		if open > resume-1 && open > 0 && body[open-1] == '!' && open-1 >= resume {
+			found.start, found.bangStart = open-1, open-1
+		}
+		visit(found)
+		resume = found.end
+		index = resume
+	}
+}
+
+// targetEnd finds the parenthesis that closes a Markdown link, starting at the
+// first byte of its destination, and reports whether there is one before the
+// line ends.
+//
+// CommonMark allows a destination to hold "zero or more balanced pairs of
+// unescaped parentheses", so the closing parenthesis is the one that matches the
+// opening `(` rather than the first `)` in the body. Ending at the first `)`
+// truncated every ordinary link whose URL carries a pair — a Wikipedia URL, a
+// Python docs anchor, several citation styles — recording a target that resolves
+// to nothing and a span that leaves the tail of the URL behind as prose (v1.0
+// J41).
+//
+// A backslash escapes the byte after it, so `\(` and `\)` are text and count
+// toward nothing.
+//
+// When the parentheses do not balance there is no closing one to find, and the
+// answer is the first `)` at any depth: that is what this scan has always
+// returned, and a body that is wrong today should not become a different kind of
+// wrong (v1.0 J41-B).
+func targetEnd(body string, start int) (int, bool) {
+	// A destination wrapped in <> may hold spaces and parentheses, so the link
+	// does not end on a parenthesis inside the brackets. The closing parenthesis
+	// is looked for after the bracket that closes the destination (v1.0 J42).
+	if start < len(body) && body[start] == '<' {
+		if bracket, ok := angleClose(body, start); ok {
+			if end, ok := closeParen(body, bracket+1); ok {
+				return end, true
+			}
+		}
+	}
+	return closeParen(body, start)
+}
+
+// angleClose returns the index of the `>` that closes the `<` at open, and
+// whether there is one before the line ends. CommonMark does not allow an
+// unescaped `<` or `>` inside this form, and a backslash escapes the byte after
+// it, so an escaped `>` does not close anything.
+func angleClose(text string, open int) (int, bool) {
+	for index := open + 1; index < len(text); index++ {
+		switch text[index] {
+		case '\n':
+			return 0, false
+		case '\\':
+			index++
+		case '<':
+			return 0, false
+		case '>':
+			return index, true
+		}
+	}
+	return 0, false
+}
+
+func closeParen(body string, start int) (int, bool) {
+	depth := 0
+	firstClose := -1
+	for index := start; index < len(body); index++ {
+		switch body[index] {
+		case '\n':
+			return fallbackClose(firstClose)
+		case '\\':
+			if index+1 < len(body) && body[index+1] == '\n' {
+				// A destination may not cross a line, and a backslash does not
+				// buy one: the escape ends at the line, not through it.
+				return fallbackClose(firstClose)
+			}
+			index++
+		case '(':
+			depth++
+		case ')':
+			if firstClose < 0 {
+				firstClose = index
+			}
+			if depth == 0 {
+				return index, true
+			}
+			depth--
+		}
+	}
+	return fallbackClose(firstClose)
+}
+
+func fallbackClose(firstClose int) (int, bool) {
+	if firstClose < 0 {
+		return 0, false
+	}
+	return firstClose, true
+}
+
+// scanWikiLinks finds `(!?)\[\[([^\]\n]+)\]\]` on the same terms.
+func scanWikiLinks(body string, visit func(span)) {
+	resume := 0
+	for index := resume; index+1 < len(body); {
+		offset := strings.Index(body[index:], "[[")
+		if offset < 0 {
+			break
+		}
+		open := index + offset
+		inner := open + 2
+		for inner < len(body) && body[inner] != ']' && body[inner] != '\n' {
+			inner++
+		}
+		if inner == open+2 || inner+1 >= len(body) || body[inner] != ']' || body[inner+1] != ']' {
+			index = open + 1
+			continue
+		}
+		found := span{
+			start: open, end: inner + 2,
+			bangStart: open, bangEnd: open,
+			firstStart: open + 2, firstEnd: inner,
+		}
+		if open > 0 && body[open-1] == '!' && open-1 >= resume {
+			found.start, found.bangStart = open-1, open-1
+		}
+		visit(found)
+		resume = found.end
+		index = resume
+	}
+}
+
 // Candidate is one raw link-like object extracted from Markdown source.
 type Candidate struct {
 	RelationType string
 	SourceFormat string
 	RawTarget    string
 	DisplayText  string
-	AnchorType   string
-	AnchorValue  string
-	Context      string
-	StartByte    int
-	EndByte      int
-	Line         int
-	Column       int
+	// TitleSuffix is whatever follows the destination inside the parentheses,
+	// copied byte for byte: the whitespace that separates it and the quotes or
+	// parentheses the author put around it. It is never parsed or normalised,
+	// because a rewriter's job is to put it back exactly as it was found, and
+	// because a title may be delimited three different ways (v1.0 J43).
+	TitleSuffix string
+	AnchorType  string
+	AnchorValue string
+	Context     string
+	StartByte   int
+	EndByte     int
+	Line        int
+	Column      int
 }
 
 var (
@@ -33,48 +223,80 @@ var (
 // Extract returns Markdown inline links/images plus Obsidian wikilinks/embeds.
 func Extract(body string) []Candidate {
 	matches := []Candidate{}
-	seen := map[string]bool{}
-	for _, loc := range markdownLinkRE.FindAllStringSubmatchIndex(body, -1) {
-		if len(loc) < 8 {
-			continue
-		}
-		rawTarget := strings.TrimSpace(body[loc[6]:loc[7]])
-		rawTarget = stripMarkdownTitle(rawTarget)
+	// Where the Markdown links sit, in ascending order because the scan is
+	// leftmost-first and non-overlapping. The wiki pass walks them with one
+	// index rather than searching, so this costs one small slice per note and
+	// no work per link.
+	claimed := []byteRange{}
+	// One cursor per pass: each pass reports its matches in ascending order,
+	// and the second starts again at the beginning of the body.
+	cursor := newLineCursor(body)
+	scanMarkdownLinks(body, func(found span) {
+		claimed = append(claimed, byteRange{start: found.start, end: found.end})
+		rawTarget, titleSuffix := markdownDestination(body[found.targetStart:found.targetEnd])
 		candidate := Candidate{
-			RelationType: relationFromBang(body[loc[2]:loc[3]]),
+			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "markdown",
-			DisplayText:  body[loc[4]:loc[5]],
+			DisplayText:  body[found.firstStart:found.firstEnd],
 			RawTarget:    rawTarget,
-			StartByte:    loc[0],
-			EndByte:      loc[1],
+			TitleSuffix:  titleSuffix,
+			StartByte:    found.start,
+			EndByte:      found.end,
 		}
-		decorateCandidate(body, &candidate)
-		key := candidateKey(candidate)
-		seen[key] = true
+		decorateCandidate(body, cursor, &candidate, literalHref(rawTarget))
 		matches = append(matches, candidate)
-	}
-	for _, loc := range wikiLinkRE.FindAllStringSubmatchIndex(body, -1) {
-		if len(loc) < 6 {
-			continue
+	})
+	cursor = newLineCursor(body)
+	// What sat here was a de-duplication that could never fire: the Markdown
+	// pass stored keys of the form "markdown:target:display" while this pass
+	// looked up the raw matched text, so no key ever matched, and every link
+	// both passes found was reported twice (v1.0 J32-Y). J37 decided what
+	// should happen instead: a wiki link inside a Markdown link's target is a
+	// literal href, so only the Markdown row survives. `[text]([[Target]])` is
+	// a mistake for `[[Target|text]]`, and Obsidian reads it the same way —
+	// the brackets are part of the destination, and no backlink to Target is
+	// made. A `[[Target]]` anywhere else is still a wiki link.
+	claim := 0
+	scanWikiLinks(body, func(found span) {
+		// Both sequences ascend and neither overlaps itself, so one index walks
+		// them together. Overlap rather than containment is the test: a body
+		// like `[a](x[[b)]]` has a wiki match that starts inside the Markdown
+		// link and ends past it, and keeping both would leave two rows over the
+		// same bytes — the thing this decision exists to prevent. Dropping every
+		// wiki match that overlaps a Markdown link makes what remains provably
+		// disjoint.
+		for claim < len(claimed) && claimed[claim].end <= found.start {
+			claim++
 		}
-		key := body[loc[0]:loc[1]]
-		if seen[key] {
-			continue
+		if claim < len(claimed) && claimed[claim].start < found.end {
+			return
 		}
-		inner := strings.TrimSpace(body[loc[4]:loc[5]])
+		inner := strings.TrimSpace(body[found.firstStart:found.firstEnd])
 		rawTarget, display := splitWikiTarget(inner)
 		candidate := Candidate{
-			RelationType: relationFromBang(body[loc[2]:loc[3]]),
+			RelationType: relationFromBang(body[found.bangStart:found.bangEnd]),
 			SourceFormat: "obsidian-wikilink",
 			DisplayText:  display,
 			RawTarget:    rawTarget,
-			StartByte:    loc[0],
-			EndByte:      loc[1],
+			StartByte:    found.start,
+			EndByte:      found.end,
 		}
-		decorateCandidate(body, &candidate)
+		decorateCandidate(body, cursor, &candidate, false)
 		matches = append(matches, candidate)
-	}
+	})
 	return matches
+}
+
+// byteRange is a half-open span of the body.
+type byteRange struct{ start, end int }
+
+// literalHref reports whether a Markdown link's target is a wiki link written
+// where an href belongs. Such a target names nothing, so it keeps every byte it
+// was written with: splitting an anchor off `[[Target#heading]]` would record
+// the target as `[[Target` and invent the heading `heading]]`, neither of which
+// appears in the note (v1.0 J37).
+func literalHref(rawTarget string) bool {
+	return strings.HasPrefix(rawTarget, "[[")
 }
 
 func relationFromBang(bang string) string {
@@ -84,14 +306,46 @@ func relationFromBang(bang string) string {
 	return "link"
 }
 
-func stripMarkdownTitle(target string) string {
+// markdownDestination splits the bytes between a link's parentheses into the
+// destination and whatever follows it, which is a title.
+//
+// A destination wrapped in <> keeps the spaces inside the brackets, which is the
+// point of that form and the documented way to link to a note whose name has one.
+// The brackets themselves are not part of the destination, and anything after the
+// closing bracket is a title rather than part of the path. Every other
+// destination is read as it always was, cut at the first space (v1.0 J42).
+//
+// The title comes back as the raw bytes that followed the destination, so a
+// rewriter can put them back without knowing which of the three delimiters the
+// author used (v1.0 J43).
+func markdownDestination(region string) (string, string) {
+	region = strings.TrimSpace(region)
+	if strings.HasPrefix(region, "<") {
+		if bracket, ok := angleClose(region, 0); ok {
+			return strings.TrimSpace(region[1:bracket]), region[bracket+1:]
+		}
+	}
 	// Basic Markdown links may include an optional title after whitespace.
 	// Keep URIs with escaped spaces for later parser hardening, but support the
 	// common [label](target "title") form here.
-	if i := strings.IndexAny(target, " \t"); i > 0 {
-		return strings.TrimSpace(target[:i])
+	if index := strings.IndexAny(region, " \t"); index > 0 {
+		return strings.TrimSpace(region[:index]), region[index:]
 	}
-	return target
+	return region, ""
+}
+
+// TitleSuffix returns what follows the destination inside one Markdown link's
+// parentheses, for a caller that holds the link's own bytes and nothing else —
+// `notriosctl fix`, which rebuilds a link from a stored row and would otherwise
+// drop the title the author wrote. It is empty when there is no title, or when
+// text is not exactly one inline link.
+func TitleSuffix(text string) string {
+	for _, candidate := range Extract(text) {
+		if candidate.SourceFormat == "markdown" && candidate.StartByte == 0 && candidate.EndByte == len(text) {
+			return candidate.TitleSuffix
+		}
+	}
+	return ""
 }
 
 func splitWikiTarget(inner string) (string, string) {
@@ -104,9 +358,12 @@ func splitWikiTarget(inner string) (string, string) {
 	return rawTarget, display
 }
 
-func decorateCandidate(body string, candidate *Candidate) {
-	candidate.Line, candidate.Column = lineColumn(body, candidate.StartByte)
+func decorateCandidate(body string, cursor *lineCursor, candidate *Candidate, literal bool) {
+	candidate.Line, candidate.Column = cursor.at(candidate.StartByte)
 	candidate.Context = contextAround(body, candidate.StartByte, candidate.EndByte, 80)
+	if literal {
+		return
+	}
 	base, anchorType, anchorValue := splitAnchor(candidate.RawTarget)
 	candidate.RawTarget = base
 	candidate.AnchorType = anchorType
@@ -129,6 +386,8 @@ func splitAnchor(raw string) (base string, anchorType string, anchorValue string
 	return base, "", ""
 }
 
+// lineColumn is what lineCursor must agree with: the straightforward reading,
+// kept as the reference the tests compare against.
 func lineColumn(body string, offset int) (line int, column int) {
 	line = 1
 	column = 1
@@ -144,6 +403,49 @@ func lineColumn(body string, offset int) (line int, column int) {
 		column++
 	}
 	return line, column
+}
+
+// lineCursor answers the same question as lineColumn, walking forward instead
+// of restarting (v1.0 J32-E).
+//
+// Extract asks for coordinates in ascending order within each pass, so the
+// bytes between one candidate and the next are all that a cursor has to read.
+// Restarting at byte zero every time made a note with thousands of links
+// decode itself thousands of times, and a note that is one long line is the
+// worst case, because a column counts runes since the last newline.
+//
+// Asked for an offset behind it, it starts over, so an answer never depends on
+// what was asked before it.
+type lineCursor struct {
+	body   string
+	offset int
+	line   int
+	column int
+}
+
+func newLineCursor(body string) *lineCursor {
+	return &lineCursor{body: body, line: 1, column: 1}
+}
+
+func (c *lineCursor) at(offset int) (int, int) {
+	if offset < c.offset {
+		c.offset, c.line, c.column = 0, 1, 1
+	}
+	for index, r := range c.body[c.offset:] {
+		absolute := c.offset + index
+		if absolute >= offset {
+			c.offset = absolute
+			return c.line, c.column
+		}
+		if r == '\n' {
+			c.line++
+			c.column = 1
+			continue
+		}
+		c.column++
+	}
+	c.offset = len(c.body)
+	return c.line, c.column
 }
 
 func contextAround(body string, start, end, radius int) string {
@@ -162,8 +464,4 @@ func contextAround(body string, start, end, radius int) string {
 		right++
 	}
 	return strings.TrimSpace(body[left:right])
-}
-
-func candidateKey(candidate Candidate) string {
-	return candidate.SourceFormat + ":" + candidate.RawTarget + ":" + candidate.DisplayText
 }

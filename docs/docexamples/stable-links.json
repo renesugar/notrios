@@ -1,0 +1,110 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/stable-links.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "stable-links-between-notes-and-machines",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "link"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl link --db data/notes.sqlite doc_01H..."
+        }
+      ]
+    },
+    {
+      "section": "telling-this-machine-where-your-databases-are",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "profile register",
+          "profile list",
+          "profile forget"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl profile register --name work --db /srv/work/notes.sqlite"
+        },
+        {
+          "run": "notriosctl profile register --name personal --db ~/notes/notes.sqlite"
+        },
+        {
+          "run": "notriosctl profile list"
+        },
+        {
+          "run": "notriosctl profile forget --name work        # registry edit only; the database is untouched"
+        }
+      ]
+    },
+    {
+      "section": "opening-a-link",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "open"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl open 'notrios://databases/db_qz.../documents/doc_01H...'"
+        }
+      ]
+    },
+    {
+      "section": "registering-the-desktop-handler-ubuntu",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "register-url-handler"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl register-url-handler            # prints the desktop entry, changes nothing"
+        },
+        {
+          "run": "notriosctl register-url-handler --apply    # installs it and registers the scheme"
+        }
+      ]
+    },
+    {
+      "section": "linking-to-a-section-or-a-block",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "link"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl link --list-anchors doc_01H..."
+        },
+        {
+          "run": "notriosctl link --anchor getting-started doc_01H..."
+        },
+        {
+          "run": "notriosctl link --anchor 'Getting Started' doc_01H...   # heading text works too"
+        },
+        {
+          "run": "notriosctl link --anchor '^my-anchor' doc_01H..."
+        }
+      ]
+    }
+  ]
+}

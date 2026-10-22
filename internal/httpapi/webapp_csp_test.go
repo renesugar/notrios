@@ -25,6 +25,7 @@ func TestWebAppServesAContentSecurityPolicy(t *testing.T) {
 		"default-src 'self'",
 		"script-src 'self'",
 		"font-src 'self' data:",
+		"media-src 'self'",
 		"connect-src 'self'",
 		"object-src 'none'",
 	} {
@@ -35,6 +36,10 @@ func TestWebAppServesAContentSecurityPolicy(t *testing.T) {
 	// The directive that does the work: no third-party origin may supply script.
 	if strings.Contains(policy, "script-src 'self' http") || strings.Contains(policy, "script-src 'self' https") {
 		t.Fatalf("script-src admits a remote origin: %s", policy)
+	}
+	// J34: audio and video come only from this service, stated explicitly.
+	if strings.Contains(policy, "media-src 'self' http") || strings.Contains(policy, "media-src 'self' https") || strings.Contains(policy, "media-src *") {
+		t.Fatalf("media-src admits a remote origin: %s", policy)
 	}
 	// CodeMirror and md-editor-rt inject <style> elements at runtime, so inline
 	// styles are allowed — but a remote stylesheet still is not.

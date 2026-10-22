@@ -1,0 +1,78 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/gui.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "verifying-the-embedded-service",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "rest": [
+          "GET /healthz",
+          "GET /api/v1/status"
+        ]
+      },
+      "steps": [
+        {
+          "run": "curl http://127.0.0.1:8080/healthz            # -> ok"
+        },
+        {
+          "run": "curl http://127.0.0.1:8080/api/v1/status | jq  # storage, schema, Recoll backlog/reconciliation"
+        }
+      ]
+    },
+    {
+      "section": "the-graph-report",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "graph report"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl graph report --write-note"
+        }
+      ]
+    },
+    {
+      "section": "the-graph-report",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "graph export"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl graph export ~/graph      # nodes.csv and edges.csv"
+        }
+      ]
+    },
+    {
+      "section": "choosing-which-notebook-a-note-goes-in",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "notes move"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl notes move --document doc_01H... --notebook nb_01H..."
+        },
+        {
+          "run": "notriosctl notes move --document doc_01H... --notebook Work"
+        }
+      ]
+    }
+  ]
+}

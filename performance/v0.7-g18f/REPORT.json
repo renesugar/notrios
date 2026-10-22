@@ -2,23 +2,23 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "6c0daf1268710c5e280b0f438dd24fc391516d11c5193ed47b28055fab6032a0"
+      "sha256": "0cc5ab51d0daf537c703ffaa68b5eb71e884aa4aabad3f590de48d94f83d6283"
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "4608f0822051397cbc263c9f823534b9d4dc8da8adb9889f6a38e34c11721a76"
+      "sha256": "9c94c6bebda79675c6a337e321c6b11fcb00c57b4d988c525dccf8bcd4c99c22"
     },
     {
       "path": "docs/cli.md",
-      "sha256": "2ea6350257123eaedecf46b118f29790ca806eb1616a742bd98a3bfb51ab401c"
+      "sha256": "02c57415f82f707a34cea99f64024243fe735549d73844a4455681afc6709303"
     },
     {
       "path": "docs/gui.md",
-      "sha256": "6dffb0a3b66c121d1455f2d14296f6924f6a1da6f3976e38668c2e9682aae3d3"
+      "sha256": "3c6b30b3ac99f2d18fcd69341376fd6ef00d472ddb8d0b49b8152ad107577f1d"
     },
     {
       "path": "docs/service.md",
-      "sha256": "a91567b7c0010d1c1f15cf505dc5de51ed176a1faa9a8e681ea0473c13fdafce"
+      "sha256": "e9b5808085ac8fa7a285054af9ca9c976653fe58fb2731cf0bfda1c17fbb6737"
     }
   ],
   "enumerations": {

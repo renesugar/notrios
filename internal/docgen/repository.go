@@ -237,13 +237,14 @@ func restOperations(root string) ([]string, error) {
 	return values, nil
 }
 
+// normalizeRESTPath maps a registered route onto the path OpenAPI describes it
+// under. It used to fold the carrier listing and the carrier write onto one
+// `{segment1}/{segment2}` path, because they shared a shape; v1.0 J16 gave the
+// write its own literal segment, so every route is described under its own
+// path again and this is the identity. It is kept as the one place to put such
+// a mapping if a future route ever needs one.
 func normalizeRESTPath(path string) string {
-	switch path {
-	case "/api/v1/sync/carrier/{namespace}/{class}", "/api/v1/sync/carrier/{class}/{name}":
-		return "/api/v1/sync/carrier/{segment1}/{segment2}"
-	default:
-		return path
-	}
+	return path
 }
 
 func openAPIOperations(path string) (map[string]bool, error) {

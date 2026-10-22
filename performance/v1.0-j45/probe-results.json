@@ -1,0 +1,221 @@
+{
+  "csp_violations": [],
+  "console_errors": [],
+  "page_errors": [],
+  "total_requests": 32,
+  "cross_origin_requests": [],
+  "script_execution_detected": false,
+  "fixtures": {
+    "click_blank_target": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 587,
+      "svg_bytes": 12291,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [
+          "https://example.invalid/x"
+        ],
+        "remoteImages": []
+      }
+    },
+    "click_schemes": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 200,
+      "svg_bytes": 14803,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [
+          "https://example.invalid/remote"
+        ],
+        "remoteImages": []
+      }
+    },
+    "elk_layout": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 156,
+      "svg_bytes": 0,
+      "error": "ELK layouts are not included in Notrios",
+      "audit": null
+    },
+    "flowchart_basic": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 182,
+      "svg_bytes": 14646,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "foreign_object_html": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 80,
+      "svg_bytes": 10657,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "html_anchor_in_label": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 190,
+      "svg_bytes": 12584,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "html_script_handler": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 118,
+      "svg_bytes": 12001,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "javascript_and_remote_url": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 148,
+      "svg_bytes": 12701,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [
+          "https://example.invalid/pwn"
+        ],
+        "remoteImages": []
+      }
+    },
+    "malformed_syntax": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 33,
+      "svg_bytes": 0,
+      "error": "Parse error on line 2:\nflowchart TD  A[[[[unclosed --> ???\n-----------------^\nExpecting 'TAGEND', 'STR', 'MD_STR', 'UNICODE_TEXT', 'TEXT', 'TAGSTART', got 'SUBROUTINESTART'",
+      "audit": null
+    },
+    "node_limit_plus_one": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 2445,
+      "svg_bytes": 0,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "audit": null
+    },
+    "remote_image": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 112,
+      "svg_bytes": 10682,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "render_deadline": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 170,
+      "svg_bytes": 0,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "audit": null
+    },
+    "sequence_basic": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 171,
+      "svg_bytes": 23582,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "slow_dense_graph": {
+      "rendered": false,
+      "timed_out": false,
+      "ms": 688,
+      "svg_bytes": 0,
+      "error": "Edge limit exceeded. 500 edges found, but the limit is 500.\n\nInitialize mermaid with maxEdges set to a higher number to allow more edges.\nYou cannot set this config via configuration inside the diagra",
+      "audit": null
+    },
+    "source_byte_limit_plus_one": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 93,
+      "svg_bytes": 11866,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    },
+    "state_basic": {
+      "rendered": true,
+      "timed_out": false,
+      "ms": 280,
+      "svg_bytes": 27555,
+      "error": null,
+      "audit": {
+        "scripts": 0,
+        "iframes": 0,
+        "foreignObjects": 0,
+        "eventHandlerAttrs": [],
+        "hrefs": [],
+        "remoteImages": []
+      }
+    }
+  }
+}

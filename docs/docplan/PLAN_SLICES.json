@@ -1,5 +1,6 @@
 {
   "schema": "notrios.docplan.slices.v1",
+  "milestone": "v1.0",
   "items": [
     {
       "id": "J1",
@@ -29,171 +30,218 @@
     {
       "id": "J2",
       "title": "Create the release signing key, and sign what ships",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J2-A",
           "statement": "A release key exists under the custody I5 decided, separate from the evidence key",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:keys/release-public.asc"
         },
         {
           "id": "J2-B",
           "statement": "Release artifacts and SHA256SUMS are signed and RFC 3161 timestamped",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:.github/workflows/release.yml"
         },
         {
           "id": "J2-C",
           "statement": "verify_release_set.py accepts a set that records itself as signed because it carries signatures",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v0.9-i6/verify_release_set.py"
         }
       ]
     },
     {
       "id": "J3",
       "title": "Give a packaged installation a supported way to delete its data",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J3-A",
           "statement": "notriosctl purge carries the verified backup, the explicit-flag refusal and the symlink protection",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:internal/purge/purge.go"
         },
         {
           "id": "J3-B",
           "statement": "Sync key material is excluded from the backup it writes",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/REPORT.json"
         },
         {
           "id": "J3-C",
           "statement": "The v0.9 I4 drills pass against a packaged installation, and the frozen CLI surface is re-recorded",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/command_drills.sh"
+        },
+        {
+          "id": "J3-D",
+          "statement": "A profile whose library lives outside the roots is enumerated in the plan and never deleted",
+          "state": "done",
+          "evidence": "file:internal/purge/external.go"
+        },
+        {
+          "id": "J3-E",
+          "statement": "A registered profile path reports and never blocks a purge, including one naming a parent of the roots",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j3/command_drills.sh"
         }
       ]
     },
     {
       "id": "J4",
       "title": "Stabilise the REST and MCP surfaces for 1.0",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J4-A",
-          "statement": "Every frozen REST route and MCP tool is reviewed against what 1.0 should promise",
-          "state": "not-started"
+          "statement": "Every frozen REST route and MCP tool has derived evidence and a recorded review decision",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j4/DECISIONS.md"
         },
         {
           "id": "J4-B",
-          "statement": "Anything 1.0 should not carry is withdrawn or deprecated before the freeze becomes a commitment",
-          "state": "not-started"
+          "statement": "Every advertised MCP tool is named by a test, gated so a fourth untested one fails",
+          "state": "done",
+          "evidence": "test:TestJ4EverySyncToolIsReachableAndGated"
         },
         {
           "id": "J4-C",
-          "statement": "The review records which parts of behaviour it did not settle",
-          "state": "not-started"
+          "statement": "The one change that would break a wire protocol is recorded for the owner rather than made",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j4/REPORT.json"
         }
       ]
     },
     {
       "id": "J5",
       "title": "Prove the library at scale",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J5-A",
-          "statement": "Import, search and sync are measured on hundreds of thousands of documents and resources",
-          "state": "not-started"
+          "statement": "Import, export and restore are measured on real libraries at 382,206 notes",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j5/REPORT.json"
         },
         {
           "id": "J5-B",
-          "statement": "Backup and restore are measured at that size",
-          "state": "not-started"
+          "statement": "The two-format corpus separates importer cost from store cost, and the difference is traced to a call site",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j5/README.md"
         },
         {
           "id": "J5-C",
-          "statement": "What degraded is recorded, and nothing incomplete is extrapolated",
-          "state": "not-started"
+          "statement": "What degraded at scale is recorded, including an external comparison that names what each tool builds",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j5/README.md"
         }
       ]
     },
     {
       "id": "J6",
       "title": "Ship the versioned no-GUI library and header artifacts",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J6-A",
-          "statement": "Versioned library and header artifacts are published for the supported matrix",
-          "state": "not-started"
+          "statement": "A versioned tarball carries libnotrios.so.1, the header, licence, readme and SHA256SUMS, built and attested by the release workflow for the I7-supported platform",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j6/README.md"
         },
         {
           "id": "J6-B",
-          "statement": "Lifecycle, ownership, threading, error, stream and compatibility examples compile against them",
-          "state": "not-started"
+          "statement": "Six C examples -- lifecycle, ownership, threading, errors, streams, compatibility -- compile and run against the extracted artifact rather than the source tree",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j6/README.md"
         },
         {
           "id": "J6-C",
-          "statement": "The ABI baseline is unchanged or re-recorded with a reason",
-          "state": "not-started"
+          "statement": "The I8 ABI baseline is re-derived and unchanged, or the move is recorded with its reason",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j6/README.md"
         }
       ]
     },
     {
       "id": "J7",
       "title": "Validate backup, export, restore, sync compatibility and disaster recovery",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J7-A",
-          "statement": "Data round-trips across the exact versions 1.0 will interoperate with",
-          "state": "not-started"
+          "statement": "Archives and library files written by 0.7.0, 0.8.0 and the v0.9 close restore and open in 1.0 with their content intact, and a 1.0 archive is refused clearly by each older version",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
         },
         {
           "id": "J7-B",
+          "statement": "Sync between 1.0 and each older version is refused cleanly in both directions, and replicas syncing on an older version keep syncing after both are upgraded to 1.0",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
+        },
+        {
+          "id": "J7-C",
           "statement": "A disaster-recovery drill destroys and restores a library at the scale J5 measured",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j7/README.md"
         }
       ]
     },
     {
       "id": "J8",
       "title": "Security review for remote media and MCP",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J8-A",
-          "statement": "Remote-media localization is reviewed: domain policy, quarantine, hashing, MIME sniffing, size limits and SSRF",
-          "state": "not-started"
+          "statement": "Remote-media localization is attacked and recorded: reserved ranges the private check may miss, DNS rebinding, redirect chains, host forms, lying servers, quarantine handling and provenance",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         },
         {
           "id": "J8-B",
-          "statement": "The MCP surface and its tool scopes are reviewed for what a client can reach",
-          "state": "not-started"
+          "statement": "The MCP surface is reviewed for what a client can reach: every tool classified and enforced on every dispatch path, out-of-scope tools absent as well as refused, the sync scope orthogonal, and the default scope written down",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         },
         {
           "id": "J8-C",
-          "statement": "Every finding is fixed or explicitly accepted with a reason",
-          "state": "not-started"
+          "statement": "Every finding carries a disposition: accepted with a reason, or deferred to a named new plan item; no product code changes in this item",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j8/README.md"
         }
       ]
     },
     {
       "id": "J9",
       "title": "Publish the release documentation for the supported matrix",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J9-A",
-          "statement": "Installation and support documentation carries exact OS, architecture and runtime rows",
-          "state": "not-started"
+          "statement": "The product version is 1.0.0, and nothing that compares a version was changed by accident",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         },
         {
           "id": "J9-B",
-          "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published",
-          "state": "not-started"
+          "statement": "Installation and support documentation carries exact OS, architecture and runtime rows, checked against a v1.0 matrix",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         },
         {
           "id": "J9-C",
+          "statement": "Migration, rollback, disaster-recovery and artifact-authenticity instructions are published, each one executed",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
+        },
+        {
+          "id": "J9-D",
           "statement": "No sentence remains that J1, J2 or J3 made untrue",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j9/README.md"
         }
       ]
     },
@@ -222,22 +270,1168 @@
     {
       "id": "J11",
       "title": "Report the installation's structure and manifest, and verify a purge against it",
-      "state": "not-started",
+      "state": "complete",
       "slices": [
         {
           "id": "J11-A",
-          "state": "not-started",
-          "statement": "A report lists every directory holding Notrios files or data, and every file by absolute path"
+          "state": "done",
+          "statement": "`notriosctl paths report` lists every directory holding Notrios files or data and every file by absolute path, marking what is outside the owned roots, as a report, as JSON and as one path per line",
+          "evidence": "file:performance/v1.0-j11/README.md"
         },
         {
           "id": "J11-B",
-          "state": "not-started",
-          "statement": "A clean install's structure and manifest are captured as a record"
+          "state": "done",
+          "statement": "A clean install's structure and manifest are captured as a record",
+          "evidence": "file:performance/v1.0-j11/README.md"
         },
         {
           "id": "J11-C",
-          "state": "not-started",
-          "statement": "A shell check reads a pre-purge manifest and confirms every path is gone, and fails when one is left"
+          "state": "done",
+          "statement": "scripts/check_purged.sh reads a pre-purge path manifest with nothing but a shell, requires every owned path gone and every external library still present, and fails when one owned file is left",
+          "evidence": "file:performance/v1.0-j11/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J12",
+      "title": "Make the README true, and generate what can be generated",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J12-A",
+          "statement": "The README's project status is generated from the ledger and gated, like the plan's and the roadmap's",
+          "state": "done",
+          "evidence": "test:TestProgressLogIsCurrent"
+        },
+        {
+          "id": "J12-B",
+          "statement": "The opening is readable and Quick start covers install, uninstall, purge, clean and clobber",
+          "state": "done",
+          "evidence": "file:README.md"
+        },
+        {
+          "id": "J12-C",
+          "statement": "docs/configuration.md documents every configuration key, checked against internal/config, and the README points at it",
+          "state": "done",
+          "evidence": "test:TestEverySettableKeyIsListed"
+        },
+        {
+          "id": "J12-D",
+          "statement": "The documentation site can be built and served locally, said in the README, and _site staleness is detectable",
+          "state": "done",
+          "evidence": "file:scripts/check_docs_site_fresh.py"
+        }
+      ]
+    },
+    {
+      "id": "J13",
+      "title": "Generate the published command-line examples from executed runs",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J13-A",
+          "statement": "Every fenced block in docs/ is classified as synopsis, recipe or transcript, and the gaps are reported per document",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j13/REPORT.json"
+        },
+        {
+          "id": "J13-B",
+          "statement": "A per-document tracked example set generates its published command lines, gated against the recorded run",
+          "state": "done",
+          "evidence": "test:TestPublishedExamplesMatchTheirTrackedSet"
+        },
+        {
+          "id": "J13-C",
+          "statement": "Each configuration section shows what to run and which other keys must be set with it, and each example runs",
+          "state": "done",
+          "evidence": "file:docs/configuration.md"
+        },
+        {
+          "id": "J13-D",
+          "statement": "Unverified hand-written recipes are executed and generated, or carry a reason naming where they do run",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j13/validate_evidence.py"
+        }
+      ]
+    },
+    {
+      "id": "J14",
+      "title": "Stop leaving bytecode behind, and derive the evidence index",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J14-A",
+          "statement": "Every Python invocation in the repository runs with PYTHONDONTWRITEBYTECODE=1 and PYTHONUNBUFFERED=1",
+          "state": "done",
+          "evidence": "file:scripts/check_python_hygiene.py"
+        },
+        {
+          "id": "J14-B",
+          "statement": "A check reports when a validate run has left bytecode behind",
+          "state": "done",
+          "evidence": "test:TestProgressLogIsCurrent"
+        },
+        {
+          "id": "J14-C",
+          "statement": "The README's Validation section is split, and its evidence index is generated from performance/ and gated",
+          "state": "done",
+          "evidence": "file:README.md"
+        }
+      ]
+    },
+    {
+      "id": "J15",
+      "title": "Migrate the remaining documents to the tracked example set",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J15-A",
+          "statement": "A recipe kind is added to the tracked schema and proven on one page: it declares the CLI commands and REST routes it uses, checked against the frozen surfaces, and the generator moves the registry hash",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
+        },
+        {
+          "id": "J15-B",
+          "statement": "Every document is either generated from its tracked set or carries a recorded reason it is not, in a tracked record, and a migration changes no published byte",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
+        },
+        {
+          "id": "J15-C",
+          "statement": "No generated page's fence can be hand-edited, and no generated page's registry hash is moved by a human",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
+        },
+        {
+          "id": "J15-D",
+          "statement": "The troubleshooting page's import rows quote the errors the importers return, and a check fails when a quoted error leaves the source",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j15/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J16",
+      "title": "Give the carrier write its own path shape",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J16-A",
+          "statement": "The carrier write has a literal path segment, so no two carrier routes share a shape",
+          "state": "done",
+          "evidence": "file:internal/httpapi/sync_data.go"
+        },
+        {
+          "id": "J16-B",
+          "statement": "api/openapi.yaml describes each carrier path once, with parameter names that mean something",
+          "state": "done",
+          "evidence": "file:api/openapi.yaml"
+        },
+        {
+          "id": "J16-C",
+          "statement": "The frozen REST surface and J4's review are re-recorded, and sync exchange still round-trips",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j16/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J17",
+      "title": "Batch the per-item work J5 found in import and export",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J17-A",
+          "statement": "A CPU profile names where the Obsidian importer's per-note time goes, after five call-site hypotheses were tested and rejected",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
+        },
+        {
+          "id": "J17-B",
+          "statement": "The Obsidian importer uses the batch link rebuild, with the same corpus re-measured beside the old number",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
+        },
+        {
+          "id": "J17-C",
+          "statement": "Every remaining per-item store call in import and export is either batched or recorded",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j17/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J18",
+      "title": "Stop scanning the full-text index on every document write",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J18-A",
+          "statement": "A document_id to rowid mapping exists and is populated for an existing library by migration",
+          "state": "done",
+          "evidence": "file:internal/store/migrations/0028_fts_rowid_map.sql"
+        },
+        {
+          "id": "J18-B",
+          "statement": "All ten call sites delete from documents_fts by rowid, with search results proven unchanged",
+          "state": "done",
+          "evidence": "test:TestJ18SearchIsUnchangedByTheRowidMapping"
+        },
+        {
+          "id": "J18-C",
+          "statement": "The write-cost measurement is re-run on the same three libraries, beside the old numbers",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j18/REPORT.json"
+        }
+      ]
+    },
+    {
+      "id": "J19",
+      "title": "Test the external performance review, and adopt only what measures better",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J19-A",
+          "statement": "Every review suggestion that survives a source check is measured on J5's corpora and given a recorded verdict",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j19/README.md"
+        },
+        {
+          "id": "J19-B",
+          "statement": "Only the suggestions J19-A measured as improvements are implemented, each with its own before and after",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j19/README.md"
+        },
+        {
+          "id": "J19-C",
+          "statement": "Import counts, unchanged-item fingerprints, search results and J18's mapping are proven unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j19/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J20",
+      "title": "Finish the Obsidian inventory memory work, on a fresh J5 baseline",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J20-A",
+          "statement": "J5's Obsidian and Joplin corpora are re-imported in full under the current code, one run at a time, beside J5's numbers",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
+        },
+        {
+          "id": "J20-B",
+          "statement": "The Obsidian inventory's duplicated structs and hex hashes are measured on the full vault and changed only where held memory falls, with equivalence proven",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
+        },
+        {
+          "id": "J20-C",
+          "statement": "The Obsidian import is re-run after J20-B under J20-A's conditions, with the difference stated at the size measured",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j20/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J21",
+      "title": "Stop re-running schema migrations every time a library is opened",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J21-A",
+          "statement": "Opening a library at the current schema runs no migration step's work, proven by a test that fails if any guarded step runs again",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j21/README.md"
+        },
+        {
+          "id": "J21-B",
+          "statement": "Fresh, older and current libraries still reach the same schema, proven by comparing their schemas before and after the change",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j21/README.md"
+        },
+        {
+          "id": "J21-C",
+          "statement": "Open cost and search are re-measured on both 382,206-note libraries beside J20-A's numbers",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j21/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J22",
+      "title": "Stop stores and tests leaving directories in the temp root",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J22-A",
+          "statement": "A store that created its own temp asset root removes it on Close, and never removes an asset root a caller supplied",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j22/README.md"
+        },
+        {
+          "id": "J22-B",
+          "statement": "Each instance keeps its temporary work in its own data.temp_dir, one locked subdirectory per process, removes only its own crashed processes' leftovers, and never touches another instance's temp files",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j22/README.md"
+        },
+        {
+          "id": "J22-C",
+          "statement": "The CLI tests' shared binary directory is removed, validators stop defaulting Go caches into the temp root, and a check runs the Go suite in a fresh temp root and fails on any notrios-* entry left",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j22/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J23",
+      "title": "Keep existing sync peers syncing after both upgrade in place",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J23-A",
+          "statement": "A paired peer whose handshake differs from its stored compatibility only by a schema rise both sides' ranges admit is accepted, and the stored record is updated with an audit event",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
+        },
+        {
+          "id": "J23-B",
+          "statement": "A paired peer whose protocol, capabilities or identity differ from its stored compatibility is still refused, proven by security tests",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
+        },
+        {
+          "id": "J23-C",
+          "statement": "J7's upgrade-in-place drill converges on the original pairing for 0.7.0, 0.8.0 and v0.9",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j23/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J24",
+      "title": "Check the running agent's own usage, not every agent's",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J24-A",
+          "statement": "The usage preflight checks the running agent's own quota, identified as the nearest coding agent in its process ancestry, then an explicit NOTRIOS_AGENT_USAGE_AGENT only when ancestry finds none, then all",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
+        },
+        {
+          "id": "J24-B",
+          "statement": "Tests prove classification, nearest-ancestor resolution, ancestry winning over leaked environment, each fallback, and that a Claude or Codex run is paused only by its own quota with the other agent's probe never called",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
+        },
+        {
+          "id": "J24-C",
+          "statement": "Every caller of the preflight gets the selection without changes of its own, and the guard's documentation says whose usage is checked and how to choose",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j24/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J25",
+      "title": "Import a Twitter/X archive as it is downloaded, completely, at its real size",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J25-A",
+          "statement": "notriosctl import twitter reads the downloaded ZIP in place and every tweets part, imports community posts, skips and counts deleted posts, and checks the count against tweet-headers.js",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
+        },
+        {
+          "id": "J25-B",
+          "statement": "Post files are stream-decoded and media streamed, with entry-count, decompressed-size and media-size bounds tested against hostile archives",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
+        },
+        {
+          "id": "J25-C",
+          "statement": "The owner's 3.3 GB archive is dry-run, imported and re-imported with phase timings, peak RSS, and every post and media file accounted for",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j25/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J26",
+      "title": "Import ChatGPT, OpenAI Privacy Portal and Claude archives as downloaded",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J26-A",
+          "statement": "J25's ZIP-or-folder archive reader moves to a shared package, gains nested-ZIP support read in place, and the Twitter/X importer keeps its behaviour and tests",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        },
+        {
+          "id": "J26-B",
+          "statement": "import chatgpt accepts the downloaded ZIP and every conversations shard, one note per conversation in the ChatGPT notebook, with referenced assets imported as resources and matched under either the file- or file_ id prefix",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        },
+        {
+          "id": "J26-C",
+          "statement": "import chatgpt accepts the OpenAI Privacy Portal ZIP, reads its nested Conversations and Files ZIPs in place, recovers .dat names and types from the asset map then library_files.json then sniffing, and imports the file library with unreferenced files as stub notes",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        },
+        {
+          "id": "J26-D",
+          "statement": "import claude accepts the downloaded ZIP and batch siblings, one note per conversation in the Claude notebook with attachment text and file references, and one note per project",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        },
+        {
+          "id": "J26-E",
+          "statement": "Code and execution output become fenced code blocks and browsing results text, while thinking, reasoning recaps and tool plumbing are counted rather than imported",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        },
+        {
+          "id": "J26-F",
+          "statement": "The owner's ChatGPT, Privacy Portal and Claude archives are each dry-run, imported and re-imported with timings, peak RSS, and every conversation and asset accounted for",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j26/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J27",
+      "title": "Normalise a host before matching it against the domain lists",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J27-A",
+          "statement": "A trailing-dot host matches the same private check and blocked, allowed and review patterns as its undotted form, and a host with an empty label is blocked as malformed, proven by cases for every list (J8 finding J8-F1)",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j27/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J28",
+      "title": "Refuse the reserved address ranges remote media must not reach, by a named default the configuration can state",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J28-A",
+          "statement": "SECURITY_AND_MEDIA_POLICY.md names a dated default refusal set with each range's purpose and source, the ranges left out and why, the embedded-IPv4 rule, and the owner's decisions (J8 finding J8-F2)",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j28/README.md"
+        },
+        {
+          "id": "J28-B",
+          "statement": "One helper applies the effective set, the embedded-IPv4 rule and the exceptions at the static check and at the connect-time check, with a case per default range at both",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j28/README.md"
+        },
+        {
+          "id": "J28-C",
+          "statement": "security.remote_media states the refused and permitted ranges, the default applies when absent, a malformed entry fails loading, and config show and service start report the effective set, its origin and every omitted default range",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j28/README.md"
+        },
+        {
+          "id": "J28-D",
+          "statement": "The configuration, service, example-config, security-review and troubleshooting documents say how to state the refused ranges, and J8's multicast wording is corrected",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j28/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J29",
+      "title": "Decide which HTML reference forms the remote-media scanner is responsible for",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J29-A",
+          "statement": "The scanner finds every covered media element and attribute (img, source, video, audio, track, embed, object, SVG image; src, srcset, poster, data, href) quoted or unquoted, does not report inline data: URIs, and the policy records what the scan does not promise (J8 finding J8-F3)",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j29/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J30",
+      "title": "Stop a lying Content-Type header deciding the type of an inconclusive payload",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J30-A",
+          "statement": "With an inconclusive sniff the header is followed only for named media types whose signature is in the payload; a payload that contradicts its claimed type is refused, and SVG, TIFF, AVIF, HEIC, MOV, frame-led MP3 and FLAC still localize (J8 finding J8-F4)",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j30/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J31",
+      "title": "Bring the vendored Ledger theme up to its Bluge result-URL fix",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J31-A",
+          "statement": "The production theme copy is validated against its own provenance while the frozen G18b snapshot and G18g evidence validate unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j31/README.md"
+        },
+        {
+          "id": "J31-B",
+          "statement": "docs-site/themes/hugo-theme-ledger is refreshed from a GitHub clone at the upstream commit carrying the Bluge fix, with provenance recording the commit, counts and manifest",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j31/README.md"
+        },
+        {
+          "id": "J31-C",
+          "statement": "The docs site builds, validates and searches on the refreshed copy, and the theme's own tests pass at the pinned commit",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j31/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J32",
+      "title": "Investigate the import performance review's findings, and keep only what measurement shows is faster",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J32-A",
+          "statement": "A synthetic benchmark matrix, a prepared-statement counter and a baseline with dispersion exist before any candidate is measured",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-B",
+          "statement": "F1, reusing prepared block and link insert statements, is kept or reverted on its measured prepare count and wall time",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-C",
+          "statement": "Building PropertyOrder only when source is preserved is kept or reverted on its measured heap and peak RSS",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-D",
+          "statement": "Single-pass Obsidian replacement assembly is kept or reverted on the link-dense corpus, after overlapping-match behaviour is pinned",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-E",
+          "statement": "F8, one-pass link coordinates, is kept or reverted on the link-dense corpus with offsets, columns and order unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-F",
+          "statement": "F9, collision-heavy namespace construction, is kept or reverted on the collision corpus without costing memory on the ordinary corpus",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-G",
+          "statement": "Hashing Obsidian Markdown from bytes already read is kept or reverted on warm and dropped-cache inventory time",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-H",
+          "statement": "F3, existence-only store reads, is kept or reverted on measured allocations and wall time with deleted-note filtering unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-I",
+          "statement": "F2, reusing current blocks in the final link pass, is kept or reverted after its revision invariant is proven",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-J",
+          "statement": "Checkpoint consolidation is measured and reverted, and the stable-note skip is deferred to J39 with its design recorded, because it needs a schema addition this item's boundaries exclude",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-K",
+          "statement": "F5, byte-bounded batches, is kept or reverted on peak RSS with near-limit notes, and a single large note still imports",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-L",
+          "statement": "The smaller candidates are each measured and dispositioned, the database experiments first because SQLite is now 48.5% of the import",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-O",
+          "statement": "markdownTitle stops converting a whole note between []byte and string, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-P",
+          "statement": "Assembling the canonical body once is withdrawn: J32-U is that change, measured there",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-Q",
+          "statement": "A block's text is a slice of the body rather than rejoined lines, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-S",
+          "statement": "The per-block allocations in Extract are reduced, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-T",
+          "statement": "Block storage is reused across notes instead of allocated per note, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-U",
+          "statement": "Whether an edit script beats stage-by-stage copying is decided by a measured prototype, and recorded either way",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-R",
+          "statement": "Withdrawn: the copies it targeted are 5.3% of the import, and its largest item was removed by J32-H and J32-I",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-V",
+          "statement": "A block's text is sliced rather than rebuilt when trimming changes nothing, and hashed without a second copy, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-W",
+          "statement": "A note is read, edited and written from one in-memory representation within the write path, or each step is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-X",
+          "statement": "A body is bound to SQLite without being copied into C memory first, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-Y",
+          "statement": "Link extraction matches without a regexp engine, held to the regexps it replaces, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-Z",
+          "statement": "A block's trailing marker is found by reading its tail rather than scanning the block, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-AA",
+          "statement": "A body is hashed once per import rather than twice, sized first by a counter of bytes hashed, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-M",
+          "statement": "performance/v1.0-j32/README.md gives every review finding a disposition backed by a measurement or a stated reason, and defers any correctness defect to its own item",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        },
+        {
+          "id": "J32-N",
+          "statement": "The link-resolution title lookup uses the title index when a collection is given, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j32/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J33",
+      "title": "Decide whether Ogg media and comment-led SVG are localizable",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J33-A",
+          "statement": "Ogg localizes as audio/video with a .ogg quarantine name, .ogv and .opus are media extensions, an SVG that opens with a comment stays refused because its bytes sniff as text/html, and the policy records both decisions",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j33/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J34",
+      "title": "Stop the preview loading remote images through media elements",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J34-A",
+          "statement": "The preview sanitizer neutralises every J29-covered remote media reference as it does img, the CSP states media-src, and a rendered-note test proves no remote request is made",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j34/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J35",
+      "title": "Make G18g's browser smoke runnable again",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J35-A",
+          "statement": "The documented browser smoke command completes, with the reason the theme control was not clickable recorded",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
+        },
+        {
+          "id": "J35-B",
+          "statement": "The smoke, G18g's README, DOCS_SITE.md and FEATURE_MATRIX.md name the apex address the site is served at instead of the GitHub Pages subpath, which is recorded as the historical fallback",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
+        },
+        {
+          "id": "J35-C",
+          "statement": "A check run with make validate fails when a tracked file names a base address contradicting docs-site/hugo.toml's baseURL, with historical mentions listed and a test proving it both ways",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j35/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J36",
+      "title": "Resolve Obsidian partial-path links the way Obsidian does",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J36-A",
+          "statement": "What Obsidian documents and what Notrios does are stated side by side, with tests pinning each case, and no test asserts suffix matching because Obsidian does not do it",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
+        },
+        {
+          "id": "J36-B",
+          "statement": "A path-shaped link that matches no path is unresolved rather than resolved by file name, for notes and attachments",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
+        },
+        {
+          "id": "J36-C",
+          "statement": "A reimport of a library imported before the fix revises exactly the notes whose links moved and rebuilds their link rows, and a no-op reimport adds no revision to any note",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
+        },
+        {
+          "id": "J36-D",
+          "statement": "The vault-root path is preferred over the note-relative one for notes and attachments, matching Obsidian, with the rule cited to its source",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
+        },
+        {
+          "id": "J36-E",
+          "statement": "A bare name shared between folders with no note of that name at the vault root stays ambiguous rather than guessed, because the ambiguity is what a reader can be asked about (J40)",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j36/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J37",
+      "title": "Decide what a link matched by both patterns should be",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J37-A",
+          "statement": "What both patterns record for one span today is stated by a test, as the description any decision is compared against",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
+        },
+        {
+          "id": "J37-B",
+          "statement": "A wiki link inside a Markdown link's target is a literal href and only the outer Markdown row survives, matching Obsidian, with no two remaining rows overlapping",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
+        },
+        {
+          "id": "J37-C",
+          "statement": "Import rewriting, the stored rows, the preview and libraries imported before the fix all follow the decision, with the no-overlap invariant asserted over generated bodies",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j37/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J38",
+      "title": "Carry J32's import findings into the Joplin importer, where they measure",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J38-A",
+          "statement": "A Joplin import is profiled for CPU and allocations before any change, and which J32 findings already apply through shared code is recorded",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        },
+        {
+          "id": "J38-B",
+          "statement": "Joplin's existence-only reads ask for presence, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        },
+        {
+          "id": "J38-C",
+          "statement": "Joplin batches are bounded by bytes as well as item count, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        },
+        {
+          "id": "J38-D",
+          "statement": "Joplin reads each item into a reused capped buffer, or the change is reverted on its measurement",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        },
+        {
+          "id": "J38-E",
+          "statement": "Whatever the profile names beyond this list is measured and dispositioned on its own",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        },
+        {
+          "id": "J38-F",
+          "statement": "performance/v1.0-j38/README.md records every finding as carried, rejected or already shared",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j38/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J39",
+      "title": "Skip a note a reimport cannot change",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J39-A",
+          "statement": "The Obsidian note fingerprint carries the canonical hash, a pinned rule version, the link namespace, the resource references and whether the note warned, and an item recorded without them is not skippable",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
+        },
+        {
+          "id": "J39-B",
+          "statement": "A note is skipped only when its fingerprint, recomputed from the stored revision and references without reading a body, matches, so a diverged note is still repaired",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
+        },
+        {
+          "id": "J39-C",
+          "statement": "A reimport with every note skipped still leaves the library as a fresh import would, with the link pass, item states and checkpoint intact",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
+        },
+        {
+          "id": "J39-D",
+          "statement": "The skip is kept or reverted on wall time, hashed bytes and read bytes for no-op and 1%-changed reimports, the latter a scenario the harness gains",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j39/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J40",
+      "title": "Show ambiguous links, and report them with the notes they might mean",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J40-A",
+          "statement": "What the stored row, the editor, Library Health, lint and the preview say is stated as tests for title, vault-name and attachment-name ambiguity",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        },
+        {
+          "id": "J40-B",
+          "statement": "A renderer rule renders a working wiki link as a link and marks ambiguous and unresolved links and embeds in distinct styles, with no click prompt and no marking in a read-only note, to a rendering written into UI_DESIGN.md first",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        },
+        {
+          "id": "J40-C",
+          "statement": "A report lists each note with an ambiguous link, the link as written and the notes it might mean by title and URL, with a count of unresolved links, bounded like lint with complete counts, generated only when asked",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        },
+        {
+          "id": "J40-D",
+          "statement": "The report is produced by a command and as a read-only Reports note, REST carries no note content, MCP does not offer it, and Library Health gains a control that generates it and the graph report",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        },
+        {
+          "id": "J40-E",
+          "statement": "Import-time ambiguity reaches the report, its candidates derived from each note's provenance by the importer's own resolution code, with no schema change and the one-namespace-per-collection limit stated",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        },
+        {
+          "id": "J40-F",
+          "statement": "One clearly identifiable documentation section lists every report, how to generate it on each surface, what it quotes and what it costs, and the documentation checks keep it complete",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j40/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J41",
+      "title": "A Markdown link's target may contain balanced parentheses",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J41-A",
+          "statement": "The rows recorded today for balanced, unbalanced, escaped and angle-bracketed targets are stated as tests",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
+        },
+        {
+          "id": "J41-B",
+          "statement": "A target ends at the parenthesis that closes it by depth, escapes count toward nothing, an unbalanced target still ends at the first parenthesis, and the Markdown reference is an independent implementation rather than a regexp",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
+        },
+        {
+          "id": "J41-C",
+          "statement": "A note or attachment whose file name carries a parenthesis resolves and is rewritten, an external URL is recorded whole, and a reimport repairs a library imported before the fix without revising anything else",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j41/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J42",
+      "title": "An angle-bracketed link target may contain spaces",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J42-A",
+          "statement": "The rows recorded today for angle-bracketed destinations, with and without titles, and for the percent-encoded alternative, are stated as tests",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
+        },
+        {
+          "id": "J42-B",
+          "statement": "A destination beginning with < ends at the matching > and keeps the spaces inside it, the closing parenthesis is looked for after that bracket, and every other destination is read as it is today",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
+        },
+        {
+          "id": "J42-C",
+          "statement": "A note or attachment whose name has a space resolves through the bracketed form, the percent-encoded alternative still resolves, and a reimport repairs a library imported before the fix without revising anything else",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j42/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J43",
+      "title": "Rewriting a link should not drop its title",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J43-A",
+          "statement": "All five title forms are shown lost by the Obsidian rewrite, the Joplin rewriter is shown immune because it substitutes in place, and notriosctl fix is found to share the defect",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
+        },
+        {
+          "id": "J43-B",
+          "statement": "A title is carried as raw bytes and put back after the URI by both rewriters, with notriosctl fix recovering it from the link's own bytes and no schema change, and a link with no title written exactly as before",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
+        },
+        {
+          "id": "J43-C",
+          "statement": "Stored rows never carry a title, the preview needs no change, and a reimport of a library imported before the fix revises only the notes whose titles were lost",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j43/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J44",
+      "title": "Keep Recoll's external indexers out of the search sidecar",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J44-A",
+          "statement": "The sidecar's configuration always carries an empty backends file, so Recoll never installs an external indexer into it, and a test proves it survives an index pass",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j44/README.md"
+        },
+        {
+          "id": "J44-B",
+          "statement": "Every test that runs a real Recoll binary isolates HOME and every XDG directory, the build fails if one does not, and an opt-in trace proves no path of the owner's is opened",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j44/README.md"
+        },
+        {
+          "id": "J44-C",
+          "statement": "What an existing instance's index holds after the fix, and whether it must be rebuilt, is stated in the troubleshooting guide",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j44/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J45",
+      "title": "Clear the web UI's dependency advisories",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J45-A",
+          "statement": "npm audit fix, without --force, clears the advisories a lockfile change can, package.json is unchanged, the web tests, type check and build pass, and the record says whether mermaid uses DOMPurify's IN_PLACE mode",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j45/README.md"
+        },
+        {
+          "id": "J45-B",
+          "statement": "katex 0.18.11 and mermaid 12.2.0 are pinned, mermaid's EPL-2.0 elkjs is replaced at install by a refusing local stub so no EPL code is installed or shipped, and the licence gate reads a linked package's licence from its target; H2a's probe re-run against mermaid 12.2.0 under the production CSP shows the same containment, math still renders, and the bundle size change is recorded",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j45/README.md"
+        },
+        {
+          "id": "J45-C",
+          "statement": "npm audit is clean in web and docs-site and the release packager produces an archive check_release_zip.py accepts",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j45/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J46",
+      "title": "Clear vite's launch-editor advisories",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J46-A",
+          "statement": "The lockfile moves vite from 8.1.4 to 8.1.6 with package.json unchanged, the web tests, type check, build and licence gate pass, npm audit is clean in web, and the built dist is compared file by file with 8.1.4's and every difference recorded",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j46/README.md"
+        },
+        {
+          "id": "J46-B",
+          "statement": "The release packager produces an archive check_release_zip.py accepts, and J39 is closed from that commit",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j46/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J47",
+      "title": "Render a working wiki embed in the preview",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J47-A",
+          "statement": "A working wiki embed renders as the element a Markdown embed of the same target renders as, through the same neutralisation, pinned by tests that compare the two",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j47/README.md"
+        },
+        {
+          "id": "J47-B",
+          "statement": "J34's measures re-run over wiki embeds show no element loads anything a Markdown embed could not, with the CSP unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j47/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J48",
+      "title": "Show attachments in the preview: a sanitiser that leaves its own output alone",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J48-A",
+          "statement": "normalizePreviewHTML is idempotent over J34's media corpus and every routed link form, keeping a resolved attachment URL only beside the data-app-uri it came from and removing a forged pair",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j48/README.md"
+        },
+        {
+          "id": "J48-B",
+          "statement": "J47's probe in Chromium shows Markdown and wiki attachment embeds load with no remote request and no CSP violation, J34's unit tests pass unchanged and the CSP is unchanged",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j48/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J49",
+      "title": "Put everything a stranger verifies with into the release set",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J49-A",
+          "statement": "The release set carries each artifact's attestation bundle, covered by SHA256SUMS and required by name by the verifier, so provenance checks need no GitHub login",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
+        },
+        {
+          "id": "J49-B",
+          "statement": "The C ABI tarball is in the release set, signed and timestamped like the package, and required by name by the verifier",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
+        },
+        {
+          "id": "J49-C",
+          "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one run against the rehearsal set, and the ones a workflow-built set is needed for named for J10-A",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
+        },
+        {
+          "id": "J49-D",
+          "statement": "release.yml builds on ubuntu-24.04, the matrix's row, and a check refuses a runner label the matrix does not support",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
+        },
+        {
+          "id": "J49-E",
+          "statement": "draft_release.sh uploads every file in the release set, SHA256SUMS.asc among them",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
+        }
+      ]
+    },
+    {
+      "id": "J50",
+      "title": "Clear vitest's mocker advisories",
+      "state": "complete",
+      "slices": [
+        {
+          "id": "J50-A",
+          "statement": "The lockfile moves vitest and its @vitest packages from 4.1.11 to 4.1.12 with package.json unchanged, the web tests, build and licence gate pass, npm audit is clean in web, and the built dist is compared file by file with the one before",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j50/README.md"
+        },
+        {
+          "id": "J50-B",
+          "statement": "The release packager produces an archive check_release_zip.py accepts, and J9 is closed from that commit",
+          "state": "done",
+          "evidence": "file:performance/v1.0-j50/README.md"
         }
       ]
     }

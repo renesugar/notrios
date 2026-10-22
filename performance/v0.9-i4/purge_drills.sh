@@ -12,6 +12,7 @@
 # truncation is corruption. None of them need root, so this runs where the
 # developer runs.
 set -uo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 HERE=$ROOT/performance/v0.9-i4

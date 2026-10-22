@@ -79,6 +79,12 @@ function loadMermaid(): Promise<typeof import('mermaid')> {
         // Strict is the sanitising level. It is not sufficient on its own —
         // see sanitizeDiagramSVG — but it is the right floor.
         securityLevel: 'strict',
+        // mermaid 12 lays out flowcharts and state diagrams with ELK by
+        // default, and ELK is not shipped (src/elk-refused.ts, v1.0 J45).
+        // dagre is what mermaid 11 used, so every diagram that rendered still
+        // does; one that asks for ELK itself fails and keeps its source.
+        layout: 'dagre',
+        state: { layout: 'dagre' },
         // HTML labels are the vector H2a measured: they emit foreignObject and
         // a label's <img src="https://…"> is actually fetched. SVG text labels
         // cannot do either.

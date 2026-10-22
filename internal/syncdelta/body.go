@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/renesugar/notrios/internal/hashmeter"
 )
 
 // FormatVCDIFF1 names the constrained RFC 3284 default-table profile this
@@ -46,8 +47,38 @@ var (
 // SHA256Hex is the single content-identity function for body and delta
 // objects. Exact SHA-256 is the only identity Notrios recognizes.
 func SHA256Hex(value []byte) string {
+	hashmeter.Add(len(value))
 	digest := sha256.Sum256(value)
 	return hex.EncodeToString(digest[:])
+}
+
+// hashChunkBytes is how much of a string is copied at a time to hash it. Large
+// enough that the per-chunk call costs nothing, small enough that the buffer is
+// noise beside the note it hashes.
+const hashChunkBytes = 32 << 10
+
+// SHA256HexString is SHA256Hex for a string, without copying the string whole.
+//
+// `SHA256Hex([]byte(body))` allocates a second copy of the body only to hash
+// it, which for a 60 MiB note is 60 MiB: two such conversions were 480 MB of a
+// near-limit import (v1.0 J32-W1). The bytes hashed are the same bytes, so the
+// hash is the same hash.
+func SHA256HexString(value string) string {
+	if len(value) <= hashChunkBytes {
+		return SHA256Hex([]byte(value))
+	}
+	hashmeter.Add(len(value))
+	digest := sha256.New()
+	var chunk [hashChunkBytes]byte
+	for offset := 0; offset < len(value); offset += hashChunkBytes {
+		end := offset + hashChunkBytes
+		if end > len(value) {
+			end = len(value)
+		}
+		count := copy(chunk[:], value[offset:end])
+		_, _ = digest.Write(chunk[:count])
+	}
+	return hex.EncodeToString(digest.Sum(nil))
 }
 
 // Delta is a transfer delta bound to both of its endpoints by exact hash. It

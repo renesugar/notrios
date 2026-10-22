@@ -13,10 +13,26 @@ const RegistrySchema = "notrios.docaudit.registry.v2"
 
 var exampleSurfaces = map[string]bool{"cli": true, "config": true, "rest": true, "mcp": true}
 var exampleExpectedKinds = map[string]bool{"exit": true, "http": true, "mcp": true, "config": true}
+
+// exampleUnrunCodes is the closed set of reasons a published example may be
+// unexecuted. Closed on purpose: a free-text reason is a place to put "later".
+//
+// The last two were added in v1.0 J13-D, because J13-A classified every block
+// and crossed it with these codes and found ten records that contradicted their
+// own content. Two of those had nowhere honest to go -- a literal command
+// naming a file from a published release set, and a literal block needing one
+// fixture in two states at once -- and "illustrative-placeholder" was the only
+// category left for either, which made a runnable command read as decoration.
 var exampleUnrunCodes = map[string]bool{
 	"external-network": true, "host-installation": true, "privileged-host-change": true,
 	"shared-user-state": true, "interactive-or-long-running": true,
 	"illustrative-placeholder": true, "unsupported-contract": true,
+	// The command is literal and correct; the file it names comes from
+	// something this repository does not contain and does not fabricate.
+	"artifact-not-in-repository": true,
+	// Literal, and unrunnable as one block: it needs the same fixture in two
+	// states that cannot both hold.
+	"incompatible-prerequisites": true,
 }
 
 func Audit(options Options) (Report, error) {

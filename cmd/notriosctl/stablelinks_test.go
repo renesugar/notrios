@@ -73,6 +73,17 @@ var (
 	sharedBinaryErr error
 )
 
+// TestMain removes the shared binary directory once the package's tests are
+// done. Nothing did before: every run left a copy of both binaries in the temp
+// root, and J7 found 171 of them holding 6.5 GiB (J22).
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if sharedBinaryDir != "" {
+		_ = os.RemoveAll(sharedBinaryDir)
+	}
+	os.Exit(code)
+}
+
 func buildSharedBinaries() {
 	sharedBinaryDir, sharedBinaryErr = os.MkdirTemp("", "notrios-test-bin-")
 	if sharedBinaryErr != nil {

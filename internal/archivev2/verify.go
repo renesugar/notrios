@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 type VerificationReport struct {
@@ -83,6 +85,13 @@ const (
 // Memory is bounded: objects and records stream, and cross-reference checking
 // uses external-sorted spools rather than in-memory record maps.
 func VerifyDirectory(root string, limits Limits) (VerificationReport, error) {
+	return VerifyDirectoryIn(nil, root, limits)
+}
+
+// VerifyDirectoryIn is VerifyDirectory with its spools in space, the running
+// instance's temp space. A nil space means no instance is configured, and the
+// spools go in a private system temp directory. They are removed either way.
+func VerifyDirectoryIn(space *tempspace.Space, root string, limits Limits) (VerificationReport, error) {
 	if err := validateLimits(limits); err != nil {
 		return VerificationReport{}, err
 	}
@@ -102,7 +111,7 @@ func VerifyDirectory(root string, limits Limits) (VerificationReport, error) {
 		return VerificationReport{}, err
 	}
 
-	spoolRoot, err := os.MkdirTemp("", "notrios-archive-verify-*")
+	spoolRoot, err := space.MkdirTemp("notrios-archive-verify-*")
 	if err != nil {
 		return VerificationReport{}, err
 	}

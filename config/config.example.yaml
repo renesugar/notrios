@@ -72,6 +72,19 @@ remote_media:
     video: "200MB"
     pdf: "100MB"
 
+# Addresses remote media may not reach. Left out, the default set in
+# SECURITY_AND_MEDIA_POLICY.md applies: loopback, private and link-local
+# networks, carrier-grade NAT, documentation and benchmarking nets, multicast
+# and the other reserved ranges, checked in URLs and at connect time. A stated
+# refused_address_ranges REPLACES that set, and start-up names each default
+# range it omits. Exceptions cover a range's IPv4-mapped and NAT64 forms and can
+# never include loopback or 0.0.0.0/8. Read from Notrios 1.0.
+#
+# security:
+#   remote_media:
+#     refused_address_ranges: ["127.0.0.0/8", "10.0.0.0/8", "192.168.0.0/16"]
+#     permitted_address_ranges: ["192.168.1.0/24"]
+
 retention:
   unreferenced_resource_days: 30  # unattached uploads and explicitly detached resources
   purged_resource_days: 90        # resources orphaned by permanent note purge

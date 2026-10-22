@@ -51,10 +51,23 @@ func New(cfg config.Config) (*Service, error) {
 	if err := profiles.ValidateStartup(context.Background(), cfg); err != nil {
 		return nil, err
 	}
+	// The loader refuses a malformed security.remote_media block; a Config
+	// built in code is checked here, so the service never starts with ranges
+	// it cannot apply (J28).
+	if _, err := cfg.Security.RemoteMedia.Rules(); err != nil {
+		return nil, fmt.Errorf("remote-media address ranges: %w", err)
+	}
+	// Said once at start: a stated set that omits default ranges, exceptions
+	// in force, or a set switched off by allow_private_networks (J28 D2, D5).
+	for _, warning := range cfg.RemoteMediaAddressWarnings() {
+		log.Printf("remote media: %s", warning)
+	}
 	if err := config.EnsureDirectories(cfg); err != nil {
 		return nil, err
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	// The instance's temporary work goes in its own temp directory, closed with
+	// the store: other instances may be running on the same machine (J22).
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		return nil, err
 	}
@@ -449,8 +462,8 @@ func restrictRemoteRequests(next http.Handler) http.Handler {
 		"GET /api/v1/sync/carrier/{namespace}/{class}",
 		"GET /api/v1/sync/carrier/{namespace}/{class}/{name}",
 		"HEAD /api/v1/sync/carrier/{namespace}/{class}/{name}",
-		"PUT /api/v1/sync/carrier/{class}/{name}",
-		"DELETE /api/v1/sync/carrier/{class}/{name}",
+		"PUT /api/v1/sync/carrier/mine/{class}/{name}",
+		"DELETE /api/v1/sync/carrier/mine/{class}/{name}",
 		"POST /api/v1/sync/backups",
 		"GET /api/v1/sync/backups/{backup_id}",
 		"HEAD /api/v1/sync/backups/{backup_id}",

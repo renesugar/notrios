@@ -1,0 +1,33 @@
+{
+  "chromium": {
+    "remote_requests": [],
+    "csp_violations": [],
+    "images": [
+      {
+        "alt": "markdown attachment",
+        "src": null,
+        "data_app_uri": "resource://default/resources/res_bktzn4hbjm7l3guawsjhxgc6da",
+        "data_remote_src": null,
+        "loaded": false
+      },
+      {
+        "alt": "wiki attachment",
+        "src": null,
+        "data_app_uri": "resource://default/resources/res_bktzn4hbjm7l3guawsjhxgc6da",
+        "data_remote_src": null,
+        "loaded": false
+      },
+      {
+        "alt": "markdown remote",
+        "src": null,
+        "data_app_uri": null,
+        "data_remote_src": "http://127.0.0.1:18751/markdown-remote.png",
+        "loaded": false
+      }
+    ],
+    "embeds_left_as_text": [
+      "![[http://127.0.0.1:18751/wiki-remote.png]]",
+      "![[document://default/documents/doc_elsewhere]]"
+    ]
+  }
+}

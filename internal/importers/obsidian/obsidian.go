@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/fs"
 	"mime"
@@ -22,8 +23,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/syncdelta"
 )
 
 const (
@@ -34,6 +37,19 @@ const (
 	importConfigVersion = 1
 )
 
+// canonicalRules is the version of the rules that turn a vault note into its
+// canonical body: which note or asset a link resolves to, how a link is
+// rewritten, and how the frontmatter and body are assembled. It is part of every
+// note's recorded fingerprint, so a note written under other rules is never
+// skipped and a reimport applies the new rules to it (v1.0 J39). J36 changed
+// where links resolve without touching a vault file; a skip that did not know
+// would have kept the pre-fix links.
+//
+// TestJ39CanonicalRulesArePinned holds the canonical output of a corpus of edge
+// cases beside this number. Changing what the rules produce fails it until
+// both are moved together.
+const canonicalRules = 1
+
 type Options struct {
 	CollectionID   string
 	DryRun         bool
@@ -41,6 +57,9 @@ type Options struct {
 	BatchSize      int
 	SourceKey      string
 	Config         *ImportConfig
+	// readEveryNote turns J39's skip off, so a test can compare a reimport
+	// with skips against one without.
+	readEveryNote bool
 	// AfterBatch is called only after a durable checkpoint. It is useful to
 	// display progress and to test interruption/resume behavior.
 	AfterBatch func(phase string, processed, total int) error
@@ -70,6 +89,7 @@ type Report struct {
 	NotesImported        int           `json:"notes_imported"`
 	NotesUpdated         int           `json:"notes_updated"`
 	NotesUnchanged       int           `json:"notes_unchanged"`
+	NotesSkipped         int           `json:"notes_skipped"` // unchanged and not read at all (v1.0 J39); their links are not in LinksRewritten or AttachmentsCreated
 	NotebooksSeen        int           `json:"notebooks_seen"`
 	NotebooksCreated     int           `json:"notebooks_created"`
 	NotebooksUpdated     int           `json:"notebooks_updated"`
@@ -93,15 +113,13 @@ type Report struct {
 }
 
 type vaultFile struct {
-	AbsPath        string
 	RelPath        string
-	ItemKey        string
 	ItemType       string
-	Fingerprint    string
+	Fingerprint    [sha256.Size]byte
 	SizeBytes      int64
 	Title          string
 	Aliases        []string
-	FrontmatterSHA string
+	FrontmatterSHA [sha256.Size]byte
 	PropertyOrder  []string
 	NotebookPath   string
 	TargetID       string
@@ -151,10 +169,17 @@ type importRun struct {
 	folderPlans []folderPlan
 	folderIDs   map[string]string
 	namespace   linkNamespace
-	phase       string
-	nextIndex   int
-	workTotal   int
-	processed   int
+	// basis is what every note's canonical body depends on besides the note
+	// itself: canonicalRules, the collection and the link namespace (v1.0 J39).
+	basis string
+	// noteBytes is the buffer the notes phase reads each note into, reused
+	// between notes and given back when a note is unusually large (v1.0
+	// J32-W2).
+	noteBytes []byte
+	phase     string
+	nextIndex int
+	workTotal int
+	processed int
 }
 
 // Import applies the deterministic plan, resuming only a checkpoint whose
@@ -285,7 +310,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if sourceKey == "" {
 		sourceKey = filepath.Clean(absoluteDir)
 	}
-	inv, err := readInventory(ctx, absoluteDir)
+	inv, err := readInventory(ctx, absoluteDir, options.PreserveSource)
 	if err != nil {
 		return nil, err
 	}
@@ -308,6 +333,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 			ResourcesSeen: len(inv.Assets), CheckpointStatus: "not-started",
 		},
 	}
+	run.basis = canonicalBasis(canonicalRules, options.CollectionID, inv)
 	run.applyFolderReport()
 	run.workTotal = len(inv.Folders) + len(inv.Assets) + len(inv.Notes) + len(inv.Notes)
 	if options.PreserveSource {
@@ -337,7 +363,14 @@ func normalizedCollection(value string) string {
 	return "default"
 }
 
-func readInventory(ctx context.Context, root string) (inventory, error) {
+// readInventory walks the vault once. retainFiles keeps a full per-file list
+// in Files, which only the source-bundle phase reads. Every note and asset is
+// otherwise already held in Notes or Assets, so an import that does not
+// preserve source skips that second copy: ~160 MB at 382,206 notes (v1.0 J20).
+// It also decides whether each note's frontmatter property order is parsed and
+// kept, for the same reason: only the source-bundle phase reads it (v1.0
+// J32-C). The inventory fingerprint covers every file either way.
+func readInventory(ctx context.Context, root string, retainFiles bool) (inventory, error) {
 	result := inventory{}
 	hash := sha256.New()
 	seenPaths := map[string]string{}
@@ -390,7 +423,9 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 		if err != nil {
 			return err
 		}
-		rel = filepath.ToSlash(rel)
+		// filepath.Rel returns a slice of path, so without the clone RelPath
+		// would keep the whole absolute path alive for the entire import.
+		rel = strings.Clone(filepath.ToSlash(rel))
 		normalized := normalizeVaultPath(rel)
 		if previous := seenPaths[normalized]; previous != "" {
 			return fmt.Errorf("%w: case-insensitive vault path collision between %s and %s", store.ErrInvalidInput, previous, rel)
@@ -405,8 +440,8 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 			return err
 		}
 		file := vaultFile{
-			AbsPath: path, RelPath: rel, ItemKey: "file:" + rel,
-			Fingerprint: fingerprint, SizeBytes: size,
+			RelPath:     rel,
+			Fingerprint: sha256FromHex(fingerprint), SizeBytes: size,
 			NotebookPath: folderPath(rel),
 		}
 		ext := strings.ToLower(filepath.Ext(rel))
@@ -421,10 +456,23 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 			frontmatter, _, _ := splitFrontmatterBytes(raw)
 			body := normalizeNewlines(string(raw))
 			file.ItemType = "markdown"
-			file.Title = markdownTitle(rel, body)
-			file.Aliases = frontmatterAliases(string(frontmatter))
-			file.FrontmatterSHA = sha256Hex(frontmatter)
-			file.PropertyOrder = frontmatterPropertyOrder(string(frontmatter))
+			// These are substrings of a copy of the note's frontmatter or body.
+			// A substring keeps its whole backing string alive, and the
+			// inventory lives for the entire import, so without the clones
+			// each note's text stays on the heap to keep a title and a few
+			// property names. J19 measured it at 382,206 notes.
+			file.Title = strings.Clone(markdownTitle(rel, body))
+			file.Aliases = cloneStrings(frontmatterAliases(string(frontmatter)))
+			file.FrontmatterSHA = sha256.Sum256(frontmatter)
+			if retainFiles {
+				// Only the source-bundle phase reads this, and that phase runs
+				// only when source is preserved. An import that does not
+				// preserve source parsed and kept a slice per note for nothing
+				// (v1.0 J32-C). The inventory fingerprint is built from item
+				// keys and content hashes, so gating it cannot move a
+				// checkpoint.
+				file.PropertyOrder = cloneStrings(frontmatterPropertyOrder(string(frontmatter)))
+			}
 			file.TargetID = documentID(rel)
 			if previous := seenTargets[file.TargetID]; previous != "" {
 				file.TargetID += "_" + shortPathHash(rel)
@@ -443,8 +491,10 @@ func readInventory(ctx context.Context, root string) (inventory, error) {
 				result.Assets = append(result.Assets, file)
 			}
 		}
-		result.Files = append(result.Files, file)
-		_, _ = io.WriteString(hash, file.ItemKey+"\x00"+file.Fingerprint+"\x00")
+		if retainFiles {
+			result.Files = append(result.Files, file)
+		}
+		_, _ = io.WriteString(hash, file.itemKey()+"\x00"+file.fingerprintHex()+"\x00")
 		return nil
 	})
 	if err != nil {
@@ -636,6 +686,93 @@ func buildLinkNamespace(inv inventory) linkNamespace {
 	return ns
 }
 
+// canonicalBasis hashes what a note's canonical body depends on besides its own
+// bytes and path: the rule version, the collection its links are written into,
+// and the link namespace (v1.0 J39).
+//
+// The namespace is what planObsidianLinks resolves against, and
+// buildLinkNamespace builds it from these inputs and nothing else: every note's
+// path, title, aliases and target ID, and every asset's path and ID. So the
+// inputs are hashed rather than the maps built from them, which repeat each ID
+// under several keys. Equal inputs make an equal namespace; a change to how the
+// namespace is built from them changes what the rules produce, which
+// TestJ39CanonicalRulesArePinned catches.
+//
+// So an edit anywhere in the vault that moves none of those leaves every other
+// note's basis as it was, and a skip can trust it; an edit that adds a note,
+// renames one or changes a title or an alias moves every note's basis, and every
+// note is read again. Hashing the namespace rather than the vault is what lets a
+// reimport with a few edited notes skip the rest.
+func canonicalBasis(rules int, collectionID string, inv inventory) string {
+	basis := basisHash{hash: sha256.New(), buffer: make([]byte, 0, basisBufferBytes)}
+	// Notes and Assets are sorted by path when the inventory is read, so the
+	// order is the vault's and not the walk's.
+	basis.add("rules")
+	basis.add(strconv.Itoa(rules))
+	basis.add("collection")
+	basis.add(collectionID)
+	basis.add("notes")
+	basis.add(strconv.Itoa(len(inv.Notes)))
+	for _, note := range inv.Notes {
+		basis.add(note.RelPath)
+		basis.add(note.TargetID)
+		basis.add(note.Title)
+		basis.add(strconv.Itoa(len(note.Aliases)))
+		for _, alias := range note.Aliases {
+			basis.add(alias)
+		}
+	}
+	basis.add("assets")
+	basis.add(strconv.Itoa(len(inv.Assets)))
+	for _, asset := range inv.Assets {
+		basis.add(asset.RelPath)
+		basis.add(asset.TargetID)
+	}
+	return basis.sum()
+}
+
+// basisBufferBytes is how much of the basis is gathered before it is hashed.
+const basisBufferBytes = 64 << 10
+
+// basisHash feeds canonicalBasis's parts to one hash through one buffer.
+// Writing each part as a string allocated a copy of it, several per note,
+// which was most of what recording the basis cost a fresh import (measured,
+// v1.0 J39-D).
+type basisHash struct {
+	hash    hash.Hash
+	buffer  []byte
+	written int
+}
+
+func (basis *basisHash) add(part string) {
+	if len(basis.buffer)+len(part)+1 > cap(basis.buffer) {
+		basis.flush()
+	}
+	basis.buffer = append(basis.buffer, part...)
+	basis.buffer = append(basis.buffer, 0)
+}
+
+func (basis *basisHash) flush() {
+	_, _ = basis.hash.Write(basis.buffer)
+	basis.written += len(basis.buffer)
+	basis.buffer = basis.buffer[:0]
+}
+
+func (basis *basisHash) sum() string {
+	basis.flush()
+	hashmeter.Add(basis.written)
+	return hex.EncodeToString(basis.hash.Sum(nil))
+}
+
+// cloneStrings copies each string so the slice holds no reference into the
+// larger string its values were cut from.
+func cloneStrings(values []string) []string {
+	for index, value := range values {
+		values[index] = strings.Clone(value)
+	}
+	return values
+}
+
 func appendUnique(values []string, value string) []string {
 	for _, current := range values {
 		if current == value {
@@ -734,16 +871,20 @@ func (run *importRun) runAll(write bool) error {
 }
 
 func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
-	return run.eachBatch("source_bundle", len(run.inventory.Files), write, nextPhase, func(start, end int) error {
+	// A source bundle streams each file, but it reads one per item and commits
+	// per batch, so the same budget keeps a batch of large files bounded.
+	return run.eachSizedBatch("source_bundle", len(run.inventory.Files), func(index int) int64 {
+		return run.inventory.Files[index].SizeBytes
+	}, write, nextPhase, func(start, end int) error {
 		for _, item := range run.inventory.Files[start:end] {
 			if write {
-				file, err := os.Open(item.AbsPath)
+				file, err := os.Open(run.absPath(item))
 				if err != nil {
 					return err
 				}
 				bundled, putErr := run.st.PutSourceBundleItem(run.ctx, store.PutSourceBundleItemRequest{
 					SourceSystem: sourceSystem, SourceKey: run.report.SourceKey,
-					CollectionID: run.options.CollectionID, ItemKey: item.ItemKey,
+					CollectionID: run.options.CollectionID, ItemKey: item.itemKey(),
 					ItemType: item.ItemType, ExternalID: item.RelPath,
 					RelativePath: item.RelPath, PropertyOrder: item.PropertyOrder, Content: file,
 				})
@@ -754,7 +895,7 @@ func (run *importRun) processSourceBundle(write bool, nextPhase string) error {
 				if closeErr != nil {
 					return closeErr
 				}
-				if bundled.SHA256 != item.Fingerprint {
+				if bundled.SHA256 != item.fingerprintHex() {
 					return fmt.Errorf("%w: Obsidian file %s changed during source-bundle capture", store.ErrConflict, item.RelPath)
 				}
 			}
@@ -799,7 +940,7 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 		ids, keys := make([]string, 0, len(items)), make([]string, 0, len(items))
 		for _, item := range items {
 			ids = append(ids, item.TargetID)
-			keys = append(keys, item.ItemKey)
+			keys = append(keys, item.itemKey())
 		}
 		existing, err := run.st.GetResources(run.ctx, ids)
 		if err != nil {
@@ -815,12 +956,12 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 			action := "create"
 			if found {
 				action = "update"
-				if current.SHA256 == item.Fingerprint && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
+				if current.SHA256 == item.fingerprintHex() && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
 					action = "unchanged"
 				}
 			}
-			if state, ok := states[item.ItemKey]; ok && state.Fingerprint == item.Fingerprint && found &&
-				current.SHA256 == item.Fingerprint && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
+			if state, ok := states[item.itemKey()]; ok && state.Fingerprint == item.fingerprintHex() && found &&
+				current.SHA256 == item.fingerprintHex() && current.Filename == filepath.Base(item.RelPath) && current.MIMEType == item.MIMEType {
 				action = "unchanged"
 			}
 			switch action {
@@ -832,14 +973,14 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 				run.report.ResourcesExisting++
 			}
 			if write && action != "unchanged" {
-				actual, _, err := hashFile(run.ctx, item.AbsPath)
+				actual, _, err := hashFile(run.ctx, run.absPath(item))
 				if err != nil {
 					return err
 				}
-				if actual != item.Fingerprint {
+				if actual != item.fingerprintHex() {
 					return fmt.Errorf("%w: Obsidian asset %s changed during import", store.ErrConflict, item.RelPath)
 				}
-				file, err := os.Open(item.AbsPath)
+				file, err := os.Open(run.absPath(item))
 				if err != nil {
 					return err
 				}
@@ -873,29 +1014,75 @@ func (run *importRun) processResources(write bool, nextPhase string) error {
 }
 
 func (run *importRun) processNotes(write bool, nextPhase string) error {
-	return run.eachBatch("notes", len(run.inventory.Notes), write, nextPhase, func(start, end int) error {
+	// The notes phase holds every canonical body of a batch at once, so this is
+	// the phase the byte budget is for (v1.0 J32-K).
+	return run.eachSizedBatch("notes", len(run.inventory.Notes), func(index int) int64 {
+		return run.inventory.Notes[index].SizeBytes
+	}, write, nextPhase, func(start, end int) error {
 		items := run.inventory.Notes[start:end]
-		ids, externalIDs, keys := make([]string, 0, len(items)), make([]string, 0, len(items)), make([]string, 0, len(items))
+		keys := make([]string, 0, len(items))
 		for _, item := range items {
-			ids = append(ids, item.TargetID)
-			externalIDs = append(externalIDs, item.RelPath)
-			keys = append(keys, item.ItemKey)
-		}
-		documents, err := run.st.GetDocuments(run.ctx, ids)
-		if err != nil {
-			return err
-		}
-		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, externalIDs)
-		if err != nil {
-			return err
+			keys = append(keys, item.itemKey())
 		}
 		states, err := run.st.GetImportItemStates(run.ctx, sourceSystem, run.report.SourceKey, run.options.CollectionID, keys)
 		if err != nil {
 			return err
 		}
-		newStates := make([]store.ImportItemState, 0, len(items))
+		// What the store holds for each note, without its body, decides which
+		// notes need reading at all; only those are fetched in full (v1.0 J39).
+		// Only a state recorded in skipPrefix form can be skipped, so a fresh
+		// import, a note that warned and a library an older build wrote ask for
+		// nothing.
+		headIDs := make([]string, 0, len(states))
 		for _, item := range items {
-			raw, err := readExact(item)
+			if state, ok := states[item.itemKey()]; mayBeSkipped(state, ok) {
+				headIDs = append(headIDs, item.TargetID)
+			}
+		}
+		heads, err := run.st.ImportDocumentHeads(run.ctx, headIDs)
+		if err != nil {
+			return err
+		}
+		skipped := make([]bool, len(items))
+		readIDs := make([]string, 0, len(items))
+		for index, item := range items {
+			state, stateFound := states[item.itemKey()]
+			head, headFound := heads[item.TargetID]
+			if !run.options.readEveryNote && run.skippable(item, run.notebookFor(item), state, stateFound, head, headFound) {
+				skipped[index] = true
+				continue
+			}
+			readIDs = append(readIDs, item.TargetID)
+		}
+		documents, err := run.st.GetDocuments(run.ctx, readIDs)
+		if err != nil {
+			return err
+		}
+		// Provenance is consulted only for a note its deterministic ID did not
+		// find -- a legacy import, or a note in the trash -- so a reimport,
+		// which finds every note, does not ask (v1.0 J39).
+		lookupExternalIDs := make([]string, 0, len(items))
+		for index, item := range items {
+			if _, found := documents[item.TargetID]; !skipped[index] && !found {
+				lookupExternalIDs = append(lookupExternalIDs, item.RelPath)
+			}
+		}
+		sourceDocuments, err := run.st.FindDocumentsBySourceIDs(run.ctx, sourceSystem, lookupExternalIDs)
+		if err != nil {
+			return err
+		}
+		mutations := make([]store.ImportDocumentMutation, 0, len(items))
+		for index, item := range items {
+			notebookID := run.notebookFor(item)
+			if skipped[index] {
+				run.report.NotesUnchanged++
+				run.report.NotesSkipped++
+				if write {
+					mutations = append(mutations, run.skippedMutation(item, notebookID, states[item.itemKey()]))
+				}
+				continue
+			}
+			raw, err := run.readNote(item)
 			if err != nil {
 				return err
 			}
@@ -904,10 +1091,6 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 			for _, warning := range warnings {
 				run.addWarning(warning)
 			}
-			notebookID := run.folderIDs[item.NotebookPath]
-			if notebookID == "" {
-				notebookID = store.DefaultNotebookID
-			}
 			targetID := item.TargetID
 			current, found := documents[targetID]
 			if mapped := sourceDocuments[item.RelPath]; mapped != "" && !found {
@@ -915,7 +1098,24 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				current, found = documents[mapped]
 			}
 			trashed := !found && sourceDocuments[item.RelPath] != ""
-			fingerprint := noteFingerprint(item, notebookID, canonical)
+			// The canonical body is hashed once here and used twice: for the
+			// fingerprint that decides whether this note changed, and as the
+			// revision's content_sha256, which the store would otherwise hash
+			// over the same bytes (v1.0 J32-AA).
+			canonicalSHA := syncdelta.SHA256HexString(canonical)
+			refs := make([]store.AttachResourceRequest, 0, len(attachments))
+			for _, attachment := range attachments {
+				refs = append(refs, store.AttachResourceRequest{
+					DocumentID: targetID, ResourceID: attachment.ResourceID, RelationType: attachment.RelationType,
+					AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
+				})
+			}
+			var fingerprint string
+			if len(warnings) == 0 {
+				fingerprint = recordedFingerprint(item, notebookID, canonicalSHA, run.basis, store.ResourceRefsDigest(refs))
+			} else {
+				fingerprint = noteFingerprint(item, notebookID, canonicalSHA)
+			}
 			action := "create"
 			if trashed {
 				action = "unchanged"
@@ -924,7 +1124,7 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				if current.Title == item.Title && current.Body == canonical && current.NotebookID == notebookID {
 					action = "unchanged"
 				}
-				if state, ok := states[item.ItemKey]; ok && state.Fingerprint == fingerprint &&
+				if state, ok := states[item.itemKey()]; ok && state.Fingerprint == fingerprint &&
 					current.Title == item.Title && current.Body == canonical && current.NotebookID == notebookID {
 					action = "unchanged"
 				}
@@ -938,62 +1138,119 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 				run.report.NotesUnchanged++
 			}
 			run.report.AttachmentsCreated += len(attachments)
-			if write && !trashed {
-				if action == "create" {
-					current, err = run.st.CreateDocument(run.ctx, store.CreateDocumentRequest{
-						PreferredID: targetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
-						Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
-						Message: "import from Obsidian vault",
-					})
-					if err != nil {
-						return err
-					}
-				} else if action == "update" {
-					if current.Title != item.Title || current.Body != canonical {
-						current, err = run.st.UpdateDocument(run.ctx, store.UpdateDocumentRequest{
-							ID: targetID, Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
-							BaseRevisionID: current.CurrentRevisionID, Message: "import update from Obsidian vault",
-						})
-						if err != nil {
-							return err
-						}
-					}
-					if current.NotebookID != notebookID {
-						if _, err := run.st.MoveDocumentToNotebook(run.ctx, targetID, notebookID); err != nil {
-							return err
-						}
-					}
-				}
-				metadata, _ := json.Marshal(map[string]any{
-					"relative_path": item.RelPath, "aliases": item.Aliases,
-					"frontmatter_sha256": item.FrontmatterSHA,
-				})
-				if _, err := run.st.SetDocumentSource(run.ctx, store.SetDocumentSourceRequest{
-					DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
-				}); err != nil {
-					return err
-				}
-				for _, attachment := range attachments {
-					if _, err := run.st.AttachDocumentResource(run.ctx, store.AttachResourceRequest{
-						DocumentID: targetID, ResourceID: attachment.ResourceID, RelationType: attachment.RelationType,
-						AnchorJSON: fmt.Sprintf(`{"obsidian_path":%q,"raw_target":%q}`, item.RelPath, attachment.RawTarget),
-					}); err != nil && !errors.Is(err, store.ErrNotFound) {
-						return err
-					}
-				}
+			if !write {
+				continue
 			}
-			if write {
-				state := run.itemState(item, action)
-				state.TargetID = targetID
-				state.Fingerprint = fingerprint
-				newStates = append(newStates, state)
+			// Every note in the batch becomes one mutation, applied in one
+			// transaction with the checkpoint. J17 measured the per-note calls
+			// this replaces at three or more durable commits per note, and on
+			// a disk that syncs each commit that waiting was 42% of the import.
+			state := run.itemState(item, action)
+			state.TargetID = targetID
+			state.Fingerprint = fingerprint
+			mutation := store.ImportDocumentMutation{
+				Action:        action,
+				ContentSHA256: canonicalSHA,
+				Document: store.CreateDocumentRequest{
+					PreferredID: targetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
+					Title: item.Title, Body: canonical, BodyMIMEType: "text/markdown",
+					Message: "import from Obsidian vault",
+				},
+				State:        state,
+				SkipDocument: trashed,
 			}
+			if action == "update" {
+				mutation.Document.Message = "import update from Obsidian vault"
+				mutation.BaseRevisionID = current.CurrentRevisionID
+			}
+			if !trashed {
+				mutation.Source = run.noteSource(item, targetID)
+				mutation.Resources = refs
+			}
+			mutations = append(mutations, mutation)
 		}
-		if write {
-			return run.st.PutImportItemStates(run.ctx, newStates)
+		if !write || len(mutations) == 0 {
+			return nil
 		}
-		return nil
+		checkpoint, err := run.batchCheckpoint("notes", end, len(run.inventory.Notes), nextPhase)
+		if err != nil {
+			return err
+		}
+		return run.st.ApplyImportDocumentBatch(run.ctx, store.ImportDocumentBatchRequest{Documents: mutations, Checkpoint: checkpoint})
 	})
+}
+
+// notebookFor is the notebook a note lands in.
+func (run *importRun) notebookFor(item vaultFile) string {
+	if notebookID := run.folderIDs[item.NotebookPath]; notebookID != "" {
+		return notebookID
+	}
+	return store.DefaultNotebookID
+}
+
+// noteSource is a note's provenance, which every import writes, so a note whose
+// provenance was lost has it back after one reimport whether or not the note
+// itself was read.
+func (run *importRun) noteSource(item vaultFile, targetID string) store.SetDocumentSourceRequest {
+	metadata, _ := json.Marshal(map[string]any{
+		"relative_path": item.RelPath, "aliases": item.Aliases,
+		"frontmatter_sha256": item.frontmatterSHAHex(),
+	})
+	return store.SetDocumentSourceRequest{
+		DocumentID: targetID, SourceSystem: sourceSystem, ExternalID: item.RelPath, MetadataJSON: string(metadata),
+	}
+}
+
+// skippable reports whether a note is already exactly what this import would
+// write, which it can tell without reading the note (v1.0 J39).
+//
+// The note's recorded fingerprint covers its file, its notebook, its canonical
+// body, the run's basis and its resource references, if it did not warn. Here it
+// is recomputed from what is true now: the inventory's file hash and this run's
+// notebook and basis, and in place of the canonical body and references, the
+// stored revision's content hash and the digest of the stored references. The
+// two agree only when the file, the rules, the collection and the namespace are
+// as they were when the note was last written, the note did not warn, and the
+// stored note still holds what that import gave it. Anything else -- an edit
+// inside Notrios, a detached or purged resource, a moved note, a new note that
+// makes a link ambiguous -- makes them disagree, and the note is read and
+// repaired exactly as it was before skips existed.
+//
+// Title and notebook are compared directly, as the unchanged test below
+// compares them, because the stored document's can change without its body.
+func (run *importRun) skippable(item vaultFile, notebookID string, state store.ImportItemState, stateFound bool, head store.ImportDocumentHead, headFound bool) bool {
+	if !mayBeSkipped(state, stateFound) || !headFound || state.TargetID != item.TargetID || head.ContentSHA256 == "" {
+		return false
+	}
+	if head.Title != item.Title || head.NotebookID != notebookID {
+		return false
+	}
+	return state.Fingerprint == recordedFingerprint(item, notebookID, head.ContentSHA256, run.basis, head.ResourceRefsSHA256)
+}
+
+// mayBeSkipped is skippable's first test, the one that needs no head: a state
+// recorded without skipPrefix -- a note that warned, or one an older build
+// wrote -- is never skipped.
+func mayBeSkipped(state store.ImportItemState, stateFound bool) bool {
+	return stateFound && strings.HasPrefix(state.Fingerprint, skipPrefix)
+}
+
+// skippedMutation is what a skipped note still sends: its provenance and its
+// item state, as an unchanged note always has. It carries no body, because the
+// store checks only that an unchanged note is there, and no references, because
+// skippable has just seen that the stored ones are the ones it would attach.
+func (run *importRun) skippedMutation(item vaultFile, notebookID string, recorded store.ImportItemState) store.ImportDocumentMutation {
+	state := run.itemState(item, "unchanged")
+	state.Fingerprint = recorded.Fingerprint
+	return store.ImportDocumentMutation{
+		Action: "unchanged",
+		Document: store.CreateDocumentRequest{
+			PreferredID: item.TargetID, CollectionID: run.options.CollectionID, NotebookID: notebookID,
+			Title: item.Title, BodyMIMEType: "text/markdown", Message: "import from Obsidian vault",
+		},
+		Source: run.noteSource(item, item.TargetID),
+		State:  state,
+	}
 }
 
 func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
@@ -1005,41 +1262,217 @@ func (run *importRun) processLinkRebuild(write bool, nextPhase string) error {
 		for _, note := range run.inventory.Notes[start:end] {
 			ids = append(ids, note.TargetID)
 		}
-		existing, err := run.st.GetDocuments(run.ctx, ids)
+		// Presence, not documents: this pass refreshes link indexes and never
+		// reads a body (v1.0 J32-H).
+		existing, err := run.st.ExistingDocumentIDs(run.ctx, ids)
 		if err != nil {
 			return err
 		}
-		for _, note := range run.inventory.Notes[start:end] {
-			if _, found := existing[note.TargetID]; !found {
-				continue
+		present := make([]string, 0, len(ids))
+		for _, id := range ids {
+			if existing[id] {
+				present = append(present, id)
 			}
-			if err := run.st.RebuildDocumentLinks(run.ctx, note.TargetID); err != nil {
-				return err
-			}
-			run.report.LinkIndexesRefreshed++
 		}
-		return nil
+		if len(present) == 0 {
+			return nil
+		}
+		run.report.LinkIndexesRefreshed += len(present)
+		checkpoint, err := run.batchCheckpoint("link_rebuild", end, len(run.inventory.Notes), nextPhase)
+		if err != nil {
+			return err
+		}
+		return run.st.RebuildImportDocumentLinksBatch(run.ctx, store.ImportLinkBatchRequest{DocumentIDs: present, Checkpoint: checkpoint})
 	})
 }
 
 func (run *importRun) canonicalBody(note vaultFile, raw []byte) (string, []attachmentRef, int, []string) {
 	body := normalizeNewlines(string(raw))
-	rewritten, attachments, count, warnings := rewriteObsidianLinks(body, note.RelPath, run.options.CollectionID, run.namespace)
-	return augmentFrontmatter(rewritten, note.RelPath), attachments, count, warnings
+	replacements, attachments, count, warnings := planObsidianLinks(body, note.RelPath, run.options.CollectionID, run.namespace)
+	if canonical, ok := canonicalBodyOnce(body, note.RelPath, replacements); ok {
+		return canonical, attachments, count, warnings
+	}
+	// The staged path, for the bodies the one-pass assembly declines: a link
+	// rewrite that straddles the frontmatter delimiters, or replacements that
+	// overlap each other (v1.0 J32-D, J32-U).
+	return augmentFrontmatter(applyReplacements(body, replacements), note.RelPath), attachments, count, warnings
 }
 
-func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace) (string, []attachmentRef, int, []string) {
-	type replacement struct {
-		start int
-		end   int
-		text  string
+// canonicalBodyOnce writes a note's canonical body in one pass (v1.0 J32-U).
+//
+// canonicalBody builds it in stages, each a new string: the newlines are
+// normalized, the links are rewritten into a second body, and the frontmatter
+// is then rebuilt around a third. The link rewrites are already an edit list --
+// J32-D made them one -- so the frontmatter is written as part of the same
+// assembly rather than by a second pass over the result.
+//
+// It returns false when the edits cannot be applied this way, which is when a
+// link rewrite crosses the frontmatter boundary; the caller then uses the
+// staged path, because this slice is about how the bytes are assembled and not
+// about what they say.
+func canonicalBodyOnce(body, relPath string, replacements []replacement) (string, bool) {
+	sortReplacements(replacements)
+	if overlapping(replacements) {
+		return "", false
 	}
+
+	fields := []string{"source_system: obsidian", "obsidian_path: " + yamlQuote(filepath.ToSlash(relPath))}
+	if folder := folderPath(relPath); folder != "" {
+		fields = append(fields, "obsidian_folder: "+yamlQuote(folder))
+	}
+
+	// The frontmatter's own bytes, and where the body after it begins.
+	frontmatterStart, frontmatterEnd, restStart, hasFrontmatter := frontmatterRegion(body)
+	if hasFrontmatter {
+		// Trailing newlines of the frontmatter and leading newlines of the
+		// rest are trimmed, exactly as augmentFrontmatter trims them.
+		for frontmatterEnd > frontmatterStart && body[frontmatterEnd-1] == '\n' {
+			frontmatterEnd--
+		}
+		for restStart < len(body) && body[restStart] == '\n' {
+			restStart++
+		}
+	}
+	if hasFrontmatter && crossesRegion(replacements, frontmatterStart, frontmatterEnd, restStart) {
+		return "", false
+	}
+
+	// Sized exactly: the body, plus what the edits add, plus the delimiters and
+	// the fields. A builder given slack allocated more than the staged path it
+	// replaces on a small note with links (measured, v1.0 J32-U).
+	size := len(body) + len("---\n---\n") + 1
+	for _, field := range fields {
+		size += len(field) + 1
+	}
+	for _, change := range replacements {
+		size += len(change.text) - (change.end - change.start)
+	}
+	var out strings.Builder
+	out.Grow(size)
+	out.WriteString("---\n")
+	for _, field := range fields {
+		out.WriteString(field)
+		out.WriteByte('\n')
+	}
+	if hasFrontmatter {
+		if strings.TrimSpace(body[frontmatterStart:frontmatterEnd]) != "" {
+			writeRegion(&out, body, frontmatterStart, frontmatterEnd, replacements)
+			out.WriteByte('\n')
+		}
+		out.WriteString("---\n")
+		writeRegion(&out, body, restStart, len(body), replacements)
+		return out.String(), true
+	}
+	out.WriteString("---\n")
+	end := len(body)
+	for end > 0 && body[end-1] == '\n' {
+		end--
+	}
+	writeRegion(&out, body, 0, end, replacements)
+	out.WriteByte('\n')
+	return out.String(), true
+}
+
+// writeRegion writes body[from:to] with the replacements that fall inside it.
+func writeRegion(out *strings.Builder, body string, from, to int, replacements []replacement) {
+	cursor := from
+	for _, change := range replacements {
+		if change.start < from || change.end > to {
+			continue
+		}
+		out.WriteString(body[cursor:change.start])
+		out.WriteString(change.text)
+		cursor = change.end
+	}
+	out.WriteString(body[cursor:to])
+}
+
+// crossesRegion reports whether a replacement straddles the frontmatter
+// delimiters, which the one-pass assembly cannot place.
+func crossesRegion(replacements []replacement, frontmatterStart, frontmatterEnd, restStart int) bool {
+	for _, change := range replacements {
+		insideFrontmatter := change.start >= frontmatterStart && change.end <= frontmatterEnd
+		insideRest := change.start >= restStart
+		if !insideFrontmatter && !insideRest {
+			return true
+		}
+	}
+	return false
+}
+
+// frontmatterRegion locates a note's frontmatter by offset rather than by
+// copying it out: where its content starts and ends, and where the body after
+// the closing delimiter begins. It answers exactly what splitFrontmatterBytes
+// answers, which the tests check on the same bodies.
+func frontmatterRegion(body string) (start, end, restStart int, ok bool) {
+	firstEnd := strings.IndexByte(body, '\n')
+	if firstEnd < 0 || strings.TrimSuffix(body[:firstEnd], "\r") != "---" {
+		return 0, 0, 0, false
+	}
+	contentStart := firstEnd + 1
+	for lineStart := contentStart; lineStart <= len(body); {
+		lineEnd := strings.IndexByte(body[lineStart:], '\n')
+		next := len(body)
+		if lineEnd >= 0 {
+			lineEnd += lineStart
+			next = lineEnd + 1
+		} else {
+			lineEnd = len(body)
+		}
+		if strings.TrimSuffix(body[lineStart:lineEnd], "\r") == "---" {
+			return contentStart, lineStart, next, true
+		}
+		if next >= len(body) {
+			break
+		}
+		lineStart = next
+	}
+	return 0, 0, 0, false
+}
+
+func sortReplacements(replacements []replacement) {
+	sort.Slice(replacements, func(i, j int) bool {
+		if replacements[i].start != replacements[j].start {
+			return replacements[i].start < replacements[j].start
+		}
+		return replacements[i].end < replacements[j].end
+	})
+}
+
+func overlapping(replacements []replacement) bool {
+	for index := 1; index < len(replacements); index++ {
+		if replacements[index].start < replacements[index-1].end {
+			return true
+		}
+	}
+	return false
+}
+
+// replacement is one link's rewritten text and the bytes of the body it
+// stands for.
+type replacement struct {
+	start int
+	end   int
+	text  string
+}
+
+// rewriteObsidianLinks returns the body with its links rewritten. canonicalBody
+// uses planObsidianLinks instead and applies the edits while it assembles.
+func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace) (string, []attachmentRef, int, []string) {
+	replacements, attachments, count, warnings := planObsidianLinks(body, notePath, collectionID, ns)
+	return applyReplacements(body, replacements), attachments, count, warnings
+}
+
+// planObsidianLinks resolves a note's links and returns the edits that rewrite
+// them, rather than a rewritten body: the caller decides when to apply them,
+// which lets the canonical body be assembled in one pass (v1.0 J32-U).
+func planObsidianLinks(body, notePath, collectionID string, ns linkNamespace) ([]replacement, []attachmentRef, int, []string) {
 	replacements := []replacement{}
 	attachmentByID := map[string]attachmentRef{}
 	warnings := []string{}
 	for _, candidate := range markdownlinks.Extract(body) {
 		raw := strings.TrimSpace(candidate.RawTarget)
-		if raw == "" || isExternal(raw) || strings.HasPrefix(raw, "document://") || strings.HasPrefix(raw, "resource://") || strings.HasPrefix(raw, "mailto:") {
+		if !vaultTarget(raw) {
 			continue
 		}
 		target := ""
@@ -1086,51 +1519,153 @@ func rewriteObsidianLinks(body, notePath, collectionID string, ns linkNamespace)
 			if candidate.RelationType == "embed" {
 				prefix = "!"
 			}
-			replacementText = prefix + "[" + candidate.DisplayText + "](" + uri + ")"
+			// The title is put back exactly as it was written. Dropping it
+			// lost the author's own text on every import (v1.0 J43).
+			replacementText = prefix + "[" + candidate.DisplayText + "](" + uri + candidate.TitleSuffix + ")"
 		}
 		replacements = append(replacements, replacement{start: candidate.StartByte, end: candidate.EndByte, text: replacementText})
-	}
-	sort.Slice(replacements, func(i, j int) bool { return replacements[i].start > replacements[j].start })
-	for _, change := range replacements {
-		body = body[:change.start] + change.text + body[change.end:]
 	}
 	attachments := make([]attachmentRef, 0, len(attachmentByID))
 	for _, attachment := range attachmentByID {
 		attachments = append(attachments, attachment)
 	}
 	sort.Slice(attachments, func(i, j int) bool { return attachments[i].ResourceID < attachments[j].ResourceID })
-	return body, attachments, len(replacements), warnings
+	return replacements, attachments, len(replacements), warnings
+}
+
+// applyReplacements writes a note's rewritten body (v1.0 J32-D).
+//
+// It used to splice each replacement into the body in descending order:
+// body[:start] + text + body[end:], once per link. Every splice copies the
+// whole note, so a note with thousands of links copied itself thousands of
+// times -- 11 GB allocated to import four 1 MiB notes (J32-A). This walks the
+// body once instead, and the pinned cases in j32d_rewrite_test.go say the
+// result is the same.
+//
+// Two replacements overlap only if a vault holds a file whose name is itself
+// a wiki link, such as `[[Target]].md`, because then the Markdown match around
+// a nested wiki link resolves too. A one-pass assembly cannot reproduce what
+// the descending splices did to those bytes, so that case keeps the splices:
+// this change is about how a body is assembled, not about what it says.
+func applyReplacements(body string, replacements []replacement) string {
+	if len(replacements) == 0 {
+		return body
+	}
+	sort.Slice(replacements, func(i, j int) bool {
+		if replacements[i].start != replacements[j].start {
+			return replacements[i].start < replacements[j].start
+		}
+		return replacements[i].end < replacements[j].end
+	})
+	size := len(body)
+	overlapping := false
+	for index, change := range replacements {
+		if index > 0 && change.start < replacements[index-1].end {
+			overlapping = true
+			break
+		}
+		size += len(change.text) - (change.end - change.start)
+	}
+	if overlapping {
+		// Descending, as the splice loop ran. Its sort compared starts alone,
+		// so two replacements starting at the same byte were ordered
+		// arbitrarily; the widest is applied first here, which is the only
+		// part of this path that is decided rather than reproduced.
+		sort.Slice(replacements, func(i, j int) bool {
+			if replacements[i].start != replacements[j].start {
+				return replacements[i].start > replacements[j].start
+			}
+			return replacements[i].end > replacements[j].end
+		})
+		for _, change := range replacements {
+			body = body[:change.start] + change.text + body[change.end:]
+		}
+		return body
+	}
+	var out strings.Builder
+	out.Grow(size)
+	cursor := 0
+	for _, change := range replacements {
+		out.WriteString(body[cursor:change.start])
+		out.WriteString(change.text)
+		cursor = change.end
+	}
+	out.WriteString(body[cursor:])
+	return out.String()
+}
+
+// pathShapedTarget reports whether a link target names a path rather than a
+// file name. Obsidian's documentation is explicit that "Folder paths start at
+// the vault root and use forward slashes (/), even on Windows", so a target
+// carrying a slash is a path and nothing else. When no path matches it, the
+// link is broken; resolving it to whichever file happens to share its last
+// segment would point the reader at a note the author never wrote down.
+func pathShapedTarget(raw string) bool {
+	return strings.Contains(raw, "/") || strings.HasPrefix(raw, ".")
+}
+
+// vaultCandidates lists the paths a link target can name, vault root first.
+// Obsidian resolves the root path ahead of the note-relative one so that a
+// link means the same note wherever it is written: "We want [[A]] to point to
+// the same note across the vault. Otherwise, where [[A]] points to depends on
+// which file it is contained." A bare name is a root path too, which is how
+// [[note]] reaches note.md at the root from a note inside a folder.
+func vaultCandidates(noteDir, raw string) [2]string {
+	return [2]string{raw, filepath.ToSlash(filepath.Join(noteDir, raw))}
+}
+
+// vaultTarget reports whether a link's target is one the import resolves
+// against the vault: not empty, not a web or mail address, and not already a
+// Notrios URI.
+func vaultTarget(raw string) bool {
+	return raw != "" && !isExternal(raw) && !strings.HasPrefix(raw, "document://") &&
+		!strings.HasPrefix(raw, "resource://") && !strings.HasPrefix(raw, "mailto:")
 }
 
 func resolveNoteID(notePath, raw string, ns linkNamespace) (string, bool) {
+	id, matches := noteMatches(notePath, raw, ns)
+	if id != "" {
+		return id, false
+	}
+	return "", len(matches) > 1
+}
+
+// noteMatches is how a note link resolves: the note it names, or else every
+// note its name could mean. A path that matches nothing names none.
+func noteMatches(notePath, raw string, ns linkNamespace) (string, []string) {
 	raw = decodeVaultTarget(raw)
 	noteDir := folderPath(notePath)
-	candidates := []string{}
-	if strings.Contains(raw, "/") || strings.HasPrefix(raw, ".") {
-		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)), raw)
-	} else {
-		candidates = append(candidates, filepath.ToSlash(filepath.Join(noteDir, raw)))
-	}
-	for _, candidate := range candidates {
+	for _, candidate := range vaultCandidates(noteDir, raw) {
 		if id := ns.notesByPath[normalizeNotePath(candidate)]; id != "" {
-			return id, false
+			return id, nil
 		}
 	}
-	key := strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
-	ids := ns.notesByName[key]
-	if len(ids) == 1 {
-		return ids[0], false
+	if pathShapedTarget(raw) {
+		// A path that matches nothing is a broken link, not a name to look up.
+		// The link text stays as it is, which is what Obsidian shows.
+		return "", nil
 	}
-	return "", len(ids) > 1
+	ids := ns.notesByName[nameKey(raw)]
+	if len(ids) == 1 {
+		return ids[0], nil
+	}
+	return "", ids
+}
+
+// nameKey is the key a link's name is looked up by.
+func nameKey(raw string) string {
+	return strings.ToLower(strings.TrimSuffix(filepath.Base(raw), filepath.Ext(raw)))
 }
 
 func resolveAssetID(notePath, raw string, ns linkNamespace) (string, bool) {
 	raw = decodeVaultTarget(raw)
-	noteDir := folderPath(notePath)
-	for _, candidate := range []string{filepath.ToSlash(filepath.Join(noteDir, raw)), raw} {
+	for _, candidate := range vaultCandidates(folderPath(notePath), raw) {
 		if id := ns.assetsByPath[normalizeVaultPath(candidate)]; id != "" {
 			return id, false
 		}
+	}
+	if pathShapedTarget(raw) {
+		return "", false
 	}
 	ids := ns.assetsByBase[strings.ToLower(filepath.Base(raw))]
 	if len(ids) == 1 {
@@ -1155,13 +1690,45 @@ type attachmentRef struct {
 	RawTarget    string
 }
 
+// importBatchByteBudget bounds a batch by the bytes its notes hold, as well as
+// by how many there are (v1.0 J32-K).
+//
+// The notes phase keeps each note's canonical body until the batch is written,
+// so a batch's memory is the sum of its notes' sizes, and only the note count
+// was bounded: a hundred notes of 60 MiB would ask for 6 GB. The budget is the
+// size one note is already allowed to reach, so a large note becomes a batch of
+// its own and nothing legal is refused.
+const importBatchByteBudget = int64(maxMarkdownBytes)
+
+// eachBatch walks a phase in windows, saving a checkpoint after each.
+//
+// A window ends at the count limit, or -- when the caller says how large its
+// items are -- once the window holds importBatchByteBudget of them, whichever
+// comes first. A window always holds at least one item, so a note larger than
+// the budget still imports. A checkpoint records the index the next window
+// starts at and not how large a window was, so varying the length changes
+// nothing about resume.
 func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase string, process func(start, end int) error) error {
+	return run.eachSizedBatch(phase, total, nil, write, nextPhase, process)
+}
+
+func (run *importRun) eachSizedBatch(phase string, total int, sizeOf func(index int) int64, write bool, nextPhase string, process func(start, end int) error) error {
 	start := 0
 	if run.phase == phase {
 		start = run.nextIndex
 	}
 	for start < total {
 		end := min(start+run.options.BatchSize, total)
+		if sizeOf != nil {
+			bytes := int64(0)
+			for index := start; index < end; index++ {
+				bytes += sizeOf(index)
+				if bytes >= importBatchByteBudget {
+					end = index + 1
+					break
+				}
+			}
+		}
 		if err := process(start, end); err != nil {
 			return err
 		}
@@ -1190,15 +1757,34 @@ func (run *importRun) eachBatch(phase string, total int, write bool, nextPhase s
 }
 
 func (run *importRun) saveCheckpoint(phase string, nextIndex int, status string) error {
-	raw, err := json.Marshal(run.report)
+	checkpoint, err := run.checkpoint(phase, nextIndex, status)
 	if err != nil {
 		return err
 	}
-	return run.st.PutImportCheckpoint(run.ctx, store.ImportCheckpoint{
+	return run.st.PutImportCheckpoint(run.ctx, checkpoint)
+}
+
+func (run *importRun) checkpoint(phase string, nextIndex int, status string) (store.ImportCheckpoint, error) {
+	raw, err := json.Marshal(run.report)
+	if err != nil {
+		return store.ImportCheckpoint{}, err
+	}
+	return store.ImportCheckpoint{
 		SourceSystem: sourceSystem, SourceKey: run.report.SourceKey, CollectionID: run.options.CollectionID,
 		InventoryFingerprint: run.inventory.Fingerprint, Phase: phase, NextIndex: nextIndex,
 		TotalItems: run.workTotal, ProcessedItems: run.processed, Status: status, ReportJSON: string(raw),
-	})
+	}, nil
+}
+
+// batchCheckpoint is the checkpoint a batch commits with its own writes, so a
+// crash cannot leave the writes durable and the position behind them. It names
+// the same phase and index eachBatch saves after the batch; that later save
+// still runs, and carries the report counters the batch has just advanced.
+func (run *importRun) batchCheckpoint(phase string, end, total int, nextPhase string) (store.ImportCheckpoint, error) {
+	if end == total {
+		return run.checkpoint(nextPhase, 0, "running")
+	}
+	return run.checkpoint(phase, end, "running")
 }
 
 func (run *importRun) currentDocumentIDs() ([]string, error) {
@@ -1209,12 +1795,12 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 		for _, note := range run.inventory.Notes[start:end] {
 			ids = append(ids, note.TargetID)
 		}
-		existing, err := run.st.GetDocuments(run.ctx, ids)
+		existing, err := run.st.ExistingDocumentIDs(run.ctx, ids)
 		if err != nil {
 			return nil, err
 		}
 		for _, id := range ids {
-			if _, found := existing[id]; found {
+			if existing[id] {
 				result = append(result, id)
 			}
 		}
@@ -1225,7 +1811,7 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 func (run *importRun) itemState(item vaultFile, action string) store.ImportItemState {
 	return store.ImportItemState{
 		SourceSystem: sourceSystem, SourceKey: run.report.SourceKey, CollectionID: run.options.CollectionID,
-		ItemKey: item.ItemKey, ItemType: item.ItemType, Fingerprint: item.Fingerprint,
+		ItemKey: item.itemKey(), ItemType: item.ItemType, Fingerprint: item.fingerprintHex(),
 		TargetID: item.TargetID, Action: action,
 	}
 }
@@ -1239,19 +1825,150 @@ func (run *importRun) addWarning(message string) {
 	}
 }
 
-func noteFingerprint(item vaultFile, notebookID, canonical string) string {
-	return sha256Hex([]byte(item.Fingerprint + "\x00" + notebookID + "\x00" + sha256Hex([]byte(canonical))))
+// noteFingerprint composes what decides whether a note changed: the file's
+// hash, the notebook it lands in, and the hash of the canonical body.
+//
+// It takes the body's hash rather than the body, because the caller has it: the
+// same value is the revision's content_sha256, and hashing the body twice was a
+// fifth of everything a near-limit import hashed (v1.0 J32-AA). The outer hash
+// is over a few dozen bytes.
+func noteFingerprint(item vaultFile, notebookID, canonicalSHA string) string {
+	return sha256Hex([]byte(item.fingerprintHex() + "\x00" + notebookID + "\x00" + canonicalSHA))
 }
 
-func readExact(item vaultFile) ([]byte, error) {
-	raw, err := os.ReadFile(item.AbsPath)
+// skipPrefix marks a recorded fingerprint a later import may skip on (v1.0
+// J39). It is readable, so a state that cannot be skipped is known by its first
+// bytes alone: no head is fetched for it and nothing is hashed to rule it out.
+const skipPrefix = "j39:"
+
+// recordedFingerprint is what a note's item state holds since v1.0 J39. It
+// covers the note fingerprint's parts -- the file's hash, the notebook and the
+// canonical body's hash -- and beside them everything else the canonical body
+// and references were derived from, so that a later import can tell, without
+// reading the note, that it would write exactly what is already stored:
+//
+//   - basis is the run's canonical rule version, collection and link namespace;
+//   - refsSHA is store.ResourceRefsDigest over the references the import gave
+//     the note.
+//
+// Every input is one a skip can supply from the inventory and from
+// store.ImportDocumentHeads: the canonical hash is then the stored revision's
+// content_sha256, and refsSHA the digest of the stored references.
+//
+// A note whose links warned records the bare noteFingerprint instead, as every
+// note did before J39. Neither form carries skipPrefix, so such a note is read
+// on every import and its warnings are reported every time, and a library
+// written by an older build is read in full until one import has run.
+func recordedFingerprint(item vaultFile, notebookID, canonicalSHA, basis, refsSHA string) string {
+	return skipPrefix + sha256Hex([]byte(item.fingerprintHex()+"\x00"+notebookID+"\x00"+canonicalSHA+"\x00"+basis+"\x00"+refsSHA))
+}
+
+// fingerprintHex is the file's SHA-256 as lowercase hex, the form item states,
+// resource records, bundle items and the inventory fingerprint were written
+// with. The inventory holds the 32 bytes rather than the 64-character string,
+// for every file for the whole import (v1.0 J20), and every comparison and
+// composition goes through this method so the text it sees is unchanged.
+func (file vaultFile) fingerprintHex() string {
+	return hex.EncodeToString(file.Fingerprint[:])
+}
+
+// frontmatterSHAHex is the frontmatter's SHA-256 as lowercase hex, as recorded
+// in a note source's metadata.
+func (file vaultFile) frontmatterSHAHex() string {
+	return hex.EncodeToString(file.FrontmatterSHA[:])
+}
+
+// sha256FromHex decodes a digest hashFile produced with hex.EncodeToString.
+// That input is always 64 valid hex characters. Were it ever not, the zero
+// value would make readExact refuse the file as changed during import, which
+// fails loudly, not silently.
+func sha256FromHex(value string) [sha256.Size]byte {
+	var sum [sha256.Size]byte
+	_, _ = hex.Decode(sum[:], []byte(value))
+	return sum
+}
+
+// itemKey is the import item-state key for a vault file. It is derived from
+// RelPath, not stored beside it, so the inventory does not hold a second copy
+// of every path for the whole import (v1.0 J20). The composition is the one
+// item states were written with, and must not change.
+func (file vaultFile) itemKey() string {
+	return "file:" + file.RelPath
+}
+
+// absPath is where a vault file lives on disk. The inventory holds only the
+// slash-separated path relative to the vault, and readInventory walked that
+// same cleaned root, so joining them rebuilds the path it read. Storing the
+// absolute path as well kept a second, longer copy of every path for the whole
+// import (v1.0 J20).
+func (run *importRun) absPath(item vaultFile) string {
+	return filepath.Join(run.sourceDir, filepath.FromSlash(item.RelPath))
+}
+
+// maxRetainedNoteBytes is how large a note buffer the import keeps between
+// notes: the largest note the importer accepts at all, so every legal note is
+// read into the same buffer (v1.0 J32-W2).
+//
+// It was 8 MiB first, on the rule J32-T set for the block buffers, and that
+// measured flat on the near-limit corpus for the obvious reason -- every note
+// there is 60 MiB, so every note allocated anyway. The bound that makes reuse
+// mean something is the one the importer already enforces: a buffer this large
+// is one a single note could legitimately need, and holding it between notes
+// costs no more than reading one more such note would.
+const maxRetainedNoteBytes = maxMarkdownBytes
+
+// retainNoteBuffer reports whether a buffer of this capacity is kept for the
+// next note. A buffer larger than any note the importer accepts was grown by a
+// file that is being refused anyway, so it is given back.
+func retainNoteBuffer(capacity int) bool {
+	return capacity <= maxRetainedNoteBytes
+}
+
+// readNote reads one note into the import's own buffer and checks that it is
+// still the note the inventory hashed (v1.0 J32-W2).
+//
+// os.ReadFile allocated a buffer per note, and the notes phase reads every note
+// in the library. The buffer is reused instead, which is safe because what the
+// batch keeps -- the canonical body, the attachment references, the warnings --
+// is built from the string canonicalBody makes, not from these bytes.
+func (run *importRun) readNote(item vaultFile) ([]byte, error) {
+	path := run.absPath(item)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	if sha256Hex(raw) != item.Fingerprint {
+	defer file.Close()
+
+	wanted := item.SizeBytes
+	buffer := run.noteBytes[:0]
+	if int64(cap(buffer)) < wanted+1 {
+		// One byte past the size the inventory recorded, so a note that grew
+		// under us is read whole and caught by the hash below rather than
+		// silently truncated.
+		buffer = make([]byte, 0, wanted+1)
+	}
+	for {
+		if len(buffer) == cap(buffer) {
+			buffer = append(buffer, 0)[:len(buffer)]
+		}
+		count, readErr := file.Read(buffer[len(buffer):cap(buffer)])
+		buffer = buffer[:len(buffer)+count]
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return nil, readErr
+		}
+	}
+	if retainNoteBuffer(cap(buffer)) {
+		run.noteBytes = buffer
+	} else {
+		run.noteBytes = nil
+	}
+	if sha256Hex(buffer) != item.fingerprintHex() {
 		return nil, fmt.Errorf("%w: Obsidian note %s changed during import", store.ErrConflict, item.RelPath)
 	}
-	return raw, nil
+	return buffer, nil
 }
 
 func hashFile(ctx context.Context, path string) (string, int64, error) {
@@ -1270,6 +1987,7 @@ func hashFile(ctx context.Context, path string) (string, int64, error) {
 		count, readErr := file.Read(buffer)
 		if count > 0 {
 			_, _ = hash.Write(buffer[:count])
+			hashmeter.Add(count)
 			size += int64(count)
 		}
 		if readErr == io.EOF {
@@ -1291,12 +2009,20 @@ func shouldSkipDir(name string) bool {
 }
 
 func markdownTitle(relPath, body string) string {
-	if fm, _, ok := splitFrontmatter(body); ok {
-		if title := frontmatterScalar(fm, "title"); title != "" {
+	// Both steps used to copy the whole note to answer a question about a few
+	// of its bytes (v1.0 J32-O): splitFrontmatter converted it to []byte and
+	// converted both halves back, and strings.Split built a slice of every
+	// line -- about four million of them for a 60 MiB note -- to find the
+	// first heading. The frontmatter is located by offset and the lines are
+	// walked one at a time; both are slices of the body the caller holds.
+	if start, end, _, ok := frontmatterRegion(body); ok {
+		if title := frontmatterScalar(body[start:end], "title"); title != "" {
 			return title
 		}
 	}
-	for _, line := range strings.Split(body, "\n") {
+	for rest := body; rest != ""; {
+		line, remainder, _ := strings.Cut(rest, "\n")
+		rest = remainder
 		if trimmed := strings.TrimSpace(line); strings.HasPrefix(trimmed, "# ") {
 			return strings.TrimSpace(strings.TrimPrefix(trimmed, "# "))
 		}
@@ -1533,6 +2259,7 @@ func yamlQuote(value string) string {
 }
 
 func sha256Hex(value []byte) string {
+	hashmeter.Add(len(value))
 	sum := sha256.Sum256(value)
 	return hex.EncodeToString(sum[:])
 }

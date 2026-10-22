@@ -13,6 +13,7 @@ import (
 
 	"github.com/renesugar/notrios/internal/projection"
 	"github.com/renesugar/notrios/internal/query"
+	"github.com/renesugar/notrios/internal/recoll/recolltest"
 	"github.com/renesugar/notrios/internal/store"
 )
 
@@ -77,6 +78,8 @@ func TestParseResultsRejectsHostileAndDuplicateRows(t *testing.T) {
 	validURL := "file:///data/projections/notes/doc_one.md"
 	output := strings.Join([]string{
 		b64("https://example.test/doc.md") + " " + b64("remote"),
+		// An external indexer's document, left in an index built before v1.0 J44.
+		b64("joplin://x-callback-url/openNote?id=jop00") + " " + b64("another application's note"),
 		b64("file://server/data/projections/notes/remote.md") + " " + b64("remote host"),
 		b64("file:///data/outside/notes/outside.md") + " " + b64("outside"),
 		b64("file:///data/projections/notes/nested/doc.md") + " " + b64("nested"),
@@ -186,12 +189,7 @@ func TestSearchCancelsSubprocess(t *testing.T) {
 // are installed: projection -> generated config -> front-matter handler ->
 // field queries. Skipped otherwise.
 func TestLiveRecollPipeline(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("XDG_CONFIG_HOME", dir+"/xdg-config")
-	t.Setenv("XDG_RUNTIME_DIR", dir+"/xdg-runtime")
-	if err := os.MkdirAll(dir+"/xdg-runtime", 0o700); err != nil {
-		t.Fatalf("create XDG runtime dir: %v", err)
-	}
+	dir := recolltest.Isolate(t)
 	sidecar := New(dir+"/conf", dir+"/proj", "recollindex")
 	if !sidecar.Available() {
 		t.Skip("recollindex/recollq not installed")
@@ -244,6 +242,7 @@ func TestLiveRecollPipeline(t *testing.T) {
 	if err := sidecar.Index(ctx); err != nil {
 		t.Fatalf("Index: %v", err)
 	}
+	recolltest.AssertNoExternalIndexers(t, dir+"/conf")
 
 	now := time.Now()
 	cases := []struct {
@@ -319,4 +318,25 @@ func TestLiveRecollPipeline(t *testing.T) {
 			t.Fatalf("backend parity %q: SQLite=%v Recoll=%v", queryText, sqliteIDs, recollIDs)
 		}
 	}
+}
+
+// TestEnsureConfigDeclaresNoExternalIndexers needs no Recoll binary: it states
+// what the generated configuration says, which is the half of J44 that holds on
+// a machine where Recoll is not installed at all.
+func TestEnsureConfigDeclaresNoExternalIndexers(t *testing.T) {
+	dir := t.TempDir()
+	sidecar := New(filepath.Join(dir, "conf"), filepath.Join(dir, "proj"), "recollindex")
+	if err := sidecar.EnsureConfig(); err != nil {
+		t.Fatalf("EnsureConfig: %v", err)
+	}
+	recolltest.AssertNoExternalIndexers(t, sidecar.ConfDir)
+	// Regenerated on every start, so a backends file someone edited — or one
+	// an older build let recollindex install — is replaced, not kept.
+	if err := os.WriteFile(filepath.Join(sidecar.ConfDir, "backends"), []byte("[JOPLIN]\nindex = rcljoplin.py index\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := sidecar.EnsureConfig(); err != nil {
+		t.Fatalf("EnsureConfig again: %v", err)
+	}
+	recolltest.AssertNoExternalIndexers(t, sidecar.ConfDir)
 }

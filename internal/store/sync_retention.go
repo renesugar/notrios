@@ -645,7 +645,9 @@ func (s *SQLiteStore) collectTombstonePayloadLocked(documentID string) error {
 		`DELETE FROM document_resource_refs WHERE document_id=?`,
 		`DELETE FROM document_links WHERE source_document_id=?`,
 		`DELETE FROM document_blocks WHERE document_id=?`,
-		`DELETE FROM documents_fts WHERE document_id=?`,
+		// By recorded rowid; matching on document_id scans the index (J18).
+		`DELETE FROM documents_fts WHERE rowid=(SELECT fts_rowid FROM documents_fts_rowid WHERE document_id=?)`,
+		`DELETE FROM documents_fts_rowid WHERE document_id=?`,
 		`DELETE FROM sync_document_conflicts WHERE document_id=?`,
 		`DELETE FROM sync_revision_pending_bodies WHERE document_id=?`,
 		`UPDATE document_links SET target_document_id=NULL, resolution_status='target_deleted' WHERE target_document_id=?`,

@@ -10,10 +10,12 @@
 
 Both command forms work identically — from source or a built binary:
 
+<!-- notrios:generated:example:import-export-import-and-export-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/export dir"
 ./bin/notriosctl   import joplin-raw --dry-run "/path/to/export dir"
 ```
+<!-- notrios:generated:example:import-export-import-and-export-example-1:end -->
 
 Quote any path containing spaces.
 
@@ -63,9 +65,11 @@ Common mistakes:
 
 ### 2. Dry run
 
+<!-- notrios:generated:example:import-export-2-dry-run-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw --dry-run "/path/to/joplin-export"
 ```
+<!-- notrios:generated:example:import-export-2-dry-run-example-1:end -->
 
 The dry run uses the same deterministic inventory and action planner as the
 real import. It reports per-type inventory totals, malformed/unsupported items,
@@ -79,6 +83,7 @@ existed).
 
 ### 3. Import
 
+<!-- notrios:generated:example:import-export-3-import-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import joplin-raw \
   --db ./data/notes.sqlite \
@@ -87,6 +92,7 @@ go run ./cmd/notriosctl import joplin-raw \
   --import-config "/path/to/joplin-export/import-config.json" \
   "/path/to/joplin-export"
 ```
+<!-- notrios:generated:example:import-export-3-import-example-1:end -->
 
 The import runs in bounded batches (1–500, default 100). A durable checkpoint
 records the inventory fingerprint, phase, next item, cumulative report, and
@@ -198,12 +204,14 @@ is merged deliberately and reported as such.
 
 Point the importer at your vault directory (the folder containing your `.md` files; no export step is needed in Obsidian):
 
+<!-- notrios:generated:example:import-export-obsidian-vault-directory-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl import obsidian --dry-run \
   --write-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 go run ./cmd/notriosctl import obsidian --preserve-source \
   --import-config "/path/to/vault/.notrios/import-config.json" "/path/to/vault"
 ```
+<!-- notrios:generated:example:import-export-obsidian-vault-directory-example-1:end -->
 
 Behavior:
 
@@ -228,6 +236,14 @@ Behavior:
 - Fingerprints and bounded 1–500 item batches make re-runs idempotent and
   resumable. Dry run uses the same create/update/unchanged classifiers as the
   real import and writes no import checkpoint or content.
+- A re-run does not read a note again when nothing it was built from has
+  changed. That means: its file, the vault's note paths, titles and aliases,
+  its asset paths, and the note as it is stored in Notrios. Such a note counts
+  in `notes_unchanged`, and in `notes_skipped`. Anything else is read and
+  repaired as before, including a note edited, moved or detached from an
+  attachment inside Notrios. A note whose links warned is read on every run, so
+  its warnings are reported every time. The first re-run after upgrading from a
+  build before 1.0 J39 reads every note once.
 
 Limitations: Obsidian canvases and plugin-specific syntax import as ordinary
 non-Markdown source files; frontmatter `tags:` are not yet turned into sidebar
@@ -235,21 +251,29 @@ tags. Test first on a copy of a real vault and inspect warnings.
 
 ---
 
-## Twitter/X (extracted archive)
+## Twitter/X archive
 
-Request your archive from X (Settings → download your data), download the ZIP, and **extract it**. The importer wants the extracted directory (the one containing `data/`):
+Request your archive from X (Settings → download your data) and download the ZIP. **Give the importer the ZIP as it downloaded**: there is no need to extract it. The importer reads it in place and finds everything it needs itself. An archive you have already extracted works too: pass the folder containing `data/`.
+
+<!-- notrios:generated:example:import-export-twitter-x-archive-example-1:begin -->
+```sh
+go run ./cmd/notriosctl import twitter --dry-run "/path/to/twitter-archive.zip"
+go run ./cmd/notriosctl import twitter --notebook Twitter "/path/to/twitter-archive.zip"
+```
+<!-- notrios:generated:example:import-export-twitter-x-archive-example-1:end -->
+
+What it reads, for reference:
 
 ```text
-twitter-archive/
-  data/
-    account.js          # window.YTD.account.part0 = [...]
-    tweets.js           # window.YTD.tweets.part0 = [...]  (older archives: tweet.js)
-    tweets_media/       # media files named <tweetid>-<name>.<ext>
-```
-
-```sh
-go run ./cmd/notriosctl import twitter --dry-run "/path/to/twitter-archive"
-go run ./cmd/notriosctl import twitter --notebook Twitter "/path/to/twitter-archive"
+data/
+  account.js            # window.YTD.account.part0 = [...]
+  tweets.js             # window.YTD.tweets.part0 = [...]  (older archives: tweet.js)
+  tweets-part1.js       # a large archive continues its posts in part files,
+  tweets-part2.js       #   read in order after tweets.js
+  community-tweet.js    # posts to X Communities, imported like any post
+  deleted-tweets.js     # posts you deleted: counted, not imported
+  tweet-headers.js      # one line per post, used to check nothing was missed
+  tweets_media/         # media files named <tweetid>-<name>.<ext>
 ```
 
 Extra flag: `--notebook` (default `Twitter`) names the notebook the tweets are placed in; it is created with a 🐦 icon if missing (an existing notebook with the same name is reused).
@@ -259,42 +283,76 @@ Behavior:
 - **Conversation threads are recovered** by following in-reply-to chains among your archived tweets; thread queries return them in chronological order. Replies to other people's (unarchived) tweets keep the external `reply_to` ID.
 - `t.co` links are expanded to their real URLs; media becomes embedded resources; hashtags become **real sidebar tags**; each note ends with a link to the original post.
 - Provenance records your display name and `@handle` (searchable via `author:"..."` / `authorid:@...`), the tweet ID, thread ID, and posting time (`since:`/`until:` filters work).
-- Report: `tweets_seen`, `notes_*`, `threads_recovered`, `media_imported`/`media_missing`, `tags_applied`, `attachments_linked`, `warnings`.
+- **Every post is imported**, however many part files the archive splits them across. Posts you deleted on X are not brought back: they are counted in the report and left out.
+- **The count is checked.** When the archive has `tweet-headers.js`, the report compares the posts found with the number it lists, and warns if they differ.
+- **A hostile archive is refused, not trusted.** Entries whose names escape the archive are skipped and counted. A data file, a media file or an entry count over the import's limits stops that file or the import with a clear error, and nothing is extracted to disk.
+- Report: `source_format` (`zip` or `directory`), `tweet_files`, `posts_in_tweet_files`, `tweet_headers`, `tweets_seen`, `community_posts_seen`, `deleted_posts_skipped`, `duplicate_posts_skipped`, `archive_entries_rejected`, `notes_*`, `threads_recovered`, `media_files_in_archive`, `media_unmatched` (media files naming no imported post), `media_imported`/`media_missing`, `tags_applied`, `attachments_linked`, `warnings`.
 
 ---
 
-## ChatGPT (data export)
+## ChatGPT (data export, and the OpenAI Privacy Portal export)
 
-Request your data export from ChatGPT's settings and extract the ZIP; the importer takes either the extracted directory or the `conversations.json` inside it:
+ChatGPT is exported in two shapes, and the importer takes either **as the ZIP you downloaded** — there is no need to unzip anything:
 
+<!-- notrios:generated:example:import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1:begin -->
 ```sh
-go run ./cmd/notriosctl import chatgpt --dry-run "/path/to/export/conversations.json"
-go run ./cmd/notriosctl import chatgpt "/path/to/export-dir"
+go run ./cmd/notriosctl import chatgpt --dry-run "/path/to/chatgpt-export.zip"
+go run ./cmd/notriosctl import chatgpt "/path/to/OpenAI-export.zip"
 ```
+<!-- notrios:generated:example:import-export-chatgpt-data-export-and-the-openai-privacy-portal-export-example-1:end -->
+
+An extracted folder, or a path straight to a `conversations.json`, works too.
+
+| What you downloaded | What it holds |
+|---|---|
+| **from ChatGPT** (Settings → Data controls → Export) | `conversations.json` beside `chat.html` and the asset files, named `file-<id>-<name>.<ext>` or `file_<hash>-<name>.<ext>` |
+| **from the OpenAI Privacy Portal** | an outer ZIP whose `User Online Activity/` folder holds **ZIPs of its own**: `Conversations__….zip` (with `conversations-000.json`, `conversations-001.json`, … and assets stripped to `file-<id>.dat`) and `Files__….zip` (your ChatGPT file library) |
 
 Extra flag: `--notebook` (default `ChatGPT`, created with a 🤖 icon).
 
-Each conversation becomes **one Markdown note** with `## User — timestamp` / `## Assistant — timestamp` sections. Only the conversation's *current* branch is imported (abandoned edit/regeneration branches are excluded); system/tool and empty messages are skipped (`messages_skipped`). Unnamed conversations get dated titles. The conversation ID becomes the provenance thread ID.
+Behaviour:
+
+- **Every conversation becomes its own note**, and every `conversations*.json` shard is read, in order.
+- **Nested ZIPs are read in place.** Nothing is extracted; a large nested archive is spooled into the instance's own temp directory (`data.temp_dir`) and removed afterwards.
+- **`.dat` assets get their real names back**, from `conversation_asset_file_names.json`, then `library_files.json` (which also carries the MIME type), and otherwise from the file's own bytes. The report counts which source named how many. `chat.html` shows the `.dat` names in a Privacy Portal export; the importer reads the JSON instead, so notes name files properly.
+- **Attachments become resources** and are embedded in the note; file IDs match under either the `file-` or `file_` prefix.
+- **The file library is imported.** A file a conversation references is attached to that note; one nothing references gets a note of its own in a **ChatGPT Files** notebook, so it stays searchable.
+- **Code and output are rendered** as fenced code blocks, and browsing results as text. The model's thinking, reasoning recaps and tool plumbing are **not** imported; the report counts them.
+- Report: `source_format`, `archive_files`, `nested_archives`, `conversations_seen`, `notes_*`, `messages_*`, `code_blocks`, `machinery_skipped`, `assets_referenced`/`assets_imported`/`assets_missing`, `asset_names_from_map`/`asset_names_from_library`/`asset_names_sniffed`, `library_files_seen`/`library_files_imported`/`library_stub_notes`, `archive_entries_rejected`, `warnings`.
+
+---
 
 ## Claude (data export)
 
-Same shape as ChatGPT — point at the export's `conversations.json` or its directory:
+Give the importer the ZIP as you downloaded it. A large export arrives as several `...-batch-0000.zip`, `...-batch-0001.zip` files: point at the folder holding them and they import as one export.
 
+<!-- notrios:generated:example:import-export-claude-data-export-example-1:begin -->
 ```sh
-go run ./cmd/notriosctl import claude --dry-run "/path/to/conversations.json"
-go run ./cmd/notriosctl import claude "/path/to/export-dir"
+go run ./cmd/notriosctl import claude --dry-run "/path/to/claude-data-export.zip"
+go run ./cmd/notriosctl import claude "/path/to/export-folder"
 ```
+<!-- notrios:generated:example:import-export-claude-data-export-example-1:end -->
 
-Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon). Messages come from each conversation's flat message list (text content blocks are used when the plain-text field is empty).
+Extra flag: `--notebook` (default `Claude`, created with a ✳️ icon).
+
+Behaviour:
+
+- **Every conversation becomes its own note.** Messages come from each conversation's flat message list, using the text content blocks when the plain-text field is empty.
+- **Each project becomes a note too**, with its description, prompt template and each of its docs.
+- **Attachments keep their text.** A Claude export carries an attachment's extracted text rather than its bytes, so the note holds that text under the file's name. A file the export only names is shown as not in the archive.
+- **Thinking and tool blocks are not imported**, and are counted in the report.
+- Report: `source_format`, `archive_files`, `batch_archives`, `conversations_seen`, `notes_*`, `messages_*`, `code_blocks`, `attachments_seen`, `files_referenced`, `machinery_skipped`, `projects_seen`/`projects_imported`/`project_docs`, `archive_entries_rejected`, `warnings`.
 
 ---
 
 ## Exporting a Notrios archive
 
+<!-- notrios:generated:example:import-export-exporting-a-notrios-archive-example-1:begin -->
 ```sh
 go run ./cmd/notriosctl export archive ./my-archive                      # everything
 go run ./cmd/notriosctl export archive --query 'tag:todo' ./todo-archive # query-scoped
 ```
+<!-- notrios:generated:example:import-export-exporting-a-notrios-archive-example-1:end -->
 
 `--query` accepts the full [query language](query-language.md), so you can export a notebook (`--query 'notebook:"Work"'`), a tag, or any search-notebook query instead of the whole database. Notes in the Trash are excluded.
 
@@ -314,6 +372,7 @@ revision, or all provenance.
 
 ## Exporting a native archive v2 snapshot
 
+<!-- notrios:generated:example:import-export-exporting-a-native-archive-v2-snapshot-example-1:begin -->
 ```sh
 # Complete database backup.
 go run ./cmd/notriosctl export archive-v2 ./notrios-backup
@@ -322,6 +381,7 @@ go run ./cmd/notriosctl export archive-v2 ./notrios-backup
 go run ./cmd/notriosctl export archive-v2 --target subset_transfer \
   --notebooks nb_research --tags shared ./research-transfer
 ```
+<!-- notrios:generated:example:import-export-exporting-a-native-archive-v2-snapshot-example-1:end -->
 
 Archive **v2** is the lossless format: every saved revision, trashed notes,
 notebooks and tags, links, provenance, resources, exact source bundles, and
@@ -337,6 +397,7 @@ matched afterwards.
 
 ## Verifying and restoring an archive v2 snapshot
 
+<!-- notrios:generated:example:import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1:begin -->
 ```sh
 # Read-only integrity/contents check.
 go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
@@ -345,6 +406,7 @@ go run ./cmd/notriosctl verify archive-v2 ./notrios-backup
 go run ./cmd/notriosctl restore archive-v2 --intent adopt \
   --db ./restored/notes.sqlite ./notrios-backup
 ```
+<!-- notrios:generated:example:import-export-verifying-and-restoring-an-archive-v2-snapshot-example-1:end -->
 
 `adopt` restores into an empty database and keeps the archive's logical database
 ID; `replace` restores over an existing one; `merge` imports records into an
@@ -359,6 +421,7 @@ For a complete local library on the current schema, the frozen G14c-G14e path
 provides the physical snapshot representation selected and accepted against the
 full corpora:
 
+<!-- notrios:generated:example:import-export-fast-same-schema-whole-library-snapshots-example-1:begin -->
 ```bash
 go run ./cmd/notriosctl snapshot create --db data/notes.sqlite \
   --asset-store data/assets ./notrios-physical-snapshot
@@ -367,6 +430,7 @@ go run ./cmd/notriosctl snapshot restore --intent replace \
   --db data/notes.sqlite --asset-store data/assets \
   ./notrios-physical-snapshot
 ```
+<!-- notrios:generated:example:import-export-fast-same-schema-whole-library-snapshots-example-1:end -->
 
 This is not a subset export and cannot be merged. It binds one consistent
 SQLite Online Backup image to deterministic bounded packs of every
@@ -380,6 +444,7 @@ fallback when schema compatibility is not exact.
 
 ## Importing a Notrios archive
 
+<!-- notrios:generated:example:import-export-importing-a-notrios-archive-example-1:begin -->
 ```sh
 # 1. Analyze; writes my-archive/import-config.json (or --write-config <path>)
 go run ./cmd/notriosctl import archive --dry-run ./my-archive
@@ -387,6 +452,7 @@ go run ./cmd/notriosctl import archive --dry-run ./my-archive
 # 2. Review/edit the renames in import-config.json, then import
 go run ./cmd/notriosctl import archive --import-config ./my-archive/import-config.json ./my-archive
 ```
+<!-- notrios:generated:example:import-export-importing-a-notrios-archive-example-1:end -->
 
 The dry run classifies each top-level archive notebook name (case-insensitively):
 

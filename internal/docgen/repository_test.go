@@ -20,8 +20,14 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// 62 -> 63 and 52 -> 53 in v0.8 H9 slice B:
 		// sync.rest.credential_store names where the secret protecting the
 		// key material lives.
-		{configAnchor, 63},
-		{defaultAnchor, 53},
+		// 63 -> 64 and 53 -> 54 in v1.0 J22 slice B: data.temp_dir is each
+		// instance's own temp directory, so instances on one machine never share
+		// temporary work.
+		// 64 -> 68 and 54 -> 56 in v1.0 J28 slice C: the security section, its
+		// remote_media subsection, and refused_address_ranges and
+		// permitted_address_ranges.
+		{configAnchor, 68},
+		{defaultAnchor, 56},
 		// 56 -> 58 in v0.8 H4 slice D: `notriosctl paths` and
 		// `notriosctl config show`.
 		// 58 -> 59 in v0.8 H4 slice E: `notriosctl migrate`.
@@ -72,8 +78,16 @@ func TestRepositoryEnumerationsMatchFiniteRegistries(t *testing.T) {
 		// operations already had a single-note command to hang `--query` on and
 		// copying a note had none, so the command line reached five sixths of a
 		// capability REST and MCP reached whole.
-		{cliHelpAnchor, 91},
-		{restAnchor, 109},
+		// 91 -> 92 in v1.0 J3: `purge`. A packaged installation could not reach
+		// any of make purge's safeguards -- the verified backup, the refusal when
+		// nothing can answer, the symlink protection, the sync-key exclusion --
+		// because they live in scripts/lifecycle.py and the .deb ships no Python.
+		// 92 -> 93 and 109 -> 111 in v1.0 J40-D: `links report`, and its two
+		// REST routes. The report of ambiguous links quotes note content, so the
+		// command prints it and REST carries only its content-free form; the
+		// second route writes it as a read-only note in Reports.
+		{cliHelpAnchor, 93},
+		{restAnchor, 111},
 		{mcpToolsAnchor, 46},
 		{mcpSyncScopeAnchor, 7},
 		{mcpScopesAnchor, 4},

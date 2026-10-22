@@ -41,9 +41,10 @@ var ErrReadOnly = fmt.Errorf("document is read-only")
 
 // Localizer runs remote-media localization against one store.
 type Localizer struct {
-	store  store.Store
-	cfg    config.RemoteMediaConfig
-	policy *media.Policy
+	store   store.Store
+	cfg     config.RemoteMediaConfig
+	options []media.Option
+	policy  *media.Policy
 
 	fetchOnce sync.Once
 	fetcher   *media.Fetcher
@@ -53,8 +54,11 @@ type Localizer struct {
 // New builds a localizer. The quarantine fetcher (and its directory) is
 // created lazily on the first non-dry run, so constructing a server never
 // touches the filesystem.
-func New(cfg config.RemoteMediaConfig, st store.Store) *Localizer {
-	return &Localizer{store: st, cfg: cfg, policy: media.NewPolicy(cfg)}
+//
+// Production callers pass media.WithAddressRanges with the configuration's
+// security.remote_media block; without it the default refused set applies.
+func New(cfg config.RemoteMediaConfig, st store.Store, opts ...media.Option) *Localizer {
+	return &Localizer{store: st, cfg: cfg, options: opts, policy: media.NewPolicy(cfg, opts...)}
 }
 
 type attemptRecorder struct{ st store.Store }
@@ -77,7 +81,7 @@ func (r attemptRecorder) RecordMediaAttempt(ctx context.Context, attempt media.A
 
 func (l *Localizer) getFetcher() (*media.Fetcher, error) {
 	l.fetchOnce.Do(func() {
-		l.fetcher, l.fetchErr = media.NewFetcher(l.cfg, attemptRecorder{l.store})
+		l.fetcher, l.fetchErr = media.NewFetcher(l.cfg, attemptRecorder{l.store}, l.options...)
 	})
 	return l.fetcher, l.fetchErr
 }

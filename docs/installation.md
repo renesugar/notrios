@@ -1,27 +1,39 @@
 # Installation and building
 
 There are two ways to install Notrios, and this page is ordered for the first
-one: **from the Ubuntu package**, which needs no repository, no Go, no Node and
-no compiler. Building from a clone is the second half of the page.
+one: **from the Ubuntu package** a release publishes, which needs no repository,
+no Go, no Node and no compiler. Building from a clone is the second half of the
+page.
 
-**There is no published download yet.** The package is built from this
-repository and has not been released anywhere, so today you either receive one
-or build one. What has been established is that it *works* once you have it: it
-installs on a clean Ubuntu 24.04 with only its declared dependencies, runs as an
-unprivileged user, survives upgrade, removal and reinstallation, and keeps your
-notes when the program is removed. That was measured rather than assumed — see
-[what is supported](#what-is-supported).
-
-The only tested platform is **Ubuntu 24.04 on amd64**. arm64 is built and never
-run; Windows and macOS are neither built nor tested here, and no support is
-claimed for them.
+**The supported platform is Ubuntu 24.04 on amd64.** The package has been
+installed there in clean containers that hold no source tree, no Go and no
+compiler, run as an unprivileged user, upgraded, rolled back, removed and
+reinstalled. Every other platform is listed in
+[what is supported](#what-is-supported) with what ran on it and what did not.
+Windows and macOS are not built and not claimed.
 
 ## Installing from the package
 
-You need the `.deb` and nothing else. `apt` resolves the dependencies:
+Releases are published at
+[github.com/renesugar/notrios/releases](https://github.com/renesugar/notrios/releases).
+A release set is these files:
+
+| File | What it is |
+|---|---|
+| `notrios_1.0.0-1_amd64.deb` | the package |
+| `notrios-c-abi-1.0.0-linux-amd64.tar.gz` | the C library and header; `PACKAGING.md` in the [repository](https://github.com/renesugar/notrios/blob/main/PACKAGING.md) says what it holds |
+| `<artifact>.asc` | a detached OpenPGP signature over each of the two |
+| `<artifact>.asc.tsq`, `<artifact>.asc.tsr` | an RFC 3161 timestamp request and reply over each signature |
+| `<artifact>.attestation.jsonl` | each artifact's build attestation, as a sigstore bundle |
+| `SBOM.cdx.json` | the software bill of materials, in CycloneDX |
+| `PROVENANCE.json` | an in-toto statement of how the two were built |
+| `SHA256SUMS`, `SHA256SUMS.asc` | the checksum of every file above, and a signature over the checksums |
+
+[Verify the files](#verifying-what-you-downloaded) before you install them. Then
+`apt` resolves the dependencies:
 
 ```sh
-sudo apt install ./notrios_0.8.0-1_amd64.deb
+sudo apt install ./notrios_1.0.0-1_amd64.deb
 ```
 
 That installs `/usr/bin/notrios`, `/usr/bin/notriosd` and `/usr/bin/notriosctl`,
@@ -31,9 +43,11 @@ starts on its own.
 
 Check the installation before trusting it:
 
+<!-- notrios:generated:example:installation-installing-from-the-package-example-2:begin -->
 ```sh
 notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-installing-from-the-package-example-2:end -->
 
 `doctor` reports each check and exits non-zero if a required one failed. On a
 machine with no keyring — a server, a container — it will tell you that no
@@ -43,60 +57,204 @@ sync keys. Paths are printed with your home directory shown as `~`; pass
 
 ### Verifying what you downloaded
 
-A release set carries `SHA256SUMS` beside the artifacts:
+There are four checks, and each answers a different question. Run them in the
+directory that holds the downloaded files.
+
+**Is the download intact?**
 
 ```sh
 sha256sum -c SHA256SUMS
 ```
 
-**Nothing is signed yet.** The signing policy is decided — a detached OpenPGP
-signature over each artifact and an RFC 3161 timestamp over it — and no key has
-been created, so there is no signature to check and you should not believe a
-file that claims otherwise. A checksum tells you the download is intact; it does
-not tell you who made it.
+Every line must end `OK`. A checksum says the files arrived as they were
+published. It does not say who published them.
+
+**Who made it?** The signature answers that, against the project's public key.
+Take the key from the repository rather than from the release page: a key that
+comes from the same place as the file it vouches for vouches for very little.
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/keys/release-public.asc
+gpg --show-keys --with-fingerprint release-public.asc
+```
+
+The primary key's fingerprint must be
+`1234 C691 AC07 76A1 8524  D556 8702 7B1D D464 695E`. If it is, import it and
+check the signatures:
+
+```sh
+gpg --import release-public.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+gpg --verify notrios_1.0.0-1_amd64.deb.asc notrios_1.0.0-1_amd64.deb
+gpg --verify notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc notrios-c-abi-1.0.0-linux-amd64.tar.gz
+```
+
+Each must print `Good signature from "Rene Sugar <rene.sugar@gmail.com>"` and
+the primary fingerprint above. The signature itself is made by the key's
+signing subkey, `348B 6B87 3994 D1AF F924  D7FA F1BF 879D CE41 EA2C`, and gpg
+prints both. gpg also warns `This key is not certified with a trusted
+signature!` That means you have not certified the key yourself, and it is
+expected. Comparing the fingerprint is the step you are relying on. `BAD
+signature` means the file is not the one that was signed.
+
+**When was it signed?** The timestamp is a third party's statement that the
+signature existed at a given time. It keeps meaning something after the key
+expires or is revoked. Check it against the authority's certificates, which are
+in the repository too:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-root.pem
+curl -fsSLO https://raw.githubusercontent.com/renesugar/notrios/main/evidence/current/TRUST/tsa-untrusted.pem
+openssl ts -verify -data notrios_1.0.0-1_amd64.deb.asc -in notrios_1.0.0-1_amd64.deb.asc.tsr \
+  -CAfile tsa-root.pem -untrusted tsa-untrusted.pem
+openssl ts -verify -data notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc \
+  -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -CAfile tsa-root.pem -untrusted tsa-untrusted.pem
+```
+
+Each verification must print `Verification: OK`. It also warns that the
+certificate in `tsa-untrusted.pem` `is not a CA cert`. That is expected: the
+file holds the responder's own certificate, not an authority's. A changed
+signature prints `message imprint mismatch` and `Verification: FAILED`, and
+exits non-zero.
+
+The time each one attests is in its reply:
+
+```sh
+openssl ts -reply -in notrios_1.0.0-1_amd64.deb.asc.tsr -text | grep 'Time stamp'
+openssl ts -reply -in notrios-c-abi-1.0.0-linux-amd64.tar.gz.asc.tsr -text | grep 'Time stamp'
+```
+
+**Where was it built?** Each attestation says its artifact came out of this
+repository's release workflow, from a named commit, on GitHub's runner. The
+release set carries them, and the [GitHub CLI](https://cli.github.com/) checks
+them **with no GitHub login**:
+
+```sh
+gh attestation verify notrios_1.0.0-1_amd64.deb --repo renesugar/notrios \
+  --signer-workflow renesugar/notrios/.github/workflows/release.yml \
+  --bundle notrios_1.0.0-1_amd64.deb.attestation.jsonl
+gh attestation verify notrios-c-abi-1.0.0-linux-amd64.tar.gz --repo renesugar/notrios \
+  --signer-workflow renesugar/notrios/.github/workflows/release.yml \
+  --bundle notrios-c-abi-1.0.0-linux-amd64.tar.gz.attestation.jsonl
+```
+
+Each exits 0 when its attestation verifies, and it can print nothing when it
+does. Add `--format json` to see what it established: the SLSA provenance
+predicate, the workflow, the commit and the issuer. Without `--bundle`, the
+command fetches the attestation from GitHub instead, and that needs
+`gh auth login`.
 
 ### Upgrading
 
-Install the newer package over the older one. Your library is not touched:
+Install the newer package over the older one:
 
 ```sh
-sudo apt install ./notrios_0.8.0-1_amd64.deb
+sudo apt install ./notrios_1.0.0-1_amd64.deb
 ```
 
 The binaries are replaced and the notes stay where they are, in your home
 directory rather than anywhere the package manager owns.
 
+**Upgrading from 0.8 to 1.0 changes the library as well as the program.** 1.0
+moves a library from schema 27 to 28 the first time it opens it, and 0.8 will
+not open it afterwards. Your notes come through: an upgrade from the 0.8.0
+package keeps every note, and the library takes new ones. Going back is then not
+only a matter of reinstalling 0.8; see the next section.
+
+**Upgrade every machine that syncs together.** 0.8 and 1.0 do not sync with each
+other by any path. An older version refuses an invitation from 1.0. When the
+older version invites, pairing completes and then nothing moves, because each
+side skips what the other publishes. Replicas that were already syncing carry on
+once all of them run 1.0.
+
+**Do not open a 1.0 library with 0.7.0.** 0.7.0 predates the check that refuses
+a library from a newer version. It opens a 1.0 library and rewrites its schema
+version from 28 to 27. The notes are intact, and opening the library with 1.0
+again repairs the version. 0.8.0 refuses a 1.0 library instead, and changes
+nothing.
+
 ### Going back to an earlier version
 
-`apt` refuses to go backwards unless you ask it to, which is deliberate:
+`apt` refuses to go backwards unless you ask it to, which is deliberate, and a
+refused downgrade leaves the newer package installed and your library
+untouched. Between two builds of the same schema, asking is all it takes. This
+is the rehearsal's pair, a 1.0.0 release candidate under 1.0.0:
 
 ```sh
-sudo apt install --allow-downgrades ./notrios_0.8.0~rc1-1_amd64.deb
+sudo apt install --allow-downgrades ./notrios_1.0.0~rc1-1_amd64.deb
 ```
 
-Without the flag the refusal leaves the newer package installed and your library
-untouched. With it, the older program is installed and your library is still
-untouched — a rollback moves the program, never the notes. If the older version
-predates a schema migration, see [upgrading from before 0.8](#upgrading-from-before-08).
+**From 1.0 back to 0.8, moving the program is not enough.** 0.8 refuses a
+library 1.0 has opened, and says so:
+
+```text
+database schema is newer than this build supports: the database records schema version 28 and this build supports 27.
+```
+
+So take the notes with you in an archive. Do it with 1.0 before downgrading,
+because 0.8 can no longer read the library:
+
+<!-- notrios:generated:example:installation-going-back-to-an-earlier-version-example-2:begin -->
+```sh
+notriosctl export archive-v2 ~/notrios-backup
+notriosctl verify archive-v2 ~/notrios-backup
+```
+<!-- notrios:generated:example:installation-going-back-to-an-earlier-version-example-2:end -->
+
+Then downgrade, set the 1.0 library aside rather than deleting it, and restore
+the archive into the new, empty library 0.8 creates:
+
+<!-- notrios:generated:example:installation-going-back-to-an-earlier-version-example-3:begin -->
+```sh
+sudo apt install --allow-downgrades ./notrios_0.8.0-1_amd64.deb
+mv ~/.local/share/notrios ~/.local/share/notrios.from-1.0
+notriosctl restore archive-v2 --intent adopt ~/notrios-backup
+```
+<!-- notrios:generated:example:installation-going-back-to-an-earlier-version-example-3:end -->
+
+`~/.local/share/notrios` is the data root `notriosctl paths --no-redact` prints
+for a packaged install that uses the default locations. Use the path it prints
+for you. 0.8 restores a 1.0 archive completely: an archive declares schema 28,
+but nothing in it is beyond 0.8's reader, because schema 28 adds only a private
+search index that archives do not carry.
 
 ### Backing up, and getting your notes back
 
-Export writes a portable archive you can copy anywhere:
+The lossless backup is an archive-v2. It is verified before the command reports
+success, and you can verify it again at any time without opening a library:
 
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-1:begin -->
 ```sh
-notriosctl export archive ~/notrios-backup
+notriosctl export archive-v2 ~/notrios-backup
+notriosctl verify archive-v2 ~/notrios-backup
 ```
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-1:end -->
 
-To restore into an empty or replacement library:
+Keep it on another disk. A backup on the disk it protects is lost with it.
 
+To recover a lost library, restore the archive into an empty one. `adopt` keeps
+the archive's logical database identity and gives this copy a new replica
+identity:
+
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-2:begin -->
 ```sh
-notriosctl import archive ~/notrios-backup
+notriosctl restore archive-v2 --intent adopt ~/notrios-backup
 ```
+<!-- notrios:generated:example:installation-backing-up-and-getting-your-notes-back-example-2:end -->
 
-That is the recovery path for a lost library, and it is the one to rehearse
-before you need it. `purge` also writes a verified backup before it deletes
-anything — see [removing your data as well](#removing-your-data-as-well) — but a
-backup you took on purpose is better than one a deletion made for you.
+That is the recovery path, and it is worth rehearsing before you need it. It
+has been rehearsed here at scale. A 382,206-note, 7.35 GB library was exported
+in 55 minutes to a 1.25 GB archive, verified, and destroyed by a purge. It was
+then restored in 28 minutes, and its contents and search results matched the
+original exactly. The export never used more than 324 MiB of memory.
+
+`notriosctl export archive` writes a different, human-readable archive meant
+for moving notes between libraries. It is not a lossless backup.
+
+`purge` also writes a verified backup before it deletes anything; see
+[removing your data as well](#removing-your-data-as-well). That backup is a
+`tar` file you can extract, and it is a second way back. But a backup you took on
+purpose is better than one a deletion made for you.
 
 ### Removing Notrios when you installed the package
 
@@ -109,42 +267,40 @@ sudo apt remove notrios
 
 That deletes every file the package installed and **leaves your notes,
 configuration, profiles, keys, state and cache exactly where they are**. Install
-the package again and they are still there. That was measured, not assumed:
-`performance/v0.9-i3` removes the package, checks the library on disk, reinstalls
-and finds the note again.
+the package again and they are still there.
 
-**There is no packaged way to delete your data, and you should know that before
-you need it.** `make purge` — which takes a verified backup first, refuses
-without `FORCE=1` when nothing can answer a prompt, and excludes sync key
-material from the backup — lives in the repository, and the package does not
-ship it. With only the package installed, deleting your library is something you
-do yourself. Find out where it is first:
-
-```sh
-notriosctl paths --no-redact
-```
-
-Delete the `data`, `config`, `state` and `cache` roots it prints, and understand
-that nothing takes a backup for you when you do it that way. Export first if the
-notes matter:
-
-```sh
-notriosctl export archive ~/notrios-backup
-```
+Deleting your data as well is `notriosctl purge`, which ships with the package.
+It shows what it will delete, asks first, and writes a verified backup before it
+deletes anything. See [removing your data as well](#removing-your-data-as-well).
 
 ## What is supported
 
-| Surface | Platform | Status |
-|---|---|---|
-| command line and service | Ubuntu 24.04 amd64 | installed and run |
-| web interface | browsers driven by the journey suite | exercised |
-| desktop shell | Ubuntu 24.04 amd64 | **compiled, never run here** |
-| command line and service | Ubuntu 24.04 arm64 | built, never run |
-| anything | Windows, macOS | not built, not claimed |
+Each row names what was executed at 1.0.0 to entitle it. A row that is not
+supported says what it lacks. The rows are generated from
+`performance/v1.0-j9/MATRIX.json`, which takes the libraries from the built
+package rather than from a list somebody wrote.
 
-The desktop shell is the row worth reading twice: continuous integration
-compiles it, and nothing in this project has launched its window, so it is not
-claimed as supported.
+<!-- notrios:generated:matrix:rows:begin -->
+| Surface | Platform | Status | Needs at run time |
+|---|---|---|---|
+| command line and background service | Ubuntu 24.04 amd64 | installed and run at 1.0.0 | libc6 (>= 2.34); newest glibc symbol GLIBC_2.34 |
+| C library and header (libnotrios.so.1) | Ubuntu 24.04 amd64 | built, compiled against and run at 1.0.0 | libc6 (>= 2.34); newest glibc symbol GLIBC_2.34 |
+| web interface | Google Chrome 156.0.8078.47 on Ubuntu 26.04.1 amd64 | every control driven at 1.0.0 | a browser on the same machine as the service, which binds loopback |
+| web interface | WebKit 26.5 (Playwright 1.61.1's build) | preview only, not claimed | — |
+| desktop shell (Wails v2, GTK3 / webkit2gtk-4.1) | Ubuntu 24.04 amd64 | **compiled and packaged, never run** | libc6 (>= 2.34), libgdk-pixbuf-2.0-0 (>= 2.22.0), libglib2.0-0t64 (>= 2.16.0), libgtk-3-0t64 (>= 3.21.4), libjavascriptcoregtk-4.1-0, libsoup-3.0-0 (>= 2.4.0), libwebkit2gtk-4.1-0 (>= 2.39.91); newest glibc symbol GLIBC_2.34 |
+| command line and background service | Ubuntu 26.04.1 amd64 | built and tested from source, package not installed | — |
+| command line and background service | Ubuntu 24.04 arm64 | built, never run | — |
+| all | Windows | not built, not claimed | — |
+| all | macOS | not built, not claimed | — |
+<!-- notrios:generated:matrix:rows:end -->
+
+The desktop shell is the row worth reading twice. It is compiled, packaged and
+checked to be present in every release package, and nothing in this project has
+opened its window, so it is not claimed as supported.
+
+The web interface is served by the same program on every platform. The browser
+row names the browser in which every control was driven, not the only browser
+that works. Another browser is simply untested here.
 
 ## Prerequisites for building from source
 
@@ -225,6 +381,7 @@ dependencies gone too.
 
 From the repository root:
 
+<!-- notrios:generated:example:installation-run-example-1:begin -->
 ```sh
 # Headless service (REST + MCP + web UI at http://127.0.0.1:8099)
 ./bin/notriosd -config config/config.example.yaml
@@ -235,13 +392,16 @@ From the repository root:
 # CLI
 ./bin/notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-run-example-1:end -->
 
 You can also run everything from source without building binaries:
 
+<!-- notrios:generated:example:installation-run-example-2:begin -->
 ```sh
 go run ./cmd/notriosd -config config/config.example.yaml
 go run ./cmd/notriosctl doctor
 ```
+<!-- notrios:generated:example:installation-run-example-2:end -->
 
 ### The two ways to open the interface
 
@@ -320,10 +480,12 @@ are not gone — they are still in that directory.
 `notriosctl paths` notices a pre-0.8 library in the directory you are standing
 in and names it. Moving it is a single explicit command:
 
+<!-- notrios:generated:example:installation-upgrading-from-before-08-example-1:begin -->
 ```sh
 notriosctl migrate --dry-run   # show what would move
 notriosctl migrate             # copy, verify, and retire the old directory
 ```
+<!-- notrios:generated:example:installation-upgrading-from-before-08-example-1:end -->
 
 Nothing is moved for you, the original is copied rather than moved, every file
 is verified with SHA-256, and the old directory is renamed rather than deleted.
@@ -382,11 +544,11 @@ manifest lists. Anything else is left alone:
 touched.** Uninstall is about the program; the library outlives it, and
 reinstalling picks it straight back up.
 
-### Installing from a package
+### Building the package yourself
 
-There is an internal Ubuntu package. It is **not published anywhere** and is not
-a supported release; it exists so the application can be installed and used the
-way an end user would, without a checkout.
+`make deb` builds the same package a release publishes, from your checkout. It is
+built here rather than by the release workflow, so it carries no attestation and
+no signature: it is for installing what you built, not for passing on.
 
 ```sh
 make deb
@@ -405,23 +567,43 @@ systemctl --user enable --now notrios
 The service binds loopback, exactly as it does everywhere else.
 
 Dependencies are computed from the binaries with `dpkg-shlibdeps` rather than
-written by hand, so `apt` installs what the program actually needs. Removing the
+written by hand, so `apt` installs what the program actually needs. Without the
+GTK and webkit2gtk-4.1 development headers, `make deb` builds a package with no
+desktop binary and says `no desktop GUI`. The release workflow installs the
+headers and refuses a package that lacks it. Removing the
 package with `apt remove` deletes every file it installed and **leaves your
 notes, configuration, profiles, keys, state and cache alone** — deleting those
-is `make purge`, which asks first. `make purge` works on a packaged install too:
-it removes your data and leaves the program to your package manager.
+is `notriosctl purge`, which asks first and takes a verified backup before it
+deletes anything. It removes your data and leaves the program to your package
+manager.
 
 ### Removing your data as well
 
-`make purge` is uninstall **plus** deleting this user's Notrios data. It is the
-only target here that destroys anything you made, so it is deliberately hard to
-do by accident:
+There are two ways in, and they do the same deleting.
+
+`notriosctl purge` deletes this user's Notrios data. It ships with the program,
+so it is the one to use if you installed a package:
+
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-1:begin -->
+```sh
+notriosctl purge --dry-run   # print the whole plan and stop; asks nothing
+notriosctl purge             # shows the plan, then asks
+notriosctl purge --confirm   # skip the question, for headless automation
+```
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-1:end -->
+
+`make purge` is that **plus** removing what `make install` recorded installing,
+and needs a checkout:
 
 ```sh
 make purge                   # shows the plan, then asks; type PURGE to confirm
 DRYRUN=1 make purge          # print the whole plan and stop; asks nothing
 FORCE=1 make purge           # skip the question, for headless automation
 ```
+
+`make purge` runs `notriosctl purge` to do the deleting rather than deleting by
+itself, so everything below is true of both. It deletes your data first and
+removes the program second, because the program is what deletes the data.
 
 Before deleting anything it copies your config, data and state roots into an
 owner-only archive beside your state root
@@ -434,12 +616,28 @@ the purge that wrote it, and nothing deletes it for you afterwards.
 The cache and runtime roots are deleted without a backup: they are rebuilt from
 the library and hold nothing you wrote.
 
+**A profile whose library lives somewhere else is listed and kept.** If you
+registered a profile with a database outside the roots above — on another
+volume, say — purge names it as `NOT DELETED`, says which profile names it, and
+leaves it alone. It is not copied into the backup either, because it is not
+being deleted: if you want a copy elsewhere, make one yourself. If purge cannot
+read your profile registry it says so, rather than assuming you have no such
+profile.
+
+Listing it is all that happens. A registered path never stops a purge: if you
+pointed a profile's asset store at a directory that *contains* these roots —
+`~/.local/share`, say — purge still deletes the roots and says so on the same
+line, and leaves only that outer directory alone.
+
 `FORCE=1` skips the confirmation, never the backup. If you genuinely want
 neither:
 
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-3:begin -->
 ```sh
 NO_BACKUP=1 make purge       # still asks, and warns in detail first
+notriosctl purge --no-backup # the same, for a packaged install
 ```
+<!-- notrios:generated:example:installation-removing-your-data-as-well-example-3:end -->
 
 `NO_BACKUP=1` prints exactly what is about to be destroyed with no copy — your
 notes database, attachments, configuration, profile registry, sync key material,
@@ -456,13 +654,41 @@ hanging.
 and `purge` never touch the checkout. They are separate concerns with separate
 targets.
 
+### Checking that a purge removed everything
+
+`notriosctl paths --report` lists every directory and file this installation
+occupies, every registered profile — including one whose library lives outside
+these roots — and the program files the installer recorded. It is worth keeping
+before a purge, because afterwards it is the only record of what was there:
+
+<!-- notrios:generated:example:installation-checking-that-a-purge-removed-everything-example-1:begin -->
+```sh
+notriosctl paths --report                      # for reading
+notriosctl paths --report --json               # for a script
+notriosctl paths --report --paths > ~/notrios-before-purge.txt
+```
+<!-- notrios:generated:example:installation-checking-that-a-purge-removed-everything-example-1:end -->
+
+Save that last one somewhere the purge does not reach. Afterwards:
+
+```sh
+bash scripts/check_purged.sh ~/notrios-before-purge.txt
+```
+
+It needs nothing but a shell, because by then the program that would have read
+a manifest is gone. It reports two different failures: a path that should have
+been deleted and is still there, and a library outside the roots that a purge
+was supposed to keep and that is missing.
+
+The first two forms redact your home directory to `~`, like `paths` and
+`config show`. `--paths` does not, because a checker compares real paths.
+
 ## Ways to consume Notrios
 
 - **Run from source** (`go run ./cmd/...`) — best for development; nothing to install, always current.
 - **Local binaries** (`make build`, `make gui`) — fast startup, same behavior; outputs under `bin/`.
 - **Source release ZIP** (`bash scripts/package_release.sh`, output `dist/notrios-src.zip`) — a reviewed source snapshot *including* prebuilt `web/dist/` assets, intended for archiving or importing into another repository host. It is **not** a binary distribution: recipients still build with Go on their machine.
-
-There are no official prebuilt binaries or OS installers at this time.
+- **The release package** — the Ubuntu 24.04 amd64 `.deb` a release publishes, built and attested by the release workflow and signed; see [installing from the package](#installing-from-the-package). It is the only prebuilt binary, and there is no installer for any other operating system.
 
 ## Next steps
 

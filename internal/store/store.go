@@ -99,7 +99,7 @@ const (
 //notrios:doc user current-schema-version
 //notrios:help service configuration-reference
 //notrios:claim current-schema-status go:github.com/renesugar/notrios/internal/httpapi#TestStatusReportsConfigurationAndSchema
-const CurrentSchemaVersion = 27
+const CurrentSchemaVersion = 28
 
 // MaxResourceContentBytes is the canonical whole-resource ceiling shared by
 // local admission and G8's synchronization manifests. HTTP adapters enforce it
@@ -520,6 +520,18 @@ type ImportItemState struct {
 	ProcessedAt  time.Time
 }
 
+// ImportDocumentHead is what an importer can learn about a stored note without
+// reading its body: enough to tell whether the note is still exactly what the
+// last import wrote (v1.0 J39). ResourceRefsSHA256 is ResourceRefsDigest over
+// the note's resource references as the store holds them.
+type ImportDocumentHead struct {
+	CurrentRevisionID  string
+	Title              string
+	NotebookID         string
+	ContentSHA256      string
+	ResourceRefsSHA256 string
+}
+
 // ImportDocumentMutation is one planned canonical document change inside a
 // bounded importer transaction. SkipDocument records only State (used when an
 // externally sourced document is already trashed). Action is create, update,
@@ -534,9 +546,14 @@ type ImportDocumentMutation struct {
 	RemoveTags     []string
 	Resources      []AttachResourceRequest
 	State          ImportItemState
-	SkipDocument   bool
-	SkipSource     bool
-	SkipState      bool
+	// ContentSHA256 is the body's hash when the importer already computed it
+	// over the same bytes it puts in Document.Body, which it does to decide
+	// whether the note changed at all. Empty means the store hashes the body
+	// itself (v1.0 J32-AA).
+	ContentSHA256 string
+	SkipDocument  bool
+	SkipSource    bool
+	SkipState     bool
 }
 
 // ImportDocumentBatchRequest atomically applies a bounded set of document
@@ -943,6 +960,13 @@ type Store interface {
 	UpdateResource(ctx context.Context, req UpdateResourceRequest) (Resource, error)
 	GetResource(ctx context.Context, id string) (Resource, error)
 	GetDocuments(ctx context.Context, ids []string) (map[string]Document, error)
+	// ExistingDocumentIDs answers which of these documents exist without
+	// reading their bodies, for a caller that needs presence alone (J32-H).
+	ExistingDocumentIDs(ctx context.Context, ids []string) (map[string]bool, error)
+	// ImportDocumentHeads answers, for each of these documents, its current
+	// revision's content hash, its title and notebook and the digest of its
+	// resource references, without reading a body (v1.0 J39).
+	ImportDocumentHeads(ctx context.Context, ids []string) (map[string]ImportDocumentHead, error)
 	GetResources(ctx context.Context, ids []string) (map[string]Resource, error)
 	GetDocumentTags(ctx context.Context, ids []string) (map[string][]Tag, error)
 	OpenResourceContent(ctx context.Context, id string) (Resource, io.ReadCloser, error)
@@ -952,6 +976,10 @@ type Store interface {
 	DetachDocumentResource(ctx context.Context, documentID, resourceID string) error
 	ResourceReport(ctx context.Context) (ResourceReport, error)
 	LintWorkspace(ctx context.Context, req LintRequest) (LintReport, error)
+	// LinkReportInputs and LinkCandidates are the store's half of the
+	// ambiguous-links report, which internal/linkreport assembles (v1.0 J40-C).
+	LinkReportInputs(ctx context.Context, collectionID, sourceSystem string) (LinkReportInputs, error)
+	LinkCandidates(ctx context.Context, collectionID, rawTarget string) ([]LinkCandidate, error)
 	GarbageCollect(ctx context.Context, req GarbageCollectionRequest) (GarbageCollectionReport, error)
 	ListDocumentLinks(ctx context.Context, documentID, direction string) (DocumentLinkPage, error)
 	RebuildDocumentLinks(ctx context.Context, documentID string) error
@@ -1246,6 +1274,28 @@ func CollectionScopeSQL(alias string) string {
 		column = alias + ".collection_id"
 	}
 	return column + " = COALESCE(NULLIF(?, ''), " + column + ")"
+}
+
+// CollectionScopeSQLFor renders the same predicate, but says plainly that the
+// collection is known, so an index on the column can be used (v1.0 J32-N).
+//
+// `collection_id = COALESCE(NULLIF(?, ”), collection_id)` is not a constant
+// SQLite can seek with, so a statement carrying it scans the index it would
+// otherwise search: a title lookup on the link-resolution path scanned the
+// whole covering index for every link, 46% of a fresh collision import.
+//
+// The rule is unchanged, and this is still the only place that writes it: an
+// empty collection still means every collection, and the parameter is still
+// bound either way, so no caller's argument list depends on the scope.
+func CollectionScopeSQLFor(alias, collectionID string) string {
+	if strings.TrimSpace(collectionID) == "" {
+		return CollectionScopeSQL(alias)
+	}
+	column := "collection_id"
+	if alias != "" {
+		column = alias + ".collection_id"
+	}
+	return column + " = ?"
 }
 
 // JoinNoteText appends or prepends text to a note body, keeping the newline

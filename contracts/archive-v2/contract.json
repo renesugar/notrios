@@ -4,7 +4,7 @@
   "format": "notrios-archive",
   "version": 2,
   "minimum_schema_version": 12,
-  "current_schema_version": 27,
+  "current_schema_version": 28,
   "media_types": {
     "records": "application/vnd.notrios.archive-v2-records+jsonl",
     "index": "application/vnd.notrios.archive-v2-index+jsonl",

@@ -27,7 +27,7 @@ func TestBootstrapRefusesADatabaseFromTheFuture(t *testing.T) {
 		t.Fatalf("first bootstrap: %v", err)
 	}
 	// Pretend a newer Notrios has since written this database.
-	if err := st.Exec(context.Background(), "PRAGMA user_version = 28;"); err != nil {
+	if err := st.Exec(context.Background(), "PRAGMA user_version = 29;"); err != nil {
 		t.Fatal(err)
 	}
 	if err := st.Close(); err != nil {
@@ -49,7 +49,7 @@ func TestBootstrapRefusesADatabaseFromTheFuture(t *testing.T) {
 	}
 	// The message must name both versions: "it is newer" without saying how
 	// much newer leaves the reader unable to tell which build they need.
-	for _, want := range []string{"28", "27", "Upgrade Notrios"} {
+	for _, want := range []string{"29", "28", "Upgrade Notrios"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the refusal does not mention %q: %v", want, err)
 		}
@@ -62,7 +62,7 @@ func TestBootstrapRefusesADatabaseFromTheFuture(t *testing.T) {
 	if versionErr != nil {
 		t.Fatal(versionErr)
 	}
-	if version != 28 {
+	if version != 29 {
 		t.Fatalf("the refusal rewrote user_version to %d; the evidence that the database was newer is gone", version)
 	}
 }

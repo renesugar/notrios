@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-RELEASE=/pkg/notrios_0.8.0-1_amd64.deb
-PRERELEASE=/pkg/notrios_0.8.0~rc1-1_amd64.deb
+# The versions default to the pair I3 recorded; v1.0 J9 runs the same
+# scenarios against 1.0.0 by passing RELEASE_VERSION and PRERELEASE_VERSION.
+RV=${RELEASE_VERSION:-0.8.0}
+PV=${PRERELEASE_VERSION:-0.8.0~rc1}
+RELEASE=/pkg/notrios_${RV}-1_amd64.deb
+PRERELEASE=/pkg/notrios_${PV}-1_amd64.deb
 id tester >/dev/null 2>&1 || useradd -m -s /bin/bash tester
 as_tester() { su - tester -c "$1"; }
 # Nothing here parses JSON with a scripting language: a clean ubuntu:24.04 has
@@ -27,7 +31,7 @@ echo "OBSERVE downgrade_exit=$code"
 [ "$code" -ne 0 ] || { echo "apt performed a downgrade without being asked"; tail -5 /tmp/downgrade.log; exit 1; }
 
 still=$(notriosctl version); echo "OBSERVE version_after_refusal=$still"
-[ "$still" = "0.8.0" ] || { echo "the refusal left a different version installed"; exit 1; }
+[ "$still" = "$RV" ] || { echo "the refusal left a different version installed"; exit 1; }
 holds_note "Present before the downgrade attempt" || { echo "data lost during a refused downgrade"; exit 1; }
 echo "OBSERVE data_intact_after_refusal=yes"
 
@@ -35,6 +39,6 @@ echo "OBSERVE data_intact_after_refusal=yes"
 # the data still there afterwards -- a rollback has to be usable, not just legal.
 apt-get install -y -qq --allow-downgrades "$PRERELEASE"
 rolled=$(notriosctl version); echo "OBSERVE version_after_explicit_downgrade=$rolled"
-[ "$rolled" = "0.8.0~rc1" ] || { echo "an explicit downgrade did not take"; exit 1; }
+[ "$rolled" = "$PV" ] || { echo "an explicit downgrade did not take"; exit 1; }
 holds_note "Present before the downgrade attempt" || { echo "the rollback lost the data"; exit 1; }
 echo "OBSERVE data_intact_after_rollback=yes"

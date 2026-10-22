@@ -126,13 +126,13 @@ func NewServerWithOptions(options ServerOptions) *Server {
 		mux:         http.NewServeMux(),
 		store:       options.Store,
 		config:      cfg,
-		mediaPolicy: media.NewPolicy(cfg.RemoteMedia),
+		mediaPolicy: media.NewPolicy(cfg.RemoteMedia, media.WithAddressRanges(cfg.Security.RemoteMedia)),
 		searchCache: newMergedSearchCache(),
 	}
 	if options.Store != nil {
 		s.app = application.New(options.Store)
 		// Lazy fetcher inside: no filesystem side effects until first use.
-		s.localizer = localize.New(cfg.RemoteMedia, options.Store)
+		s.localizer = localize.New(cfg.RemoteMedia, options.Store, media.WithAddressRanges(cfg.Security.RemoteMedia))
 	}
 	// A missing interface is not fatal for the headless service: REST and MCP
 	// work without it. The GUI checks separately and refuses to open a window.
@@ -229,6 +229,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/resources/{resource_id}/content", s.handleResourceContent)
 	s.mux.HandleFunc("GET /api/v1/admin/gc/report", s.handleGarbageCollectionReport)
 	s.mux.HandleFunc("GET /api/v1/admin/lint/report", s.handleLintReport)
+	s.mux.HandleFunc("GET /api/v1/admin/links/report", s.handleLinkReport)
+	s.mux.HandleFunc("POST /api/v1/admin/links/report/note", s.handleWriteLinkReportNote)
 
 	s.mux.HandleFunc("GET /api/v1/notebooks", s.handleListNotebooks)
 	s.mux.HandleFunc("GET /api/v1/notebooks/tree", s.handleNotebookTree)
@@ -301,12 +303,18 @@ func (s *Server) routes() {
 //     is required because the bundler inlines the smallest font files as data
 //     URIs — those bytes ship in our own assets, so allowing them is not a
 //     remote-loading exemption.
+//   - `media-src 'self'` is stated rather than left to the `default-src`
+//     fallback (J34): audio, video and track sources come only from this
+//     service, which means a localized `resource://`. The preview sanitizer
+//     already makes remote media inert; this is the browser's own refusal if
+//     it ever does not.
 //   - `connect-src 'self'` keeps the UI talking only to its own service.
 const webAppCSP = "default-src 'self'; " +
 	"script-src 'self'; " +
 	"style-src 'self' 'unsafe-inline'; " +
 	"img-src 'self' data: blob: https: http:; " +
 	"font-src 'self' data:; " +
+	"media-src 'self'; " +
 	"connect-src 'self'; " +
 	"object-src 'none'; " +
 	"frame-src 'none'; " +
@@ -987,17 +995,33 @@ func (s *Server) handleMediaPolicy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) mediaPolicyStatus() *api.MediaPolicyStatus {
+	refused, permitted := []string{}, []string{}
+	if rules, err := s.config.Security.RemoteMedia.Rules(); err == nil {
+		refused, permitted = rules.Refused(), rules.Permitted()
+	}
+	origin := "default"
+	if s.config.Security.RemoteMedia.RefusedStated() {
+		origin = "configuration"
+	}
+	warnings := s.config.RemoteMediaAddressWarnings()
+	if warnings == nil {
+		warnings = []string{}
+	}
 	return &api.MediaPolicyStatus{
-		DefaultAction:        s.config.RemoteMedia.DefaultAction,
-		AllowPrivateNetworks: s.config.RemoteMedia.AllowPrivateNetworks,
-		MaxRedirects:         s.config.RemoteMedia.MaxRedirects,
-		FetchTimeoutSeconds:  s.config.RemoteMedia.FetchTimeoutSeconds,
-		BlockedSchemes:       len(s.config.RemoteMedia.BlockedSchemes),
-		AllowedDomains:       len(s.config.RemoteMedia.AllowedDomains),
-		BlockedDomains:       len(s.config.RemoteMedia.BlockedDomains),
-		ReviewDomains:        len(s.config.RemoteMedia.ReviewDomains),
-		MaxBytes:             s.config.RemoteMedia.MaxBytes,
-		QuarantineDir:        s.config.RemoteMedia.QuarantineDir,
+		DefaultAction:          s.config.RemoteMedia.DefaultAction,
+		AllowPrivateNetworks:   s.config.RemoteMedia.AllowPrivateNetworks,
+		MaxRedirects:           s.config.RemoteMedia.MaxRedirects,
+		FetchTimeoutSeconds:    s.config.RemoteMedia.FetchTimeoutSeconds,
+		BlockedSchemes:         len(s.config.RemoteMedia.BlockedSchemes),
+		AllowedDomains:         len(s.config.RemoteMedia.AllowedDomains),
+		BlockedDomains:         len(s.config.RemoteMedia.BlockedDomains),
+		ReviewDomains:          len(s.config.RemoteMedia.ReviewDomains),
+		MaxBytes:               s.config.RemoteMedia.MaxBytes,
+		QuarantineDir:          s.config.RemoteMedia.QuarantineDir,
+		RefusedAddressRanges:   refused,
+		PermittedAddressRanges: permitted,
+		AddressRangesOrigin:    origin,
+		Warnings:               warnings,
 	}
 }
 

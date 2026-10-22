@@ -22,7 +22,7 @@ run() {
 }
 
 run 0
-grep -F -- '--operation test-op --agent all --minimum-remaining 33 --model test-model --effort high --json' "$TMP/args" >/dev/null
+grep -F -- '--operation test-op --agent self --minimum-remaining 33 --model test-model --effort high --json' "$TMP/args" >/dev/null
 grep -F -- "--history $TMP/history.json" "$TMP/args" >/dev/null
 if run 2; then exit 1; fi
 if NOTRIOS_AGENT_USAGE_GUARD=strict FAKE_ARGS="$TMP/args" FAKE_STATUS=7 \

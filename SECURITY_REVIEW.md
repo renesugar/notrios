@@ -17,8 +17,9 @@ published handoffs, and future sync transports are security boundaries.
 - Referenced logical resources cannot be deleted directly; exact duplicate
   bytes share a blob.
 - Remote URLs are statically scanned before fetch. Every redirect is
-  re-evaluated; unsafe schemes/domains and connect-time private/link-local
-  addresses are blocked, environment proxies are disabled, size is bounded
+  re-evaluated; unsafe schemes/domains are blocked, and the reserved address
+  ranges in `SECURITY_AND_MEDIA_POLICY.md` are refused both as URL literals
+  and at connect time, including IPv4 addresses carried in IPv6 (J28), environment proxies are disabled, size is bounded
   while streaming, MIME is sniffed, SHA-256 is computed, and bytes remain in
   quarantine until admission.
 - Localization checks exact-hash policy, creates resource/provenance rows, and
@@ -58,9 +59,12 @@ was loading remote *executable JavaScript* unchecked, and a CDN compromise would
 have had script execution in the note editor. Those libraries are bundled or
 disabled now, and `handleWebApp` serves a Content-Security-Policy
 (`script-src 'self'`, `object-src 'none'`, `connect-src 'self'`,
-`form-action 'none'`). `img-src` still admits remote images because the preview
-is permitted to display them; localizing one remains a server operation under
-the media policy. `scripts/run_offline_assets_check.sh` fails if any remote
+`form-action 'none'`, and since J34 `media-src 'self'`). `img-src` still admits
+remote images; the preview sanitizer makes every remote media reference in a
+note inert (`img`, `video` and `audio` sources and posters, `track`, SVG
+`href`), which J34 verified with a rendered note in Chromium and WebKit that
+reached a stand-in remote server zero times. Localizing one remains a server
+operation under the media policy. `scripts/run_offline_assets_check.sh` fails if any remote
 asset returns.
 
 The `notrios://` OS handler is implemented (v0.4 P5) under those constraints.

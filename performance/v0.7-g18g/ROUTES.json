@@ -4,6 +4,7 @@
   "preserved_routes": [
     "index.html",
     "installation.html",
+    "configuration.html",
     "service.html",
     "cli.html",
     "query-language.html",

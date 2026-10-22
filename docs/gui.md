@@ -49,10 +49,12 @@ fresh database always bootstraps protected **All notes**, **Notes**,
 
 ## Verifying the embedded service
 
+<!-- notrios:generated:example:gui-verifying-the-embedded-service-example-1:begin -->
 ```sh
 curl http://127.0.0.1:8080/healthz            # -> ok
 curl http://127.0.0.1:8080/api/v1/status | jq  # storage, schema, Recoll backlog/reconciliation
 ```
+<!-- notrios:generated:example:gui-verifying-the-embedded-service-example-1:end -->
 
 If the window opens but shows a JSON error, the build predates v0.5 E11; current
 builds refuse to start and print the directories they searched. Run `make web`
@@ -179,7 +181,7 @@ Below the menu bar the window is four side-by-side panes, always in this order:
    unit rather than wrapping a button at a time. Every control there acts on the
    note in front of you — starting a *new* note lives in the search panel,
    because it does not. Note details (metadata, uploads, links, backlinks, resources) live in a collapsible **Note info** inspector at the bottom of this pane, not in a pane of their own. When a note references remote images or media, the inspector also lists each URL with its server-side policy decision (allow/block/review) — a static scan; nothing is downloaded. For editable notes with allowed media, a **Localize allowed media** button downloads those files through the server's quarantine pipeline, stores them as local resources, and rewrites the note to `resource://` links in a new revision (blocked URLs are never fetched).
-4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources.
+4. **Markdown preview** — rendered Markdown. `document://` links open the target note; `resource://` links download attachments; images can be pasted/uploaded in the editor and become local resources. Wiki links render as links, and a link that will not open is marked (see [Wiki links, and links that will not open](#wiki-links-and-links-that-will-not-open)).
 
 Each pane scrolls on its own; the window itself never scrolls.
 
@@ -271,9 +273,11 @@ notes, your orphans, and the totals, with the time it was generated.
 It is regenerated when you ask and not before — it reads every note, so nothing
 does it on a timer or on save:
 
+<!-- notrios:generated:example:gui-the-graph-report-example-1:begin -->
 ```sh
 notriosctl graph report --write-note
 ```
+<!-- notrios:generated:example:gui-the-graph-report-example-1:end -->
 
 The note is read-only and overwritten in place, so a link to it keeps working
 and it cannot silently drift from the truth. Nothing in Reports or Help is
@@ -282,9 +286,11 @@ notebook travels in a publication.
 
 To hand the graph to software built for graph analysis:
 
+<!-- notrios:generated:example:gui-the-graph-report-example-2:begin -->
 ```sh
 notriosctl graph export ~/graph      # nodes.csv and edges.csv
 ```
+<!-- notrios:generated:example:gui-the-graph-report-example-2:end -->
 
 Gephi, Cytoscape, NetworkX, and igraph all read those. Notrios does not try to
 do centrality or community detection itself.
@@ -328,6 +334,36 @@ the note appears, so a slow query never delays reading.
 
 Publishing a note keeps the block's text, not its results. A published note
 therefore cannot leak the notes a query happened to match when you exported it.
+
+### Wiki links, and links that will not open
+
+A wiki link, `[[…]]`, renders as a link. One an Obsidian import wrote, such as
+`[[document://default/documents/doc_x|shown]]`, shows `shown` and opens the
+note, exactly like the Markdown link `[shown](document://default/documents/doc_x)`.
+A link written by name, such as `[[Alpha]]`, becomes a link once the editor's
+link check has found the note it names.
+
+When the check says a link will not open, the preview marks it instead:
+
+- **Ambiguous**, a dotted underline: more than one note or attachment matches
+  the name. The preview does not guess between them, and an import does not
+  either.
+- **Unresolved**, a wavy underline, the same as the editor's: nothing matches,
+  or a section or block the link names is missing.
+
+Hover over a marked link to see why. A marked link cannot be clicked, and the
+preview never rewrites it. To fix one, edit the link in the editor.
+
+Only an editable note is checked, so a note in Help, Reports or the Trash shows
+no marks.
+
+A wiki embed of an attachment, such as `![[resource://default/resources/res_x|A
+heron]]`, shows exactly what `![A heron](resource://default/resources/res_x)`
+shows; the text after the pipe is its alt text. An Obsidian size, as in
+`![[pic.png|300]]`, is read as alt text, because a Markdown embed has no size
+either. An embed of a note, `![[document://…]]`, stays the text you wrote:
+showing another note inside this one is not something the preview does. A
+broken embed is marked like a link.
 
 ### Math and code blocks
 
@@ -376,10 +412,12 @@ Two details worth knowing:
 
 To move a note from the command line:
 
+<!-- notrios:generated:example:gui-choosing-which-notebook-a-note-goes-in-example-1:begin -->
 ```sh
 notriosctl notes move --document doc_01H... --notebook nb_01H...
 notriosctl notes move --document doc_01H... --notebook Work
 ```
+<!-- notrios:generated:example:gui-choosing-which-notebook-a-note-goes-in-example-1:end -->
 
 A notebook name is accepted when it identifies one notebook. Names are unique
 only among siblings, so if you have both `Contacts/Work` and `Personal/Work` the

@@ -96,8 +96,14 @@ model request:
 
 ```bash
 python3 scripts/test_check_agent_usage.py
-python3 scripts/check_agent_usage.py --agent all --minimum-remaining 20
+python3 scripts/check_agent_usage.py --agent self --minimum-remaining 20
 ```
+
+`--agent self` checks only the coding agent running the command. That is the
+nearest `claude` or `codex` process among its parents, so another agent running
+on the same machine is never consulted. With no agent among the parents, it uses
+`NOTRIOS_AGENT_USAGE_AGENT` (`claude|codex|all`), and otherwise `all`.
+`scripts/agent_usage_preflight.sh` passes `--agent self` (J24).
 
 The Codex path uses the installed app-server protocol and reports both the
 five-hour and weekly windows when available. The Claude path reads only an

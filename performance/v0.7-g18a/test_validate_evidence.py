@@ -58,7 +58,26 @@ class G18aEvidenceTests(unittest.TestCase):
         # the packaged install, adding six sections a reader without a
         # repository needs -- verifying a download, upgrading, going back,
         # backing up and restoring, and what is actually supported.
-        self.assertEqual(inventory["grade_baseline"]["denominator"], 275)
+        # 275 -> 276 in v1.0 J3: docs/features.md gained the section for
+        # `notriosctl purge`, which is a capability a packaged install
+        # previously had no way to reach.
+        # 276 -> 286 in v1.0 J12: docs/configuration.md, a whole page. The
+        # README referred a reader to a detailed configuration document that did
+        # not exist, for 53 settable keys documented by one example file. Ten
+        # sections: where configuration comes from, the storage roots and what a
+        # purge does with each, serving, search, sync, remote media, retention,
+        # profiles, and the generated key table.
+        # 286 -> 287 in v1.0 J11: docs/installation.md gained "Checking that a
+        # purge removed everything", where `paths --report` and
+        # scripts/check_purged.sh are, for a reader who has just been told how
+        # to purge and has no way to tell whether it worked.
+        # 287 -> 288 in v1.0 J40-B: docs/gui.md gained "Wiki links, and links
+        # that will not open", for the preview that now renders wiki links and
+        # marks the ones that will not open.
+        # 288 -> 290 in v1.0 J40-F: docs/operations.md gained "Reports", the
+        # one section listing every report Notrios produces, and "Finding
+        # ambiguous links", for the report that lists them.
+        self.assertEqual(inventory["grade_baseline"]["denominator"], 290)
 
     def test_duplicate_fragment_is_rejected(self):
         source = """// A.\n//notrios:doc user same\nfunc A() {}\n// B.\n//notrios:doc user same\nfunc B() {}\n"""

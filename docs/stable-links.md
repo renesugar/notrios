@@ -14,9 +14,11 @@ email, a task tracker, or another note.
 
 Get one with:
 
+<!-- notrios:generated:example:stable-links-stable-links-between-notes-and-machines-example-1:begin -->
 ```sh
 notriosctl link --db data/notes.sqlite doc_01H...
 ```
+<!-- notrios:generated:example:stable-links-stable-links-between-notes-and-machines-example-1:end -->
 
 ```json
 {
@@ -37,12 +39,14 @@ A stable link names a database, so something has to know which database that is
 on *this* machine. That is the profile registry: a small file (by default
 `~/.config/notrios/profiles.json`) that you fill in explicitly.
 
+<!-- notrios:generated:example:stable-links-telling-this-machine-where-your-databases-are-example-1:begin -->
 ```sh
 notriosctl profile register --name work --db /srv/work/notes.sqlite
 notriosctl profile register --name personal --db ~/notes/notes.sqlite
 notriosctl profile list
 notriosctl profile forget --name work        # registry edit only; the database is untouched
 ```
+<!-- notrios:generated:example:stable-links-telling-this-machine-where-your-databases-are-example-1:end -->
 
 `profile register` reads the database ID **out of the database**; you cannot
 assert one on the command line. The registry is written with owner-only
@@ -57,9 +61,11 @@ runtime validation because that indicates an unrotated filesystem copy.
 
 ## Opening a link
 
+<!-- notrios:generated:example:stable-links-opening-a-link-example-1:begin -->
 ```sh
 notriosctl open 'notrios://databases/db_qz.../documents/doc_01H...'
 ```
+<!-- notrios:generated:example:stable-links-opening-a-link-example-1:end -->
 
 The exit code is part of the contract, because a desktop protocol handler runs
 this without a terminal:
@@ -91,10 +97,12 @@ service has to be running; this command does not start one).
 
 ## Registering the desktop handler (Ubuntu)
 
+<!-- notrios:generated:example:stable-links-registering-the-desktop-handler-ubuntu-example-1:begin -->
 ```sh
 notriosctl register-url-handler            # prints the desktop entry, changes nothing
 notriosctl register-url-handler --apply    # installs it and registers the scheme
 ```
+<!-- notrios:generated:example:stable-links-registering-the-desktop-handler-ubuntu-example-1:end -->
 
 Printing is the default because this changes what happens when you click a link
 anywhere on the machine. `--apply` writes
@@ -131,12 +139,14 @@ notrios://databases/db_qz.../documents/doc_01H...#^my-anchor           # your ow
 
 Ask a note what it offers, and build the link without typing it:
 
+<!-- notrios:generated:example:stable-links-linking-to-a-section-or-a-block-example-1:begin -->
 ```sh
 notriosctl link --list-anchors doc_01H...
 notriosctl link --anchor getting-started doc_01H...
 notriosctl link --anchor 'Getting Started' doc_01H...   # heading text works too
 notriosctl link --anchor '^my-anchor' doc_01H...
 ```
+<!-- notrios:generated:example:stable-links-linking-to-a-section-or-a-block-example-1:end -->
 
 An anchor that does not resolve is refused rather than printed. A stable link is
 meant to be pasted somewhere permanent, and one that never worked is worse than

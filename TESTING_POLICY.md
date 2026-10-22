@@ -842,6 +842,18 @@ than the age limit, and a window past its reset. Both of those last two report
 cache that exists but carries no window stays `unknown` and is never read as
 full quota.
 
+J24 adds the running-agent selection behind `--agent self`, which the preflight
+passes. Its tests use fake process tables and cover:
+- classification from the executable and `argv[0]` only
+- the nearest agent ancestor, with nested agents, orphans and a parent cycle
+- ancestry winning over leaked agent variables and a contrary
+  `NOTRIOS_AGENT_USAGE_AGENT`
+- the explicit and `all` fallbacks
+- a Claude run, and a Codex run, paused only by its own quota, with the other
+  agent's probe never called
+
+The `codex`, `claude` and `all` paths are unchanged.
+
 Resumable G14b/G14e harness tests must prove the preflight runs after completed-
 result reuse is checked but before a new `started` checkpoint is written. A
 pause therefore leaves the last valid result reusable. Long profile scripts
@@ -849,14 +861,44 @@ run one preflight before disposable setup but gain no resumability claim. CI
 runs deterministic parser/integration tests only and never queries a developer
 account.
 
+## Tests that run a real Recoll binary (v1.0 J44)
+
+Recoll can run *external indexers* that find their own data, and Recoll 1.44's
+sample configuration enables one for Joplin that looks for a library under
+`HOME`. A sidecar test that isolated the XDG directories but not `HOME` read the
+owner's real Joplin library during an ordinary `go test ./...`. Two rules follow,
+and each holds on its own:
+
+- **The sidecar declares no external indexer.** `EnsureConfig` writes an empty
+  `backends` file, because `recollindex` copies its own sample into a
+  configuration directory that has none. Every live test calls
+  `recolltest.AssertNoExternalIndexers` after an index pass, so a Recoll that
+  overwrites the file is caught.
+- **A live test isolates `HOME`.** Any test that runs `recollindex` or `recollq`
+  starts with `recolltest.Isolate(t)`, which moves `HOME` and every XDG directory
+  into the test's temporary directory. `TestEveryLiveRecollTestIsolates` fails the
+  build if a test file that runs Recoll does not call it.
+
+`bash scripts/check_recoll_isolation.sh` proves both against the real process
+tree: it traces every file the live tests open and every program they start, and
+fails if a path under the real `HOME` is opened outside the repository and Go's
+caches, or if any Recoll external indexer starts. It is opt-in, because it needs
+`strace` and permission to trace a child process; it skips when either is
+missing. Run it after upgrading Recoll, before trusting a full test run on a
+machine that holds other note libraries. Shown to fail on the defect: with the
+empty `backends` file and `HOME` isolation removed, it reports `rcljoplin.py`
+started and the (synthetic) Joplin database opened.
+
 ## Current validation commands
 
 ```bash
 python3 scripts/test_check_agent_usage.py
 bash scripts/test_agent_usage_preflight.sh
 go test ./...
+bash scripts/check_temp_leaks.sh
 python3 scripts/check_required_files.py
 bash scripts/validate-scaffold.sh
+bash scripts/check_recoll_isolation.sh   # opt-in: needs strace; run after a Recoll upgrade
 ```
 
 Start each regular test pass by checking the lockfile-resolved offline bundle
@@ -1274,7 +1316,7 @@ byte-for-byte bodies, and a no-change reseed. Rendered acceptance uses the
 Browser plugin when available; because it was absent at completion, the
 recorded Playwright fallback drove Chrome at 1440×960 and 390×844. It checks
 all routes, keyboard focus, the theme modes and contrast samples, `Argon2id`
-Pagefind results under `/notrios/`, mobile drawer/Escape/44-pixel target/no
+Pagefind results under the base it is run at, mobile drawer/Escape/44-pixel target/no
 overflow, overlays, console/page/HTTP failures, CSP violations, and external
 requests. Screenshot inspection is transient and never a committed assertion.
 

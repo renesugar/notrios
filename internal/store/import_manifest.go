@@ -11,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 // ImportManifestRecord is one opaque importer-owned payload in a temporary,
@@ -31,8 +33,15 @@ type ImportManifest struct {
 	path  string
 }
 
-func OpenImportManifest() (*ImportManifest, error) {
-	root, err := os.MkdirTemp("", "notrios-import-manifest-*")
+// OpenImportManifest opens a manifest with no instance temp space; see
+// OpenImportManifestIn.
+func OpenImportManifest() (*ImportManifest, error) { return OpenImportManifestIn(nil) }
+
+// OpenImportManifestIn opens a manifest spooled in space, the running
+// instance's temp space. A nil space means no instance is configured, and the
+// spool goes in a private system temp directory. Close removes it either way.
+func OpenImportManifestIn(space *tempspace.Space) (*ImportManifest, error) {
+	root, err := space.MkdirTemp("notrios-import-manifest-*")
 	if err != nil {
 		return nil, err
 	}

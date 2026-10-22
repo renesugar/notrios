@@ -28,6 +28,14 @@ func runPaths(args []string) {
 	fs := flag.NewFlagSet("notriosctl paths", flag.ExitOnError)
 	asJSON := fs.Bool("json", false, "machine-readable output")
 	noRedact := fs.Bool("no-redact", false, "print the home directory instead of ~")
+	// --report is the exhaustive form: every directory and file, every
+	// registered profile, and the installed program files (v1.0 J11). It is a
+	// flag rather than a `paths report` subcommand because a subcommand would
+	// make `paths` a group, and `notriosctl paths` is a command users run.
+	report := fs.Bool("report", false, "every directory and file this installation occupies")
+	asPaths := fs.Bool("paths", false, "with --report: one absolute path per line for scripts/check_purged.sh")
+	registry := fs.String("registry", "", "with --report: profile registry path (default: the resolved one)")
+	installManifest := fs.String("install-manifest", "", "with --report: installer MANIFEST.json path (default: under the data root)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -37,6 +45,20 @@ func runPaths(args []string) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+
+	if *report {
+		runPathsReport(resolution, reportOptions{
+			asJSON: *asJSON, asPaths: *asPaths, noRedact: *noRedact,
+			registry: *registry, installManifest: *installManifest,
+		})
+		return
+	}
+	for name, value := range map[string]bool{"--paths": *asPaths} {
+		if value {
+			fmt.Fprintf(os.Stderr, "%s applies to --report only\n", name)
+			os.Exit(2)
+		}
 	}
 
 	// Redacted by default. These get pasted into issue reports, and a home

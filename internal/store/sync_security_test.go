@@ -182,15 +182,18 @@ func TestTheInvitationSecretIsNeverStored(t *testing.T) {
 	}
 }
 
-func TestSchemaV25SecuritySurfaceSurvivesSchemaV27(t *testing.T) {
+// Renamed and re-pinned in v1.0 J18, which took the schema to 28. The point of
+// the test is that v25's security surface survives later migrations, so the
+// version it names has to move with them or it stops testing that.
+func TestSchemaV25SecuritySurfaceSurvivesLaterSchemas(t *testing.T) {
 	ctx := context.Background()
 	st := newSecurityStore(t)
 	version, err := st.syncJournalTextForTest(`SELECT CAST((SELECT * FROM pragma_user_version) AS TEXT)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if version != "27" {
-		t.Fatalf("schema version = %s, want 27", version)
+	if version != "28" {
+		t.Fatalf("schema version = %s, want 28", version)
 	}
 	for _, table := range []string{"sync_peer_keys", "sync_pairing_invitations"} {
 		found, err := st.syncJournalTextForTest(

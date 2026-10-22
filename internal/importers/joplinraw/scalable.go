@@ -15,7 +15,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"github.com/renesugar/notrios/internal/store"
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 const (
@@ -88,9 +90,13 @@ type importRun struct {
 	resourceMap     map[string]string
 	manifestCursors map[string]manifestCursor
 	phase           string
-	nextIndex       int
-	workTotal       int
-	processed       int
+	// itemBytes is the buffer the notes phase reads each RAW item into, reused
+	// between items and given back when an item is larger than any legal one
+	// (v1.0 J38-D).
+	itemBytes []byte
+	nextIndex int
+	workTotal int
+	processed int
 }
 
 type manifestCursor struct {
@@ -158,12 +164,16 @@ func (run *importRun) currentDocumentIDs() ([]string, error) {
 			}
 			ids = append(ids, run.noteIDMap[item.ID])
 		}
-		documents, err := run.st.GetDocuments(run.ctx, ids)
+		// Presence, not documents: this collects the ids an import wrote and
+		// never reads a body, so asking for documents sent every one across the
+		// cgo boundary to be discarded (v1.0 J38-B, the change J32-H made on the
+		// Obsidian side).
+		existing, err := run.st.ExistingDocumentIDs(run.ctx, ids)
 		if err != nil {
 			return nil, err
 		}
 		for _, id := range ids {
-			if _, found := documents[id]; found {
+			if existing[id] {
 				currentIDs = append(currentIDs, id)
 			}
 		}
@@ -261,7 +271,7 @@ func newImportRun(ctx context.Context, st store.Store, sourceDir string, options
 	if sourceKey == "" {
 		sourceKey = filepath.Clean(absoluteDir)
 	}
-	inv, err := readInventory(ctx, absoluteDir, options.PreserveSource)
+	inv, err := readInventoryIn(ctx, absoluteDir, options.PreserveSource, store.TempSpaceOf(st))
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +365,13 @@ func contextOrBackground(ctx context.Context) context.Context {
 }
 
 func readInventory(ctx context.Context, sourceDir string, retainBundleInventory bool) (inventory, error) {
-	manifest, err := store.OpenImportManifest()
+	return readInventoryIn(ctx, sourceDir, retainBundleInventory, nil)
+}
+
+// readInventoryIn spools the inventory in space, the importing instance's temp
+// space; nil puts it in a private system temp directory.
+func readInventoryIn(ctx context.Context, sourceDir string, retainBundleInventory bool, space *tempspace.Space) (inventory, error) {
+	manifest, err := store.OpenImportManifestIn(space)
 	if err != nil {
 		return inventory{}, err
 	}
@@ -1178,6 +1194,15 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		if err != nil {
 			return err
 		}
+		// A window ends at the item count or once it holds the byte budget,
+		// whichever comes first (v1.0 J38-C, the rule J32-K set for the
+		// Obsidian phase). The notes phase keeps every canonical body of a
+		// batch until it is written, so a batch's memory is the sum of its
+		// items' sizes, and only the count was bounded.
+		if bounded := boundedByItemBytes(items); bounded < len(items) {
+			items = items[:bounded]
+		}
+		end = start + len(items)
 		externalIDs := make([]string, 0, len(items))
 		keys := make([]string, 0, len(items))
 		for _, item := range items {
@@ -1213,7 +1238,8 @@ func (run *importRun) processNotes(write bool, nextPhase string) error {
 		}
 		mutations := make([]store.ImportDocumentMutation, 0, len(items))
 		for _, item := range items {
-			parsed, err := readInventoryItem(item)
+			parsed, itemBytes, err := readInventoryItem(item, run.itemBytes)
+			run.itemBytes = itemBytes
 			if err != nil {
 				return err
 			}
@@ -1511,23 +1537,83 @@ func noteFingerprint(item inventoryItem, notebookID string, tags []string) strin
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func readInventoryItem(item inventoryItem) (parsedItem, error) {
-	raw, err := os.ReadFile(item.Path)
+// maxRetainedItemBytes is how large an item buffer the import keeps between
+// items: the size one RAW item may already reach, so every legal item is read
+// into the same buffer and one larger - which is being refused anyway - gives
+// its buffer back (v1.0 J38-D, the rule J32-W2 set on the Obsidian side).
+const maxRetainedItemBytes = maxRAWItemSize
+
+// readInventoryItem reads one RAW item into the caller's buffer and checks that
+// it is still the item the inventory hashed.
+//
+// os.ReadFile allocated a buffer per item, and the notes phase reads every item
+// in the export. The buffer comes from the caller and is returned with the
+// bytes, so the next item reuses it: safe because what a batch keeps is built
+// from the parsed item and the canonical body, not from these bytes.
+func readInventoryItem(item inventoryItem, buffer []byte) (parsedItem, []byte, error) {
+	file, err := os.Open(item.Path)
 	if err != nil {
-		return parsedItem{}, err
+		return parsedItem{}, buffer, err
+	}
+	defer file.Close()
+	if int64(cap(buffer)) < item.SizeBytes+1 {
+		// One byte past the recorded size, so an item that grew under us is read
+		// whole and caught by the hash below rather than silently truncated.
+		buffer = make([]byte, 0, item.SizeBytes+1)
+	}
+	raw := buffer[:0]
+	for {
+		if len(raw) == cap(raw) {
+			raw = append(raw, 0)[:len(raw)]
+		}
+		count, readErr := file.Read(raw[len(raw):cap(raw)])
+		raw = raw[:len(raw)+count]
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return parsedItem{}, raw, readErr
+		}
+	}
+	kept := raw
+	if int64(cap(kept)) > int64(maxRetainedItemBytes) {
+		kept = nil
 	}
 	sum := sha256.Sum256(raw)
+	hashmeter.Add(len(raw))
 	if hex.EncodeToString(sum[:]) != item.Fingerprint {
-		return parsedItem{}, fmt.Errorf("%w: Joplin RAW item %s changed during import", store.ErrConflict, item.RelativePath)
+		return parsedItem{}, kept, fmt.Errorf("%w: Joplin RAW item %s changed during import", store.ErrConflict, item.RelativePath)
 	}
 	parsed, ok, err := parseItemBytes(item.Path, raw)
 	if err != nil {
-		return parsedItem{}, err
+		return parsedItem{}, kept, err
 	}
 	if !ok || parsed.ID != item.ID || parsed.Type != item.Type {
-		return parsedItem{}, fmt.Errorf("%w: Joplin RAW item %s no longer matches inventory", store.ErrConflict, item.RelativePath)
+		return parsedItem{}, kept, fmt.Errorf("%w: Joplin RAW item %s no longer matches inventory", store.ErrConflict, item.RelativePath)
 	}
-	return parsed, nil
+	return parsed, kept, nil
+}
+
+// importBatchByteBudget bounds a batch by the bytes its items hold, as well as
+// by how many there are (v1.0 J38-C).
+//
+// It is the size one RAW item may already reach, so a large item becomes a batch
+// of its own and nothing legal is refused. On the Obsidian side the same bound
+// took a corpus of twelve near-limit notes from 1.88 GB of peak RSS to 917 MB
+// (v1.0 J32-K).
+const importBatchByteBudget = int64(maxRAWItemSize)
+
+// boundedByItemBytes returns how many of these items a batch should hold: all of
+// them, or as many as fit the budget, and never fewer than one.
+func boundedByItemBytes(items []inventoryItem) int {
+	var bytes int64
+	for index, item := range items {
+		bytes += item.SizeBytes
+		if bytes >= importBatchByteBudget {
+			return index + 1
+		}
+	}
+	return len(items)
 }
 
 func (run *importRun) inventoryItems(kind string, start, end int) ([]inventoryItem, error) {

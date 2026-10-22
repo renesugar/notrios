@@ -139,8 +139,8 @@
       "name": "Asset store for :memory: databases",
       "category": "data",
       "file": "internal/store/sqlite.go",
-      "anchor": "root, err := os.MkdirTemp(\"\", \"notrios-assets-\")",
-      "current": "a private per-process directory from os.MkdirTemp, not one fixed name shared by every user and instance",
+      "anchor": "root, err := noInstance.MkdirTemp(\"notrios-assets-\")",
+      "current": "a private owner-only directory made through tempspace with no instance (os.MkdirTemp in the system temp root), owned by the store and removed on Close since v1.0 J22; not one fixed name shared by every user and instance",
       "defects": [
         "shared-predictable-temp-path",
         "multi-instance-collision"

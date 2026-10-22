@@ -7,6 +7,19 @@ package store
 static int notes_sqlite_bind_text(sqlite3_stmt *stmt, int idx, char *value) {
 	return sqlite3_bind_text(stmt, idx, value, -1, SQLITE_TRANSIENT);
 }
+
+// notes_sqlite_bind_text_n binds a value of known length. SQLITE_TRANSIENT
+// makes SQLite copy it during this call and keep nothing afterwards, which is
+// what lets the caller pass Go memory (v1.0 J32-X).
+static int notes_sqlite_bind_text_n(sqlite3_stmt *stmt, int idx, const char *value, int n) {
+	return sqlite3_bind_text(stmt, idx, value, n, SQLITE_TRANSIENT);
+}
+
+// notes_sqlite_bind_empty binds the empty string, which is not the same as
+// binding NULL: a NULL pointer would make this column NULL.
+static int notes_sqlite_bind_empty(sqlite3_stmt *stmt, int idx) {
+	return sqlite3_bind_text(stmt, idx, "", 0, SQLITE_STATIC);
+}
 */
 import "C"
 
@@ -28,8 +41,10 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/renesugar/notrios/internal/markdownblocks"
 	"github.com/renesugar/notrios/internal/markdownlinks"
 	"github.com/renesugar/notrios/internal/stablelink"
+	"github.com/renesugar/notrios/internal/tempspace"
 )
 
 // ErrPhysicalRestoreInProgress prevents a service or ordinary CLI command from
@@ -65,6 +80,22 @@ type SQLiteStore struct {
 	// lastMigration records a schema migration performed by this open, so a
 	// caller can tell the user it happened. Nil when nothing was migrated.
 	lastMigration *MigrationReport
+	// ownedAssetRoot is an asset root this store created for itself, because it
+	// was given neither a database file nor an asset store. Close removes it.
+	// The store never removes any other asset root (J22).
+	ownedAssetRoot string
+	// blockExtractor parses one note's blocks at a time through buffers it
+	// keeps between notes, rather than allocating a block slice and a line
+	// table per note: an import parses every note in a library (v1.0 J32-T).
+	// It is used only under mu, and reset after each note so no block keeps
+	// that note's body alive.
+	blockExtractor markdownblocks.Extractor
+	// tempSpace is where this store's instance keeps temporary work: import
+	// manifests, archive verification spools. It is nil when no instance is
+	// configured, and then that work goes in a private system temp directory.
+	// It is set before the store is shared and never changes afterwards.
+	tempSpace     *tempspace.Space
+	ownsTempSpace bool
 }
 
 // AssetRoot returns the configured local store root for internal bulk
@@ -73,7 +104,45 @@ type SQLiteStore struct {
 func (s *SQLiteStore) AssetRoot() string { return s.assetRoot }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
-	return OpenSQLiteWithAssetStore(path, defaultAssetRoot(path))
+	return openSQLiteWithAssetStore(path, "", false)
+}
+
+// OpenInstanceSQLite opens a configured instance's store: its database, its
+// asset store, and a temp space of its own in tempDir, which the store closes
+// when it closes.
+//
+// Several Notrios instances can run on one machine, so an instance's temporary
+// work goes in its own temp directory, never in the shared system temp root.
+// An empty tempDir opens the store with no instance temp space.
+func OpenInstanceSQLite(path, assetRoot, tempDir string) (*SQLiteStore, error) {
+	var space *tempspace.Space
+	if strings.TrimSpace(tempDir) != "" {
+		var err error
+		if space, err = tempspace.Open(tempDir); err != nil {
+			return nil, fmt.Errorf("open the instance temp directory: %w", err)
+		}
+	}
+	st, err := OpenSQLiteWithAssetStore(path, assetRoot)
+	if err != nil {
+		_ = space.Close()
+		return nil, err
+	}
+	st.tempSpace, st.ownsTempSpace = space, space != nil
+	return st, nil
+}
+
+// TempSpace is the instance temp space this store's temporary work belongs in,
+// or nil when no instance is configured.
+func (s *SQLiteStore) TempSpace() *tempspace.Space { return s.tempSpace }
+
+// TempSpaceOf returns the instance temp space of a store handed over as an
+// interface (an export reader, a restore target, an import store), or nil when
+// it has none.
+func TempSpaceOf(v any) *tempspace.Space {
+	if holder, ok := v.(interface{ TempSpace() *tempspace.Space }); ok {
+		return holder.TempSpace()
+	}
+	return nil
 }
 
 func OpenSQLiteWithAssetStore(path, assetRoot string) (*SQLiteStore, error) {
@@ -88,9 +157,20 @@ func OpenSQLiteWithAssetStoreForRestore(path, assetRoot string) (*SQLiteStore, e
 }
 
 func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLiteStore, error) {
+	owned := ""
 	if strings.TrimSpace(assetRoot) == "" {
-		assetRoot = defaultAssetRoot(path)
+		var err error
+		if assetRoot, owned, err = defaultAssetRoot(path); err != nil {
+			return nil, err
+		}
 	}
+	opened := false
+	defer func() {
+		// An open that fails must not leave behind the asset root it made.
+		if !opened && owned != "" {
+			_ = os.RemoveAll(owned)
+		}
+	}()
 	if path != ":memory:" {
 		if _, err := os.Lstat(PhysicalRestoreMarkerPath(path)); err == nil && !allowRestore {
 			return nil, fmt.Errorf("%w: run the same local restore command to resume", ErrPhysicalRestoreInProgress)
@@ -130,13 +210,14 @@ func openSQLiteWithAssetStore(path, assetRoot string, allowRestore bool) (*SQLit
 		}
 		return nil, fmt.Errorf("open sqlite: %s", msg)
 	}
-	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot}
+	s := &SQLiteStore{db: db, path: path, assetRoot: assetRoot, ownedAssetRoot: owned}
 	// busy_timeout lets a CLI import and the running service share the file
 	// without immediate "database is locked" failures on write overlap.
 	if err := s.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;"); err != nil {
 		_ = s.Close()
 		return nil, err
 	}
+	opened = true
 	return s, nil
 }
 
@@ -155,17 +236,22 @@ func contextOrBackground(ctx context.Context) context.Context {
 // directory belonged to whoever created it first. It is now a private
 // per-process directory, owner-only, which is what a database that exists only
 // for the life of this process should have.
-func defaultAssetRoot(path string) string {
+//
+// J22: that private directory is the store's, so it is returned as owned and
+// Close removes it. Nothing removed it before, and J7 found 16,888 of them in
+// /tmp. The shared-name fallback for an unwritable temp root is gone too: one
+// directory shared by every instance on the machine is what the private one
+// replaced, so failing to open is the honest result.
+func defaultAssetRoot(path string) (root, owned string, err error) {
 	if path == ":memory:" || strings.TrimSpace(path) == "" {
-		root, err := os.MkdirTemp("", "notrios-assets-")
+		var noInstance *tempspace.Space
+		root, err := noInstance.MkdirTemp("notrios-assets-")
 		if err != nil {
-			// Falling back to the shared name is worse than failing loudly
-			// later; an unwritable temp directory will surface on first use.
-			return filepath.Join(os.TempDir(), "notrios-assets")
+			return "", "", fmt.Errorf("create a private asset root: %w", err)
 		}
-		return root
+		return root, root, nil
 	}
-	return filepath.Join(filepath.Dir(path), "assets")
+	return filepath.Join(filepath.Dir(path), "assets"), "", nil
 }
 
 func (s *SQLiteStore) Close() error {
@@ -178,7 +264,16 @@ func (s *SQLiteStore) Close() error {
 		return fmt.Errorf("close sqlite: %s", C.GoString(C.sqlite3_errmsg(s.db)))
 	}
 	s.db = nil
-	return nil
+	var cleanup error
+	if s.ownedAssetRoot != "" {
+		cleanup = os.RemoveAll(s.ownedAssetRoot)
+		s.ownedAssetRoot = ""
+	}
+	if s.ownsTempSpace {
+		cleanup = errors.Join(cleanup, s.tempSpace.Close())
+		s.ownsTempSpace = false
+	}
+	return cleanup
 }
 
 // ErrSchemaTooNew means the database was written by a newer Notrios than this
@@ -327,6 +422,29 @@ func (s *SQLiteStore) migrateUnderLock(ctx context.Context, existing int) error 
 // applySchema runs every forward step. It is idempotent: a database already at
 // the current version passes through it unchanged.
 func (s *SQLiteStore) applySchema(ctx context.Context) error {
+	// A library already at the current schema has run every step below, so
+	// none runs again. Running them was not harmless. 0001_initial.sql ends at
+	// `PRAGMA user_version = 17` and the unguarded V4–V18 steps end at 18, so
+	// every open lowered the version and every guarded step from V19 on ran
+	// again. At 382,206 notes that was ~7 s rebuilding V28's full-text mapping
+	// and ~4.6 s in V22's revision backfill, on every open, read-only commands
+	// included (v1.0 J20-A, J21). A fresh library reads 0 and a library being
+	// migrated reads below the current version, so both still run every step.
+	s.mu.Lock()
+	version, err := s.pragmaUserVersionLocked()
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	if version >= CurrentSchemaVersion {
+		return s.applyOpenInvariants(ctx)
+	}
+	return s.applyMigrations(ctx)
+}
+
+// applyMigrations runs every schema step in order. Each step is idempotent
+// against a library that already has what it creates.
+func (s *SQLiteStore) applyMigrations(ctx context.Context) error {
 	migration, err := migrationFS.ReadFile("migrations/0001_initial.sql")
 	if err != nil {
 		return fmt.Errorf("read migration: %w", err)
@@ -406,6 +524,17 @@ func (s *SQLiteStore) applySchema(ctx context.Context) error {
 	if err := s.ensureSchemaV27(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureSchemaV28(ctx); err != nil {
+		return err
+	}
+	return s.applyOpenInvariants(ctx)
+}
+
+// applyOpenInvariants runs on every open, current library or not: the
+// database identity, the default collection, the built-in notebooks and the
+// sync metadata baseline. Each is an INSERT OR IGNORE or a read-then-write that
+// changes nothing when the row is already there.
+func (s *SQLiteStore) applyOpenInvariants(ctx context.Context) error {
 	if err := s.ensureDatabaseIdentity(ctx); err != nil {
 		return err
 	}
@@ -941,6 +1070,9 @@ func (s *SQLiteStore) execLocked(sql string) error {
 	if s.db == nil {
 		return fmt.Errorf("sqlite store is closed")
 	}
+	if sql == "COMMIT" {
+		commits.Add(1)
+	}
 	csql := C.CString(sql)
 	defer C.free(unsafe.Pointer(csql))
 	var errmsg *C.char
@@ -1179,10 +1311,10 @@ func (s *SQLiteStore) CreateDocument(ctx context.Context, req CreateDocumentRequ
 		VALUES(?, ?, ?, ?, ?, ?)`, docID, req.CollectionID, req.NotebookID, req.Title, req.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
-	if err := s.insertRevisionLocked(revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message, ""); err != nil {
+	if err := s.insertRevisionLocked(revID, docID, req.Title, req.Body, req.BodyMIMEType, req.Message, "", ""); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, docID, req.CollectionID, req.Title, req.Body); err != nil {
+	if err := s.insertDocumentFTSLocked(docID, req.CollectionID, req.Title, req.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(docID, req.CollectionID, req.Body); err != nil {
@@ -1323,16 +1455,13 @@ func (s *SQLiteStore) UpdateDocument(ctx context.Context, req UpdateDocumentRequ
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return Document{}, ErrConflict
 	}
-	if err := s.insertRevisionLocked(revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, req.Title, req.Body, req.BodyMIMEType, req.Message, current.CurrentRevisionID, ""); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, req.Title, req.BodyMIMEType, revID, req.ID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.ID, current.CollectionID, req.Title, req.Body); err != nil {
+	if err := s.replaceDocumentFTSLocked(req.ID, current.CollectionID, req.Title, req.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(req.ID, current.CollectionID, req.Body); err != nil {
@@ -1398,13 +1527,13 @@ func (s *SQLiteStore) deleteDocumentLocked(req DeleteDocumentRequest, revID stri
 	if current.CurrentRevisionID != req.BaseRevisionID {
 		return ErrConflict
 	}
-	if err := s.insertRevisionLocked(revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message, current.CurrentRevisionID); err != nil {
+	if err := s.insertRevisionLocked(revID, req.ID, current.Title, current.Body, current.BodyMIMEType, req.Message, current.CurrentRevisionID, ""); err != nil {
 		return err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET current_revision_id = ?, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`, revID, req.ID); err != nil {
 		return err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.ID); err != nil {
+	if err := s.deleteDocumentFTSLocked(req.ID); err != nil {
 		return err
 	}
 	return s.enqueueProjectionLocked(req.ID, "delete")
@@ -1494,16 +1623,13 @@ func (s *SQLiteStore) RestoreDocumentRevision(ctx context.Context, req RestoreRe
 	if err != nil {
 		return Document{}, err
 	}
-	if err := s.insertRevisionLocked(newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message, currentRevisionID); err != nil {
+	if err := s.insertRevisionLocked(newRevID, req.DocumentID, target.Title, target.Body, target.BodyMIMEType, req.Message, currentRevisionID, ""); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`UPDATE documents SET title = ?, body_mime_type = ?, current_revision_id = ?, deleted_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, target.Title, target.BodyMIMEType, newRevID, req.DocumentID); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`DELETE FROM documents_fts WHERE document_id = ?`, req.DocumentID); err != nil {
-		return Document{}, err
-	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`, req.DocumentID, collectionID, target.Title, target.Body); err != nil {
+	if err := s.replaceDocumentFTSLocked(req.DocumentID, collectionID, target.Title, target.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.rebuildDocumentLinksLocked(req.DocumentID, collectionID, target.Body); err != nil {
@@ -1536,6 +1662,30 @@ func (s *SQLiteStore) documentExistsLocked(documentID string) (bool, error) {
 		return false, nil
 	}
 	return false, s.stepErrLocked(rc)
+}
+
+// documentLiveLocked answers what getDocumentLocked answers about whether a
+// note can be read: it exists, has a current revision and is not in the trash.
+// It reads no body, for a caller that would discard it (v1.0 J39).
+func (s *SQLiteStore) documentLiveLocked(documentID string) (bool, error) {
+	stmt, err := s.prepareLocked(`SELECT 1 FROM documents d
+		JOIN document_revisions r ON r.id = d.current_revision_id
+		WHERE d.id = ? AND d.deleted_at IS NULL`)
+	if err != nil {
+		return false, err
+	}
+	defer C.sqlite3_finalize(stmt)
+	if err := bindAll(stmt, []string{documentID}); err != nil {
+		return false, err
+	}
+	switch rc := C.sqlite3_step(stmt); rc {
+	case C.SQLITE_ROW:
+		return true, nil
+	case C.SQLITE_DONE:
+		return false, nil
+	default:
+		return false, s.stepErrLocked(rc)
+	}
 }
 
 func (s *SQLiteStore) documentCurrentStateLocked(documentID string) (collectionID string, currentRevisionID string, err error) {
@@ -2238,13 +2388,22 @@ func (s *SQLiteStore) rebuildDocumentLinksLocked(documentID, collectionID, body 
 	if err := s.execPreparedLocked(`DELETE FROM document_links WHERE source_document_id = ?`, documentID); err != nil {
 		return err
 	}
-	for _, candidate := range markdownlinks.Extract(body) {
+	candidates := markdownlinks.Extract(body)
+	if len(candidates) == 0 {
+		return nil
+	}
+	insert, err := s.prepareRepeatedLocked(`INSERT INTO document_links(
+		source_document_id, target_document_id, target_resource_id, target_uri,
+		relation_type, source_format, raw_target, display_text, anchor_type, anchor_value,
+		context, source_start_byte, source_end_byte, source_line, source_column, resolution_status
+	) VALUES(?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer insert.close()
+	for _, candidate := range candidates {
 		link := s.resolveLinkCandidateLocked(documentID, collectionID, candidate)
-		if err := s.execPreparedLocked(`INSERT INTO document_links(
-			source_document_id, target_document_id, target_resource_id, target_uri,
-			relation_type, source_format, raw_target, display_text, anchor_type, anchor_value,
-			context, source_start_byte, source_end_byte, source_line, source_column, resolution_status
-		) VALUES(?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		if err := insert.exec(
 			documentID, link.TargetDocumentID, link.TargetResourceID, link.TargetURI,
 			link.RelationType, link.SourceFormat, link.RawTarget, link.DisplayText, link.AnchorType, link.AnchorValue,
 			link.Context, strconv.Itoa(link.SourceStartByte), strconv.Itoa(link.SourceEndByte), strconv.Itoa(link.SourceLine), strconv.Itoa(link.SourceColumn), link.ResolutionStatus); err != nil {
@@ -2420,48 +2579,56 @@ func resourceIDFromURI(uri string) string {
 // quietly resolving to this library's copy -- and refusing to guess is the
 // behaviour to want there.
 func (s *SQLiteStore) findDocumentByTitleLocked(collectionID, target string) (string, bool, error) {
-	name := normalizeLinkName(target)
-	if name == "" {
-		return "", false, nil
-	}
-	stmt, err := s.prepareLocked(`SELECT id FROM documents WHERE ` + CollectionScopeSQL("") + ` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
-	if err != nil {
+	ids, err := s.documentsByLinkTitleLocked(collectionID, target, 2)
+	if err != nil || len(ids) == 0 {
 		return "", false, err
 	}
-	defer C.sqlite3_finalize(stmt)
-	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
-		return "", false, err
-	}
-	ids := []string{}
-	for {
-		rc := C.sqlite3_step(stmt)
-		switch rc {
-		case C.SQLITE_ROW:
-			ids = append(ids, columnText(stmt, 0))
-		case C.SQLITE_DONE:
-			if len(ids) == 0 {
-				return "", false, nil
-			}
-			return ids[0], len(ids) > 1, nil
-		default:
-			return "", false, s.stepErrLocked(rc)
-		}
-	}
+	return ids[0], len(ids) > 1, nil
 }
 
 func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) (string, bool, error) {
+	ids, err := s.resourcesByLinkFilenameLocked(collectionID, target, 2)
+	if err != nil || len(ids) == 0 {
+		return "", false, err
+	}
+	return ids[0], len(ids) > 1, nil
+}
+
+// documentsByLinkTitleLocked is the notes a link's text names by title, in ID
+// order: what the resolver asks, and what a report of an ambiguous link lists
+// (v1.0 J40-C). limit 0 means all of them.
+func (s *SQLiteStore) documentsByLinkTitleLocked(collectionID, target string, limit int) ([]string, error) {
+	name := normalizeLinkName(target)
+	if name == "" {
+		return nil, nil
+	}
+	return s.idsByLinkNameLocked(`SELECT id FROM documents WHERE `+CollectionScopeSQLFor("", collectionID)+
+		` AND deleted_at IS NULL AND title = ? COLLATE NOCASE ORDER BY id`, collectionID, name, limit)
+}
+
+// resourcesByLinkFilenameLocked is the resources a link's text names by file
+// name, in ID order. limit 0 means all of them.
+func (s *SQLiteStore) resourcesByLinkFilenameLocked(collectionID, target string, limit int) ([]string, error) {
 	name := strings.TrimSpace(target)
 	if name == "" {
-		return "", false, nil
+		return nil, nil
 	}
 	name = strings.TrimPrefix(filepath.Base(name), "/")
-	stmt, err := s.prepareLocked(`SELECT id FROM resources WHERE ` + CollectionScopeSQL("") + ` AND filename = ? COLLATE NOCASE ORDER BY id LIMIT 2`)
+	return s.idsByLinkNameLocked(`SELECT id FROM resources WHERE `+CollectionScopeSQLFor("", collectionID)+
+		` AND filename = ? COLLATE NOCASE ORDER BY id`, collectionID, name, limit)
+}
+
+func (s *SQLiteStore) idsByLinkNameLocked(query, collectionID, name string, limit int) ([]string, error) {
+	if limit > 0 {
+		query += " LIMIT " + strconv.Itoa(limit)
+	}
+	stmt, err := s.prepareLocked(query)
 	if err != nil {
-		return "", false, err
+		return nil, err
 	}
 	defer C.sqlite3_finalize(stmt)
 	if err := bindAll(stmt, []string{collectionID, name}); err != nil {
-		return "", false, err
+		return nil, err
 	}
 	ids := []string{}
 	for {
@@ -2470,12 +2637,9 @@ func (s *SQLiteStore) findResourceByFilenameLocked(collectionID, target string) 
 		case C.SQLITE_ROW:
 			ids = append(ids, columnText(stmt, 0))
 		case C.SQLITE_DONE:
-			if len(ids) == 0 {
-				return "", false, nil
-			}
-			return ids[0], len(ids) > 1, nil
+			return ids, nil
 		default:
-			return "", false, s.stepErrLocked(rc)
+			return nil, s.stepErrLocked(rc)
 		}
 	}
 }
@@ -2671,18 +2835,81 @@ func (s *SQLiteStore) prepareLocked(sql string) (*C.sqlite3_stmt, error) {
 	csql := C.CString(sql)
 	defer C.free(unsafe.Pointer(csql))
 	var stmt *C.sqlite3_stmt
+	preparedStatements.Add(1)
 	if rc := C.sqlite3_prepare_v2(s.db, csql, -1, &stmt, nil); rc != C.SQLITE_OK {
 		return nil, fmt.Errorf("sqlite prepare: %s", C.GoString(C.sqlite3_errmsg(s.db)))
 	}
 	return stmt, nil
 }
 
+// repeatedStatement is one statement a loop runs many times: prepared once,
+// then reset and rebound per row, the way ImportManifest.Put already does
+// (v1.0 J32-B). execPreparedLocked prepares and finalizes on every call, which
+// is right for a statement that runs once and wasteful for one that runs once
+// per block or per link of a note.
+//
+// It is scoped to the loop that makes it and finalized by its close on every
+// exit, so no statement outlives the caller's transaction and nothing is
+// cached across a migration or a restore.
+type repeatedStatement struct {
+	store *SQLiteStore
+	stmt  *C.sqlite3_stmt
+	used  bool
+}
+
+func (s *SQLiteStore) prepareRepeatedLocked(sql string) (*repeatedStatement, error) {
+	stmt, err := s.prepareLocked(sql)
+	if err != nil {
+		return nil, err
+	}
+	return &repeatedStatement{store: s, stmt: stmt}, nil
+}
+
+// exec runs the statement once with these values, to completion.
+func (r *repeatedStatement) exec(values ...string) error {
+	if r.used {
+		if rc := C.sqlite3_reset(r.stmt); rc != C.SQLITE_OK {
+			return r.store.stepErrLocked(rc)
+		}
+		if rc := C.sqlite3_clear_bindings(r.stmt); rc != C.SQLITE_OK {
+			return r.store.stepErrLocked(rc)
+		}
+	}
+	r.used = true
+	if err := bindAll(r.stmt, values); err != nil {
+		return err
+	}
+	if rc := C.sqlite3_step(r.stmt); rc != C.SQLITE_DONE {
+		return r.store.stepErrLocked(rc)
+	}
+	return nil
+}
+
+func (r *repeatedStatement) close() { C.sqlite3_finalize(r.stmt) }
+
+// bindAll binds a statement's parameters from Go strings (v1.0 J32-X).
+//
+// It used to hand each value to C.CString, which mallocs a copy of the whole
+// value in C memory, bind that, and free it -- and SQLITE_TRANSIENT means
+// SQLite had already made its own copy during the bind. Every bound body was
+// therefore copied twice outside the Go heap, where no allocation profile shows
+// it: 120 MB of malloc traffic for a 60 MiB note.
+//
+// The bytes are now passed where they already are. cgo allows a Go pointer to
+// reach C as long as C keeps nothing after the call returns, and
+// SQLITE_TRANSIENT is exactly that promise: SQLite copies during the bind. A
+// string's bytes hold no Go pointers, so they are legal to pass, and SQLite
+// only reads them.
 func bindAll(stmt *C.sqlite3_stmt, values []string) error {
 	for i, value := range values {
 		idx := C.int(i + 1)
-		cvalue := C.CString(value)
-		rc := C.notes_sqlite_bind_text(stmt, idx, cvalue)
-		C.free(unsafe.Pointer(cvalue))
+		var rc C.int
+		if len(value) == 0 {
+			rc = C.notes_sqlite_bind_empty(stmt, idx)
+		} else {
+			rc = C.notes_sqlite_bind_text_n(stmt, idx,
+				(*C.char)(unsafe.Pointer(unsafe.StringData(value))), C.int(len(value)))
+		}
 		if rc != C.SQLITE_OK {
 			return fmt.Errorf("sqlite bind parameter %d failed", i+1)
 		}
@@ -2694,12 +2921,24 @@ func (s *SQLiteStore) stepErrLocked(rc C.int) error {
 	return fmt.Errorf("sqlite step rc=%d: %s", int(rc), C.GoString(C.sqlite3_errmsg(s.db)))
 }
 
+// columnText reads a text column by length rather than to the first NUL byte
+// (v1.0 J32-X).
+//
+// C.GoString stops at a NUL, and sqlite3_column_bytes gives the length SQLite
+// stored, so a value holding a NUL byte used to come back cut short. Binding
+// now passes an explicit length too, so what is written and what is read agree:
+// either both keep the whole value, as they do now, or both silently drop part
+// of it, as they both used to.
 func columnText(stmt *C.sqlite3_stmt, index int) string {
 	text := C.sqlite3_column_text(stmt, C.int(index))
 	if text == nil {
 		return ""
 	}
-	return C.GoString((*C.char)(unsafe.Pointer(text)))
+	length := C.sqlite3_column_bytes(stmt, C.int(index))
+	if length <= 0 {
+		return ""
+	}
+	return C.GoStringN((*C.char)(unsafe.Pointer(text)), length)
 }
 
 func columnFloat(stmt *C.sqlite3_stmt, index int) float64 {

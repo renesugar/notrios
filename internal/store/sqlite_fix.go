@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/renesugar/notrios/internal/markdownlinks"
 )
 
 // PlanWorkspaceFix computes the exact edits a fix run would make, without
@@ -201,6 +203,10 @@ func (s *SQLiteStore) repairLink(link DocumentLink, before string) (string, stri
 	anchor := anchorSuffixForFix(link)
 	display := link.DisplayText
 	relation := link.RelationType
+	// A repair rewrites the syntax around what the author wrote, and the title
+	// is part of that. It comes from the link's own bytes, because the stored
+	// row records the destination alone (v1.0 J43).
+	titleSuffix := markdownlinks.TitleSuffix(before)
 
 	// A link that resolved by title or filename is rewritten to the canonical
 	// URI it already points at, so renaming the target cannot break it.
@@ -213,7 +219,7 @@ func (s *SQLiteStore) repairLink(link DocumentLink, before string) (string, stri
 			canonical = ResourceURI("", link.TargetResourceID)
 		}
 		if canonical != "" && link.RawTarget != canonical {
-			return renderMarkdownLink(relation, display, canonical+anchor), FixNonCanonicalLinkTarget, true
+			return renderMarkdownLink(relation, display, canonical+anchor, titleSuffix), FixNonCanonicalLinkTarget, true
 		}
 	}
 
@@ -236,7 +242,7 @@ func (s *SQLiteStore) repairLink(link DocumentLink, before string) (string, stri
 		if target == "" {
 			target = ResourceURI("", link.TargetResourceID)
 		}
-		return renderMarkdownLink(relation, alt, target+anchor), FixMissingAltText, true
+		return renderMarkdownLink(relation, alt, target+anchor, titleSuffix), FixMissingAltText, true
 	}
 	return "", "", false
 }
@@ -259,12 +265,12 @@ func altTextFromFilename(filename string) string {
 	return strings.Join(strings.Fields(replaced), " ")
 }
 
-func renderMarkdownLink(relation, display, target string) string {
+func renderMarkdownLink(relation, display, target, titleSuffix string) string {
 	prefix := ""
 	if relation == "image" || relation == "embed" {
 		prefix = "!"
 	}
-	return prefix + "[" + display + "](" + target + ")"
+	return prefix + "[" + display + "](" + target + titleSuffix + ")"
 }
 
 func anchorSuffixForFix(link DocumentLink) string {

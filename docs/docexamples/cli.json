@@ -1,0 +1,358 @@
+{
+  "schema": "notrios.docexamples.v1",
+  "document": "docs/cli.md",
+  "note": "The published examples on this page are generated from here by `go run ./cmd/docexamples --write`. Each recipe's steps are the published text; what this file adds is the declaration beside them -- the CLI commands and REST routes it drives, checked against the CLI spec and the routes the server registers, so a documented command that stops existing fails the build.",
+  "examples": [
+    {
+      "section": "version",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "version"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl version"
+        }
+      ]
+    },
+    {
+      "section": "migrate",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "migrate"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl migrate --dry-run"
+        }
+      ]
+    },
+    {
+      "section": "tags-show",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "tags show"
+        ]
+      },
+      "steps": [
+        {
+          "run": "if notriosctl tags show --tag todo >/dev/null 2>&1; then"
+        },
+        {
+          "run": "  echo \"the tag exists\""
+        },
+        {
+          "run": "fi"
+        }
+      ]
+    },
+    {
+      "section": "reading-json-output",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "collections list"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl collections list --json |"
+        },
+        {
+          "run": "  gomplate -d 'c=stdin:?type=application/json' \\"
+        },
+        {
+          "run": "    -i '{{ printf \"%-14s %5s  %s\" \"COLLECTION\" \"NOTES\" \"NAME\" }}"
+        },
+        {
+          "run": "{{ range (ds \"c\").collections }}{{ printf \"%-14s %5v  %s\" .collection_id .notes .name }}"
+        },
+        {
+          "run": "{{ end }}'"
+        }
+      ]
+    },
+    {
+      "section": "reading-json-output",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "notebooks list"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl notebooks list --json |"
+        },
+        {
+          "run": "  gomplate -d 'nb=stdin:?type=application/json' \\"
+        },
+        {
+          "run": "    -i '{{ (index (ds \"nb\").notebooks 0).notebook_id }}'"
+        }
+      ]
+    },
+    {
+      "section": "reading-json-output",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "notebooks list"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl notebooks list --json |"
+        },
+        {
+          "run": "  gomplate -d 'nb=stdin:?type=application/json' \\"
+        },
+        {
+          "run": "    -i '{{ range (ds \"nb\").query_notebooks }}{{ .search_notebook_id }} -> {{ .query }}"
+        },
+        {
+          "run": "{{ end }}'"
+        }
+      ]
+    },
+    {
+      "section": "where-the-key-material-is-kept",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync migrate-credentials"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync migrate-credentials --to native --dry-run"
+        },
+        {
+          "run": "notriosctl sync migrate-credentials --to native --confirm"
+        }
+      ]
+    },
+    {
+      "section": "making-the-second-replica",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "export archive-v2",
+          "restore archive-v2"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl export archive-v2 --db first/notes.sqlite /tmp/snapshot"
+        },
+        {
+          "run": "notriosctl restore archive-v2 --intent adopt --db second/notes.sqlite /tmp/snapshot"
+        }
+      ]
+    },
+    {
+      "section": "pairing",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync invite",
+          "sync join"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# on the replica that is already set up"
+        },
+        {
+          "run": "notriosctl sync invite --ttl 5m --label \"the laptop\""
+        },
+        {
+          "comment": "# \u2192 reads out a code like ABCD-EFGH-IJKL-\u2026"
+        },
+        {},
+        {
+          "comment": "# on the joining replica"
+        },
+        {
+          "run": "notriosctl sync join --url https://desktop.local:8443 --code ABCD-EFGH-IJKL-\u2026"
+        }
+      ]
+    },
+    {
+      "section": "pairing",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync invite",
+          "sync accept",
+          "sync enroll"
+        ]
+      },
+      "steps": [
+        {
+          "comment": "# on the inviting replica: writes the file, reads out the code"
+        },
+        {
+          "run": "notriosctl sync invite --offline --out /tmp/invite.json --ttl 1h"
+        },
+        {},
+        {
+          "comment": "# on the joining replica: needs both halves"
+        },
+        {
+          "run": "notriosctl sync accept --invite /tmp/invite.json --code ABCD-\u2026 --out /tmp/accept.json"
+        },
+        {},
+        {
+          "comment": "# back on the inviting replica: enrols what came back"
+        },
+        {
+          "run": "notriosctl sync enroll --acceptance /tmp/accept.json --code ABCD-\u2026"
+        }
+      ]
+    },
+    {
+      "section": "pairing",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync handshake"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync handshake --url https://desktop.local:8443"
+        }
+      ]
+    },
+    {
+      "section": "seeing-and-ending-trust",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync retire"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync retire --peer replica_abc"
+        },
+        {
+          "run": "notriosctl sync retire --peer replica_abc --reason \"device recycled\" --confirm retire-peer:replica_abc"
+        }
+      ]
+    },
+    {
+      "section": "exchanging-with-a-peer-directly",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync exchange"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync exchange --url https://desktop.local:8443"
+        }
+      ]
+    },
+    {
+      "section": "exchanging-with-a-peer-directly",
+      "ordinal": 2,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync fetch-backup"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync fetch-backup --url https://desktop.local:8443 --out /tmp/restore"
+        }
+      ]
+    },
+    {
+      "section": "exchanging-with-a-peer-directly",
+      "ordinal": 3,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "snapshot restore"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl snapshot restore --intent adopt --db second/notes.sqlite \\"
+        },
+        {
+          "run": "  --asset-store second/assets /tmp/restore/snapshot"
+        }
+      ]
+    },
+    {
+      "section": "exchanging-through-a-folder",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync once"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync once --carrier /home/you/Drive/notrios --db first/notes.sqlite"
+        }
+      ]
+    },
+    {
+      "section": "seeing-who-is-there",
+      "ordinal": 1,
+      "kind": "recipe",
+      "language": "sh",
+      "uses": {
+        "cli": [
+          "sync discover"
+        ]
+      },
+      "steps": [
+        {
+          "run": "notriosctl sync discover --carrier /home/you/Drive/notrios"
+        }
+      ]
+    }
+  ]
+}

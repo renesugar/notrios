@@ -16,9 +16,15 @@ package markdownblocks
 import (
 	"crypto/sha256"
 	"encoding/base32"
+	"hash"
+	"io"
+
+	"github.com/renesugar/notrios/internal/hashmeter"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Block kinds. They are stored, so they are part of the schema contract.
@@ -89,10 +95,97 @@ func itoa(value int) string {
 // a note, and cross-note correlation is not something a block key should
 // enable.
 func Extract(documentID, body string) []Block {
-	lines, offsets := physicalLines(body)
-	blocks := []Block{}
-	occurrences := map[string]int{}
-	slugs := map[string]int{}
+	var extractor Extractor
+	return extractor.Extract(documentID, body)
+}
+
+// Extractor extracts blocks through buffers it keeps between notes (v1.0
+// J32-T).
+//
+// Extract allocates a block slice, a line table and the maps behind them for
+// every note it is given. An import parses every note in a library, so those
+// are thousands of allocations that hold nothing once the note is written.
+//
+// The blocks an Extractor returns are valid until its next call: it is for a
+// caller that writes each note's blocks before parsing the next one, which is
+// what the import and save paths do. A caller that keeps blocks around uses
+// Extract instead.
+//
+// Reset releases what the buffers hold without giving up their capacity, and
+// matters more than it looks: a block's Text is a slice of the note's body, so
+// a buffer still holding the last note's blocks keeps that whole body alive —
+// 60 MiB for one large note.
+type Extractor struct {
+	blocks      []Block
+	lines       []string
+	offsets     []int
+	scratch     []byte
+	blockHasher hash.Hash
+	occurrences map[string]int
+	slugs       map[string]int
+}
+
+// The capacity Reset keeps. A 60 MiB note has about four million lines, and a
+// line table that size is 77 MB that the process would hold for good after one
+// such note: measured as live heap, and the reason this cap exists (v1.0
+// J32-T). Reuse is for the ordinary note; an unusually large one gives its
+// buffers back.
+const (
+	maxRetainedLines   = 1 << 16
+	maxRetainedBlocks  = 1 << 12
+	maxRetainedScratch = 1 << 20
+)
+
+// hasher is the Extractor's own, made once: a new one per block is an
+// allocation a note with thousands of blocks pays for nothing (v1.0 J32-V).
+func (e *Extractor) hasher() hash.Hash {
+	if e.blockHasher == nil {
+		e.blockHasher = sha256.New()
+	}
+	return e.blockHasher
+}
+
+// Reset drops what the buffers refer to, keeping capacity up to the caps
+// above.
+func (e *Extractor) Reset() {
+	if cap(e.lines) > maxRetainedLines {
+		e.lines, e.offsets = nil, nil
+	}
+	if cap(e.blocks) > maxRetainedBlocks {
+		e.blocks = nil
+	}
+	if cap(e.scratch) > maxRetainedScratch {
+		e.scratch = nil
+	}
+	for index := range e.blocks {
+		e.blocks[index] = Block{}
+	}
+	e.blocks = e.blocks[:0]
+	for index := range e.lines {
+		e.lines[index] = ""
+	}
+	e.lines = e.lines[:0]
+	e.offsets = e.offsets[:0]
+	e.scratch = e.scratch[:0]
+}
+
+// Extract returns the blocks of one note, in document order. The result is
+// valid until the next call on this Extractor.
+func (e *Extractor) Extract(documentID, body string) []Block {
+	e.Reset()
+	lines, offsets := e.physicalLines(body)
+	scratch := e.scratch
+	blocks := e.blocks
+	if e.occurrences == nil {
+		e.occurrences, e.slugs = map[string]int{}, map[string]int{}
+	}
+	clear(e.occurrences)
+	clear(e.slugs)
+	occurrences, slugs := e.occurrences, e.slugs
+	defer func() {
+		e.scratch = scratch
+		e.blocks = blocks
+	}()
 
 	appendBlock := func(block Block) bool {
 		if len(blocks) >= MaxBlocksPerDocument {
@@ -110,7 +203,7 @@ func Extract(documentID, body string) []Block {
 		if block.Kind == KindHeading {
 			block.Slug = disambiguate(Slugify(block.Text), slugs)
 		}
-		block.ContentSHA256, block.ID = identify(documentID, block)
+		scratch, block.ContentSHA256, block.ID = identify(documentID, block, scratch, e.hasher())
 		blocks = append(blocks, block)
 		return true
 	}
@@ -130,30 +223,33 @@ func Extract(documentID, body string) []Block {
 		if fence := codeFence(trimmed); fence != "" {
 			start := offsets[index]
 			end := offsets[index] + len(line)
-			body := []string{line}
-			index++
-			for index < len(lines) {
-				body = append(body, lines[index])
-				end = offsets[index] + len(lines[index])
-				closed := strings.HasPrefix(strings.TrimSpace(lines[index]), fence)
-				index++
+			// Written straight into a builder rather than collected into a
+			// slice and joined: the text is the same, one allocation instead
+			// of two (v1.0 J32-Q).
+			stop := index + 1
+			for stop < len(lines) {
+				end = offsets[stop] + len(lines[stop])
+				closed := strings.HasPrefix(strings.TrimSpace(lines[stop]), fence)
+				stop++
 				if closed {
 					break
 				}
 			}
-			if !appendBlock(Block{Kind: KindCode, StartByte: start, EndByte: end, Text: strings.Join(body, "\n")}) {
+			text := joinLines(body, start, end, line, lines[index+1:stop], false)
+			index = stop
+			if !appendBlock(Block{Kind: KindCode, StartByte: start, EndByte: end, Text: text}) {
 				return blocks
 			}
 			continue
 		}
 
-		if match := headingRE.FindStringSubmatch(trimmed); match != nil {
+		if level, headingText, ok := matchHeading(trimmed); ok {
 			if !appendBlock(Block{
 				Kind:      KindHeading,
-				Level:     len(match[1]),
+				Level:     level,
 				StartByte: offsets[index],
 				EndByte:   offsets[index] + len(line),
-				Text:      match[2],
+				Text:      headingText,
 			}) {
 				return blocks
 			}
@@ -161,14 +257,14 @@ func Extract(documentID, body string) []Block {
 			continue
 		}
 
-		if listItemRE.MatchString(line) {
+		if markerEnd, ok := matchListMarker(line); ok {
 			// One list item is one block: a link anchor points at an item, not
 			// at the whole list.
 			if !appendBlock(Block{
 				Kind:      KindListItem,
 				StartByte: offsets[index],
 				EndByte:   offsets[index] + len(line),
-				Text:      strings.TrimSpace(listItemRE.ReplaceAllString(line, "")),
+				Text:      strings.TrimSpace(line[markerEnd:]),
 			}) {
 				return blocks
 			}
@@ -176,17 +272,17 @@ func Extract(documentID, body string) []Block {
 			continue
 		}
 
-		if tableRowRE.MatchString(line) {
+		if matchTableRow(line) {
 			start := offsets[index]
 			end := offsets[index] + len(line)
-			rows := []string{trimmed}
-			index++
-			for index < len(lines) && tableRowRE.MatchString(lines[index]) {
-				rows = append(rows, strings.TrimSpace(lines[index]))
-				end = offsets[index] + len(lines[index])
-				index++
+			stop := index + 1
+			for stop < len(lines) && matchTableRow(lines[stop]) {
+				end = offsets[stop] + len(lines[stop])
+				stop++
 			}
-			if !appendBlock(Block{Kind: KindTable, StartByte: start, EndByte: end, Text: strings.Join(rows, "\n")}) {
+			rows := joinLines(body, start, end, trimmed, lines[index+1:stop], true)
+			index = stop
+			if !appendBlock(Block{Kind: KindTable, StartByte: start, EndByte: end, Text: rows}) {
 				return blocks
 			}
 			continue
@@ -196,20 +292,19 @@ func Extract(documentID, body string) []Block {
 		// starts a different kind of block.
 		start := offsets[index]
 		end := offsets[index] + len(line)
-		paragraph := []string{trimmed}
-		index++
-		for index < len(lines) {
-			next := lines[index]
+		stop := index + 1
+		for stop < len(lines) {
+			next := lines[stop]
 			nextTrimmed := strings.TrimSpace(next)
-			if nextTrimmed == "" || headingRE.MatchString(nextTrimmed) ||
-				listItemRE.MatchString(next) || codeFence(nextTrimmed) != "" || tableRowRE.MatchString(next) {
+			if startsAnotherBlock(next, nextTrimmed) {
 				break
 			}
-			paragraph = append(paragraph, nextTrimmed)
-			end = offsets[index] + len(next)
-			index++
+			end = offsets[stop] + len(next)
+			stop++
 		}
-		if !appendBlock(Block{Kind: KindParagraph, StartByte: start, EndByte: end, Text: strings.Join(paragraph, "\n")}) {
+		paragraph := joinLines(body, start, end, trimmed, lines[index+1:stop], true)
+		index = stop
+		if !appendBlock(Block{Kind: KindParagraph, StartByte: start, EndByte: end, Text: paragraph}) {
 			return blocks
 		}
 	}
@@ -230,12 +325,17 @@ func Extract(documentID, body string) []Block {
 // rather than a made-up one: it is reachable by its block ID, and inventing a
 // name would make two unrelated headings collide.
 func Slugify(text string) string {
-	var out []rune
+	// Lowercased a rune at a time into a buffer sized from the text, rather
+	// than lowercasing the whole string into a copy and collecting runes into
+	// a slice to convert once more (v1.0 J32-S).
+	text = strings.TrimSpace(text)
+	out := make([]byte, 0, len(text))
 	previousHyphen := false
-	for _, r := range strings.ToLower(strings.TrimSpace(text)) {
+	for _, r := range text {
+		r = unicode.ToLower(r)
 		switch {
 		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			out = append(out, r)
+			out = utf8.AppendRune(out, r)
 			previousHyphen = false
 		case r == '_' || r == '-' || r == ' ' || r == '\t':
 			if len(out) > 0 && !previousHyphen {
@@ -274,21 +374,90 @@ func disambiguate(slug string, seen map[string]int) string {
 // heading distinct from a paragraph that reads the same; occurrence keeps two
 // identical paragraphs in one note distinguishable without reintroducing
 // position as identity.
-func identify(documentID string, block Block) (string, string) {
-	digest := sha256.Sum256([]byte(strings.Join([]string{
-		"notrios-block-v1", documentID, block.Kind, block.Text, itoa(block.Occurrence),
-	}, "\x00")))
-	encoded := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:10]))
-	return hex(digest[:]), "blk_" + encoded
+// streamHashThreshold is where copying a block's text to hash it stops being
+// cheaper than streaming it (v1.0 J32-V). Below it, appending into a buffer the
+// next block reuses costs no allocation at all; above it, the copy is the
+// block's whole size, and a 60 MiB paragraph copied to be hashed was 480 MB of
+// a near-limit import.
+const streamHashThreshold = 64 << 10
+
+// identify derives a block's content hash and its opaque ID (v1.0 J32-Q,
+// J32-S, J32-V).
+//
+// The bytes hashed are exactly what a strings.Join of the five parts produced.
+// What changed is the copying. A small block is appended into a scratch buffer
+// the next block reuses, which allocates only when a block is longer than any
+// before it. A large one is streamed through the caller's hasher, so its text
+// is never copied.
+//
+// The digest comes back from Sum(nil), which allocates the 32 bytes it
+// returns: handing Sum a local array instead makes that array escape for every
+// block, which measured worse than what streaming saves (J32-Q).
+//
+// Two strings are returned because both are stored, so two allocations are the
+// floor. Each is written into an array on the stack and converted once.
+func identify(documentID string, block Block, scratch []byte, hasher hash.Hash) ([]byte, string, string) {
+	parts := [4]string{"notrios-block-v1", documentID, block.Kind, block.Text}
+	hashmeter.Add(len(block.Text))
+	var digest [sha256.Size]byte
+	if len(block.Text) >= streamHashThreshold {
+		// The digit buffer lives in this branch: handing it to the hasher's
+		// interface makes it escape, and a variable shared with the branch
+		// below would escape for every block rather than for the large ones
+		// (measured, v1.0 J32-V).
+		var occurrence [20]byte
+		hasher.Reset()
+		for index, part := range parts {
+			if index > 0 {
+				_, _ = hasher.Write([]byte{0})
+			}
+			_, _ = io.WriteString(hasher, part)
+		}
+		_, _ = hasher.Write([]byte{0})
+		_, _ = hasher.Write(strconv.AppendInt(occurrence[:0], int64(block.Occurrence), 10))
+		copy(digest[:], hasher.Sum(nil))
+	} else {
+		scratch = scratch[:0]
+		for index, part := range parts {
+			if index > 0 {
+				scratch = append(scratch, 0)
+			}
+			scratch = append(scratch, part...)
+		}
+		scratch = append(scratch, 0)
+		scratch = strconv.AppendInt(scratch, int64(block.Occurrence), 10)
+		digest = sha256.Sum256(scratch)
+	}
+
+	var hashBytes [sha256.Size * 2]byte
+	encodeHex(hashBytes[:0], digest[:])
+
+	// "blk_" and the base32 of the first ten bytes, lowercased in place: the
+	// encoder's own EncodeToString allocated, and the concatenation allocated
+	// again.
+	var idBytes [4 + 16]byte
+	copy(idBytes[:4], "blk_")
+	base32.StdEncoding.WithPadding(base32.NoPadding).Encode(idBytes[4:], digest[:10])
+	for index := 4; index < len(idBytes); index++ {
+		if idBytes[index] >= 'A' && idBytes[index] <= 'Z' {
+			idBytes[index] += 'a' - 'A'
+		}
+	}
+	return scratch, string(hashBytes[:]), string(idBytes[:])
 }
 
 func hex(value []byte) string {
-	const digits = "0123456789abcdef"
 	out := make([]byte, 0, len(value)*2)
+	return string(encodeHex(out, value))
+}
+
+// encodeHex appends the lowercase hex of value to out.
+func encodeHex(out []byte, value []byte) []byte {
+	const digits = "0123456789abcdef"
 	for _, b := range value {
 		out = append(out, digits[b>>4], digits[b&0x0f])
 	}
-	return string(out)
+	return out
 }
 
 // normalize is the documented part of identity: line endings are normalized and
@@ -296,6 +465,13 @@ func hex(value []byte) string {
 // does not silently break every anchor in the note. Nothing else is touched —
 // case, punctuation, and emphasis are content.
 func normalize(text string) string {
+	if !needsNormalizing(text) {
+		// The common case: no carriage return and no line ending in spaces, so
+		// the answer is the text itself, minus trailing newlines. Splitting it
+		// into lines and joining them back produced the same bytes at the cost
+		// of copying every block (v1.0 J32-Q).
+		return strings.TrimRight(text, "\n")
+	}
 	text = strings.ReplaceAll(text, "\r\n", "\n")
 	text = strings.ReplaceAll(text, "\r", "\n")
 	lines := strings.Split(text, "\n")
@@ -305,16 +481,197 @@ func normalize(text string) string {
 	return strings.TrimRight(strings.Join(lines, "\n"), "\n")
 }
 
+// The three matchers below replace the regexps they are named after in the
+// parsing loop, which runs for every line of every note (v1.0 J32-S). The
+// regexps allocated: a replacement string per list item, a submatch slice per
+// heading, and a `sync.Pool` entry per call. The regexps stay in the package
+// as the reference the tests hold these to, line for line, so what is
+// recognised cannot drift.
+//
+// `\s` in Go's regexp is [\t\n\f\r ], which is what isSpaceByte matches. A
+// line never contains a newline, because the body is split on newlines first.
+
+// startsAnotherBlock reports whether a line ends the paragraph before it: a
+// blank line, or the start of a block of another kind.
+func startsAnotherBlock(line, trimmed string) bool {
+	if trimmed == "" {
+		return true
+	}
+	if _, _, ok := matchHeading(trimmed); ok {
+		return true
+	}
+	if _, ok := matchListMarker(line); ok {
+		return true
+	}
+	return codeFence(trimmed) != "" || matchTableRow(line)
+}
+
+func isSpaceByte(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\f' || b == '\r'
+}
+
+// matchListMarker implements `^\s*([-*+]|\d+[.)])\s+`, returning the end of
+// the match. It reports false when the line is not a list item.
+func matchListMarker(line string) (int, bool) {
+	index := 0
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	if index == len(line) {
+		return 0, false
+	}
+	switch line[index] {
+	case '-', '*', '+':
+		index++
+	default:
+		digits := index
+		for digits < len(line) && line[digits] >= '0' && line[digits] <= '9' {
+			digits++
+		}
+		if digits == index || digits == len(line) || (line[digits] != '.' && line[digits] != ')') {
+			return 0, false
+		}
+		index = digits + 1
+	}
+	if index == len(line) || !isSpaceByte(line[index]) {
+		return 0, false
+	}
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	return index, true
+}
+
+// matchHeading implements `^(#{1,6})\s+(.*)$`, returning the level and the
+// text after the marker.
+func matchHeading(line string) (int, string, bool) {
+	level := 0
+	for level < len(line) && line[level] == '#' {
+		level++
+	}
+	if level == 0 || level > 6 || level == len(line) || !isSpaceByte(line[level]) {
+		return 0, "", false
+	}
+	index := level
+	for index < len(line) && isSpaceByte(line[index]) {
+		index++
+	}
+	return level, line[index:], true
+}
+
+// matchTableRow implements `^\s*\|.*\|\s*$`.
+func matchTableRow(line string) bool {
+	start := 0
+	for start < len(line) && isSpaceByte(line[start]) {
+		start++
+	}
+	end := len(line)
+	for end > start && isSpaceByte(line[end-1]) {
+		end--
+	}
+	return end-start >= 2 && line[start] == '|' && line[end-1] == '|'
+}
+
+// joinLines is a block's text: its first line, then the rest joined with
+// newlines, trimmed when the kind trims (v1.0 J32-Q, J32-V).
+//
+// When trimming changes nothing and no line had a carriage return stripped,
+// the text is exactly body[from:to] -- the lines are contiguous slices of the
+// body, separated by the newlines they were split on -- and a slice of the
+// body copies nothing. That is the common case and it was being rebuilt:
+// 480 MB on the near-limit corpus, where a note is one enormous paragraph.
+//
+// Otherwise it is written into a builder grown once, from the exact size.
+// Collecting the lines into a slice and joining them allocated twice per
+// block; a builder left to grow by doubling allocated about twice the block's
+// size; and a builder for every block, including the one-line ones, cost more
+// allocations than the join it replaced. All three were measured.
+func joinLines(body string, from, to int, first string, rest []string, trim bool) string {
+	if len(rest) == 0 {
+		return first
+	}
+	size := len(first)
+	for _, line := range rest {
+		if trim {
+			line = strings.TrimSpace(line)
+		}
+		size += len(line) + 1
+	}
+	if size == to-from {
+		// Nothing was trimmed and nothing was stripped, so the bytes between
+		// the offsets are the text.
+		return body[from:to]
+	}
+	var builder strings.Builder
+	builder.Grow(size)
+	builder.WriteString(first)
+	for _, line := range rest {
+		if trim {
+			line = strings.TrimSpace(line)
+		}
+		builder.WriteByte('\n')
+		builder.WriteString(line)
+	}
+	return builder.String()
+}
+
+// needsNormalizing reports whether normalize would change anything: a carriage
+// return anywhere, or a space or tab before a newline or at the end.
+func needsNormalizing(text string) bool {
+	for index := 0; index < len(text); index++ {
+		switch text[index] {
+		case '\r':
+			return true
+		case ' ', '\t':
+			if index+1 == len(text) || text[index+1] == '\n' {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // splitMarker removes an author-written `^marker` from the end of a block and
 // returns it separately. The marker is a name the author chose; it is not part
 // of the text that derives identity.
+// isMarkerByte reports whether a byte may appear in an author-written marker:
+// [A-Za-z0-9_-], the class markerRE uses.
+func isMarkerByte(b byte) bool {
+	return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' || b == '-'
+}
+
+// splitMarker removes an author-written `^marker` from the end of a block and
+// returns it separately, by reading the block's tail (v1.0 J32-Z).
+//
+// markerRE is `\s\^([A-Za-z0-9_-]{1,128})\s*$`, anchored at the end, but
+// FindStringSubmatchIndex scans forward from byte zero: a 60 MiB paragraph ran
+// the regexp engine over 60 MiB to inspect its last hundred and thirty bytes,
+// which a profile put at 47% of a near-limit import. What the pattern says can
+// be read backwards instead -- trailing whitespace, then marker bytes, then a
+// caret, then the whitespace before it -- in time proportional to the marker.
+//
+// The scan is over bytes, which is safe for a class and a whitespace set that
+// are both ASCII: a UTF-8 continuation byte is neither, so the scan stops at it.
+//
+// markerRE stays in the package as the reference the tests hold this to.
 func splitMarker(text string) (string, string) {
-	match := markerRE.FindStringSubmatchIndex(text)
-	if match == nil {
+	end := len(text)
+	for end > 0 && isSpaceByte(text[end-1]) {
+		end--
+	}
+	markerEnd := end
+	for end > 0 && isMarkerByte(text[end-1]) {
+		end--
+	}
+	length := markerEnd - end
+	if length == 0 || length > MaxMarkerBytes || end == 0 || text[end-1] != '^' {
 		return text, ""
 	}
-	marker := text[match[2]:match[3]]
-	return strings.TrimRight(text[:match[0]], " \t"), marker
+	caret := end - 1
+	if caret == 0 || !isSpaceByte(text[caret-1]) {
+		return text, ""
+	}
+	return strings.TrimRight(text[:caret-1], " \t"), text[end:markerEnd]
 }
 
 func codeFence(trimmed string) string {
@@ -330,9 +687,8 @@ func codeFence(trimmed string) string {
 
 // physicalLines splits on LF while recording each line's byte offset, so a
 // block's range refers to the body it was parsed from.
-func physicalLines(body string) ([]string, []int) {
-	lines := []string{}
-	offsets := []int{}
+func (e *Extractor) physicalLines(body string) ([]string, []int) {
+	lines, offsets := e.lines[:0], e.offsets[:0]
 	start := 0
 	for i := 0; i < len(body); i++ {
 		if body[i] == '\n' {
@@ -343,5 +699,6 @@ func physicalLines(body string) ([]string, []int) {
 	}
 	lines = append(lines, body[start:])
 	offsets = append(offsets, start)
+	e.lines, e.offsets = lines, offsets
 	return lines, offsets
 }

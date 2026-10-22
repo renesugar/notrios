@@ -103,15 +103,26 @@ paths:
       responses:
         '200': { description: Bounded opaque namespace names }
         '401': { $ref: '#/components/responses/Error' }
-  /api/v1/sync/carrier/{segment1}/{segment2}:
+  /api/v1/sync/carrier/{namespace}/{class}:
     parameters:
-      - { name: segment1, in: path, required: true, schema: { type: string } }
-      - { name: segment2, in: path, required: true, schema: { type: string } }
+      - { name: namespace, in: path, required: true, schema: { type: string } }
+      - { name: class, in: path, required: true, schema: { type: string } }
     get:
       summary: List opaque artifact names in one namespace/class (v0.7 G14)
       responses:
         '200': { description: Bounded opaque artifact names }
         '401': { $ref: '#/components/responses/Error' }
+  /api/v1/sync/carrier/mine/{class}/{name}:
+    parameters:
+      - { name: class, in: path, required: true, schema: { type: string } }
+      - { name: name, in: path, required: true, schema: { type: string } }
+    description: >
+      `mine` is a literal segment, not a namespace. Publishing and removal take
+      no namespace from the URL: the peer derives the caller's own namespace from
+      the authenticated principal, so a replica cannot write as another one. v1.0
+      J16 gave writes this path because the previous two-segment form shared a
+      shape with the namespace/class listing and could not be described with
+      honest parameter names.
     put:
       summary: Publish one immutable artifact into the authenticated caller's namespace
       requestBody:
@@ -140,8 +151,9 @@ paths:
       description: >
         Returns opaque sealed protocol bytes to an enrolled peer, honouring HTTP
         Range so a large artifact can be fetched in pieces. Publishing and
-        removal take no namespace parameter: the peer derives the caller's own
-        namespace from the authenticated principal.
+        removal use `/api/v1/sync/carrier/mine/{class}/{name}` and take no
+        namespace parameter: the peer derives the caller's own namespace from the
+        authenticated principal.
       responses:
         '200': { description: The artifact }
         '206': { description: The requested byte range }
@@ -1267,6 +1279,70 @@ paths:
                 $ref: '#/components/schemas/LintReport'
         '400':
           $ref: '#/components/responses/Error'
+  /api/v1/admin/links/report:
+    get:
+      summary: Every ambiguous link, by location and fingerprint
+      description: >
+        The ambiguous-links report without note content (v1.0 J40-D): a note
+        and each candidate by ID, a link by line, column and the SHA-256 of
+        its target. A link is ambiguous because the library finds several
+        notes by its title or attachments by its file name, or because an
+        Obsidian import found several notes by its name and left it as
+        written. The link as written and every title are in `notriosctl
+        links report` and the Reports note, never here; MCP does not offer
+        the report. Counts and the digest describe the whole library;
+        detail_limit and candidate_limit cap what is listed. It reads the
+        whole library, so it runs only when asked.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          description: Notes listed, and links listed per note.
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+        - name: candidate_limit
+          in: query
+          description: Candidate IDs listed per link.
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Content-free ambiguous-links report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkReport'
+        '400':
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/links/report/note:
+    post:
+      summary: Regenerate the ambiguous-links report as a read-only note in the Reports notebook
+      description: >
+        Explicit only — never on a schedule and never on write. The note has
+        a stable ID and is overwritten in place; the Reports notebook is
+        read-only, so the note reports `editable: false` and every mutation
+        route refuses it. The note quotes each link and names each candidate
+        by title, and is read like any other note; this response carries
+        only where it is and the content-free report.
+      parameters:
+        - name: collection
+          in: query
+          schema: { type: string }
+        - name: detail_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+        - name: candidate_limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Where the note was written, and the report it was rendered from
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkReportNoteWritten'
+        '400':
+          $ref: '#/components/responses/Error'
   /api/v1/documents/{document_id}/blocks:
     get:
       summary: List a note's addressable blocks
@@ -1951,6 +2027,30 @@ components:
               additionalProperties: { type: integer, format: int64 }
               description: Download size caps in bytes per media class (image/video/pdf).
             quarantine_dir: { type: string }
+            refused_address_ranges:
+              type: array
+              items: { type: string }
+              description: >
+                Effective refused address ranges in CIDR form (J28): the
+                configuration's security.remote_media.refused_address_ranges
+                when stated, otherwise the default set in
+                SECURITY_AND_MEDIA_POLICY.md. Not applied when
+                allow_private_networks is true.
+            permitted_address_ranges:
+              type: array
+              items: { type: string }
+              description: Exceptions to the refused set; never loopback or "this host".
+            address_ranges_origin:
+              type: string
+              enum: [default, configuration]
+              description: Whether the refused set is the default or stated by the configuration.
+            warnings:
+              type: array
+              items: { type: string }
+              description: >
+                What service start logs about the address set: default ranges a
+                stated set omits, exceptions in force, or a set switched off by
+                allow_private_networks.
         search_sidecar:
           type: object
           required: [configured, available, active, state, backlog, failed_jobs]
@@ -2867,6 +2967,60 @@ components:
         warnings:
           type: array
           items: { type: string }
+    LinkReport:
+      type: object
+      properties:
+        version: { type: integer }
+        collection_id: { type: string }
+        detail_limit: { type: integer }
+        candidate_limit: { type: integer }
+        notes_with_ambiguous_links: { type: integer, description: "Complete count." }
+        ambiguous_links: { type: integer, description: "Complete count." }
+        found_by_library: { type: integer }
+        found_by_import: { type: integer }
+        unresolved_links:
+          type: integer
+          description: Links that open nothing for another reason; lint locates them.
+        notes:
+          type: array
+          items: { $ref: '#/components/schemas/LinkReportNote' }
+        truncated: { type: boolean }
+        report_sha256:
+          type: string
+          description: Covers every finding, including those the caps hid.
+        warnings:
+          type: array
+          items: { type: string }
+        elapsed_ms: { type: number }
+    LinkReportNote:
+      type: object
+      properties:
+        document_id: { type: string }
+        link_count: { type: integer }
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/LinkReportLink' }
+        truncated: { type: boolean }
+    LinkReportLink:
+      type: object
+      properties:
+        line: { type: integer }
+        column: { type: integer }
+        target_sha256: { type: string }
+        found_by: { type: string, enum: [library, import] }
+        kind: { type: string, enum: [title, attachment, name] }
+        candidate_count: { type: integer }
+        candidate_ids:
+          type: array
+          items: { type: string }
+        truncated: { type: boolean }
+    LinkReportNoteWritten:
+      type: object
+      properties:
+        document_id: { type: string }
+        uri: { type: string }
+        title: { type: string }
+        report: { $ref: '#/components/schemas/LinkReport' }
     DocumentBlock:
       type: object
       properties:

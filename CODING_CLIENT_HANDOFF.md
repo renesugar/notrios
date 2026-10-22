@@ -203,6 +203,14 @@ at all four commits.
 `DRYRUN=1 make purge` previews. 23 tests in `scripts/test_lifecycle.py` run them
 against a disposable HOME and a fixture source tree.
 
+> **Superseded in part by v1.0 J3 (2026-09-11).** `scripts/lifecycle.py` no
+> longer plans, backs up or deletes: it runs `notriosctl purge` for the data
+> half and keeps only the install-manifest half, so it imports no oracle and
+> resolves no roots. The reasoning below is why the rules were imported rather
+> than copied, and it is the same reasoning that later moved the whole half into
+> the command; the properties it describes are now proven in `internal/purge`
+> and drilled in `performance/v1.0-j3`. See the J3 entry in `PLAN.md`.
+
 **Read this before touching purge.** It imports H3's `purge_oracle` rather than
 reimplementing the rules. That decision procedure says whether a directory of
 someone's notes may be deleted, and its 30 fixtures already catch what a second

@@ -1,0 +1,40 @@
+debconf: delaying package configuration, since apt-utils is not installed
+OS Ubuntu 24.04.4 LTS, glibc 2.39, gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+examples against notrios-c-abi-1.0.0-linux-amd64.tar.gz
+  --- 01_lifecycle
+      abi.info: {"status":"ok","code":0,"result":{"abi_major":1,"capabilities":31,"events_dropped":0,"max_request":1048576,"max_stream_read":1048576}}
+      lifecycle: ok
+  --- 02_ownership
+        ok   a zero handle never resolves
+        ok   the library's buffer is released once
+        ok   releasing it twice is refused
+        ok   releasing a pointer the library did not produce is refused
+        ok   a closed handle is stale, not merely invalid
+      ownership: ok
+  --- 03_threading
+      threading: 4 threads x 8 calls, 0 failure(s)
+  --- 04_errors
+        ok   open (rc=0)
+        ok   an unknown operation is a runtime not_found (rc=5)
+        ok   a malformed request is invalid_argument (rc=1)
+        ok   a second owner of the same library is refused (rc=6)
+        ok   polling a zero call handle is invalid_handle (rc=3)
+        ok   a call on a closed instance is stale_handle (rc=4)
+      errors: ok
+  --- 05_streams
+        ok   a stream over a missing resource is refused with no handle
+        ok   an empty event queue reports would_block
+      streams: ok
+  --- 06_compatibility
+        header ABI major 1, library ABI major 1
+        ok   the majors match, so the calls below mean what the header says
+        capabilities 0x1f: 0x1f understood, 0x0 newer than this host
+        ok   every capability this host needs is present
+        ok   unknown capability bits are ignored, not refused
+        ok   a library of the expected major opens
+      compatibility: ok
+every example compiled and ran against the artifact
+
+real	0m42.776s
+user	0m0.088s
+sys	0m0.071s

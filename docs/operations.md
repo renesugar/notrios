@@ -14,14 +14,45 @@ large import or a garbage-collection apply, make a verified backup as described
 in the [service guide](service.md#backup-and-restore).
 
 
+## Reports
+
+Every report Notrios can produce is listed here: what it answers, how to get it
+on each surface, what it will quote from your notes, and what it costs. The
+heading of each row links to the section that explains it. A report reads the
+library and writes nothing. The one exception is a report's own note: a
+command's `--write-note`, or **Write the report** in Library Health, replaces
+that note in the read-only Reports notebook, and only when you ask.
+
+This list is checked when Notrios is built. A command, REST route or MCP tool
+whose name says "report" fails the build until it appears here, and so does a
+row naming one that no longer exists.
+
+| Report | What it answers | Command | REST | MCP | In the interface | What it quotes from notes | Cost |
+|---|---|---|---|---|---|---|---|
+| [Workspace lint](#finding-what-has-rotted-workspace-lint) | What is broken or missing? | `notriosctl lint` | `GET /api/v1/admin/lint/report` | `get_lint_report` | Library Health shows each check's count | Nothing. A finding is a note ID, a line and column, and a SHA-256 of the target | One pass over every link; 0.55 s on a 5,500-note library |
+| [Ambiguous links](#finding-ambiguous-links) | Which links could mean more than one note, and which notes? | `notriosctl links report` | `GET /api/v1/admin/links/report`, `POST /api/v1/admin/links/report/note` | none | Library Health, **Reports to read**; the *Ambiguous links report* note in Reports | The command and the note quote each link and every candidate's title. REST quotes nothing, and MCP has no form of it | One pass over every link, plus each import's provenance; 0.92 s on a 5,500-note library |
+| [Link graph](#seeing-the-shape-of-the-link-graph) | Which notes are hubs, and which does nothing link to? | `notriosctl graph report` | `GET /api/v1/graph/report`, `POST /api/v1/graph/report/note` | `get_graph_report` | Library Health, **Reports to read**; the *Library graph report* note in Reports | Note titles, on every surface | One pass over every link; 0.18 s on a 5,500-note library |
+| [Mechanical repairs](#fixing-what-can-be-fixed-mechanically) | What could be repaired without judgement? | `notriosctl fix`, a dry run unless you add `--apply` | none | none | Library Health, in the desktop app | The text each repair would replace, and what it would write | Reads the notes with findings |
+| [Garbage collection](#garbage-collection) | What attachment storage could be reclaimed? | `notriosctl gc`, a dry run unless you add `--apply` | `GET /api/v1/admin/gc/report` | none | Library Health | Nothing: resource IDs, hashes and sizes | Reads every attachment reference |
+| [Resource references](#inspecting-resource-references) | Which attachments are duplicates, which are unused, and where are they used? | `notriosctl resources report` | `GET /api/v1/resources/reports/reference` | none | none | Attachment file names and notebook names | Reads every attachment |
+| [Import report](#planning-and-resuming-imports) | What did an import do, and what did it warn about? | the import command's own output | none | none | the import dialog's result | Counts, and warnings that name vault paths and link targets | Part of the import |
+| [Installation report](installation.md#checking-that-a-purge-removed-everything) | What does this installation occupy? | `notriosctl paths --report` | none | none | none | No note content: paths, with your home directory shown as `~` unless you pass `--no-redact` | Reads the installation's directories |
+| [Installation check](installation.md#installing-from-the-package) | Is this installation set up the way you think? | `notriosctl doctor` | none | none | none | No note content | A few seconds |
+
+The timings are from J32's collision library, 5,500 notes in 5,050 folders,
+measured in v1.0 J40 with other programs running. They are there to compare
+reports with each other, not to promise a time on your machine.
+
 ## Finding what has rotted (workspace lint)
 
+<!-- notrios:generated:example:operations-finding-what-has-rotted-workspace-lint-example-1:begin -->
 ```sh
 notriosctl lint                       # JSON report; exit 1 if anything was found
 notriosctl lint --quiet               # exit code only, for a script or a hook
 notriosctl lint --checks broken_document_link,unreferenced_resource
 notriosctl lint --list-checks
 ```
+<!-- notrios:generated:example:operations-finding-what-has-rotted-workspace-lint-example-1:end -->
 
 Lint reads and never writes, so it is safe to run on a library you have not
 backed up — which is usually when you want to know what is broken. Fixing is a
@@ -55,8 +86,57 @@ produce the same digest, and a changed digest means something really changed.
 `GET /api/v1/admin/lint/report` returns the same report. Like the
 garbage-collection report, there is deliberately no apply endpoint.
 
+## Finding ambiguous links
+
+A link is ambiguous when its text could mean more than one note. Notrios never
+guesses between them: the link stays as you wrote it, opens nothing, and the
+preview marks it with a dotted underline. This report lists every one of them,
+with the notes each might mean, so you can choose at your own pace:
+
+<!-- notrios:generated:example:operations-finding-ambiguous-links-example-1:begin -->
+```sh
+notriosctl links report                    # every ambiguous link, with the notes it might mean
+notriosctl links report --candidate-limit 3
+notriosctl links report --write-note --quiet  # the same, as a read-only note in Reports
+```
+<!-- notrios:generated:example:operations-finding-ambiguous-links-example-1:end -->
+
+A link is listed for one of two reasons, and the report says which:
+
+- **`found_by: library`**: several notes have the link's text as their title,
+  or, when no note has it, several attachments have it as their file name.
+- **`found_by: import`**: an Obsidian import found several notes by that name,
+  as a file name, a title or an alias, and left the link as written. Notrios
+  resolves by title alone, so it records such a link as opening nothing. The
+  import's candidates are worked out again from what each imported note
+  records about where it came from. That record does not say which vault a note
+  came from, so if you imported two vaults into one collection, a list can
+  include a note from the other vault. The report says so whenever it applies.
+
+Each note is named by its title, its `document://` URI and its `notrios://`
+link. Each link is quoted exactly as written, with its line and column, and
+each candidate is named the same way as the note. Choosing one is an ordinary
+edit of the note the link is in. Nothing here repairs anything.
+
+The counts always cover the whole library. `--detail-limit` caps the notes
+listed, and the links listed per note: 50 by default, 1,000 at most.
+`--candidate-limit` caps the candidates listed per link: 10 by default, 100 at
+most. A cap that hides something says so, and `report_sha256` covers every
+finding, so it does not change with the caps. Links that open nothing for any
+other reason are only counted here; `notriosctl lint` locates them.
+
+`--write-note` writes the same report into the Reports notebook, as a read-only
+note you can read and follow links from. **Write the report** in Library Health
+does the same. The note quotes each link as plain text, never as a link, so it
+cannot add an ambiguous link of its own.
+
+Because the report quotes your notes, it stays on your machine. Its REST form,
+`GET /api/v1/admin/links/report`, carries IDs, lines and columns and a SHA-256
+of each target, as lint does, and MCP does not offer it at all.
+
 ## Fixing what can be fixed mechanically
 
+<!-- notrios:generated:example:operations-fixing-what-can-be-fixed-mechanically-example-1:begin -->
 ```sh
 notriosctl fix --list-kinds       # what can be repaired, and what is opt-in
 notriosctl fix                    # dry run: prints the exact edits, changes nothing
@@ -64,6 +144,7 @@ notriosctl fix --apply            # writes them, one note at a time
 notriosctl fix --kinds missing_alt_text --apply
 notriosctl fix --kinds unlocalized_remote_media --apply
 ```
+<!-- notrios:generated:example:operations-fixing-what-can-be-fixed-mechanically-example-1:end -->
 
 Most of what lint reports cannot be repaired without deciding what you meant —
 a broken link needs a target, an ambiguous wikilink needs a choice. Those stay
@@ -111,11 +192,13 @@ another shell or over REST without holding the terminal that started it. The
 current GUI's Sync Center deliberately lists sync jobs only; it does not yet
 show or cancel import/export jobs:
 
+<!-- notrios:generated:example:operations-watching-a-long-import-or-export-example-1:begin -->
 ```sh
 notriosctl jobs list
 notriosctl jobs status --wait <job-id>     # exits with the job's code
 notriosctl jobs cancel <job-id>
 ```
+<!-- notrios:generated:example:operations-watching-a-long-import-or-export-example-1:end -->
 
 Cancelling is cooperative: the work stops after its next committed, checkpointed
 batch, so everything it finished is kept. Rerun the same command and it
@@ -136,9 +219,11 @@ an interruption usually just needs the command run again.
 `GET /api/v1/graph/report` reads the whole collection once and reports what the
 links look like from above:
 
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-1:begin -->
 ```sh
 curl -s "http://127.0.0.1:8080/api/v1/graph/report?limit=20" | jq
 ```
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-1:end -->
 
 - `orphan_count` — notes nothing links to;
 - `isolated_count` — the subset that also links to nothing;
@@ -163,9 +248,11 @@ and a note linked only from the Trash was never reported as an orphan.
 
 To keep the report where you can read it:
 
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-2:begin -->
 ```sh
 notriosctl graph report --write-note
 ```
+<!-- notrios:generated:example:operations-seeing-the-shape-of-the-link-graph-example-2:end -->
 
 That renders it as a read-only note in the builtin **Reports** notebook, with a
 stable ID, overwritten in place. It happens when you ask and never on a timer,
@@ -189,11 +276,13 @@ the search covered everything reachable. See the
 Tags nest with `/`: `project/alpha` is a child of `project`. Renaming the parent
 can carry the children with it.
 
+<!-- notrios:generated:example:operations-renaming-a-tag-hierarchy-example-1:begin -->
 ```sh
 notriosctl tags rename --from project --to work                     # dry run
 notriosctl tags rename --from project --to work --include-children  # dry run
 notriosctl tags rename --from project --to work --include-children --apply
 ```
+<!-- notrios:generated:example:operations-renaming-a-tag-hierarchy-example-1:end -->
 
 The dry run is the default, and it is not a guess. Notrios performs the rename
 inside a transaction and rolls it back, so what the dry run prints is what an
@@ -239,9 +328,11 @@ Deleting a notebook does not delete the notes in it. They move to the Trash —
 and they are re-homed to the default notebook on the way, so restoring one later
 has somewhere to land. Ask before you do it:
 
+<!-- notrios:generated:example:operations-deleting-a-notebook-without-surprises-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/notebooks/$NB/deletion-preview | jq
 ```
+<!-- notrios:generated:example:operations-deleting-a-notebook-without-surprises-example-1:end -->
 
 ```json
 {
@@ -276,6 +367,7 @@ the shared quarantine pipeline:
 
 The equivalent CLI workflow is:
 
+<!-- notrios:generated:example:operations-localizing-remote-media-example-1:begin -->
 ```sh
 # Report decisions only; no network request and no write
 notriosctl localize --dry-run <document-id>
@@ -286,6 +378,7 @@ notriosctl localize <document-id>
 # Also opt in URLs classified as review; blocked URLs remain blocked
 notriosctl localize --allow-review <document-id>
 ```
+<!-- notrios:generated:example:operations-localizing-remote-media-example-1:end -->
 
 Joplin RAW and Obsidian imports can run the same engine after import with
 `--localize-media`. Notrios never treats a browser preview cache as an admitted
@@ -296,10 +389,12 @@ note and the result explains why.
 
 Run the read-only reference report before removing anything:
 
+<!-- notrios:generated:example:operations-inspecting-resource-references-example-1:begin -->
 ```sh
 notriosctl resources report
 curl -s http://127.0.0.1:8080/api/v1/resources/reports/reference | jq
 ```
+<!-- notrios:generated:example:operations-inspecting-resource-references-example-1:end -->
 
 The report distinguishes:
 
@@ -316,12 +411,14 @@ installed hook can suggest review only—it never merges or deletes resources.
 
 Garbage collection is retention-aware and dry-run first:
 
+<!-- notrios:generated:example:operations-garbage-collection-example-1:begin -->
 ```sh
 notriosctl gc                 # same as --dry-run for an unsynchronized library
-notriosctl gc --snapshot /safe/snapshot --dry-run  # sync-enrolled library
-notriosctl gc --snapshot /safe/snapshot --apply    # explicit destructive step
+notriosctl gc --snapshot <snapshot-dir> --dry-run  # sync-enrolled library
+notriosctl gc --snapshot <snapshot-dir> --apply    # explicit destructive step
 curl -s http://127.0.0.1:8080/api/v1/admin/gc/report | jq
 ```
+<!-- notrios:generated:example:operations-garbage-collection-example-1:end -->
 
 The REST route is always read-only. The plan separates `eligible` and
 `retained` resources and includes the reason and eligibility time. Apply
@@ -338,10 +435,12 @@ gate; only explicit signed retirement does.
 
 Operation/tombstone retention has a separate exact-digest review:
 
+<!-- notrios:generated:example:operations-garbage-collection-example-2:begin -->
 ```sh
-notriosctl sync retention --snapshot /safe/snapshot
-notriosctl sync retention --snapshot /safe/snapshot --apply --confirm-digest <reviewed-digest>
+notriosctl sync retention --snapshot <snapshot-dir>
+notriosctl sync retention --snapshot <snapshot-dir> --apply --confirm-digest <reviewed-digest>
 ```
+<!-- notrios:generated:example:operations-garbage-collection-example-2:end -->
 
 The Sync Center shows the same horizon, blockers, and repair source without a
 filesystem path or apply endpoint. A below-floor peer must use verified
@@ -355,22 +454,26 @@ requires the object-specific `X-Notrios-Confirmation` header documented in the
 
 Use a dry run first for Joplin RAW and Obsidian:
 
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-1:begin -->
 ```sh
 notriosctl import joplin-raw --dry-run --write-config /tmp/joplin-plan.json /path/to/raw
 notriosctl import obsidian --dry-run --write-config /tmp/obsidian-plan.json /path/to/vault
 ```
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-1:end -->
 
 The dry run uses the real deterministic inventory and action classifiers, but
 creates no canonical notes, resources, checkpoints, or source bundles. Review
 the create/update/unchanged counts and any conflict renames, then pass the
 configuration to the real import:
 
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-2:begin -->
 ```sh
 notriosctl import joplin-raw --batch-size 100 --preserve-source \
   --import-config /tmp/joplin-plan.json /path/to/raw
 notriosctl import obsidian --batch-size 100 --preserve-source \
   --import-config /tmp/obsidian-plan.json /path/to/vault
 ```
+<!-- notrios:generated:example:operations-planning-and-resuming-imports-example-2:end -->
 
 Both importers commit bounded batches and persist the source fingerprint,
 phase, next item, and applied item fingerprints. Re-run the same command after
@@ -405,6 +508,7 @@ section is about running it against a real provider.
 
 ### Commands that are safe against a carrier
 
+<!-- notrios:generated:example:operations-commands-that-are-safe-against-a-carrier-example-1:begin -->
 ```sh
 # One exchange. Run it by hand, from cron, or after an import.
 notriosctl sync once --carrier ~/Drive/notrios
@@ -417,6 +521,7 @@ rclone copy --immutable <source> <destination>
 rclone copy --immutable --no-traverse <source> <destination>   # small set into a large folder
 rclone lsf <path>                                              # look at what is there
 ```
+<!-- notrios:generated:example:operations-commands-that-are-safe-against-a-carrier-example-1:end -->
 
 ### Commands that must never touch protocol state
 
@@ -535,9 +640,11 @@ any request carrying `Origin`, `Cookie`, or `Referer`.
 
 ### Watching it
 
+<!-- notrios:generated:example:operations-watching-it-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8443/api/v1/sync/status | jq .
 ```
+<!-- notrios:generated:example:operations-watching-it-example-1:end -->
 
 Loopback only, and redacted: enrolled key ids and their status, the transport
 policy and limits, how many invitations are open, and the recent authentication
@@ -553,10 +660,12 @@ failed is in your log, not in their answer.
 
 ### If a device is lost
 
+<!-- notrios:generated:example:operations-if-a-device-is-lost-example-1:begin -->
 ```sh
 notriosctl sync peers
 notriosctl sync revoke --key <signer-key-id> --reason "lost laptop" --advance-epoch
 ```
+<!-- notrios:generated:example:operations-if-a-device-is-lost-example-1:end -->
 
 Revoking ends that key immediately; every request signed with it is refused and
 audited from that moment. `--advance-epoch` additionally mints a new group key,
@@ -570,9 +679,11 @@ SQLite/FTS5 remains the always-on search engine. When Recoll is enabled, the
 desktop header shows `off`, `unavailable`, `active`, or `degraded`, plus
 pending work and the last projection sync. The complete report is:
 
+<!-- notrios:generated:example:operations-monitoring-the-recoll-sidecar-example-1:begin -->
 ```sh
 curl -s http://127.0.0.1:8080/api/v1/status | jq .search_sidecar
 ```
+<!-- notrios:generated:example:operations-monitoring-the-recoll-sidecar-example-1:end -->
 
 Useful fields include pending/retrying/failed jobs, last sync/index/
 reconciliation timestamps, the most recent missing/stale/orphaned/repaired

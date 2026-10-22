@@ -1,0 +1,392 @@
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/renesugar/notrios/internal/paths"
+	"github.com/renesugar/notrios/internal/profiles"
+	"github.com/renesugar/notrios/internal/purge"
+)
+
+// `notriosctl purge` exists because a packaged installation could not reach any
+// of this.
+//
+// `make purge` takes a verified backup before it deletes anything, refuses when
+// nothing can answer a prompt, never follows a symlink out of a profile, and
+// keeps sync key material out of the backup it writes. All of that lived in
+// scripts/lifecycle.py, which the .deb does not ship -- so a user who installed
+// the package was deleting directories by hand with no backup taken for them,
+// and v0.9 I9's installation page had to say so.
+//
+// It deletes data, not program files. Removing the program is `apt remove`, or
+// `make uninstall`, and both leave the data alone by design; this is the other
+// half, and the half that is irreversible.
+func runPurge(args []string) {
+	fs := flag.NewFlagSet("notriosctl purge", flag.ExitOnError)
+	dryRun := fs.Bool("dry-run", false, "show exactly what would be deleted and delete nothing")
+	confirm := fs.Bool("confirm", false, "proceed without asking; required when nothing can answer")
+	noBackup := fs.Bool("no-backup", false, "delete without copying anything anywhere first")
+	backupDir := fs.String("backup-dir", "", "where to write the backup (default: beside the state root)")
+	asJSON := fs.Bool("json", false, "print the plan as JSON instead of a report")
+	noRedact := fs.Bool("no-redact", false, "print the home directory instead of ~")
+	// For a caller that has already shown the plan. `make purge` shows a
+	// combined one -- the data half from this command's --dry-run --json, the
+	// installed-file half from its own manifest -- asks one question about
+	// both, and then calls this to do the data half. Without this flag the user
+	// would see the plan twice, the second time after they had already answered
+	// for it, which reads like the command re-decided something.
+	//
+	// It suppresses the description and nothing else: not the question, which
+	// is --confirm, and not the backup, which is --no-backup.
+	noPlan := fs.Bool("no-plan", false, "do not print the plan; the caller has already shown it")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+
+	resolution, err := paths.ForProcess(nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	home := ""
+	if !*noRedact {
+		home, _ = os.UserHomeDir()
+	}
+	show := func(path string) string {
+		if home == "" {
+			return path
+		}
+		return paths.Redact(path, home)
+	}
+
+	// paths.RootNames, not resolution.Codes(): Codes reports the notice codes a
+	// resolution emitted, which is a different list entirely and happened to be
+	// empty here -- leaving purge with no roots and a confusing complaint about
+	// the state root rather than an obvious one about having nothing to do.
+	roots := map[string]string{}
+	for _, name := range paths.RootNames {
+		if value := resolution.Root(name); value != "" {
+			roots[name] = value
+		}
+	}
+	userHome, _ := os.UserHomeDir()
+
+	// What the profile registry names outside these roots.
+	//
+	// The oracle has always refused to delete such a path and two of H3's
+	// fixtures prove it, but both callers passed an empty list -- so the rule
+	// was unreachable and an external library was absent from the plan a user is
+	// asked to approve. Enumerating it is the half that protects somebody with
+	// several profiles: they cannot act on a warning nobody gives.
+	external, registryNotice := externalProfilePaths(roots)
+	owned := make([]string, 0, len(roots))
+	for _, path := range roots {
+		owned = append(owned, path)
+	}
+
+	// Reported, and deliberately not handed to the oracle.
+	//
+	// The oracle's external-profile rule refuses a path that is or contains an
+	// external profile path, and passing this list to it was wrong in a way
+	// only a run showed. Every path here is already outside every owned root --
+	// that is what made it external -- so the rule can never fire to *protect*
+	// a root. The one case it can fire on is the opposite one: a profile that
+	// names an ancestor of the roots, which `profile register --asset-store
+	// ~/.local/share` produces by accident. The whole data root was then
+	// REFUSED, the user's notes survived a confirmed purge, and the message
+	// said the library had been "enumerated and backed up" when nothing had
+	// been copied anywhere.
+	//
+	// So external paths inform the user and nothing else. They cannot block a
+	// purge, because a purge that silently keeps the library is worse than
+	// anything this rule was protecting against.
+	steps := purge.Plan(roots, purge.Environment{Home: userHome})
+	steps = append(steps, purge.ExternalSteps(external, owned)...)
+
+	destination := ""
+	if !*noBackup {
+		if *backupDir != "" {
+			destination = *backupDir
+		} else if destination, err = purge.BackupDestination(roots, time.Now()); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		// The backup must not land anywhere this same run would delete. H3
+		// proved the property for the default location; this asserts it on
+		// every run rather than trusting the layout -- which matters more here
+		// than it does for the Make target, because --backup-dir lets the user
+		// name a destination, and the obvious wrong answer is somewhere inside
+		// the library they are about to remove.
+		verdict := purge.Decide(destination, purge.Environment{
+			OwnedRoots: owned,
+			Home:       userHome,
+		})
+		if verdict.Verdict != purge.Refuse {
+			fmt.Fprintf(os.Stderr,
+				"the backup destination %s is not refused by the purge oracle (%s),\n"+
+					"which means this run could delete its own backup. Refusing.\n",
+				destination, verdict)
+			os.Exit(1)
+		}
+	}
+
+	if *asJSON {
+		printJSON(map[string]any{
+			"dry_run": *dryRun, "backup": destination, "no_backup": *noBackup,
+			"steps": steps, "redacted": home != "",
+			"external_profiles": external, "registry_notice": registryNotice,
+		})
+		if *dryRun {
+			return
+		}
+	} else if !*noPlan {
+		describePurge(steps, destination, *noBackup, show)
+		if registryNotice != "" {
+			fmt.Printf("\nProfiles: %s\n", registryNotice)
+		}
+	}
+
+	if *dryRun {
+		fmt.Println("\ndry run: nothing was deleted.")
+		return
+	}
+
+	if !anythingToDelete(steps) {
+		fmt.Println("\nNothing to delete: no data root resolved to something removable.")
+		return
+	}
+
+	if !confirmPurge(*confirm) {
+		os.Exit(1)
+	}
+
+	if !*noBackup {
+		fmt.Printf("\nwriting backup to %s\n", show(destination))
+		manifest, err := purge.CreateBackup(steps, destination)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "the backup failed, so nothing was deleted: %v\n", err)
+			os.Exit(1)
+		}
+		ok, detail := purge.VerifyBackup(destination)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "the backup could not be verified, so nothing was deleted: %s\n", detail)
+			os.Exit(1)
+		}
+		fmt.Printf("backup verified: %s\n", detail)
+		if len(manifest.ExcludedKeyMaterial) > 0 {
+			fmt.Printf("sync key material excluded from the backup: %d file(s)\n",
+				len(manifest.ExcludedKeyMaterial))
+		}
+	}
+
+	removed, err := purge.Remove(steps)
+	for _, path := range removed {
+		fmt.Printf("deleted %s\n", show(path))
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	// Said last, where it is read, and in absolute form even when the rest is
+	// redacted: a backup the user cannot find is not a backup.
+	if !*noBackup {
+		fmt.Printf("\nYour data is in %s until you remove it. Nothing deletes it for you.\n", destination)
+	}
+}
+
+// externalProfilePaths reads the profile registry and returns what it names
+// outside the roots this purge would delete.
+//
+// It returns a notice rather than an error for every failure mode. A registry
+// that cannot be located or parsed must not stop a user deleting their own data
+// -- but it must not be silently treated as empty either, because "no external
+// profiles" and "I could not tell" are different sentences and only one of them
+// is safe to act on. The notice is printed above the confirmation.
+func externalProfilePaths(roots map[string]string) ([]purge.ExternalRef, string) {
+	registryPath, err := profiles.DefaultPath()
+	if err != nil {
+		return nil, "the profile registry location could not be resolved (" + err.Error() +
+			"), so nothing here can say whether a profile keeps its library outside these roots."
+	}
+	registry, err := profiles.Load(registryPath)
+	if err != nil {
+		return nil, "the profile registry at " + registryPath + " could not be read (" +
+			err.Error() + "), so nothing here can say whether a profile keeps its library " +
+			"outside these roots."
+	}
+
+	refs := []purge.ExternalRef{}
+	for _, profile := range registry.Profiles {
+		for _, named := range []struct{ field, path string }{
+			{"database", profile.DatabasePath},
+			{"asset store", profile.AssetStore},
+			{"config", profile.ConfigPath},
+		} {
+			if strings.TrimSpace(named.path) == "" {
+				continue
+			}
+			refs = append(refs, purge.ExternalRef{
+				Path: named.path, Profile: profile.Name, Field: named.field,
+			})
+		}
+	}
+
+	owned := make([]string, 0, len(roots))
+	for _, path := range roots {
+		owned = append(owned, path)
+	}
+	external := purge.ExternalPaths(refs, owned)
+	if len(registry.Profiles) == 0 {
+		return external, "no profiles are registered on this machine."
+	}
+	if len(external) == 0 {
+		return external, fmt.Sprintf("%d registered, all inside the roots above.",
+			len(registry.Profiles))
+	}
+	return external, fmt.Sprintf("%d registered; %d path(s) outside these roots, listed above "+
+		"and not deleted.", len(registry.Profiles), len(external))
+}
+
+func anythingToDelete(steps []purge.Step) bool {
+	for _, step := range steps {
+		if step.Action == "backup_then_delete" || step.Action == "dispose" {
+			return true
+		}
+	}
+	return false
+}
+
+// confirmPurge asks before deleting, and fails closed when nobody can answer.
+//
+// A non-interactive run without --confirm refuses rather than hanging on a
+// prompt no one will see. --confirm skips the question, never the backup.
+func confirmPurge(confirmed bool) bool {
+	if confirmed {
+		return true
+	}
+	// Decided by reading, not by inspecting the file mode.
+	//
+	// The obvious check -- os.Stdin.Stat() and ModeCharDevice -- calls
+	// /dev/null a terminal, because /dev/null *is* a character device. A purge
+	// run with stdin redirected therefore printed a prompt nobody could see and
+	// reported an answer nobody gave. It failed closed, which is the direction
+	// to be wrong in, but it told the user the wrong thing: that they had
+	// declined, rather than that nothing could ask them.
+	//
+	// A terminal blocks for input; a closed or empty stream returns EOF at
+	// once. That distinction is the one that matters, and it needs no extra
+	// dependency to make. The prompt goes to stderr so that a caller capturing
+	// stdout gets the report rather than the question.
+	fmt.Fprint(os.Stderr, "\nType 'delete my notes' to continue: ")
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && strings.TrimSpace(answer) == "" {
+		fmt.Fprintln(os.Stderr,
+			"\n\nNothing was deleted. Nothing could answer that question -- this is not an\n"+
+				"interactive terminal. Run it interactively, or pass --confirm if you are\n"+
+				"automating it deliberately: --confirm skips the question, never the backup.")
+		return false
+	}
+	if strings.TrimSpace(answer) != "delete my notes" {
+		fmt.Fprintln(os.Stderr, "\nNothing was deleted.")
+		return false
+	}
+	return true
+}
+
+func describePurge(steps []purge.Step, destination string, noBackup bool, show func(string) string) {
+	fmt.Println("Mutable roots:")
+	for _, step := range steps {
+		label := map[string]string{
+			"backup_then_delete": "BACK UP AND DELETE",
+			"dispose":            "DELETE WITHOUT BACKUP",
+			"keep":               "KEEP   ",
+			"refuse":             "REFUSED",
+			"enumerate":          "NOT DELETED",
+		}[step.Action]
+		detail := step.Reason
+		if step.Action == "backup_then_delete" && detail == "" {
+			detail = fmt.Sprintf("%d files, %d bytes", step.Files, step.Bytes)
+		}
+		if step.Action == "dispose" && detail == "" {
+			detail = "rebuildable"
+		}
+		fmt.Printf("  %-22s %s  (%s; %s)\n", label, show(step.Path), step.Category, detail)
+	}
+	fmt.Println("\nBackup:")
+	if noBackup {
+		fmt.Println("  NONE. --no-backup was passed, so nothing will be copied anywhere")
+		fmt.Println("  before it is deleted. Run it again without --no-backup if that was not")
+		fmt.Println("  what you meant.")
+	} else {
+		fmt.Printf("  %s\n", show(destination))
+		fmt.Println("  written and verified before anything is deleted")
+	}
+
+	describeSyncKeys(steps, show)
+	if noBackup {
+		fmt.Print(irreversibleWarning(steps))
+	}
+}
+
+// describeSyncKeys names the key files before the question, not after the
+// deletion.
+//
+// The Make target printed this and the command did not, which meant the user
+// who most needed it -- the one who installed a package, and so has no Make
+// target -- was the one who never saw it. A user who wants to keep a library's
+// sync identity has exactly one chance to copy it, and it is now.
+func describeSyncKeys(steps []purge.Step, show func(string) string) {
+	found := []string{}
+	for _, step := range steps {
+		if step.Action == "backup_then_delete" || step.Action == "dispose" {
+			found = append(found, step.SyncKeyMaterial...)
+		}
+	}
+	sort.Strings(found)
+	fmt.Println("\nSync keys:")
+	if len(found) == 0 {
+		fmt.Println("  none found; this library has no sync key material")
+		return
+	}
+	for _, path := range found {
+		fmt.Printf("  NOT BACKED UP, THEN DELETED  %s\n", show(path))
+	}
+	fmt.Println("  Sync key material is never copied into a backup: the backup is an ordinary")
+	fmt.Println("  archive, and this is the password to your synchronized traffic. Copy it")
+	fmt.Println("  somewhere you trust first if you want this library's sync identity back.")
+	fmt.Println("  A data key held by your operating system's credential store is not removed")
+	fmt.Println("  by purge; remove it there if you want nothing left behind.")
+}
+
+// irreversibleWarning is what --no-backup costs, said in full before the
+// question rather than summarised.
+func irreversibleWarning(steps []purge.Step) string {
+	categories := []string{}
+	for _, step := range steps {
+		if step.Action == "backup_then_delete" {
+			categories = append(categories, step.Category)
+		}
+	}
+	joined := strings.Join(categories, ", ")
+	if joined == "" {
+		joined = "none"
+	}
+	return "\n" +
+		"!! --no-backup: nothing will be copied anywhere before it is deleted.\n" +
+		"!!\n" +
+		"!! This permanently destroys the " + joined + " roots, which hold your notes\n" +
+		"!! database, your attachments, your configuration, your profile registry and\n" +
+		"!! generated profile configs, your sync key material, your sync spools and\n" +
+		"!! backups, the catch-up inbox, and the remote-media quarantine.\n" +
+		"!!\n" +
+		"!! There is no undo and no copy to restore from. If you want one, run this\n" +
+		"!! again without --no-backup.\n"
+}

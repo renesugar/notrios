@@ -1,0 +1,3136 @@
+{
+  "counts": {
+    "directories": 22,
+    "files": 424,
+    "bytes": 22534206,
+    "external": 0,
+    "profiles": 0
+  },
+  "manifest": [
+    {
+      "path": "~/.local/share/notrios/MANIFEST.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 115657
+    },
+    {
+      "path": "~/.local/share/notrios/docs/api/mcp.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 18260
+    },
+    {
+      "path": "~/.local/share/notrios/docs/api/rest.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 42907
+    },
+    {
+      "path": "~/.local/share/notrios/docs/archive-v2.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9016
+    },
+    {
+      "path": "~/.local/share/notrios/docs/cli.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 70687
+    },
+    {
+      "path": "~/.local/share/notrios/docs/configuration.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19757
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docaudit/registry.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129405
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docexamples/configuration.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3646
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docfeatures/FEATURES.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 34706
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docgen/templates.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4236
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docjourneys/CLI_JOURNEYS.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 70450
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docjourneys/GUI_JOURNEYS.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 54187
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docplan/PLAN_SLICES.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 37125
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docrules/DOCUMENTS.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 8171
+    },
+    {
+      "path": "~/.local/share/notrios/docs/features.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30128
+    },
+    {
+      "path": "~/.local/share/notrios/docs/gui.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 25912
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/MANIFEST.json",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 34261
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-apply-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129466
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-read-the-panel.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125669
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-read-the-report.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 137485
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-tick-another.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126587
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-tick-the-first.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 133295
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/act-on-several-notes-type-a-tag.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129882
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/attach-a-file-choose-a-file.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 139689
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/attach-a-file-open-note-info.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 117726
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/attach-a-file-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128316
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/attach-a-file-see-it-attached.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 149011
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/bring-images-into-the-library-localize-the-allowed-ones.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 137853
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/bring-images-into-the-library-open-note-info.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 109699
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/bring-images-into-the-library-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 123486
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/bring-images-into-the-library-read-the-decisions.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 137947
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/check-library-health-open-health.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127787
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/check-library-health-what-can-be-repaired.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 114350
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/check-library-health-what-could-be-reclaimed.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 114092
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/check-library-health-what-has-rotted.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 114360
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-a-notebook-new-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129030
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-a-notebook-notebook-picker.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129272
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-back-to-the-overview.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 124754
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-choose-a-shared-directory.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 121904
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-name-the-folder.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 121866
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-open-setup.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 95291
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127519
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-save-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 122029
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/choose-where-sync-happens-start-one.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 100556
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/delete-a-note-delete-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 116762
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/delete-a-note-look-in-the-trash.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129412
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/delete-a-note-open-all-notes.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126738
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/delete-a-note-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125384
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/delete-and-restore-a-note-open-trash.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 141606
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/export-this-library-name-the-destination.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 110640
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/export-this-library-open-import-and-export.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 107041
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/export-this-library-the-archive.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 97236
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/find-your-way-around-the-sidebar.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125152
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/import-from-joplin-in-the-app-name-the-folder.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 106396
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/import-from-joplin-in-the-app-open-import-and-export.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 107451
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/import-from-joplin-in-the-app-the-report.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 106755
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/insert-a-link-choose-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 139221
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/insert-a-link-find-the-other-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 137492
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/insert-a-link-open-note-info.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 115599
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/insert-a-link-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 123684
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/insert-a-link-save-when-ready.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 140187
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/invite-another-device-carry-it-across.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 108252
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/invite-another-device-create-a-code.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 95620
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/invite-another-device-label-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 95023
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/invite-another-device-open-peers.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 99075
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/invite-another-device-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127519
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/keep-a-search-as-a-notebook-keep-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 84627
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/keep-a-search-as-a-notebook-name-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 89138
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/keep-a-search-as-a-notebook-run-a-search.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126259
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/keep-a-search-as-a-notebook-save-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 89121
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/keep-a-search-as-a-notebook-see-it-work.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126347
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/look-for-peers-without-enrolling-one-open-peers.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 99075
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/look-for-peers-without-enrolling-one-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127477
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/look-for-peers-without-enrolling-one-read-the-empty-list.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 90874
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/look-for-peers-without-enrolling-one-scan-the-carrier.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 94622
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/make-a-protected-backup-choose-a-password.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 133507
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/make-a-protected-backup-open-backup.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 98914
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/make-a-protected-backup-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127471
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/make-a-protected-backup-type-it-again.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 134966
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/make-a-protected-backup-write-it-out.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 135356
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/publish-a-subset-open-import-and-export.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 107030
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/publish-a-subset-open-import-export.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 134991
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/publish-a-subset-publish-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 103515
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/publish-a-subset-review-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 103806
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/publish-a-subset-the-publication.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 112083
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/put-a-live-query-in-a-note-follow-a-result.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128200
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/put-a-live-query-in-a-note-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127921
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/put-a-live-query-in-a-note-read-the-results.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128084
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/rename-a-tag-agree-to-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 130202
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/rename-a-tag-find-the-tag.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126529
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/rename-a-tag-see-what-changes.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129212
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/rename-a-tag-type-the-new-name.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128497
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/restore-a-note-back-to-all-notes.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 75699
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/restore-a-note-open-the-trash.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126916
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/restore-a-note-open-the-trashed-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 88821
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/restore-a-note-restore-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 80959
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/search-by-tag-and-exclude-run-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126848
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/search-by-tag-and-exclude-type-a-field-query.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126259
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/search-your-notes-run-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125944
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/search-your-notes-type-a-query.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126259
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-what-a-note-connects-to-follow-one.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 151921
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-what-a-note-connects-to-open-note-info.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125825
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-what-a-note-connects-to-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 133052
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-what-a-note-connects-to-read-the-neighbourhood.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 147568
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-where-a-note-came-from-open-an-imported-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128188
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-where-a-note-came-from-open-note-info.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 151782
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-where-a-note-came-from-read-the-collection.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 170160
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-which-library-this-is-choose-a-profile.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 117563
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-which-library-this-is-open-setup.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 97116
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-which-library-this-is-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127519
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/see-which-library-this-is-read-the-identity.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 93099
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/tag-a-note-add-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129033
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/tag-a-note-new-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129072
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/tag-a-note-open-tags.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 128834
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/tag-a-note-type-a-tag.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129252
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/take-a-snapshot-name-the-destination.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 107246
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/take-a-snapshot-open-import-and-export.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 106808
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/take-a-snapshot-the-snapshot.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 102231
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/update-a-note-change-the-title.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 117268
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/update-a-note-open-all-notes.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129205
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/update-a-note-open-the-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 122883
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/update-a-note-save-it.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 120239
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/watch-a-synchronization-job-open-the-sync-centre.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127477
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/watch-a-synchronization-job-read-the-jobs.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 95284
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/watch-a-synchronization-job-retry-one.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 98903
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/write-a-note-new-note.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129072
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys/write-a-note-the-editor.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129839
+    },
+    {
+      "path": "~/.local/share/notrios/docs/import-export.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 25127
+    },
+    {
+      "path": "~/.local/share/notrios/docs/index.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4170
+    },
+    {
+      "path": "~/.local/share/notrios/docs/installation.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 21232
+    },
+    {
+      "path": "~/.local/share/notrios/docs/journeys-cli.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 28791
+    },
+    {
+      "path": "~/.local/share/notrios/docs/journeys-gui.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 35995
+    },
+    {
+      "path": "~/.local/share/notrios/docs/operations.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 26946
+    },
+    {
+      "path": "~/.local/share/notrios/docs/publishing.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5342
+    },
+    {
+      "path": "~/.local/share/notrios/docs/query-language.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3897
+    },
+    {
+      "path": "~/.local/share/notrios/docs/selection-planning.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2029
+    },
+    {
+      "path": "~/.local/share/notrios/docs/service.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 26013
+    },
+    {
+      "path": "~/.local/share/notrios/docs/stable-links.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 8808
+    },
+    {
+      "path": "~/.local/share/notrios/docs/troubleshooting.md",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 13246
+    },
+    {
+      "path": "~/.local/share/notrios/notes.sqlite",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 897024
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 28076
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_AMS-Regular-DMm9YOAa.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 33516
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_AMS-Regular-DRggAlZN.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 63632
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12368
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7716
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6912
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7656
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6908
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12344
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19584
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 13296
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 11348
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Regular-CB_wures.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19572
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 11316
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 13208
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Bold-Cx986IdX.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 25324
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Bold-Jm3AIy58.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 29912
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Bold-waoOVXN0.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 51336
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16780
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 32968
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19412
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Italic-3WenGoN9.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 33580
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Italic-BMLOBm91.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19676
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16988
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Regular-B22Nviop.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 26272
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Regular-Dr94JaBh.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30772
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Main-Regular-ypZvNtVU.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 53580
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 31196
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16400
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 18668
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-Italic-DA0__PXp.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 18748
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-Italic-flOr_0UB.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 31308
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Math-Italic-t53AETM-.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16440
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 24504
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12216
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 14408
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12028
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 14112
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 22364
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 19436
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12316
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10344
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Script-Regular-C5JkGWo-.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16648
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Script-Regular-D3wIWfF6.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9644
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Script-Regular-D5yQViql.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10588
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size1-Regular-C195tn64.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6496
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 12228
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5468
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 11508
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5208
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size2-Regular-oD1tc_U0.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6188
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size3-Regular-CTq5MqoE.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4420
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7588
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size4-Regular-BF-4gkZK.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5980
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size4-Regular-DWFBv043.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10364
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4928
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16028
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 13568
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 27556
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/abnfDiagram-VCTEODGH-CgHidHg0.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1848
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/apl-gfMMiTNf.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2290
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/arc-DZkGaN36.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3472
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/architecture-7GRP2DOG-d8dCoBWa.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 131
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/architectureDiagram-5GKGNRK7-C_bMf8u0.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 149319
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/array-BifhSqXX.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 107
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/asciiarmor-qTkVPQu6.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 792
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/asn1-Dr8qZg38.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3956
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/asterisk-Bja0s6e1.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4079
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/blockDiagram-I7D4REHJ-DJdJzljV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 41465
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/brainfuck-D5EjA2JK.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 599
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/c4Diagram-7LVT6UL2-Cw0h06lh.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 64758
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/channel-Bt6gy_A8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 114
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-2E4U76K2-CP4c0Vpx.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10403
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-2Q5K7J3B-C1jixKkw.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 191
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-4HAMMTFA-BdDheoVm.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 104859
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-5VM5RSS4-ZNzvKenW.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 362
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-75Z2AOVW-cAQSCJ6T.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30879
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-CLGD4ZFX-74KfHYjf.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 321
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-DU6HZSFF-CPZdkQIj.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 235800
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-F27PBJKO-DmTHY49H.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1972
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-FOHPRMQF-CdD2_EOh.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 662709
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-GMAD6QVW-DaFeMQ7t.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 51877
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-GVQU2GXP-CmnUhB6y.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1424
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-IMKFNOWR-p0Z7Wv9N.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 37717
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-JWPE2WC7-DVXcaiue.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 223
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-L3NEJ4N5-C2qsTOtK.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9714
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-LNGE3PJU-DNNNwF8Y.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 46389
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-OSK3NFVY-rdbl92Ij.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 36467
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-P2QGCYS3-DuYkZuMc.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1947
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-POPQ4Y6H-VB1fQR65.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 574
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-PWAF6VOD-CCITh9UO.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5835
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-SHT3W25Y-CcLbsKxI.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 61287
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-SVP7TREG-BLqxhR9m.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 15646
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-TICWLB2K-DACoAfvP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 48847
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-TLUHSLCS-6D6j3PGi.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3752
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-XXDRQBXY-BMFFZCAP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 262
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/chunk-Y2CYZVJY-DsF7k-Jl.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 155
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/classDiagram-ZZMXUADV-1Pdp4moa.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 780
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/classDiagram-v2-VYDZK3BY-1Pdp4moa.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 780
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/clike-CVjTFI47.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 22059
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/clojure-BflJGmDX.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9406
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cmake-CyVbuzPu.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 780
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cobol-DHLQUbN7.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6195
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/coffeescript-B2pKbFk8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3855
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/commonlisp-CcllspGY.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2320
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cose-bilkent-JH36ORCC-BVOCUDXK.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 81435
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/crystal-M5-qzICs.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5020
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/css-CYpP4FRV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 24708
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cynefin-OW5HDTMX-BtmoI3gH.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cynefinDiagram-5FMLGOSQ-DdtT3tf3.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9913
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cypher-p9eYesGn.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3182
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/cytoscape.esm-Dic2qDnk.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 435434
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/d-BhMjBjQP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3673
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dagre-CNOzUhxk.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 36854
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dagre-GXQ25YYZ-mrzI5khI.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10960
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/defaultLocale-C8Fc0cco.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4646
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diagram-S7CK7UJ4-Cr4xgO7o.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 8199
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diagram-UQ7AKVKN-Drrxzqlz.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6068
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diagram-VSXAHHWV-Bo0aY7qQ.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10656
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diagram-VX7I27RA-G880jl5o.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 15741
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diagram-Z3DM3KII-Cg5EnkVF.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4282
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/diff-ChtP43wD.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 302
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist--sOkpPji.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 97708
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-1cKj4Kov.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 40672
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-4GKEZqPF.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 20673
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-4P-ZkJGt.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16203
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-7OCUnmf7.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 11525
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-B2iknffm.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30690
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-BBY3Am05.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 46926
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-BRQraEqG.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 103860
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-ByRcQrQ-.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 22927
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-C3ufHt9I.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 309906
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-CAQq_aiI.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4872
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-CDHKsc2v.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1959
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-DNdD0XrS.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2577
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-DRP5RDga.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2162
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-Dbub4Aij.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 14306
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-Dn4iUHl8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 20927
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-DuE4QAzg.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 44547
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-KcC4kzvV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3261
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dist-iuGIeXyc.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 70755
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dockerfile-BLkNEvjs.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1906
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dtd-DTF72YNO.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2092
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/dylan-C6jEEEk-.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4041
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ebnf-D4c0_ac3.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1979
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ebnfDiagram-PWID7BFC-Q8XGoMcl.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2061
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ecl-BSZaIHnp.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5092
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/eiffel-BEjRio4Q.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1692
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/elm-Cshzl8qu.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1866
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/erDiagram-RLTQ6QDP-ojP13le2.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30722
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/erlang-DaB2Rkuy.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7846
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/eventmodeling-NTZA5JFV-MWVDOwmS.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 132
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/factor-D7LVTn2l.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1669
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/fcl-ClOhbFR7.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2029
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/flowDiagram-HODETNUW-sIi_HNwa.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 614
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/forth-Cezjo90N.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2541
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/fortran-Bt6PBEDR.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3862
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ganttDiagram-EL5Y4UJY-D9ySj_qp.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 69426
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/gas-BHEdbvp9.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4550
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/gherkin-oBAE_ms0.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10156
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/gitGraph-4MIJSDKK-BHmT5tX5.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/gitGraphDiagram-WWUBYQGX-zM9iSHf8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 29018
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/graphlib-DS17s2tU.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 23904
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/groovy-BC3IOsC8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4103
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/haskell-BRsoo5mP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4159
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/haxe-DjVOVvNP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7862
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/http-CLVgA2GD.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 845
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/idl-BUZw3wgd.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9826
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/index-CEGpgCwV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1300793
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/index-DdYjRfZR.css",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 129838
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/info-A6RAGUB7-jMDkloUA.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 123
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/infoDiagram-27XIBGKW-Sr2G5elo.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 658
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/init-D6jRqBbL.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 146
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ishikawaDiagram-5VMMS53U-CpPgqEXz.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 17345
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/javascript-8HiN0ThV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 17020
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/journeyDiagram-3NMN7TZE-BepzPurO.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 23207
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/julia-CQfgDRfP.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5263
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/kanban-definition-UXKFOSKX-B0fSwXPO.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 20346
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/line-BQfA_6us.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 943
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/linear-CChbQL87.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5524
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/livescript-BXxG0Yva.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4081
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/lua-CiA1ziua.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3130
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mathematica-u8YMmbU0.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1899
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mbox-BEMVcqjs.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1386
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mermaid-parser.core-Cb1iaUVi.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 16587
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mermaid.core-BXltjex0.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 35591
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mindmap-definition-YA3MSWOX-H2S3C3LF.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 23491
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mirc-C9zpzAZU.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5917
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mllike-B45xgp2S.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4823
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/modelica-CqHI_q-D.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2795
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mscgen-qgSLujhx.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3499
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/mumps-CW_TBmxz.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1836
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/nginx-BMaDbqW3.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7409
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/nsis-AQ_alPln.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6804
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ntriples-d28e9m0E.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2077
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/octave-D2Q8cUp1.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2101
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ordinal-hYBb2elL.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1174
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/oz-BwTct_5T.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2881
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/packet-AYTQ26CC-RLXkiFMY.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 125
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pascal-Dp_KdFgX.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2256
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/path-BWPyau1x.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2314
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pegDiagram-XKGWAZYB-DiN2nS-t.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2013
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/perl-CdEHsPfU.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9750
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pie-WAS4IAKB-Bxw4PLu_.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 122
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pieDiagram-E7YTZNPT-C8KrMa5X.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6240
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pig-AF4Hwhju.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2513
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/powershell-CzG71I4L.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 7699
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/properties-C357ku5U.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 664
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/protobuf-D1ij_kNL.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 802
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/pug-DyBTKFx8.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6670
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/puppet-B4hC2X4m.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2540
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/python-2zlmcyof.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6287
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/q-B9NhS7L_.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3691
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/quadrantDiagram-AXDQQJYC-Km_Xzgeh.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 33547
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/r-DADKenSm.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3008
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/radar-RG4KPBEZ-CjWTyeWH.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 124
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/railroad-74A4TZTK-ChIzv4Ig.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/railroad-abnf-HS5TGJTU-BKRy6Iyb.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 131
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/railroad-ebnf-LZEXJU2U-BXjjBKvp.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 131
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/railroad-peg-WCYAUIDC-DihpUt5T.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 130
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/railroadDiagram-O6MQD6OU-H8ABM8Io.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1661
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/requirementDiagram-BXWQKSXE-C6hPnG-O.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 31034
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/rough.esm-CSKSodPl.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 27103
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/rpm-gpDK5sbt.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1597
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ruby-DsYpTuWg.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5104
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sankeyDiagram-P5KCCOFB-vpyl3-DX.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 22822
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sas-C2OyD2Y6.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 9331
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/scheme-tChLYBuY.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6355
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sequenceDiagram-WJ2MYXX4-ljxaU_RT.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 115862
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/shell-Du5Qg9im.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2449
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sieve-BAxa3IjF.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1615
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/simple-mode-DRpGK0lJ.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2295
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sizeCapture-INFHLROL-B0uUizjq.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 875
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/smalltalk-BLp5-jwC.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1996
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/solr-BBopId9w.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 863
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sparql-Dz-mlCAC.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3331
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/spreadsheet-CTIncYxj.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1135
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/sql-DcCJ9jop.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 36858
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/src-VOoNg038.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 45727
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/stateDiagram-D77RDMKH-C0pexHTA.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 10642
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/stateDiagram-v2-MP3YSRHH-D3r6Csi3.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 783
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/stex-sDrdk2BW.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3121
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/stylus-DLLZ8dgm.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 23526
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/swift-DKB6_1j6.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3762
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/swimlanes-42K2YHIH-CDo9oDnX.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 111169
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/swimlanesDiagram-VR7AAH4N-C11Xl46N.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 873
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/tcl-BGfruO1u.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2353
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/textile-CyzeGT9J.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6771
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/tiddlywiki-VlUiK86J.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2760
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/tiki-CxVlf5KZ.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3235
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/timeline-definition-24CTP7MA-DG1A4VA7.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 30417
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/toml-LvoKBwCs.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1190
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/treeView-Q6P3EWNA-riHiAqKs.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 127
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/treemap-WGGIJYW6-U3mJOwhO.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/troff-C2dAgh7P.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 957
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ttcn-BePYh-hG.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4824
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/ttcn-cfg-CY0aot7Q.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 4078
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/turtle-Cx3rYX2g.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1955
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/vb-BthdM_4N.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3650
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/vbscript-D9f6rSsU.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 5431
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/velocity-CqftRsjg.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2703
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/vennDiagram-4TSXK5OY-Ba_ghi5A.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 41192
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/verilog-BKSQ5RMB.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 8164
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/vhdl-CBDDcIJ_.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 3297
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/wardley-WFR3VGLG-COBVUUEG.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 126
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/wardleyDiagram-VM6X3IG4-E6-YQz6V.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 25229
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/webidl-D5jiJvOU.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2449
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/xquery-Cda5K8Gy.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 6223
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/xychartDiagram-S5SC5T6Z-Bm69Mwp1.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 44192
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/yacas-CXXgtw0p.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2141
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets/z80-CL1naaMV.js",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1755
+    },
+    {
+      "path": "~/.local/share/notrios/web/favicon-32.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2002
+    },
+    {
+      "path": "~/.local/share/notrios/web/favicon.ico",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 11904
+    },
+    {
+      "path": "~/.local/share/notrios/web/index.html",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 1699
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-180.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 32371
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-192.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 36935
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-32.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2002
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-512.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 235683
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-dark-192.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 37642
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-dark-32.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 2072
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-maskable-192.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 24253
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios-maskable-512.png",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 160748
+    },
+    {
+      "path": "~/.local/share/notrios/web/notrios.svg",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 45805
+    },
+    {
+      "path": "~/.local/share/notrios/web/site.webmanifest",
+      "kind": "file",
+      "category": "data",
+      "owned": true,
+      "bytes": 580
+    }
+  ],
+  "mode": "installed",
+  "notes": [
+    "the config root ~/.config/notrios does not exist yet",
+    "the program_assets root is the data root (~/.local/share/notrios); its contents are listed once",
+    "no profile is registered, so no library is kept outside these roots"
+  ],
+  "program": {
+    "manifest_path": "~/.local/share/notrios/MANIFEST.json",
+    "version": "0.8.0",
+    "installed_at": "2026-09-17T22:55:58Z",
+    "prefix": "~/.local",
+    "entries": 433
+  },
+  "redacted": true,
+  "roots": {
+    "cache": "~/.cache/notrios",
+    "config": "~/.config/notrios",
+    "data": "~/.local/share/notrios",
+    "program_assets": "~/.local/share/notrios",
+    "runtime": "~/.local/state/notrios/runtime",
+    "state": "~/.local/state/notrios"
+  },
+  "schema": "notrios.install-report/1",
+  "structure": [
+    {
+      "path": "~/.cache/notrios",
+      "kind": "directory",
+      "category": "cache",
+      "owned": true
+    },
+    {
+      "path": "~/.cache/notrios/projections",
+      "kind": "directory",
+      "category": "cache",
+      "owned": true
+    },
+    {
+      "path": "~/.cache/notrios/search-index",
+      "kind": "directory",
+      "category": "cache",
+      "owned": true
+    },
+    {
+      "path": "~/.cache/notrios/tmp",
+      "kind": "directory",
+      "category": "cache",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/assets",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/api",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docaudit",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docexamples",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docfeatures",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docgen",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docjourneys",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docplan",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/docrules",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/docs/images/journeys",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/web",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/share/notrios/web/assets",
+      "kind": "directory",
+      "category": "data",
+      "owned": true
+    },
+    {
+      "path": "~/.local/state/notrios",
+      "kind": "directory",
+      "category": "state",
+      "owned": true
+    },
+    {
+      "path": "~/.local/state/notrios/quarantine",
+      "kind": "directory",
+      "category": "state",
+      "owned": true
+    },
+    {
+      "path": "~/.local/state/notrios/runtime",
+      "kind": "directory",
+      "category": "runtime",
+      "owned": true
+    }
+  ]
+}

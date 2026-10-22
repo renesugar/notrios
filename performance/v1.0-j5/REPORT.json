@@ -1,0 +1,406 @@
+{
+  "comparison": {
+    "commit": "cb7ddc011eddfb4e1c9092c373f156ad124680a6",
+    "corpus": "/home/renes/projects/recipedb/recipe_joplin",
+    "database_bytes": 5618405376,
+    "items_imported": 1237553,
+    "one_trade_worth_naming": "movenotes ran with a 1.4 GB write-ahead log, which is one long transaction: fast, and a crash mid-import loses everything. Notrios commits in 3,823 checkpointed batches.",
+    "peak_rss_kib": 1279820,
+    "seconds": 2186.22,
+    "so_the_ratio_is_not_like_for_like": "movenotes produces a staging database that cannot be searched; Notrios produces a searchable library. The comparison bounds how much of the import time is inherent -- walking 1,237,553 files and parsing Joplin items -- rather than showing the same job done better.",
+    "source": "cloned from github.com/renesugar/movenotes-v3, not the owner's working copy",
+    "tool": "movenotes-v3 joplin2sql",
+    "what_it_builds": "two tables -- settings and notes -- with eight B-tree indexes and no full-text index. Every RAW item becomes one row.",
+    "what_notrios_builds_instead": "382,206 notes with revision chains, a documents_fts index whose data alone is 374 MB, a link index, 781 notebooks, 11,753 tags with 842,813 tag applications, and a content-addressed asset store."
+  },
+  "content_commit": "b5b981fb885a615748cdf909bda2259608692e56",
+  "corpora_are_real": "All three are libraries the owner supplied, not generated. J5's open decision on corpus generation is therefore closed by the corpora reaching the target size without one: no synthetic data was produced and nothing has to be labelled synthetic.",
+  "item": "J5",
+  "milestone": "v1.0",
+  "runs": {
+    "joplin-export-with-resources": {
+      "backup_restore": {
+        "export": {
+          "completed": true,
+          "peak_rss_kib": 108032,
+          "seconds": 772.07
+        },
+        "restore": {
+          "completed": true,
+          "note": "re-run after the harness supplied --new-database-id",
+          "peak_rss_kib": 45144,
+          "seconds": 498.76
+        },
+        "verify": {
+          "completed": true,
+          "peak_rss_kib": 11264,
+          "seconds": 0.01
+        }
+      },
+      "import": {
+        "completed": true,
+        "elapsed_seconds": 1627,
+        "exit_status": 0,
+        "import": {
+          "attachments_created": 766,
+          "batches_completed": 2078,
+          "canonical_document_batches": 1034,
+          "checkpoint_status": "completed",
+          "collection_id": "default",
+          "dry_run": false,
+          "ignored_files": 0,
+          "item_type_counts": {
+            "1": 103349,
+            "2": 6,
+            "4": 763,
+            "5": 322,
+            "6": 6890
+          },
+          "items_seen": 111330,
+          "link_rebuild_batches": 1034,
+          "links_rewritten": 2420,
+          "malformed_items": 0,
+          "metadata_files_seen": 111330,
+          "notebooks_created": 5,
+          "notebooks_existing": 1,
+          "notebooks_merged": 1,
+          "notebooks_seen": 6,
+          "notebooks_skipped": 1,
+          "notebooks_updated": 0,
+          "notes_imported": 103349,
+          "notes_seen": 103349,
+          "notes_unchanged": 0,
+          "notes_updated": 0,
+          "resources_existing": 0,
+          "resources_imported": 758,
+          "resources_missing_content": 5,
+          "resources_seen": 763,
+          "resources_skipped": 5,
+          "resources_updated": 0,
+          "resumed": false,
+          "source_bundle_bytes": 0,
+          "source_bundle_items": 0,
+          "source_dir": "/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18",
+          "source_key": "/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18",
+          "tags_applied": 6890,
+          "tags_created": 322,
+          "tags_existing": 0,
+          "tags_removed": 0,
+          "tags_seen": 322,
+          "tags_skipped": 0,
+          "tags_updated": 0,
+          "temporary_manifest_bytes": 110508816,
+          "unresolved_links": 95,
+          "unsupported_items": 0,
+          "warnings": [
+            "resource 02f096c85efa4a0d9d6d56cf8693425a has no content file",
+            "resource 4e29c369f9e2424da4633ac8782d419d has no content file",
+            "resource 65d890aa6b734604828a08074f4045d7 has no content file",
+            "resource 6fae657274fc4588ba70eb4c4ad17507 has no content file",
+            "resource ee0a922b58f24a3c8f36e856a05499e1 has no content file"
+          ]
+        },
+        "kind": "joplin-raw",
+        "label": "joplin-export-with-resources",
+        "library": {
+          "asset_bytes": 955882362,
+          "database_bytes": 916209664
+        },
+        "peak_rss_kib": 537620,
+        "search": [
+          {
+            "count": 50509,
+            "exit": 0,
+            "pass": "cold",
+            "query": "common",
+            "seconds": 2.359
+          },
+          {
+            "count": 50509,
+            "exit": 0,
+            "pass": "warm",
+            "query": "common",
+            "seconds": 2.166
+          },
+          {
+            "count": 8,
+            "exit": 0,
+            "pass": "cold",
+            "query": "rare",
+            "seconds": 1.207
+          },
+          {
+            "count": 8,
+            "exit": 0,
+            "pass": "warm",
+            "query": "rare",
+            "seconds": 1.34
+          },
+          {
+            "count": 20,
+            "exit": 0,
+            "pass": "cold",
+            "query": "two-term",
+            "seconds": 1.248
+          },
+          {
+            "count": 20,
+            "exit": 0,
+            "pass": "warm",
+            "query": "two-term",
+            "seconds": 1.378
+          }
+        ],
+        "source": {
+          "bytes": 1213322962,
+          "markdown_files": 111359,
+          "path": "/home/renes/Documents/Joplin Archive/JoplinExport_2026_07_18"
+        }
+      }
+    },
+    "recipe-joplin-raw": {
+      "backup_restore": {
+        "export": {
+          "completed": true,
+          "peak_rss_kib": 296960,
+          "seconds": 3206.27
+        },
+        "restore": {
+          "completed": true,
+          "note": "re-run after the harness supplied --new-database-id",
+          "peak_rss_kib": 55208,
+          "seconds": 2766.74
+        },
+        "verify": {
+          "completed": true,
+          "peak_rss_kib": 11264,
+          "seconds": 0.02
+        }
+      },
+      "import": {
+        "completed": true,
+        "elapsed_seconds": 6194,
+        "exit_status": 0,
+        "import": {
+          "attachments_created": 0,
+          "batches_completed": 7648,
+          "canonical_document_batches": 3823,
+          "checkpoint_status": "completed",
+          "collection_id": "default",
+          "dry_run": false,
+          "ignored_files": 0,
+          "item_type_counts": {
+            "1": 382206,
+            "2": 781,
+            "5": 11753,
+            "6": 842813
+          },
+          "items_seen": 1237553,
+          "link_rebuild_batches": 3823,
+          "links_rewritten": 0,
+          "malformed_items": 0,
+          "metadata_files_seen": 1237553,
+          "notebooks_created": 781,
+          "notebooks_existing": 0,
+          "notebooks_merged": 0,
+          "notebooks_seen": 781,
+          "notebooks_skipped": 0,
+          "notebooks_updated": 0,
+          "notes_imported": 382206,
+          "notes_seen": 382206,
+          "notes_unchanged": 0,
+          "notes_updated": 0,
+          "resources_existing": 0,
+          "resources_imported": 0,
+          "resources_missing_content": 0,
+          "resources_seen": 0,
+          "resources_skipped": 0,
+          "resources_updated": 0,
+          "resumed": false,
+          "source_bundle_bytes": 0,
+          "source_bundle_items": 0,
+          "source_dir": "/home/renes/projects/recipedb/recipe_joplin",
+          "source_key": "/home/renes/projects/recipedb/recipe_joplin",
+          "tags_applied": 842813,
+          "tags_created": 11753,
+          "tags_existing": 0,
+          "tags_removed": 0,
+          "tags_seen": 11753,
+          "tags_skipped": 0,
+          "tags_updated": 0,
+          "temporary_manifest_bytes": 838699456,
+          "unresolved_links": 14,
+          "unsupported_items": 0
+        },
+        "kind": "joplin-raw",
+        "label": "recipe-joplin-raw",
+        "library": {
+          "asset_bytes": 0,
+          "database_bytes": 6039658496
+        },
+        "peak_rss_kib": 2949812,
+        "search": [
+          {
+            "count": 187518,
+            "exit": 0,
+            "pass": "cold",
+            "query": "common",
+            "seconds": 8.814
+          },
+          {
+            "count": 187518,
+            "exit": 0,
+            "pass": "warm",
+            "query": "common",
+            "seconds": 8.648
+          },
+          {
+            "count": 385,
+            "exit": 0,
+            "pass": "cold",
+            "query": "rare",
+            "seconds": 4.39
+          },
+          {
+            "count": 385,
+            "exit": 0,
+            "pass": "warm",
+            "query": "rare",
+            "seconds": 4.299
+          },
+          {
+            "count": 9703,
+            "exit": 0,
+            "pass": "cold",
+            "query": "two-term",
+            "seconds": 4.766
+          },
+          {
+            "count": 9703,
+            "exit": 0,
+            "pass": "warm",
+            "query": "two-term",
+            "seconds": 4.757
+          }
+        ],
+        "source": {
+          "bytes": 1425023292,
+          "markdown_files": 1237553,
+          "path": "/home/renes/projects/recipedb/recipe_joplin"
+        }
+      }
+    },
+    "recipe-vault-obsidian": {
+      "backup_restore": {
+        "export": {
+          "completed": true,
+          "peak_rss_kib": 356264,
+          "seconds": 3017.13
+        },
+        "restore": {
+          "completed": true,
+          "note": "re-run after the harness supplied --new-database-id",
+          "peak_rss_kib": 59656,
+          "seconds": 1654.83
+        },
+        "verify": {
+          "completed": true,
+          "peak_rss_kib": 11648,
+          "seconds": 0.03
+        }
+      },
+      "import": {
+        "completed": true,
+        "elapsed_seconds": 16262,
+        "exit_status": 0,
+        "import": {
+          "attachments_created": 0,
+          "batches_completed": 7654,
+          "checkpoint_status": "completed",
+          "collection_id": "default",
+          "dry_run": false,
+          "link_indexes_refreshed": 382206,
+          "links_rewritten": 0,
+          "markdown_seen": 382206,
+          "notebooks_created": 780,
+          "notebooks_existing": 0,
+          "notebooks_merged": 0,
+          "notebooks_seen": 780,
+          "notebooks_skipped": 0,
+          "notebooks_updated": 0,
+          "notes_imported": 382206,
+          "notes_unchanged": 0,
+          "notes_updated": 0,
+          "resources_existing": 0,
+          "resources_imported": 0,
+          "resources_seen": 0,
+          "resources_skipped": 0,
+          "resources_updated": 0,
+          "resumed": false,
+          "source_bundle_bytes": 0,
+          "source_bundle_items": 0,
+          "source_dir": "/home/renes/projects/recipedb/recipe_vault",
+          "source_key": "/home/renes/projects/recipedb/recipe_vault"
+        },
+        "kind": "obsidian",
+        "label": "recipe-vault-obsidian",
+        "library": {
+          "asset_bytes": 0,
+          "database_bytes": 7284244480
+        },
+        "peak_rss_kib": 1761824,
+        "search": [
+          {
+            "count": 187518,
+            "exit": 0,
+            "pass": "cold",
+            "query": "common",
+            "seconds": 9.314
+          },
+          {
+            "count": 187518,
+            "exit": 0,
+            "pass": "warm",
+            "query": "common",
+            "seconds": 9.101
+          },
+          {
+            "count": 385,
+            "exit": 0,
+            "pass": "cold",
+            "query": "rare",
+            "seconds": 5.053
+          },
+          {
+            "count": 385,
+            "exit": 0,
+            "pass": "warm",
+            "query": "rare",
+            "seconds": 4.947
+          },
+          {
+            "count": 9703,
+            "exit": 0,
+            "pass": "cold",
+            "query": "two-term",
+            "seconds": 5.619
+          },
+          {
+            "count": 9703,
+            "exit": 0,
+            "pass": "warm",
+            "query": "two-term",
+            "seconds": 5.241
+          }
+        ],
+        "source": {
+          "bytes": 602218600,
+          "markdown_files": 382206,
+          "path": "/home/renes/projects/recipedb/recipe_vault"
+        }
+      }
+    }
+  },
+  "schema": "notrios.v10.j5-scale.v1",
+  "what_this_is": "Import, export and restore measured on real libraries at 382,206 notes, plus one external comparison. Nothing here is generated or extrapolated."
+}

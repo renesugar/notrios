@@ -287,11 +287,10 @@ func (s *SQLiteStore) duplicateDocumentLocked(documentID string) (Document, erro
 		newID, source.CollectionID, source.NotebookID, title, source.BodyMIMEType, revID); err != nil {
 		return Document{}, err
 	}
-	if err := s.insertRevisionLocked(revID, newID, title, source.Body, source.BodyMIMEType, "duplicated from "+source.ID, ""); err != nil {
+	if err := s.insertRevisionLocked(revID, newID, title, source.Body, source.BodyMIMEType, "duplicated from "+source.ID, "", ""); err != nil {
 		return Document{}, err
 	}
-	if err := s.execPreparedLocked(`INSERT INTO documents_fts(document_id, collection_id, title, body) VALUES(?, ?, ?, ?)`,
-		newID, source.CollectionID, title, source.Body); err != nil {
+	if err := s.insertDocumentFTSLocked(newID, source.CollectionID, title, source.Body); err != nil {
 		return Document{}, err
 	}
 	if err := s.execPreparedLocked(`INSERT INTO note_tags(document_id, tag_id) SELECT ?, tag_id FROM note_tags WHERE document_id = ?`, newID, source.ID); err != nil {

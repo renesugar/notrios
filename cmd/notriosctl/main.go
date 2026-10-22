@@ -25,6 +25,7 @@ import (
 	"github.com/renesugar/notrios/internal/importers/obsidian"
 	"github.com/renesugar/notrios/internal/importers/twitter"
 	"github.com/renesugar/notrios/internal/localize"
+	"github.com/renesugar/notrios/internal/media"
 	"github.com/renesugar/notrios/internal/migrate"
 	"github.com/renesugar/notrios/internal/paths"
 	"github.com/renesugar/notrios/internal/snapshotimage"
@@ -49,6 +50,8 @@ func main() {
 		runDoctor(os.Args[2:])
 	case "paths":
 		runPaths(os.Args[2:])
+	case "purge":
+		runPurge(os.Args[2:])
 	case "config":
 		runConfig(os.Args[2:])
 	case "migrate":
@@ -101,6 +104,8 @@ func main() {
 		runNotes(os.Args[2:])
 	case "graph":
 		runGraph(os.Args[2:])
+	case "links":
+		runLinks(os.Args[2:])
 	case "jobs":
 		runJobs(os.Args[2:])
 	case "sync":
@@ -183,7 +188,7 @@ func runImportJoplinRaw(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -312,7 +317,7 @@ func runImportObsidian(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -423,7 +428,7 @@ func runLocalize(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -432,7 +437,7 @@ func runLocalize(args []string) {
 	ctx := context.Background()
 	bootstrapOrExit(st, ctx)
 
-	result, err := localize.New(cfg.RemoteMedia, st).LocalizeDocument(ctx, localize.Options{
+	result, err := localize.New(cfg.RemoteMedia, st, media.WithAddressRanges(cfg.Security.RemoteMedia)).LocalizeDocument(ctx, localize.Options{
 		DocumentID:     fs.Arg(0),
 		BaseRevisionID: *baseRevision,
 		DryRun:         *dryRun,
@@ -533,7 +538,7 @@ func runGarbageCollection(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -594,7 +599,7 @@ func runGarbageCollection(args []string) {
 // import touched (--localize-media). Failures are reported per note and do
 // not fail the completed import.
 func localizeImportedNotes(ctx context.Context, cfg config.Config, st store.Store, documentIDs []string, allowReview bool) {
-	localizer := localize.New(cfg.RemoteMedia, st)
+	localizer := localize.New(cfg.RemoteMedia, st, media.WithAddressRanges(cfg.Security.RemoteMedia))
 	total := struct{ localized, blocked, review, failed int }{}
 	for _, documentID := range documentIDs {
 		result, err := localizer.LocalizeDocument(ctx, localize.Options{DocumentID: documentID, AllowReview: allowReview})
@@ -693,7 +698,7 @@ func runImportTwitter(args []string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: notriosctl import twitter [options] <extracted-archive-dir>")
+		fmt.Fprintln(os.Stderr, "usage: notriosctl import twitter [options] <twitter-archive.zip | extracted-archive-dir>")
 		fs.PrintDefaults()
 		os.Exit(2)
 	}
@@ -714,7 +719,7 @@ func runImportTwitter(args []string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -749,7 +754,7 @@ func runImportConversations(args []string, kind string) {
 		os.Exit(2)
 	}
 	if fs.NArg() != 1 {
-		fmt.Fprintf(os.Stderr, "usage: notriosctl import %s [options] <conversations.json|export-dir>\n", kind)
+		fmt.Fprintf(os.Stderr, "usage: notriosctl import %s [options] <export.zip|export-dir|conversations.json>\n", kind)
 		fs.PrintDefaults()
 		os.Exit(2)
 	}
@@ -770,7 +775,7 @@ func runImportConversations(args []string, kind string) {
 		os.Exit(1)
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -823,7 +828,7 @@ func openStoreFromFlags(configPath, dbPath, assetStore string) *store.SQLiteStor
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -1142,7 +1147,7 @@ func runSnapshotCreate(args []string) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -1433,7 +1438,7 @@ func runDoctor(args []string) {
 		report(true, true, "directories", "storage directories exist or were created")
 	}
 
-	st, err := store.OpenSQLiteWithAssetStore(cfg.Data.DatabasePath, cfg.Data.AssetStore)
+	st, err := store.OpenInstanceSQLite(cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.TempDir)
 	if err != nil {
 		report(false, true, "database", err.Error())
 	} else {

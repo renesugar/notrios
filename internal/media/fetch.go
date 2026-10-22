@@ -26,6 +26,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,7 +99,11 @@ type Fetcher struct {
 
 // NewFetcher builds a quarantine fetcher for the configured policy. The
 // quarantine directory is created if missing.
-func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder) (*Fetcher, error) {
+func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder, opts ...Option) (*Fetcher, error) {
+	policy := NewPolicy(cfg, opts...)
+	if policy.addressErr != nil {
+		return nil, fmt.Errorf("remote-media address ranges: %w", policy.addressErr)
+	}
 	dir := strings.TrimSpace(cfg.QuarantineDir)
 	if dir == "" {
 		return nil, fmt.Errorf("remote_media.quarantine_dir is not configured")
@@ -109,7 +114,7 @@ func NewFetcher(cfg config.RemoteMediaConfig, recorder AttemptRecorder) (*Fetche
 		return nil, fmt.Errorf("create quarantine dir %q: %w", dir, err)
 	}
 	f := &Fetcher{
-		policy:        NewPolicy(cfg),
+		policy:        policy,
 		cfg:           cfg,
 		quarantineDir: dir,
 		recorder:      recorder,
@@ -190,8 +195,9 @@ func (f *Fetcher) checkRedirect(req *http.Request, via []*http.Request) error {
 
 type allowReviewKey struct{}
 
-// checkDialAddress rejects private, loopback, link-local, and unspecified
-// resolved addresses unless the policy allows private networks.
+// checkDialAddress applies the refused-address set (J28) to the concrete
+// address about to be dialed, unless the policy allows private networks. It
+// is the same check Evaluate applies to URL literals.
 func (f *Fetcher) checkDialAddress(address string) error {
 	if f.cfg.AllowPrivateNetworks {
 		return nil
@@ -200,12 +206,12 @@ func (f *Fetcher) checkDialAddress(address string) error {
 	if err != nil {
 		return fmt.Errorf("unexpected dial address %q: %w", address, err)
 	}
-	ip := net.ParseIP(host)
-	if ip == nil {
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
 		return fmt.Errorf("dial address %q is not an IP literal", address)
 	}
-	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
-		return fmt.Errorf("resolved address %s is private, loopback, or link-local", ip)
+	if reason := f.policy.checkAddress(addr); reason != "" {
+		return fmt.Errorf("resolved %s", reason)
 	}
 	return nil
 }
@@ -246,12 +252,18 @@ func (f *Fetcher) fetchOne(ctx context.Context, rawURL, action string, allowRevi
 	contentType := strings.TrimSpace(strings.SplitN(http.DetectContentType(head), ";", 2)[0])
 	class := classFromMIME(contentType)
 	if class == "other" && sniffInconclusive(contentType) {
-		// Formats sniffing doesn't know (e.g. SVG → text/xml) may fall back
-		// to the header — but only when the sniff was inconclusive. A
-		// positive detection (like text/html) always wins over a lying
-		// image/* header.
+		// Formats sniffing doesn't know (SVG, TIFF, AVIF, HEIC, MOV,
+		// frame-led MP3, FLAC) may take the header's type, but only when the
+		// sniff was inconclusive, the type is one claimedTypes names, and the
+		// bytes carry that format's signature (J30). A positive detection
+		// (like text/html) always wins over the header.
 		if headerType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type")); err == nil {
 			if headerClass := classFromMIME(headerType); headerClass != "other" {
+				if !claimMatchesPayload(headerType, contentType, head) {
+					result := refuse(rawURL, action, fmt.Sprintf("payload sniffed as %q does not match the claimed content type %q", contentType, headerType))
+					result.FinalURL = finalURL
+					return result
+				}
 				contentType, class = headerType, headerClass
 			}
 		}
@@ -379,6 +391,10 @@ func classFromMIME(mimeType string) string {
 		return "video"
 	case mimeType == "application/pdf":
 		return "pdf"
+	case mimeType == "application/ogg":
+		// Ogg is a media container carrying audio or video, and the sniffer
+		// names it positively (owner decision, J33).
+		return "video"
 	}
 	return "other"
 }
@@ -389,7 +405,7 @@ func extensionForMIME(mimeType string) string {
 		return ".bin"
 	}
 	// Prefer common spellings over the first alphabetical match.
-	preferred := map[string]string{"image/jpeg": ".jpg", "image/png": ".png", "application/pdf": ".pdf"}
+	preferred := map[string]string{"image/jpeg": ".jpg", "image/png": ".png", "application/pdf": ".pdf", "application/ogg": ".ogg"}
 	if ext, ok := preferred[strings.ToLower(mimeType)]; ok {
 		return ext
 	}

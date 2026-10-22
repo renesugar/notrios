@@ -20,6 +20,10 @@ export function normalizePreviewHTML(html: string): string {
 
   doc.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
     const href = anchor.getAttribute('href') || '';
+    // This rule's own output, from an earlier pass, is left as it is: the
+    // preview sanitises twice, and a second pass that rewrote the first's
+    // destinations removed every attachment link's (v1.0 J48).
+    if (href !== '' && href === resolvedAppURI(anchor.getAttribute('data-app-uri'), true)) return;
     if (href.startsWith('document://')) {
       anchor.setAttribute('data-app-uri', href);
       anchor.setAttribute('href', '#');
@@ -50,26 +54,25 @@ export function normalizePreviewHTML(html: string): string {
     // A responsive-image candidate can load without src, so never retain a
     // note-controlled srcset even when the ordinary source is local.
     image.removeAttribute('srcset');
-    const src = image.getAttribute('src') || '';
-    if (src.startsWith('resource://')) {
-      image.setAttribute('data-app-uri', src);
-      const resourceID = parseResourceIDFromURI(src);
-      if (resourceID) image.setAttribute('src', resourceContentURL(resourceID, false));
-      return;
-    }
-    // Remote note content is untrusted and must never make the browser fetch
-    // around the server-side domain/SSRF/quarantine policy. Keep the source as
-    // inert metadata for inspection; localization later rewrites admitted
-    // bytes to a loadable resource:// URI.
-    if (src.startsWith('http://') || src.startsWith('https://')) {
-      image.setAttribute('data-remote-src', src);
-      image.removeAttribute('src');
+    if (neutralizeMediaURL(image, 'src') === 'remote') {
       image.classList.add('remote-media-placeholder');
       image.setAttribute('title', 'Remote image blocked until it is localized');
-      return;
     }
-    if (src.startsWith('data:image/')) return;
-    image.removeAttribute('src');
+  });
+
+  // J34: every other element that loads media follows the same rule as img, so
+  // a note cannot fetch through a video poster, an audio or track source, or an
+  // SVG reference (image, feImage, use) the img rule never saw. embed, object
+  // and source are removed above.
+  doc.querySelectorAll('video, audio').forEach((element) => {
+    neutralizeMediaURL(element, 'src');
+    neutralizeMediaURL(element, 'poster');
+  });
+  doc.querySelectorAll('track').forEach((element) => neutralizeMediaURL(element, 'src'));
+  doc.querySelectorAll('svg *').forEach((element) => {
+    if (element.localName === 'a') return; // navigation keeps the link rule above
+    neutralizeMediaURL(element, 'href');
+    neutralizeMediaURL(element, 'xlink:href');
   });
 
   // A fenced ```note-query becomes a placeholder the preview fills in after the
@@ -98,6 +101,73 @@ export function normalizePreviewHTML(html: string): string {
   });
 
   return doc.body.innerHTML;
+}
+
+/**
+ * neutralizeMediaURL applies the preview's one rule for a URL that would load
+ * media. Remote note content is untrusted and must never make the browser fetch
+ * around the server-side domain/SSRF/quarantine policy, so:
+ *
+ * - `resource://` is resolved to the local content URL;
+ * - an inline `data:image/…` source is kept (inline images are not remote);
+ * - `http:` and `https:` move to an inert `data-remote-<attribute>`, for
+ *   inspection, until localization rewrites them to `resource://`;
+ * - anything else is removed.
+ *
+ * It returns what the value was, so a caller can mark a remote placeholder.
+ */
+function neutralizeMediaURL(element: Element, attribute: string): 'none' | 'resource' | 'inline' | 'remote' | 'removed' {
+  const value = element.getAttribute(attribute);
+  if (value === null) return 'none';
+  const url = value.trim();
+  // An earlier pass's own resolution is kept, and only that: the local content
+  // URL that this attribute's recorded resource:// resolves to. Anything else
+  // relative is removed below, as it always was (v1.0 J48).
+  const recorded = appAttribute(attribute);
+  if (url !== '' && url === resolvedAppURI(element.getAttribute(recorded), false)) return 'resource';
+  if (url.startsWith('resource://')) {
+    const resourceID = parseResourceIDFromURI(url);
+    if (resourceID) {
+      element.setAttribute('data-app-uri', url);
+      element.setAttribute(recorded, url);
+      element.setAttribute(attribute, resourceContentURL(resourceID, false));
+      return 'resource';
+    }
+    element.removeAttribute(attribute);
+    return 'removed';
+  }
+  if (url.startsWith('data:image/')) return 'inline';
+  element.removeAttribute(attribute);
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    element.setAttribute(`data-remote-${attribute.replace(':', '-')}`, url);
+    return 'remote';
+  }
+  return 'removed';
+}
+
+/**
+ * Where a media attribute's original resource:// is recorded: `data-app-src`,
+ * `data-app-poster`, `data-app-xlink-href`. One per attribute, because a
+ * video's source and poster can name two attachments, and `data-app-uri` holds
+ * only the last one written.
+ */
+function appAttribute(attribute: string): string {
+  return `data-app-${attribute.replace(':', '-')}`;
+}
+
+/**
+ * What this sanitiser writes for an app URI it routed, so a second pass can
+ * recognise its own output: a resource's local content URL, as a download for
+ * a link, and `#` for a note or a stable link. Null for anything else.
+ */
+function resolvedAppURI(appURI: string | null, forLink: boolean): string | null {
+  if (!appURI) return null;
+  if (appURI.startsWith('resource://')) {
+    const resourceID = parseResourceIDFromURI(appURI);
+    return resourceID ? resourceContentURL(resourceID, forLink) : null;
+  }
+  if (forLink && (appURI.startsWith('document://') || isStableLink(appURI))) return '#';
+  return null;
 }
 
 export function parseDocumentIDFromURI(uri: string): string | null {

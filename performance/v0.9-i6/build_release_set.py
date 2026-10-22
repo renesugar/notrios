@@ -13,6 +13,13 @@ against exactly that inventory.
 Nothing here signs anything. I5 decided what signing means and deliberately
 created no key; the signature and timestamp lines are the shape a release will
 take, recorded in the provenance as absent rather than implied.
+
+Since v1.0 J49 the set can also carry the C ABI tarball (`--abi`), as a second
+subject, and each subject's attestation bundle (`--attested` with
+`--attestation <artifact>=<bundle>`), so that a stranger holding the set can
+check provenance without a GitHub login. A bundle is written as
+`<artifact>.attestation.jsonl`, one sigstore bundle per line -- the form
+`gh attestation download` writes and `gh attestation verify --bundle` reads.
 """
 import argparse
 import hashlib
@@ -107,7 +114,8 @@ def build_sbom(subject: dict) -> dict:
     }
 
 
-def build_provenance(subjects: list[dict], version: str, signed: bool = False) -> dict:
+def build_provenance(subjects: list[dict], version: str, signed: bool = False,
+                     attested: bool = False) -> dict:
     """An in-toto statement describing how the subjects were produced."""
     return {
         "_type": "https://in-toto.io/Statement/v1",
@@ -141,7 +149,31 @@ def build_provenance(subjects: list[dict], version: str, signed: bool = False) -
                    "keys/release-public.asc.",
             "policy": "performance/v0.9-i5/POLICY.json",
         },
+        "notrios:attestation": {
+            "state": "attested" if attested else "unattested",
+            "why": "Since v1.0 J49 an attested set carries each subject's attestation bundle as "
+                   "<artifact>.attestation.jsonl, so provenance can be checked with "
+                   "`gh attestation verify --bundle` and no GitHub login. The verifier refuses an "
+                   "attested set missing a bundle, a bundle naming other bytes, and a bundle in a "
+                   "set that says it is not attested.",
+        },
     }
+
+
+def bundle_lines(path: pathlib.Path) -> list[str]:
+    """A bundle file as JSON Lines, whichever shape it arrived in.
+
+    `gh attestation download` writes one bundle per line; the attest action's
+    `bundle-path` may hold a single JSON document. Both become compact lines,
+    so the set has one form and the reader's command is the same for each."""
+    text = path.read_text(encoding="utf-8").strip()
+    try:
+        documents = [json.loads(text)]
+    except json.JSONDecodeError:
+        documents = [json.loads(line) for line in text.splitlines() if line.strip()]
+    if not documents:
+        raise SystemExit(f"{path} holds no attestation bundle")
+    return [json.dumps(document, separators=(",", ":"), sort_keys=True) for document in documents]
 
 
 def main() -> int:
@@ -151,6 +183,13 @@ def main() -> int:
     parser.add_argument("--signed", action="store_true",
                         help="record the set as one that will carry signatures; the verifier "
                              "then refuses it unless it actually does")
+    parser.add_argument("--abi", type=pathlib.Path,
+                        help="the C ABI tarball, carried as a second subject (v1.0 J49)")
+    parser.add_argument("--attested", action="store_true",
+                        help="record the set as attested; every subject then needs --attestation")
+    parser.add_argument("--attestation", action="append", default=[], metavar="ARTIFACT=BUNDLE",
+                        help="a subject's attestation bundle, by the subject's file name or by "
+                             "'deb' or 'abi'")
     arguments = parser.parse_args()
 
     deb = arguments.deb
@@ -169,13 +208,38 @@ def main() -> int:
     payload = out / deb.name
     payload.write_bytes(deb.read_bytes())
     subject = {"name": deb.name, "digest": {"sha256": sha256(payload)}, "version": version}
+    subjects = [{"name": subject["name"], "digest": subject["digest"]}]
+    aliases = {"deb": deb.name}
+    if arguments.abi is not None:
+        abi = out / arguments.abi.name
+        abi.write_bytes(arguments.abi.read_bytes())
+        subjects.append({"name": abi.name, "digest": {"sha256": sha256(abi)}})
+        aliases["abi"] = abi.name
+
+    bundles = {}
+    for pair in arguments.attestation:
+        artifact, separator, path = pair.partition("=")
+        if not separator or not path:
+            parser.error(f"--attestation wants ARTIFACT=BUNDLE, not {pair!r}")
+        name = aliases.get(artifact, artifact)
+        if name not in {s["name"] for s in subjects}:
+            parser.error(f"--attestation names {artifact!r}, which is not a subject of this set")
+        bundles[name] = pathlib.Path(path)
+    if bundles and not arguments.attested:
+        parser.error("bundles were given for a set not recorded as attested; pass --attested")
+    if arguments.attested:
+        missing = sorted({s["name"] for s in subjects} - set(bundles))
+        if missing:
+            parser.error(f"an attested set needs a bundle for every subject; missing {missing}")
+    for name, path in sorted(bundles.items()):
+        (out / f"{name}.attestation.jsonl").write_text(
+            "".join(line + "\n" for line in bundle_lines(path)), encoding="utf-8")
 
     (out / "SBOM.cdx.json").write_text(
         json.dumps(build_sbom(subject), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (out / "PROVENANCE.json").write_text(
         json.dumps(build_provenance(
-            [{"name": subject["name"], "digest": subject["digest"]}], version,
-            signed=arguments.signed),
+            subjects, version, signed=arguments.signed, attested=arguments.attested),
             indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     # Checksums last, over everything else, so the file that verifies the set is

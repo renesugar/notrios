@@ -12,6 +12,7 @@
 # and this workstation exports API keys. Generating an SBOM is itself a
 # supply-chain surface, and the warning is worth acting on rather than reading.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 HERE=$ROOT/performance/v0.9-i6

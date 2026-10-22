@@ -15,7 +15,15 @@
 // first is completing the interface; building one for the second is overruling
 // a decision.
 import { useCallback, useEffect, useState } from 'react';
-import { getGarbageReport, getLintReport, type GarbageCollectionReport, type LintReport } from '../api';
+import {
+  getGarbageReport,
+  getLintReport,
+  writeGraphReportNote,
+  writeLinkReportNote,
+  type GarbageCollectionReport,
+  type LintReport,
+  type WrittenReportNote,
+} from '../api';
 
 interface FixEdit { kind: string; line: number }
 interface FixDocumentPlan { document_id: string; base_revision_id: string; edits: FixEdit[] }
@@ -67,7 +75,28 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function LibraryHealth({ onClose }: { onClose: () => void }) {
+/**
+ * The reports a person can have written into the Reports notebook (v1.0
+ * J40-D). Each reads the whole library, so each runs when asked; each replaces
+ * its own note, which is read-only. The graph report had no control at all
+ * before this.
+ */
+const WRITABLE_REPORTS: ReadonlyArray<{ id: string; name: string; what: string; write: () => Promise<WrittenReportNote> }> = [
+  {
+    id: 'links',
+    name: 'Ambiguous links',
+    what: 'Every ambiguous link, quoted, with the notes it might mean.',
+    write: writeLinkReportNote,
+  },
+  {
+    id: 'graph',
+    name: 'Link graph',
+    what: 'The most-linked notes, and the notes nothing links to.',
+    write: writeGraphReportNote,
+  },
+];
+
+export function LibraryHealth({ onClose, onOpenDocument }: { onClose: () => void; onOpenDocument?: (documentID: string) => void }) {
   const [lint, setLint] = useState<LintReport | null>(null);
   const [garbage, setGarbage] = useState<GarbageCollectionReport | null>(null);
   const [error, setError] = useState('');
@@ -77,6 +106,22 @@ export function LibraryHealth({ onClose }: { onClose: () => void }) {
   const [fixBusy, setFixBusy] = useState(false);
   const [fixError, setFixError] = useState('');
   const repairs = fixBridge();
+  const [written, setWritten] = useState<Record<string, WrittenReportNote>>({});
+  const [writing, setWriting] = useState('');
+  const [writeError, setWriteError] = useState('');
+
+  const writeReport = useCallback(async (report: (typeof WRITABLE_REPORTS)[number]) => {
+    setWriting(report.id);
+    setWriteError('');
+    try {
+      const note = await report.write();
+      setWritten((current) => ({ ...current, [report.id]: note }));
+    } catch (caught) {
+      setWriteError(errorMessage(caught));
+    } finally {
+      setWriting('');
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -130,7 +175,8 @@ export function LibraryHealth({ onClose }: { onClose: () => void }) {
           <div>
             <p className="eyebrow">This library</p>
             <h2 id="library-health-title">Library health</h2>
-            <p className="muted">Nothing on this screen changes anything. Both reports are read-only.</p>
+            <p className="muted">Nothing on this screen changes a note of yours unless you repair it. Writing a
+              report replaces its own read-only note in Reports.</p>
           </div>
           <button type="button" className="icon-button sync-close" aria-label="Close library health"
             onClick={onClose}>×</button>
@@ -175,6 +221,40 @@ export function LibraryHealth({ onClose }: { onClose: () => void }) {
               </p>
             </div>
           )}
+
+          <div className="sync-section" data-testid="library-health-reports">
+            <h3>Reports to read</h3>
+            <p className="muted">
+              Each is written as a read-only note in the Reports notebook, replacing the last one. Each reads
+              the whole library, so it runs only when you ask.
+            </p>
+            <ul className="health-reports">
+              {WRITABLE_REPORTS.map((report) => (
+                <li key={report.id} data-testid={`library-health-report-${report.id}`}>
+                  <strong>{report.name}</strong> · <span className="muted">{report.what}</span>
+                  <div className="row-actions">
+                    <button type="button" data-testid={`write-report-${report.id}`} disabled={writing !== ''}
+                      onClick={() => void writeReport(report)}>
+                      {writing === report.id ? 'Writing…' : 'Write the report'}
+                    </button>
+                    {written[report.id] && onOpenDocument && (
+                      <button type="button" data-testid={`open-report-${report.id}`}
+                        onClick={() => { onOpenDocument(written[report.id].document_id); onClose(); }}>
+                        Open “{written[report.id].title}”
+                      </button>
+                    )}
+                  </div>
+                  {written[report.id] && (
+                    <p className="success-line" role="status" data-testid={`written-report-${report.id}`}>
+                      ✓ {written[report.id].summary}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {writeError && <p className="sync-inline-notice error" role="status"
+              data-testid="library-health-report-error">{writeError}</p>}
+          </div>
 
           <div className="sync-section" data-testid="library-health-repairs">
             <h3>What can be repaired mechanically</h3>

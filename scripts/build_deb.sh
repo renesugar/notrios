@@ -17,6 +17,7 @@
 # which is what H6a's "smallest maintainable toolchain" asked for. Moving back
 # to nFPM later is a configuration change, not a rewrite.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 OUT=${1:-"$ROOT/dist/deb"}

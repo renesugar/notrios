@@ -32,7 +32,7 @@ the integrity pipeline shared by the site and Help content:
   truth oracle—and generate actionable commands/config/API/GUI attempts from
   prose for human review;
 - migrate the site to a pinned, Apache-2.0 `hugo-theme-ledger` snapshot with
-  Hugo Extended and static Pagefind, preserving `/notrios/` URLs/fragments,
+  Hugo Extended and static Pagefind, preserving the site's URLs and fragments,
   `googleFonts=false`, zero third-party runtime requests, clean release-ZIP
   builds, and the raw Markdown Help source.
 
@@ -45,6 +45,16 @@ non-byte-identical hashed shard output. The local checkout is not a build
 dependency. G18g materialized that exact snapshot under `docs-site/`, wired it
 into production/CI/release packaging, and added strict evidence under
 `performance/v0.7-g18g/`.
+
+**What ships today** is upstream commit
+`cf68886beb31ec0bbe7e2f05e538a20fec722e5a`, 44 files and 174,456 bytes, which
+carries the Bluge result-URL fix (v1.0 J31). The G18b figures above are v0.7's
+record of what it reviewed and do not move. The vendored copy is described by
+`docs-site/THEME_PROVENANCE.json`, which G18g's validator checks it against;
+the frozen snapshot is checked separately, exactly as before. Refresh it with
+`performance/v1.0-j31/refresh_vendored_theme.sh`, which clones upstream, copies
+only the files the snapshot already has, reports any the snapshot does not
+take, and rewrites the provenance from the bytes on disk.
 
 G18c adds `make docaudit`. The repository-only audit resolves the frozen Go and
 TypeScript declaration anchors, checks the typed claim/test registry, binds
@@ -82,8 +92,12 @@ docs/
 ```
 
 The site navigation in `docs-site/layouts/` lists every user page. The build
-uses the GitHub Pages project base path (`/notrios/`) and indexes only elements
-marked `data-pagefind-body`, excluding generated API/search furniture.
+uses the `baseURL` in `docs-site/hugo.toml` — `https://notrios.com/` since v0.9
+I10, so pages are served at the root — and indexes only elements marked
+`data-pagefind-body`, excluding generated API/search furniture. It was built
+for the GitHub Pages project path until then; that address now redirects to the
+apex, and `scripts/check_site_base_url.py` fails when a tracked file says
+otherwise.
 
 ## Rules
 

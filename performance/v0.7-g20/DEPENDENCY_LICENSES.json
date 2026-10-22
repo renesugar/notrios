@@ -49,12 +49,12 @@
       "docs-site/package-lock.json": {
         "license_field": "packages[*].license",
         "packages": 8,
-        "sha256": "b1d95ed9b244709067b22f2e9612138910a434b0c2fd429ca71ac39d661d7fe2"
+        "sha256": "9ff2fe162a3be0cec6c55324f0530cc4729375878bc0db830f72f726ca18b8bc"
       },
       "web/package-lock.json": {
         "license_field": "packages[*].license",
-        "packages": 353,
-        "sha256": "b271e7a687ddf01c80b8b8596fb28b741a6423d38a45c0cde965de14144fd56e"
+        "packages": 357,
+        "sha256": "5b0c356d0fc3863e271f2a64ff9bc2c49149dbaf9b401b315afe9a12758d9b9b"
       }
     }
   },

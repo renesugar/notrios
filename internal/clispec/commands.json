@@ -32,6 +32,10 @@
       "purpose": "Watch and control recorded long-running jobs"
     },
     {
+      "name": "links",
+      "purpose": "Report the links in the library that open nothing certain"
+    },
+    {
       "name": "notebooks",
       "purpose": "Create and list notebooks, including query notebooks"
     },
@@ -190,12 +194,21 @@
     },
     {
       "path": [
+        "links",
+        "report"
+      ],
+      "notes": [],
+      "purpose": "every ambiguous link with the notes it might mean; --write-note overwrites the read-only note in Reports",
+      "usage": "[--db ...] [--collection id] [--detail-limit 50] [--candidate-limit 10] [--write-note] [--quiet]"
+    },
+    {
+      "path": [
         "import",
         "chatgpt"
       ],
       "notes": [],
-      "purpose": "import a ChatGPT conversation export",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <conversations.json|export-dir>"
+      "purpose": "import a ChatGPT export: the downloaded ZIP, an OpenAI Privacy Portal ZIP, or an extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook ChatGPT] [--dry-run] <export.zip|export-dir|conversations.json>"
     },
     {
       "path": [
@@ -203,8 +216,8 @@
         "claude"
       ],
       "notes": [],
-      "purpose": "import a Claude conversation export",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <conversations.json|export-dir>"
+      "purpose": "import a Claude export: the downloaded ZIP, its batch ZIPs, or an extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Claude] [--dry-run] <export.zip|export-dir|conversations.json>"
     },
     {
       "path": [
@@ -230,8 +243,8 @@
         "twitter"
       ],
       "notes": [],
-      "purpose": "import an extracted Twitter/X archive",
-      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <extracted-archive-dir>"
+      "purpose": "import a Twitter/X archive, as the downloaded ZIP or its extracted folder",
+      "usage": "[--config config.yaml] [--db data/notes.sqlite] [--asset-store data/assets] [--collection default] [--notebook Twitter] [--dry-run] <twitter-archive.zip | extracted-archive-dir>"
     },
     {
       "path": [
@@ -367,6 +380,18 @@
     {
       "path": [
         "notes",
+        "duplicate"
+      ],
+      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
+      "purpose": "copy a note, or every note a search names",
+      "notes": [
+        "the copy is a new note with its own id; the report names it",
+        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
+      ]
+    },
+    {
+      "path": [
+        "notes",
         "edit"
       ],
       "usage": "--document <id> [--title <title>] [--body-file path | --body text] [--message <why>]",
@@ -454,18 +479,6 @@
     },
     {
       "path": [
-        "notes",
-        "duplicate"
-      ],
-      "usage": "[--document <id> | --query <query> [--apply] [--mode atomic|best_effort] [--limit N]] [--db ...]",
-      "purpose": "copy a note, or every note a search names",
-      "notes": [
-        "the copy is a new note with its own id; the report names it",
-        "--query acts on every note a search names; without --apply it shows the selection and changes nothing"
-      ]
-    },
-    {
-      "path": [
         "open"
       ],
       "notes": [],
@@ -476,9 +489,13 @@
       "path": [
         "paths"
       ],
-      "notes": [],
-      "purpose": "resolved mode and roots (config, data, state, cache, runtime, assets)",
-      "usage": "[--json] [--no-redact]"
+      "notes": [
+        "`--report` lists every directory and file this installation occupies, every registered profile, and the installed program files",
+        "taken before `purge`, `--report --paths` is the oracle `scripts/check_purged.sh` reads afterwards",
+        "a profile whose library lives outside these roots is listed and marked external, because a purge keeps it"
+      ],
+      "purpose": "resolved mode and roots (config, data, state, cache, runtime, assets), and with --report everything the installation occupies",
+      "usage": "[--json] [--no-redact] [--report [--paths] [--registry path] [--install-manifest path]]"
     },
     {
       "path": [
@@ -590,6 +607,17 @@
       "notes": [],
       "purpose": "scoped sanitized archive-v2 handoff; refuses a stale review",
       "usage": "--profile <profile> --reviewed-plan <sha256> <out-dir> [--overwrite] [--no-verify]"
+    },
+    {
+      "path": [
+        "purge"
+      ],
+      "notes": [
+        "deletes this library's data; removing the program is `apt remove` or `make uninstall`",
+        "takes a verified backup first unless --no-backup is passed, and refuses rather than hanging when nothing can answer the question"
+      ],
+      "purpose": "delete this library's notes, configuration, state and cache, after a verified backup",
+      "usage": "[--dry-run] [--confirm] [--no-backup] [--backup-dir path] [--json] [--no-plan] [--no-redact]"
     },
     {
       "path": [

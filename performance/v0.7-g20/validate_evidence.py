@@ -119,9 +119,22 @@ def validate(root=ROOT, report_path=REPORT):
     if tuple(int(part) for part in web_match.groups()) < (0, 7, 0):
         fail(f"the web product version {web_version} is older than the 0.7.0 this record describes")
     store_source = (root / "internal/store/store.go").read_text()
-    if not re.search(r"CurrentSchemaVersion\s*=\s*27\b", store_source):
-        fail("canonical schema is not v27")
-    for step in range(19, 28):
+    # This record describes the 0.7.0 release, which shipped schema v27, and the
+    # check read the current source for exactly 27. That was right for as long
+    # as the schema did not move, and v1.0 J18 moved it to 28 to stop every
+    # document write scanning the full-text index.
+    #
+    # So the assertion becomes the one it was always making: the schema this
+    # release shipped must still be reachable, and every step up to wherever the
+    # tree is now must have a migration. A schema that went *backwards* would
+    # still fail, which is what "canonical" was protecting.
+    match = re.search(r"CurrentSchemaVersion\s*=\s*(\d+)", store_source)
+    if not match:
+        fail("no CurrentSchemaVersion in internal/store/store.go")
+    current = int(match.group(1))
+    if current < 27:
+        fail(f"canonical schema went backwards from the v27 this record describes: v{current}")
+    for step in range(19, current + 1):
         if not list((root / "internal/store/migrations").glob(f"{step:04d}_*.sql")):
             fail(f"missing schema migration v{step}")
 

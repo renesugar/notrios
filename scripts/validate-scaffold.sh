@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1  # no .pyc litter; progress arrives as it happens
 
 go test ./...
 
@@ -66,7 +67,32 @@ fi
 # lifecycle tests being added beside it delete directories for a living.
 python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check_required_files.py
+# The source half only: every entry point that runs Python must export
+# PYTHONDONTWRITEBYTECODE and PYTHONUNBUFFERED. Twenty scripts were edited by
+# hand to add that line, which is exactly where the twenty-first gets
+# forgotten, and this is a fact about tracked files -- the same kind
+# check_required_files.py above asserts.
+#
+# The byproduct half stays out, and `make bytecode` reports it instead: a
+# git-ignored __pycache__ is untidy rather than wrong, and a gate that refused a
+# commit over one would be switched off inside a week.
+python3 scripts/check_python_hygiene.py --sources
 python3 scripts/check_sqlite_provenance.py
+# The documentation site is built for one address, and nothing local can test
+# the deployment, so a sentence naming the other address survives every other
+# gate: v1.0 J31 found four, including the browser smoke's own default, which is
+# why that smoke had stopped working. This compares what tracked files say
+# against docs-site/hugo.toml's baseURL.
+python3 scripts/check_site_base_url.py
+# Documentation that quotes an error message is only useful while the program
+# still produces it. v1.0 J15-D found two rows quoting errors the importers had
+# stopped producing, each with advice a later item had made wrong, and both had
+# passed every gate for weeks.
+python3 scripts/check_documented_errors.py
+# Every published example is generated from a tracked set or recorded as left
+# with a reason (v1.0 J15-B). cmd/docexamples refuses one that is neither; this
+# keeps the record itself current, so the reasons describe today's pages.
+python3 performance/v1.0-j15/record_decisions.py --check
 python3 performance/v0.8-h2a/validate_evidence.py
 bash -n scripts/mvp_smoke.sh
 bash -n scripts/run_performance_smoke.sh
@@ -160,6 +186,38 @@ python3 performance/v0.9-i7/validate_evidence.py
 # I8: re-derives the frozen 1.0 surfaces from source on every run, and checks
 # the ABI edges record. The sanitizer runs themselves are not run here.
 python3 performance/v0.9-i8/validate_evidence.py
+# J3: the packaged-purge record. The drills install and delete; this reads
+# what they recorded.
+python3 performance/v1.0-j3/validate_evidence.py
+# J9: the 1.0 support matrix. The packages and the release set are not in the
+# repository, so this checks the record: every supported row executed, the
+# container run passed at the current version, the verification run is of the
+# blocks the page publishes now, and the installation table is the one the
+# matrix renders.
+python3 performance/v1.0-j9/record_matrix.py
+# J49: the release is built on a supported row, and the release-set builder
+# and verifier hold their refusals, proven with a throwaway key in a GnuPG home
+# of the test's own.
+python3 performance/v1.0-j49/validate_evidence.py
+python3 performance/v1.0-j49/test_release_set.py
+# J10-A: the volumes that seal v1.0's evidence. Derived from the archive
+# manifest, and each sealed volume's committed signatures held against it.
+python3 performance/v1.0-j10/plan_volumes.py
+# J13-A: the example classification. Derived on every run from the documents
+# themselves, so it fails when a document changes and the report does not.
+python3 performance/v1.0-j13/validate_evidence.py
+# J4: the surface review. Derived from the freeze and the repository on every
+# run, so a route added to the freeze and not reviewed fails here.
+python3 performance/v1.0-j4/validate_evidence.py
+# J5: the scale record. The measurements cannot be re-derived in a validate run,
+# so this checks the record against itself and against the call sites it describes.
+python3 performance/v1.0-j5/validate_evidence.py
+# J18: the full-text index is addressed by rowid. The measurements cannot be
+# re-derived here, but an eleventh call site addressing it by document_id can
+# be, and that is the defect coming back.
+python3 performance/v1.0-j18/validate_evidence.py
+# J32: the rule that decides whether a measured change ships.
+python3 -m unittest discover -s performance/v1.0-j32 -p 'test_*.py'
 
 # The anchor and enumeration gates, which used to run only inside
 # scripts/package_release.sh. That is how a dangling Go anchor survived from

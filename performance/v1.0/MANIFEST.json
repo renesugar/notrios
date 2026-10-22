@@ -12,11 +12,443 @@
       "bytes": 25163116,
       "entries": 2510,
       "sha256": "e6a1ce0adfe93716d7deedb415d09941af3e8dec088f3315ef2a9eaae4c42e91"
+    },
+    {
+      "item": "J11",
+      "archive": "notrios-v1.0-j11-42bf484.zip",
+      "commit": "42bf484b1b62af9112f0a8cc7c80f148ed3a0068",
+      "taken": "when the slice closed",
+      "bytes": 25718914,
+      "entries": 2698,
+      "sha256": "c87463ad29922cf3b78302ba87afec415522f70ffcf065cc62efd35053fc4e3b"
+    },
+    {
+      "item": "J12",
+      "archive": "notrios-v1.0-j12-ba7e431.zip",
+      "commit": "ba7e43182f1526251fa9aba95cded07604ba2cc2",
+      "taken": "when the slice closed",
+      "bytes": 25236997,
+      "entries": 2535,
+      "sha256": "7e013b37969e095a8303a4f60e342cbd060ccdf985c5676ae61d32cb71dafcfe"
+    },
+    {
+      "item": "J13",
+      "archive": "notrios-v1.0-j13-088b488.zip",
+      "commit": "088b488805ae4913816e02ef2ba93b4eeef625b4",
+      "taken": "when the slice closed",
+      "bytes": 25290595,
+      "entries": 2546,
+      "sha256": "39cd97edf265e25c227851f1297ca7b8c1168c3f3a0607217ae8390b264fb514"
+    },
+    {
+      "item": "J14",
+      "archive": "notrios-v1.0-j14-2cfaeed.zip",
+      "commit": "2cfaeedfde2be944873f36ae1fc574310eecc3c3",
+      "taken": "when the slice closed",
+      "bytes": 25250188,
+      "entries": 2536,
+      "sha256": "4b3b09c16a3b29434723e8e3c0f5b9092106689c03e33dc72b9a0b4bf17f46d0"
+    },
+    {
+      "item": "J15",
+      "archive": "notrios-v1.0-j15-5a2efdb.zip",
+      "commit": "5a2efdb337ed908039de6f0ba579be6901be639b",
+      "taken": "when the slice closed",
+      "bytes": 25778888,
+      "entries": 2734,
+      "sha256": "73346eb6fc020936bfff6ac4f244c3112e89723e8738742d3a5d822879df5739"
+    },
+    {
+      "item": "J16",
+      "archive": "notrios-v1.0-j16-792f406.zip",
+      "commit": "792f406d7852c98ac895d3f527a360f61112980b",
+      "taken": "when the slice closed",
+      "bytes": 25358757,
+      "entries": 2571,
+      "sha256": "21bec6a6cfcc6647c32232959b84a8d1209a8c5390225bca6ff8814429e897d3"
+    },
+    {
+      "item": "J17",
+      "archive": "notrios-v1.0-j17-e0ecc47.zip",
+      "commit": "e0ecc479407f3d68648b749f7bcf31e61600216c",
+      "taken": "when the slice closed",
+      "bytes": 25368884,
+      "entries": 2574,
+      "sha256": "328bfbb1422a2b6b228176fc88aa9af13ac76a3d6d9a73017d3c6a2a42490adb"
+    },
+    {
+      "item": "J18",
+      "archive": "notrios-v1.0-j18-12cc1c9.zip",
+      "commit": "12cc1c9af811b17b37b715eecc4256d990da4875",
+      "taken": "when the slice closed",
+      "bytes": 25352898,
+      "entries": 2569,
+      "sha256": "4c96260519ef330a8a67f2638125247dbae59835d6a903d071dba22f4b4601bf"
+    },
+    {
+      "item": "J19",
+      "archive": "notrios-v1.0-j19-ae0eb90.zip",
+      "commit": "ae0eb9088bc34204c5dd4a4c0f358fe1d3970156",
+      "taken": "when the slice closed",
+      "bytes": 25386792,
+      "entries": 2581,
+      "sha256": "dd4a71f1bcd32a96c562bba5bcc635389349dc79b3843aef17d4d3427389f52a"
+    },
+    {
+      "item": "J2",
+      "archive": "notrios-v1.0-j2-442a968.zip",
+      "commit": "442a968bddac6d8802d888595223eb9ff944b720",
+      "taken": "when the slice closed",
+      "bytes": 25169656,
+      "entries": 2513,
+      "sha256": "2bee2e899cafc47da476013351a4b37b8a941d788d0db0d1fc35fa918db9081c"
+    },
+    {
+      "item": "J20",
+      "archive": "notrios-v1.0-j20-f5b7102.zip",
+      "commit": "f5b710220173af977d969592a499cf9b9e8b1175",
+      "taken": "when the slice closed",
+      "bytes": 25408141,
+      "entries": 2591,
+      "sha256": "3ec5d563d3ee714005148386d1324d544f956362b49a25117568329749be0ee3"
+    },
+    {
+      "item": "J21",
+      "archive": "notrios-v1.0-j21-a6de139.zip",
+      "commit": "a6de139d8445d8aaca416fee6fbbe60f6060d138",
+      "taken": "when the slice closed",
+      "bytes": 25403831,
+      "entries": 2591,
+      "sha256": "f0b10302474db63253cb4c960ee17a1da6ef473de6490436c962451b45818f1e"
+    },
+    {
+      "item": "J22",
+      "archive": "notrios-v1.0-j22-07f3acc.zip",
+      "commit": "07f3accb16141fd35a9ee7a48ff18bf1ddf7ee6c",
+      "taken": "when the slice closed",
+      "bytes": 25479082,
+      "entries": 2614,
+      "sha256": "bca1a76f52aabcced5d3259d3ff2193b6c091c4e7e103e948aa6b6c3921023f3"
+    },
+    {
+      "item": "J23",
+      "archive": "notrios-v1.0-j23-bb68681.zip",
+      "commit": "bb68681a6a8af1e212c54f1d1d93f2cb915d1338",
+      "taken": "when the slice closed",
+      "bytes": 25445858,
+      "entries": 2602,
+      "sha256": "f8d3106e03ace9209d4966af4d5d82d7ab7261fc090c6bbf6f62f185f356aa40"
+    },
+    {
+      "item": "J24",
+      "archive": "notrios-v1.0-j24-b92f715.zip",
+      "commit": "b92f7154098f5d830612e33955e90cc7a495a45f",
+      "taken": "when the slice closed",
+      "bytes": 25455843,
+      "entries": 2604,
+      "sha256": "545687a7ba22729259a498eb08cb9b25a3546cc930c87d7a90cd1d9e0c16b055"
+    },
+    {
+      "item": "J25",
+      "archive": "notrios-v1.0-j25-2fd67ec.zip",
+      "commit": "2fd67ec9f016ac8f4848793fd34d08aafb3bf50d",
+      "taken": "when the slice closed",
+      "bytes": 25500808,
+      "entries": 2621,
+      "sha256": "f7e55b6d6bc0d65d096f33d02d95020dbd5bd9aad2ddca9d13e18f8bbf1a09a9"
+    },
+    {
+      "item": "J26",
+      "archive": "notrios-v1.0-j26-fe024ae.zip",
+      "commit": "fe024aed32a4b86a25203cde31433e280b7454ae",
+      "taken": "when the slice closed",
+      "bytes": 25538803,
+      "entries": 2635,
+      "sha256": "a54f6c20cb1fc1c788d9814daef81df028221ff4530c948d978eabd868c276f6"
+    },
+    {
+      "item": "J27",
+      "archive": "notrios-v1.0-j27-ab6fd32.zip",
+      "commit": "ab6fd3232e112489011d162bd193eaf2a32ef04c",
+      "taken": "when the slice closed",
+      "bytes": 25571167,
+      "entries": 2643,
+      "sha256": "f9846de44907b625787f76785ee4d944e76e305785bb4bfdb7011ebac00867a6"
+    },
+    {
+      "item": "J28",
+      "archive": "notrios-v1.0-j28-2253560.zip",
+      "commit": "2253560bdcf8f7f9fb2ed6c0288170b3d8ff89f1",
+      "taken": "when the slice closed",
+      "bytes": 25603517,
+      "entries": 2655,
+      "sha256": "fb2869fc7e0cf012d102cba911edf6538fe7e2cc4ab307c666ebfc5103980524"
+    },
+    {
+      "item": "J29",
+      "archive": "notrios-v1.0-j29-dc866c1.zip",
+      "commit": "dc866c1e4e0c801ee8e8feb9b26cba425602223c",
+      "taken": "when the slice closed",
+      "bytes": 25647494,
+      "entries": 2664,
+      "sha256": "a994a99f9d7cb58bcd5f664d3b5ebad6992372786b525ac5c1477c1f3735a8c1"
+    },
+    {
+      "item": "J3",
+      "archive": "notrios-v1.0-j3-45d097a.zip",
+      "commit": "45d097a4cfbe801cb916206c4147a9368e48935c",
+      "taken": "when the slice closed",
+      "bytes": 25203819,
+      "entries": 2528,
+      "sha256": "6404bf8910a494127dc2206283d59bcb78ede0f2046b9d226517b25b18e5fafb"
+    },
+    {
+      "item": "J30",
+      "archive": "notrios-v1.0-j30-0b47dd5.zip",
+      "commit": "0b47dd5629752869051f5147d5d987ed61e71b56",
+      "taken": "when the slice closed",
+      "bytes": 25636599,
+      "entries": 2660,
+      "sha256": "27a6fa112c30a566246f35fb8d56951d4af5071b7bd830ef2389c731207bd04c"
+    },
+    {
+      "item": "J31",
+      "archive": "notrios-v1.0-j31-d8c67d4.zip",
+      "commit": "d8c67d48ea07ecb62b62d8744a870475b277f2e1",
+      "taken": "when the slice closed",
+      "bytes": 25673818,
+      "entries": 2680,
+      "sha256": "b2ff65bf195ec6ca5fa1b0ceb64d81493499976f1f394f4f766445eab6376b42"
+    },
+    {
+      "item": "J32",
+      "archive": "notrios-v1.0-j32-2937c76.zip",
+      "commit": "2937c76e2064e687ba1ad8ef09a4c5e8968c9a84",
+      "taken": "when the slice closed",
+      "bytes": 26311272,
+      "entries": 2907,
+      "sha256": "2cb1cc48f7cda46c190a9317951e13a272d77a065d4698a42fa431725b7b74a9"
+    },
+    {
+      "item": "J33",
+      "archive": "notrios-v1.0-j33-f8749e6.zip",
+      "commit": "f8749e64fadbf42f139b13f2fc677e9af3d372d7",
+      "taken": "when the slice closed",
+      "bytes": 25663410,
+      "entries": 2674,
+      "sha256": "e4dde0660a7af2d09bcbd2f5840affeb5761b20fe6b83c4673b717bdf0336f73"
+    },
+    {
+      "item": "J34",
+      "archive": "notrios-v1.0-j34-dbae64d.zip",
+      "commit": "dbae64dc04a150d10e04049457c7a8cb90d73fff",
+      "taken": "when the slice closed",
+      "bytes": 25659206,
+      "entries": 2671,
+      "sha256": "052f3ce2ecf5c192a3b76943a9d10ed3ea49b9729ba730990cdcd2a117c7b510"
+    },
+    {
+      "item": "J35",
+      "archive": "notrios-v1.0-j35-f3d0cdf.zip",
+      "commit": "f3d0cdfa282d603363654a41aef2e0361376b393",
+      "taken": "when the slice closed",
+      "bytes": 25684782,
+      "entries": 2685,
+      "sha256": "dbf6dedf4d2a9c864d2e321ccb288cf8c3b72bdae7fd162162d579af62e5bd6e"
+    },
+    {
+      "item": "J36",
+      "archive": "notrios-v1.0-j36-f6b9719.zip",
+      "commit": "f6b9719fe1374ac220f38e30fdc41e0b1e2c7f22",
+      "taken": "when the slice closed",
+      "bytes": 26456882,
+      "entries": 2936,
+      "sha256": "cf56492012b5e23866a42b69f49fa1cee5c3ca9ddadb576f0c95e67a2f3bb3b6"
+    },
+    {
+      "item": "J37",
+      "archive": "notrios-v1.0-j37-3737bdc.zip",
+      "commit": "3737bdcd349e1a3439129948e87b45f5fd898d2e",
+      "taken": "when the slice closed",
+      "bytes": 26468481,
+      "entries": 2940,
+      "sha256": "fe8e4533c9b1bbd8234b3b99c71f8fc5b5d3cc075841b6fb16bc3161d683b684"
+    },
+    {
+      "item": "J38",
+      "archive": "notrios-v1.0-j38-a5c42db.zip",
+      "commit": "a5c42db06b3a3e549812a69037d3b723b18b8178",
+      "taken": "when the slice closed",
+      "bytes": 26442426,
+      "entries": 2932,
+      "sha256": "b09bd5d8047582d98911923c128af20fb164f55556462803b481ddef599de314"
+    },
+    {
+      "item": "J39",
+      "archive": "notrios-v1.0-j39-cd14448.zip",
+      "commit": "cd1444848ebed42b082e02d06b150daff6619ae9",
+      "taken": "when the slice closed",
+      "bytes": 26659678,
+      "entries": 2991,
+      "sha256": "5933a1113de47e1d50b0bfb85e51a86706e3339153abd802fc99de8b15082ed1"
+    },
+    {
+      "item": "J4",
+      "archive": "notrios-v1.0-j4-9d6e38a.zip",
+      "commit": "9d6e38aca61bf43c758a1e433879c7ab9b2cf7ef",
+      "taken": "when the slice closed",
+      "bytes": 25311801,
+      "entries": 2552,
+      "sha256": "e45a162891d29e1eb054a57c3cf4c84b81d95e434a0852a83414cd28da8160d6"
+    },
+    {
+      "item": "J40",
+      "archive": "notrios-v1.0-j40-3a56004.zip",
+      "commit": "3a560046f76e0d257a12098dfacc482614832e68",
+      "taken": "when the slice closed",
+      "bytes": 26725022,
+      "entries": 3013,
+      "sha256": "03a9cd4b7cc817d24f4a6a0f1e29acd5f182061e7a615658115dbbd25301ba4a"
+    },
+    {
+      "item": "J41",
+      "archive": "notrios-v1.0-j41-c71acbb.zip",
+      "commit": "c71acbbe3f004fd0a946f7e19b58e62ba3d407f3",
+      "taken": "when the slice closed",
+      "bytes": 26479358,
+      "entries": 2944,
+      "sha256": "e04fb5f704329f435ed9c17144372c957590f763473b8f57d0d046bf21c127b6"
+    },
+    {
+      "item": "J42",
+      "archive": "notrios-v1.0-j42-36309b6.zip",
+      "commit": "36309b66961f541af6a6e7fd3583d6e8c512f4ee",
+      "taken": "when the slice closed",
+      "bytes": 26488501,
+      "entries": 2948,
+      "sha256": "56bd95f439abda7bafa58c8c797fadc0f047d5059ce32558ccba6dc65bdca3bb"
+    },
+    {
+      "item": "J43",
+      "archive": "notrios-v1.0-j43-666b705.zip",
+      "commit": "666b705959574d7639d5c69520fb531dc6312983",
+      "taken": "when the slice closed",
+      "bytes": 26613074,
+      "entries": 2979,
+      "sha256": "e22f6d4f79101aa037339d457b6f21f704c3f1c6e10a9bea28c25d1a952a1dd7"
+    },
+    {
+      "item": "J44",
+      "archive": "notrios-v1.0-j44-4fe08b7.zip",
+      "commit": "4fe08b7ff9363deb99456c1a5023f1de94926007",
+      "taken": "when the slice closed",
+      "bytes": 26609076,
+      "entries": 2977,
+      "sha256": "74047ed16151da80f79c274a32b164b3ec22289ad8af48126f83c6d19c6aa61a"
+    },
+    {
+      "item": "J45",
+      "archive": "notrios-v1.0-j45-754acd5.zip",
+      "commit": "754acd5bfebbd8edf711cbcd2d93d486394115fb",
+      "taken": "when the slice closed",
+      "bytes": 26609834,
+      "entries": 2977,
+      "sha256": "7f2dc50c55815d1ffacaf2bd29166aed250ecd63126c988e2b3046267309dbae"
+    },
+    {
+      "item": "J46",
+      "archive": "notrios-v1.0-j46-de1affb.zip",
+      "commit": "de1affbc4c1dee8761f1407cde897cfba0b332ff",
+      "taken": "when the slice closed",
+      "bytes": 26660213,
+      "entries": 2991,
+      "sha256": "7d82cdf0d6430510264d229a12458fbe407bab0cc66b42e6409e0ce9e02972e5"
+    },
+    {
+      "item": "J47",
+      "archive": "notrios-v1.0-j47-4eaf46f.zip",
+      "commit": "4eaf46fcf6afa77a85eba4a33c5c8c5fcd80a5b6",
+      "taken": "when the slice closed",
+      "bytes": 26742413,
+      "entries": 3024,
+      "sha256": "621b0b61331cd3f6b3c60150ef362a7ea0e61912aa6480330269a25d11c360a9"
+    },
+    {
+      "item": "J48",
+      "archive": "notrios-v1.0-j48-74d067f.zip",
+      "commit": "74d067f7fc9a3e6926ab86ab85369d023542d2ab",
+      "taken": "when the slice closed",
+      "bytes": 26741488,
+      "entries": 3024,
+      "sha256": "ea2b11683ed1df44c732228eab8a4d90a702826e77f385573ec09bf3c9c86fe0"
+    },
+    {
+      "item": "J49",
+      "archive": "notrios-v1.0-j49-f8dc72e.zip",
+      "commit": "f8dc72e0abecb2004e6907bb156930a7a82e9b3e",
+      "taken": "when the slice closed",
+      "bytes": 26799068,
+      "entries": 3043,
+      "sha256": "bee73a30c3d6e80dc4d474f025bd416346a7a08513e7fa27205c5576b19031e3"
+    },
+    {
+      "item": "J5",
+      "archive": "notrios-v1.0-j5-fde1330.zip",
+      "commit": "fde133078ca467cfd2f9a8a0bf733ab73e6cccd0",
+      "taken": "when the slice closed",
+      "bytes": 25326172,
+      "entries": 2558,
+      "sha256": "3d72a8b8fcd175d151a03ca31b02518e55d228b8524b0b185fc54af043301ce1"
+    },
+    {
+      "item": "J50",
+      "archive": "notrios-v1.0-j50-1a9cdbe.zip",
+      "commit": "1a9cdbe9ba9256921b7fd66bbe4549c9b3d9be99",
+      "taken": "when the slice closed",
+      "bytes": 26784782,
+      "entries": 3039,
+      "sha256": "169ab39c24eb9882e25dae7a748f9a4b0f96ca025d428e3d1517484bed8016ed"
+    },
+    {
+      "item": "J6",
+      "archive": "notrios-v1.0-j6-7a7d688.zip",
+      "commit": "7a7d68846140dbc6e0b78dbc3d0233d0ef44bbc5",
+      "taken": "when the slice closed",
+      "bytes": 25738953,
+      "entries": 2712,
+      "sha256": "caab18caace26ed717d1ebbab1b9645820f25957e84ea486f3bb7f76ba15cfca"
+    },
+    {
+      "item": "J7",
+      "archive": "notrios-v1.0-j7-d331551.zip",
+      "commit": "d33155139a5d8b359a7867211a092e560d3d4eb3",
+      "taken": "when the slice closed",
+      "bytes": 25448557,
+      "entries": 2602,
+      "sha256": "38bf63636b6741646b9e6d3a32d7d7bc186b8d641cb1bc9316d6239615f2d2e7"
+    },
+    {
+      "item": "J8",
+      "archive": "notrios-v1.0-j8-0f0f956.zip",
+      "commit": "0f0f95664ea0210c1361a879e7e626b127f72f9f",
+      "taken": "when the slice closed",
+      "bytes": 25556784,
+      "entries": 2640,
+      "sha256": "0f2dfd761b4bb8da84238ca920adaf1a26a865182101a3ee84870a99b62b1afb"
+    },
+    {
+      "item": "J9",
+      "archive": "notrios-v1.0-j9-978c67c.zip",
+      "commit": "978c67c160126d3e213c35622a4a39da4107bf54",
+      "taken": "when the slice closed",
+      "bytes": 26783850,
+      "entries": 3039,
+      "sha256": "c254b36d9c93d298cc4416d91497647a06e0b3eb2bd965a11eddd375f4c34dcf"
     }
   ],
   "counts": {
-    "items": 1,
+    "items": 49,
     "retroactive": 0,
-    "total_bytes": 25163116
+    "total_bytes": 1267409548
   }
 }

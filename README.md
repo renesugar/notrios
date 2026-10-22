@@ -1,58 +1,34 @@
 # Notrios
 
-Notrios (formerly "Notes Companion") is a local-first note-taking, search, import, and publishing system for very large Markdown and document collections.
-It combines a Go REST/MCP service (`notriosd`), a built-in GUI, SQLite/FTS5-backed canonical storage, content-addressed resources, optional Recoll-derived search/extraction, and support for third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) over the same API. A versioned no-GUI C ABI is planned before 1.0, followed by an independent post-1.0 Flutter client; mobile delivery does not depend exclusively on Wails.
+Notrios is a local-first note-taking, search, import and publishing system for
+very large Markdown and document collections. It was formerly called "Notes
+Companion".
 
-**How to keep this document current is in [`AGENTS.md`](AGENTS.md)** — under "Keeping the reference documents current".
+**What it is made of.** A Go REST/MCP service (`notriosd`), a desktop GUI, a
+command-line tool (`notriosctl`), and SQLite/FTS5 canonical storage with
+content-addressed resources. Search and text extraction can optionally use a
+Recoll sidecar. Third-party native clients (C++/Qt, Go/Wails, Rust/Tauri) work
+against the same API.
 
-The v0.1 through v0.7 milestones are complete. v0.7 G0-G20 delivered
-the authenticated REST sync data plane and resumable encrypted snapshot
-download. The blocking G14a-G14e archive-scalability sequence is complete:
-G14b selected and G14c implemented a
-same-schema SQLite image plus bounded packed assets for full backup/catch-up
-while retaining semantic archive-v2; G14d integrated crash-safe restore and
-incremental catch-up, and G14e passed/froze the production full-scale contract.
-G15 adds the schema-v26 durable sync outbox, bounded retries/cancellation, and
-explicit-scope REST/MCP control. G16 adds the responsive local Sync Center,
-native directory chooser, explicit pairing/snapshot permission, lazy-resource
-and three-way conflict workflows, and non-persistent password backup review.
-G17 advances schema v27 with signed peer retirement, a configurable 90-day
-history horizon, acknowledgement plus re-verified-snapshot collection floors,
-permanent death identity, sync-aware resource GC, and explicit snapshot catch-
-up below the floor. The blocking G17a-G17b preservation sequence is complete:
-G17a proved the contract, and G17b sealed 81 curated artifacts, issued and
-independently verified immutable reserve volume `NTR-EV-0001`, and committed
-the finite outer catalog without rewriting original handoffs. Its host-side
-verifier now gates every future GitHub push. G18 completed the finite 19-
-capability platform matrix, 109-operation facade audit, ABI-major-1 ownership/
-error/cancel/stream proposal, Android SQLite/cgo finding, and exact Mermaid
-enablement gate without implementing or claiming those future products. Its
-follow-up now makes pinned modernc/libc a measured H0 candidate beside the C
-amalgamation control while preserving Go database ownership; neither is
-selected. A later API 35 x86_64 emulator run passed the disposable candidate's
-FTS5/JSON/WAL/integrity, reboot-persistence, and shared-library-load pre-gates;
-Android arm64 and the production Notrios ABI/store workload remain open. G18a
-completed the documentation-anchor investigation. G18b then selected a pinned
-minimal Ledger source snapshot, preserved `.html`/fragment routes, and static
-Pagefind through a repository-owned prototype without switching production.
-G18c provides the deterministic cross-language `docaudit` graph and typed
-claim registry; G18d executes the closed non-GUI example set, and G18e executes
-the finite GUI journey set. G18f now generates 15 source-anchored user/API
-fragments and 413 finite registry rows with a deterministic freshness gate.
-Its local advisory Qwen run is preserved honestly at 7/16 calibration
-decisions and never blocks builds or rewrites prose. G18g now ships the exact
-pinned Hugo/Ledger source, local Pagefind, preserved public links, and raw Help
-equivalence through the production build. G19 now publishes the frozen
-archive-v2 consumer contract, schemas, deterministic goldens, and compatibility
-preflight. G20 closed the 0.7.0/schema-v27 release matrix, remediated the
-complete standard security scan and one static correction cycle, and archived
-the milestone. v0.8 H0 then selected the application/ABI/SQLite portability
-foundation without changing production; H1 is next and unapproved. GitHub
-push and physical disc burning remain unauthorized — see [`PLAN.md`](PLAN.md),
-[`ROADMAP.md`](ROADMAP.md), and
-[`plans/v0.7/034-android-emulator-modernc-runtime.md`](plans/v0.7/034-android-emulator-modernc-runtime.md). The repository is
-structured so a coding agent can resume safely after usage limits or model
-changes.
+**Where it runs.** Ubuntu Linux, which is the only tested platform. There is a
+`.deb` package a person can install without Go, Node or a compiler; Windows and
+macOS installers are post-1.0, when there is hardware to test them on.
+
+**What is planned before 1.0.** A versioned no-GUI C ABI, so a client can link
+the core rather than speak to the service. An independent Flutter client comes
+after 1.0; mobile delivery does not depend on Wails.
+
+**Where to start reading.** [Quick start](#quick-start) to build and run it;
+[`docs/index.md`](docs/index.md) for the user documentation;
+[Project status](#project-status) for where the work is;
+[`ROADMAP.md`](ROADMAP.md) for where it is going. The per-milestone history that
+used to live in this paragraph is in Project status, one row per milestone.
+
+**If you are a coding agent,** read [`AGENTS.md`](AGENTS.md) first — it carries
+the reading order, the authorizations that are and are not in force, and, under
+"Keeping the reference documents current", the rules for updating this file and
+the other reference documents. The repository is structured so an agent can
+resume safely after usage limits or a model change.
 
 ## Technology choices
 
@@ -81,7 +57,29 @@ changes.
 
 ## Documentation
 
-User documentation lives under [`docs/`](docs/index.md) and is published as a pinned Hugo/Ledger GitHub Pages site with local Pagefind search (`npm ci --prefix docs-site && bash scripts/build_docs_site.sh /tmp/notrios-site`). `notriosctl seed-help` mirrors the same raw content into the app's built-in read-only Help notebook for offline use. G18a-G18f provide the frozen anchor, audit, execution, generation, and advisory-review evidence; G18g moved the production site to the exact G18b-selected theme while preserving Help bytes, public routes, and fragments.
+User documentation lives under [`docs/`](docs/index.md) as Markdown you can
+read in the repository, and is published at
+[notrios.com](https://notrios.com) as a pinned Hugo/Ledger site with offline
+Pagefind search. `notriosctl seed-help` mirrors the same raw bytes into the
+app's built-in read-only Help notebook, so the documentation works with no
+network at all.
+
+### Reading the site locally
+
+```bash
+make docs                                        # builds _site/ (first run installs Pagefind)
+python3 -m http.server 8000 --directory _site    # then open http://127.0.0.1:8000
+```
+
+`make docs` writes `_site/` and nothing else in the tree; both `_site/` and
+`docs-site/node_modules/` are git-ignored. It needs the pinned toolchain the
+build script checks for — Hugo Extended 0.164.0, Node 26.3.0, Pagefind 1.5.2 —
+and refuses rather than producing a site built with something else.
+
+**`_site/` is not rebuilt by `make validate`.** Nothing in the ordinary loop
+refreshes it, so a checkout can hold months-old rendered documentation while
+every gate is green. `make docs-stale` says whether it has fallen behind
+`docs/`; `make docs` fixes it.
 
 ## Quick start
 
@@ -101,19 +99,95 @@ Desktop GUI (needs `libgtk-3-dev libwebkit2gtk-4.1-dev`):
 make gui && ./bin/notrios
 ```
 
-Everything also runs from source: `go run ./cmd/notriosd -config config/config.example.yaml` and `go run ./cmd/notriosctl <command>`. `make help` lists all build, test, docs, and cleanup targets. There are no official prebuilt binaries yet; Notrios is built from source on Ubuntu Linux (the only tested platform).
+Everything also runs from source: `go run ./cmd/notriosd -config config/config.example.yaml` and `go run ./cmd/notriosctl <command>`. `make help` lists every target.
+
+### Installing, and removing
+
+These are the targets that touch files outside the checkout, so they are listed
+together. Full detail, including the packaged install, is in
+[docs/installation.md](docs/installation.md).
+
+```bash
+make install                 # copy into $HOME/.local by default; records a manifest
+make install-dry-run         # print every path it would write, write nothing
+make uninstall               # remove only what that manifest recorded installing
+make purge                   # uninstall AND delete this user's Notrios data
+DRYRUN=1 make purge          # print the whole plan and stop; asks nothing
+```
+
+`make install` writes a `MANIFEST.json` and `make uninstall` removes only what
+that manifest recorded, so a file you edited is kept and reported rather than
+deleted. Pass `prefix=/some/where` to both.
+
+**`make purge` is the one that destroys things you made.** It deletes your
+notes, configuration, state and cache after writing a verified backup beside
+your state root, and it asks first. `make uninstall` never touches your data;
+`make purge` is uninstall plus your data. A packaged install has no Makefile, so
+the same deletion is `notriosctl purge`. Both are documented in
+[docs/installation.md](docs/installation.md).
+
+### Cleaning up
+
+These two only ever touch the checkout, and never your notes, configuration or
+installed files:
+
+```bash
+make clean                   # build output, and every __pycache__/.pyc in the tree
+make clobber                 # clean, plus web/node_modules/ and docs-site/node_modules/
+make precheck                # fail if the tree has uncommitted or ignored-but-tracked files
+```
+
+`clean` removes what a build produces — `bin/`, `dist/`, `_site/`, `web/dist/`,
+`.playwright-mcp/`, the coverage files, and every `__pycache__` directory and
+`.pyc` file in the tree — so the next build remakes it. `clobber` additionally
+removes the installed npm dependencies, so the next build has to run `npm ci`
+again; use it when a dependency tree is suspect, not routinely.
+Neither reads or writes `~/.config/notrios`, `~/.local/share/notrios` or
+anything `make install` wrote: deleting those is `notriosctl purge`, or `make
+purge` from a checkout, and nothing else.
+
+A release publishes one prebuilt binary, the Ubuntu 24.04 amd64 package. It is
+built and attested by the release workflow and signed with the project's key.
+[docs/installation.md](docs/installation.md) says how to verify it, and lists
+every other platform with what ran on it.
 
 ## Configuration
 
-`notriosd` now loads runtime configuration from `-config <path>`. When no path is supplied, it loads `config/config.example.yaml` from a source checkout if that file exists; otherwise it uses compiled local-development defaults. The `-addr` and `-db` flags remain available as explicit overrides.
+**[docs/configuration.md](docs/configuration.md) is the reference** — what each
+section is for, which roots a purge treats differently, and a generated table of
+all 53 settable keys with their types and defaults.
 
-On startup, the service creates the configured data directory, SQLite database
-parent directory, asset store, projection directory, and search-sidecar index
-directory (`search_sidecar.index_dir`). `/api/v1/status` reports the active
-storage roots, database/schema state, capability/search limits, and optional
-Recoll availability, backlog, sync/index, and reconciliation state.
+Notrios runs with no configuration file at all; everything has a default.
+`notriosd` takes `-config <path>`, and without one it loads
+`config/config.example.yaml` from a source checkout if that file exists and
+compiled defaults otherwise. `-addr` and `-db` override the file.
+
+`notriosctl config show` prints what is actually in effect, which is the command
+to run before editing anything; `notriosctl paths` shows the resolved storage
+roots and how they were resolved, and `notriosctl doctor` checks they exist and
+that the database opens. `/api/v1/status` reports the same roots plus
+database/schema state, capability and search limits, and optional Recoll
+availability, backlog, sync/index and reconciliation state.
 
 ## Project status
+
+Where the project is, generated from the slice ledger by
+`go run ./cmd/docplan --write` and gated, so it cannot be the paragraph that
+drifts. The rules for keeping the reference documents current are in
+[`AGENTS.md`](AGENTS.md).
+
+<!-- notrios:generated:readme:status:begin -->
+**Current milestone: v1.0.** 50 items: 49 complete, 0 in progress, 1 not started, 0 deferred. Item by item, with what each one proved and what it left owed, in [`PLAN.md`](PLAN.md).
+
+**Product version: 1.0.0**, which is what every binary reports and what a release is tagged with. It is not the milestone number: a milestone is the work in the plan, and the version is what the binaries built from it say they are.
+
+**Archived milestones:** v0.1, v0.2, v0.3, v0.4, v0.5, v0.6, v0.7, v0.8, v0.8e, v0.9 — one directory each under [`plans/`](plans/), holding the plan as it stood when the milestone closed.
+<!-- notrios:generated:readme:status:end -->
+
+What each milestone *meant* is below, in prose, because that is not derivable
+from a ledger. `plans/scaffold` and `plans/mvp` are records of how the
+repository started rather than numbered milestones, so the generated list above
+does not name them.
 
 - v0.1 MVP: complete (see `plans/mvp/MVP_RELEASE_REPORT.md`).
 - v0.2 Notrios redesign: **complete** (all 16 tasks; see `plans/v0.2/`) — notebooks/tags/search notebooks, source provenance with conversation threads, the query language, the optional Recoll sidecar, five importers, query-scoped export/import, the Wails GUI with themes, and the documentation site.
@@ -208,8 +282,7 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   admission and untrusted filesystem roots, validates schema v27 upgrade and
   recovery, and ships the 0.7.0 source release candidate. All G0-G20 slices are
   archived under `plans/v0.7/`.
-- **v0.8 (current, 0.8.0) — installation, configuration, shared core, and
-  portability.** H0-H1 established the application facade, the frozen version-1
+- **v0.8 — installation, configuration, shared core, and portability.** H0-H1 established the application facade, the frozen version-1
   C ABI and one hidden SQLite engine. H3-H6 centralised installed paths on the
   XDG contract, added a reviewed `install`/`uninstall`/`purge` lifecycle and an
   Ubuntu package a person can install without Go, Node or a compiler; Windows
@@ -222,6 +295,26 @@ Recoll availability, backlog, sync/index, and reconciliation state.
   command line; the interface gained names for its controls, multi-select, and a
   journey for every capability it offers. The schema is unchanged at v27. All
   H0-H29 slices are archived under `plans/v0.8/`.
+- **v0.8e — the evidence reserve.** A separate short milestone rather than a
+  slice of v0.8, because it is the one thing that cannot be done retroactively:
+  four chained, signed and RFC 3161 timestamped volumes (`NTR-EV-0001` to
+  `NTR-EV-0004`) over an append-only outer catalog, and a host-side verifier
+  that gates every push. Archived under `plans/v0.8e/`.
+- **v0.9 — release-candidate hardening.** I1 put the repository on GitHub and
+  reconciled `develop` with `main`. I3 promoted the Ubuntu installer through
+  clean containers, I4 hardened the destructive lifecycle and fixed a profile
+  race, I5 settled signing, notarization and timestamping policy, and I6
+  generated and verified the release evidence set — SBOM, provenance,
+  checksums — cross-checked against syft and cdxgen. I7 soaked the service,
+  drilled recovery, and froze the support matrix; I8 froze the 1.0
+  compatibility surfaces by re-deriving them rather than restating them. I9
+  rewrote the operational documentation for a reader who has only the package,
+  and I10 moved the documentation site to `notrios.com`. I2 — the Wails v3
+  desktop migration — is **deferred**, on the record, because Wails v3 has not
+  released. Archived under `plans/v0.9/`.
+- **v1.0 — feature-complete local product.** In progress; the generated block
+  at the top of this section counts it, and [`PLAN.md`](PLAN.md) says what each
+  item proved and what it left owed.
 - Agent progress/attempt tracking: [`agent/PLAN_STATUS.md`](agent/PLAN_STATUS.md), [`agent/ATTEMPT_LOG.jsonl`](agent/ATTEMPT_LOG.jsonl), and [`agent/MODEL_LOG.jsonl`](agent/MODEL_LOG.jsonl).
 
 ## Contributing
@@ -263,25 +356,57 @@ make docgen                   # deterministic user/API documentation freshness
 make g18f-validate            # model-free generated/advisory evidence checks
 make g18g-validate            # pinned Hugo/Ledger source/site evidence
 make smoke                    # end-to-end REST/MCP smoke test
+bash scripts/package_release.sh    # validated source ZIP into dist/
+```
+
+`make validate` is the one to run before a commit. The others are narrower and
+slower: `g18g-validate` rebuilds the documentation site, and
+`package_release.sh` runs everything above plus the npm installs.
+
+Two reporting targets fail nothing and answer a question:
+
+```bash
+make docs-stale               # has _site/ fallen behind docs/?
+make bytecode                 # is there __pycache__/.pyc left in the tree?
+```
+
+### Performance profiles
+
+```bash
 bash scripts/run_performance_smoke.sh
 bash scripts/run_large_library_profile.sh 100000 /tmp/notrios-profile.json
 bash scripts/run_joplin_import_profile.sh 100000 /tmp/notrios-joplin-profile.json
 bash scripts/run_real_joplin_profile.sh <label> <raw-export-dir> /tmp/notrios-joplin-real.json
 bash scripts/run_obsidian_import_profile.sh 100000 /tmp/notrios-obsidian-profile.json
 bash scripts/run_recoll_hardening_profile.sh 100000 /tmp/notrios-recoll-profile.json
-bash scripts/package_release.sh    # validated source ZIP into dist/
 ```
 
-The collection scale profile accepts `10000`, `100000`, or `500000`; Joplin
-accepts `100`, `10000`, or `100000`; Obsidian also accepts `500000`; Recoll
-accepts `100` or `100000`. Committed reference evidence is under
-`performance/v0.3-h7/` through `performance/v0.3-h10/` and
-`performance/v0.4-j2/` through `performance/v0.4-p7/`; the v0.5 profiles are
-under `performance/v0.5-e1/`, `performance/v0.5-e1a/`, `performance/v0.5-e2/`,
-`performance/v0.5-e4/`, `performance/v0.5-e5/`, `performance/v0.5-e6/`, and
-`performance/v0.5-e6a/`. Slices that added no new unbounded surface (E1b, E3,
-E6b, E7, E8) carry no profile of their own and say so in their archived plan.
-See `PACKAGING.md`,
-`SECURITY_REVIEW.md`, and `RELEASE_CHECKLIST.md` before tagging a release.
-Archive-v2 evidence, including the attachment-bearing round trip, is under
-`performance/v0.4-p3/` through `performance/v0.4-p4/`.
+The scale argument is not free-form. The collection profile accepts `10000`,
+`100000` or `500000`; Joplin accepts `100`, `10000` or `100000`; Obsidian also
+accepts `500000`; Recoll accepts `100` or `100000`.
+
+### Where the evidence is
+
+<!-- notrios:generated:readme:evidence:begin -->
+122 evidence directories under [`performance/`](performance/), generated by `go run ./cmd/docplan --write`. Each holds the record for one plan item: what was measured, how, and what was not.
+
+| Milestone | Evidence directories | For example |
+|---|---|---|
+| v0.3 | 4 | `performance/v0.3-h10/` |
+| v0.4 | 10 | `performance/v0.4-j2/` |
+| v0.5 | 7 | `performance/v0.5-e1/` |
+| v0.7 | 33 | `performance/v0.7-g0/` |
+| v0.8 | 13 | `performance/v0.8-h0/` |
+| v0.8e | 1 | `performance/v0.8e/` |
+| v0.9 | 7 | `performance/v0.9/` |
+| v1.0 | 47 | `performance/v1.0/` |
+<!-- notrios:generated:readme:evidence:end -->
+
+A slice that added no new unbounded surface carries no profile of its own and
+says so in its archived plan — v0.5's E1b, E3, E6b, E7 and E8 are the worked
+example of that.
+
+### Before tagging a release
+
+Read [`PACKAGING.md`](PACKAGING.md), [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md)
+and [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md).

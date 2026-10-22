@@ -124,6 +124,51 @@ Referenced block. ^block-a
 		t.Fatalf("second import was not idempotent enough: %#v", report2)
 	}
 
+	// A changed note is updated through the batch: a new revision, the new
+	// body, and a link index rebuilt from that body rather than the old one.
+	before, err := st.GetDocument(ctx, targetID)
+	if err != nil {
+		t.Fatalf("get target before update: %v", err)
+	}
+	writeFile(t, filepath.Join(dir, "Projects", "Target Note.md"), `---
+title: Target Note
+aliases:
+  - Target Alias
+---
+# Target
+
+Referenced block. ^block-a
+
+Now pointing back at [[Source Note]].
+`)
+	updated, err := Import(ctx, st, dir, Options{CollectionID: "default"})
+	if err != nil {
+		t.Fatalf("import after edit: %v", err)
+	}
+	if updated.NotesUpdated != 1 || updated.NotesUnchanged != 1 || updated.NotesImported != 0 {
+		t.Fatalf("edit was not applied as one update: %#v", updated)
+	}
+	after, err := st.GetDocument(ctx, targetID)
+	if err != nil {
+		t.Fatalf("get target after update: %v", err)
+	}
+	if after.CurrentRevisionID == before.CurrentRevisionID || !strings.Contains(after.Body, "Now pointing back") {
+		t.Fatalf("update did not create a revision with the new body: %#v", after)
+	}
+	outgoing, err := st.ListDocumentLinks(ctx, targetID, "outgoing")
+	if err != nil {
+		t.Fatalf("list target links: %v", err)
+	}
+	sawBack := false
+	for _, link := range outgoing.Outgoing {
+		if link.TargetDocumentID == sourceID && link.ResolutionStatus == "resolved" {
+			sawBack = true
+		}
+	}
+	if !sawBack {
+		t.Fatalf("link index was not rebuilt from the updated body: %#v", outgoing.Outgoing)
+	}
+
 	// Trashing an imported note and re-running the import must not
 	// resurrect it (or crash on the reserved document ID).
 	trashed, _ := st.GetDocument(ctx, targetID)
@@ -380,4 +425,40 @@ func openTestStore(t *testing.T) *store.SQLiteStore {
 		t.Fatal(err)
 	}
 	return st
+}
+
+// TestInventoryPropertyOrderFollowsPreserveSource pins v1.0 J32-C: a note's
+// frontmatter property order is parsed and kept only when source is preserved,
+// because only the source-bundle phase reads it. The inventory fingerprint is
+// the same either way, so an import that changes this cannot move a checkpoint.
+func TestInventoryPropertyOrderFollowsPreserveSource(t *testing.T) {
+	vault := t.TempDir()
+	writeFile(t, filepath.Join(vault, "Note.md"),
+		"---\nunknown: kept\naliases: [Alias]\nstatus: draft\n---\n# Note\n\nBody.\n")
+
+	withSource, err := readInventory(context.Background(), vault, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(withSource.Notes) != 1 {
+		t.Fatalf("expected one note, got %d", len(withSource.Notes))
+	}
+	want := []string{"unknown", "aliases", "status"}
+	if !reflect.DeepEqual(withSource.Notes[0].PropertyOrder, want) {
+		t.Fatalf("preserving source: property order %v, want %v", withSource.Notes[0].PropertyOrder, want)
+	}
+
+	without, err := readInventory(context.Background(), vault, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := without.Notes[0].PropertyOrder; len(got) != 0 {
+		t.Fatalf("not preserving source: property order %v, want none", got)
+	}
+	if without.Fingerprint != withSource.Fingerprint {
+		t.Fatalf("fingerprints differ: %s and %s", without.Fingerprint, withSource.Fingerprint)
+	}
+	if !reflect.DeepEqual(without.Notes[0].Aliases, withSource.Notes[0].Aliases) {
+		t.Fatal("aliases must not depend on whether source is preserved")
+	}
 }

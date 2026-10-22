@@ -5,7 +5,7 @@
   "documents": [
     {
       "path": "docs/api/mcp.md",
-      "sha256": "6c0daf1268710c5e280b0f438dd24fc391516d11c5193ed47b28055fab6032a0",
+      "sha256": "0cc5ab51d0daf537c703ffaa68b5eb71e884aa4aabad3f590de48d94f83d6283",
       "help_note": "doc_help_api_mcp",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#(*Server).mcpTools",
       "sections": [
@@ -123,7 +123,7 @@
     },
     {
       "path": "docs/api/rest.md",
-      "sha256": "4608f0822051397cbc263c9f823534b9d4dc8da8adb9889f6a38e34c11721a76",
+      "sha256": "9c94c6bebda79675c6a337e321c6b11fcb00c57b4d988c525dccf8bcd4c99c22",
       "help_note": "doc_help_api_rest",
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
       "sections": [
@@ -431,7 +431,7 @@
     },
     {
       "path": "docs/archive-v2.md",
-      "sha256": "713aee006231be7bf7d1937e59966ae707d4050d6efa5742d5956c13993116f3",
+      "sha256": "98cdbd76e4457e8dd3b5a6e92a3134dfe170258d402c5cfd3a4559289b7d59ef",
       "help_note": "doc_help_archive_v2",
       "owner": "go:github.com/renesugar/notrios/internal/archivev2#Export",
       "sections": [
@@ -529,7 +529,7 @@
     },
     {
       "path": "docs/cli.md",
-      "sha256": "2ea6350257123eaedecf46b118f29790ca806eb1616a742bd98a3bfb51ab401c",
+      "sha256": "02c57415f82f707a34cea99f64024243fe735549d73844a4455681afc6709303",
       "help_note": "doc_help_cli",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp",
       "sections": [
@@ -1046,8 +1046,116 @@
       ]
     },
     {
+      "path": "docs/configuration.md",
+      "sha256": "174c5a186f0cc9ea323d52939cc24627d217ea203357874ddf71119756af158f",
+      "help_note": "doc_help_configuration",
+      "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+      "sections": [
+        {
+          "id": "configuration",
+          "level": 1,
+          "title": "Configuration",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-configuration-comes-from",
+          "level": 2,
+          "title": "Where configuration comes from",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "where-your-notes-are-stored",
+          "level": 2,
+          "title": "Where your notes are stored",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "serving-the-api-and-the-interface",
+          "level": 2,
+          "title": "Serving the API and the interface",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "search",
+          "level": 2,
+          "title": "Search",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "sync",
+          "level": 2,
+          "title": "Sync",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "remote-media",
+          "level": 2,
+          "title": "Remote media",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "retention",
+          "level": 2,
+          "title": "Retention",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "profiles",
+          "level": 2,
+          "title": "Profiles",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "every-key",
+          "level": 2,
+          "title": "Every key",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/config#Default",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        }
+      ]
+    },
+    {
       "path": "docs/features.md",
-      "sha256": "85f32d5c25377b8c5c1017026d27c8e7950df03ce2aa2c88b466f56c31c83fd7",
+      "sha256": "c4e41f6efa13ae174f48f50c28172e76f7ef2dcfc793d1a76b3f0085515d143a",
       "help_note": "doc_help_features",
       "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
       "sections": [
@@ -1082,9 +1190,9 @@
           "grade": "unverified"
         },
         {
-          "id": "write-and-edit-notes",
+          "id": "attach-and-manage-files",
           "level": 3,
-          "title": "Write and edit notes",
+          "title": "Attach and manage files",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1092,49 +1200,9 @@
           "grade": "generated"
         },
         {
-          "id": "read-a-note-and-its-structure",
+          "id": "reorganise-many-notes-at-once",
           "level": 3,
-          "title": "Read a note and its structure",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "search-your-notes",
-          "level": 3,
-          "title": "Search your notes",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "notebooks-that-are-really-saved-searches",
-          "level": 3,
-          "title": "Notebooks that are really saved searches",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "organise-notes-into-notebooks",
-          "level": 3,
-          "title": "Organise notes into notebooks",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "tag-and-untag-a-note",
-          "level": 3,
-          "title": "Tag and untag a note",
+          "title": "Reorganise many notes at once",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1162,29 +1230,9 @@
           "grade": "generated"
         },
         {
-          "id": "attach-and-manage-files",
+          "id": "export-your-library",
           "level": 3,
-          "title": "Attach and manage files",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "bring-remote-images-into-the-library",
-          "level": 3,
-          "title": "Bring remote images into the library",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "link-notes-to-each-other",
-          "level": 3,
-          "title": "Link notes to each other",
+          "title": "Export your library",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1202,36 +1250,6 @@
           "grade": "generated"
         },
         {
-          "id": "templates-and-tasks",
-          "level": 3,
-          "title": "Templates and tasks",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "live-query-blocks-inside-a-note",
-          "level": 3,
-          "title": "Live query blocks inside a note",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "reorganise-many-notes-at-once",
-          "level": 3,
-          "title": "Reorganise many notes at once",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
           "id": "import-from-another-application",
           "level": 3,
           "title": "Import from another application",
@@ -1242,79 +1260,49 @@
           "grade": "generated"
         },
         {
-          "id": "export-your-library",
-          "level": 3,
-          "title": "Export your library",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "back-up-and-restore-the-whole-library",
-          "level": 3,
-          "title": "Back up and restore the whole library",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "pair-two-of-your-own-libraries",
-          "level": 3,
-          "title": "Pair two of your own libraries",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "synchronize-with-a-replica",
-          "level": 3,
-          "title": "Synchronize with a replica",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "see-and-end-trust-between-replicas",
-          "level": 3,
-          "title": "See and end trust between replicas",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "recover-a-replica-and-resolve-conflicts",
-          "level": 3,
-          "title": "Recover a replica and resolve conflicts",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
-          "id": "choose-where-sync-keys-are-kept",
-          "level": 3,
-          "title": "Choose where sync keys are kept",
-          "audience": "user",
-          "kind": "actionable_or_reference",
-          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
-          "owner_role": "review_root_candidate",
-          "grade": "generated"
-        },
-        {
           "id": "watch-and-steer-long-running-work",
           "level": 3,
           "title": "Watch and steer long-running work",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "link-notes-to-each-other",
+          "level": 3,
+          "title": "Link notes to each other",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "keep-a-library-healthy",
+          "level": 3,
+          "title": "Keep a library healthy",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "let-an-ai-assistant-use-your-library",
+          "level": 3,
+          "title": "Let an AI assistant use your library",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "organise-notes-into-notebooks",
+          "level": 3,
+          "title": "Organise notes into notebooks",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1342,9 +1330,139 @@
           "grade": "generated"
         },
         {
-          "id": "keep-a-library-healthy",
+          "id": "live-query-blocks-inside-a-note",
           "level": 3,
-          "title": "Keep a library healthy",
+          "title": "Live query blocks inside a note",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "read-a-note-and-its-structure",
+          "level": 3,
+          "title": "Read a note and its structure",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "bring-remote-images-into-the-library",
+          "level": 3,
+          "title": "Bring remote images into the library",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "remove-your-data-on-purpose",
+          "level": 3,
+          "title": "Remove your data, on purpose",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "notebooks-that-are-really-saved-searches",
+          "level": 3,
+          "title": "Notebooks that are really saved searches",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "search-your-notes",
+          "level": 3,
+          "title": "Search your notes",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "back-up-and-restore-the-whole-library",
+          "level": 3,
+          "title": "Back up and restore the whole library",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "choose-where-sync-keys-are-kept",
+          "level": 3,
+          "title": "Choose where sync keys are kept",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "synchronize-with-a-replica",
+          "level": 3,
+          "title": "Synchronize with a replica",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "pair-two-of-your-own-libraries",
+          "level": 3,
+          "title": "Pair two of your own libraries",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "see-and-end-trust-between-replicas",
+          "level": 3,
+          "title": "See and end trust between replicas",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "recover-a-replica-and-resolve-conflicts",
+          "level": 3,
+          "title": "Recover a replica and resolve conflicts",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "tag-and-untag-a-note",
+          "level": 3,
+          "title": "Tag and untag a note",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
+          "owner_role": "review_root_candidate",
+          "grade": "generated"
+        },
+        {
+          "id": "templates-and-tasks",
+          "level": 3,
+          "title": "Templates and tasks",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1362,9 +1480,9 @@
           "grade": "generated"
         },
         {
-          "id": "let-an-ai-assistant-use-your-library",
+          "id": "write-and-edit-notes",
           "level": 3,
-          "title": "Let an AI assistant use your library",
+          "title": "Write and edit notes",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/docfeatures#Registry",
@@ -1405,7 +1523,7 @@
     },
     {
       "path": "docs/gui.md",
-      "sha256": "6dffb0a3b66c121d1455f2d14296f6924f6a1da6f3976e38668c2e9682aae3d3",
+      "sha256": "3c6b30b3ac99f2d18fcd69341376fd6ef00d472ddb8d0b49b8152ad107577f1d",
       "help_note": "doc_help_gui",
       "owner": "ts:web/src/App.tsx#App",
       "sections": [
@@ -1560,6 +1678,16 @@
           "grade": "unverified"
         },
         {
+          "id": "wiki-links-and-links-that-will-not-open",
+          "level": 3,
+          "title": "Wiki links, and links that will not open",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "ts:web/src/App.tsx#App",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
           "id": "math-and-code-blocks",
           "level": 3,
           "title": "Math and code blocks",
@@ -1643,7 +1771,7 @@
     },
     {
       "path": "docs/import-export.md",
-      "sha256": "7aa7637048f23614cc9d2b887905cfbd61309933c4ffccdf25d6cd1044ead4a1",
+      "sha256": "111de01a6c9df5e56f013477307bd847677f974cbd1e11c86673f03f88cffdbb",
       "help_note": "doc_help_import_export",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
       "sections": [
@@ -1758,9 +1886,9 @@
           "grade": "unverified"
         },
         {
-          "id": "twitter-x-extracted-archive",
+          "id": "twitter-x-archive",
           "level": 2,
-          "title": "Twitter/X (extracted archive)",
+          "title": "Twitter/X archive",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
@@ -1768,9 +1896,9 @@
           "grade": "unverified"
         },
         {
-          "id": "chatgpt-data-export",
+          "id": "chatgpt-data-export-and-the-openai-privacy-portal-export",
           "level": 2,
-          "title": "ChatGPT (data export)",
+          "title": "ChatGPT (data export, and the OpenAI Privacy Portal export)",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#runImport",
@@ -1899,7 +2027,7 @@
     },
     {
       "path": "docs/installation.md",
-      "sha256": "ff69315d669fd32dfeb8aa7887a13a013093249581daf5bfc92a8d4adde945f1",
+      "sha256": "669f604ea58c56cc2daf0c5afa410967a645f24b403646da43b60b95c043239f",
       "help_note": "doc_help_installation",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
       "sections": [
@@ -2084,9 +2212,9 @@
           "grade": "unverified"
         },
         {
-          "id": "installing-from-a-package",
+          "id": "building-the-package-yourself",
           "level": 3,
-          "title": "Installing from a package",
+          "title": "Building the package yourself",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2097,6 +2225,16 @@
           "id": "removing-your-data-as-well",
           "level": 3,
           "title": "Removing your data as well",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "checking-that-a-purge-removed-everything",
+          "level": 3,
+          "title": "Checking that a purge removed everything",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/cmd/notriosd#main",
@@ -2127,7 +2265,7 @@
     },
     {
       "path": "docs/journeys-cli.md",
-      "sha256": "2412523d01f2af8fbe6ee79f7aa7959d730ca480d85cf09c7080b6e79e55018e",
+      "sha256": "d8fa5be2e95e30dd0717557b03a51746f39f7e43d1c2b7b5b187870591a154ed",
       "help_note": "doc_help_journeys_cli",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#Catalogue",
       "sections": [
@@ -2175,7 +2313,7 @@
     },
     {
       "path": "docs/journeys-gui.md",
-      "sha256": "89d35f746a0e2ad54d3e60a7424022490560e65d5a805dcbc5b658d32b34500c",
+      "sha256": "22671f10ebabd9744e56fc639b612b8c143c74e8c5ac3963feb8284d6d7746e1",
       "help_note": "doc_help_journeys_gui",
       "owner": "go:github.com/renesugar/notrios/internal/docjourneys#GUICatalogue",
       "sections": [
@@ -2233,7 +2371,7 @@
     },
     {
       "path": "docs/operations.md",
-      "sha256": "a68da07193cdd7bbb56e3d3277e4068ee8aae83a253e9e36ec74cf96d47d7d11",
+      "sha256": "4b063b59843f7073022d3fcfa816560eeb2583344bf93a3d59441291d1abac12",
       "help_note": "doc_help_operations",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
       "sections": [
@@ -2248,9 +2386,29 @@
           "grade": "unverified"
         },
         {
+          "id": "reports",
+          "level": 2,
+          "title": "Reports",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
           "id": "finding-what-has-rotted-workspace-lint",
           "level": 2,
           "title": "Finding what has rotted (workspace lint)",
+          "audience": "user",
+          "kind": "actionable_or_reference",
+          "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
+          "owner_role": "review_root_candidate",
+          "grade": "unverified"
+        },
+        {
+          "id": "finding-ambiguous-links",
+          "level": 2,
+          "title": "Finding ambiguous links",
           "audience": "user",
           "kind": "actionable_or_reference",
           "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).LintWorkspace",
@@ -2451,7 +2609,7 @@
     },
     {
       "path": "docs/publishing.md",
-      "sha256": "ca18c737e54bf3751ac33eefe51d87df2701551f45b84512bbb93d54a40ec24d",
+      "sha256": "870c2da99dd3ee959300a6fc90b932ad158b38f3f4ead77f43cb571fa83eea64",
       "help_note": "doc_help_publishing",
       "owner": "go:github.com/renesugar/notrios/internal/publish#(Profile).PlanRequest",
       "sections": [
@@ -2529,7 +2687,7 @@
     },
     {
       "path": "docs/query-language.md",
-      "sha256": "1dd464622d2e325dc92a7b7d81d87723df17861f3cc00e77e3b2a46750b2c4ec",
+      "sha256": "419dcf0e49347cfdb1c21094a2f77adcff5286065fd890f3b282abfdf30e57a5",
       "help_note": "doc_help_query_language",
       "owner": "go:github.com/renesugar/notrios/internal/query#Parse",
       "sections": [
@@ -2557,7 +2715,7 @@
     },
     {
       "path": "docs/selection-planning.md",
-      "sha256": "2da853ab77b1955c834887e1f9a5e229b2d5c22198c56eba8222a210df6ce186",
+      "sha256": "e993488e24080f5fea13672f74287d91040a74eff05adb1aad05f75b1547955a",
       "help_note": "doc_help_selection_planning",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).PlanSelection",
       "sections": [
@@ -2575,7 +2733,7 @@
     },
     {
       "path": "docs/service.md",
-      "sha256": "a91567b7c0010d1c1f15cf505dc5de51ed176a1faa9a8e681ea0473c13fdafce",
+      "sha256": "e9b5808085ac8fa7a285054af9ca9c976653fe58fb2731cf0bfda1c17fbb6737",
       "help_note": "doc_help_service",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config",
       "sections": [
@@ -2683,7 +2841,7 @@
     },
     {
       "path": "docs/stable-links.md",
-      "sha256": "5ccd1250b7a31c5b1cc67d294343f554dd6b48172a8b4f45364a90ff1fc14f07",
+      "sha256": "48a54446d7e7e58ee5338ce3429f3bddb4b7f5491807cd13d8a26456ab0da8b9",
       "help_note": "doc_help_stable_links",
       "owner": "go:github.com/renesugar/notrios/internal/store#(*SQLiteStore).ResolveStableLink",
       "sections": [
@@ -2791,7 +2949,7 @@
     },
     {
       "path": "docs/troubleshooting.md",
-      "sha256": "1e5b55e5c401adc35ea1e7c5b75f49a20e8e1e37b3a8e8c63df0909fbed62c84",
+      "sha256": "4f4161c05db04ca9a876a3bf21602bc13e6543a76213630a7874b65f8e529622",
       "help_note": "doc_help_troubleshooting",
       "owner": "go:github.com/renesugar/notrios/internal/config#Load",
       "sections": [
@@ -2901,33 +3059,33 @@
   "surfaces": [
     {
       "id": "published_markdown",
-      "count": 18,
+      "count": 19,
       "unit": "pages",
-      "sections": 275,
+      "sections": 290,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "help_notebook",
-      "count": 18,
+      "count": 19,
       "unit": "mirrored notes",
-      "sections": 275,
+      "sections": 290,
       "owner": "go:github.com/renesugar/notrios/internal/helpdocs#Seed"
     },
     {
       "id": "cli_help",
-      "count": 91,
+      "count": 93,
       "unit": "usage forms",
       "owner": "go:github.com/renesugar/notrios/cmd/notriosctl#printHelp"
     },
     {
       "id": "configuration",
-      "count": 63,
+      "count": 65,
       "unit": "JSON-tagged keys",
       "owner": "go:github.com/renesugar/notrios/internal/config#Config"
     },
     {
       "id": "openapi",
-      "count": 109,
+      "count": 111,
       "unit": "operations",
       "operation_ids": 0,
       "owner": "go:github.com/renesugar/notrios/internal/httpapi#NewServerWithOptions",
@@ -3005,11 +3163,11 @@
     "rule": "One strongest honest grade per section; rationale is excluded before grading.",
     "totals": {
       "executed": 0,
-      "generated": 29,
+      "generated": 30,
       "claimed": 0,
-      "unverified": 246
+      "unverified": 260
     },
-    "denominator": 275,
+    "denominator": 290,
     "reconciles": true,
     "finding": "The manual does not yet name directive fragments or executable checks, so all current section units are unverified even where independent tests exist."
   },

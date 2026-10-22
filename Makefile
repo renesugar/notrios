@@ -10,10 +10,29 @@
 
 .DEFAULT_GOAL := help
 
+# Every recipe below runs Python with these set, and so does every shell script
+# a recipe calls, because make exports them into the recipe's environment.
+#
+# PYTHONDONTWRITEBYTECODE: the repository's own scripts were leaving 19
+# __pycache__ directories and 48 .pyc files across the tree. `clean` removes
+# them, so they accumulated between cleans. Nothing here benefits from the
+# cache -- deleting every one of them and running `make validate` cold proved
+# that -- and not writing one is simpler than cleaning up after it. (The
+# sharper worry, stale bytecode being used, does not apply: an orphaned
+# __pycache__ entry whose source is gone is not importable at all, per PEP
+# 3147, and a changed source invalidates its cache.)
+#
+# PYTHONUNBUFFERED: these scripts print progress somebody reads while waiting.
+# Through a pipe, buffered output arrives in one block at the end, which is why
+# a long validate could look hung when it was working.
+export PYTHONDONTWRITEBYTECODE := 1
+export PYTHONUNBUFFERED := 1
+
 .PHONY: help deps build build-service build-cli web gui docs \
         test validate docgen docaudit doccheck smoke serve doctor seed-help evidence-pre-push \
         g18e-validate g18f-validate g18g-validate g19-validate g20-validate \
-        install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck
+        install install-dry-run icons deb integration-matrix uninstall uninstall-dry-run purge clean clobber precheck \
+        docs-stale bytecode
 
 help: ## Show this target summary
 	@grep -E '^[a-zA-Z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -51,11 +70,26 @@ gui: web ## Build the desktop GUI binary bin/notrios (needs libgtk-3-dev + libwe
 abi:
 	sh cmd/notrioslib/run_host_test.sh
 
+abi-artifact: ## Build the versioned C ABI artifact (library, header, licence, checksums) into dist/abi
+	bash scripts/build_abi_artifact.sh
+
+abi-examples: ## Compile and run the C examples against the built artifact, not the source tree
+	bash examples/c/run_examples.sh
+
 docs: docs-site/node_modules ## Build the pinned offline Hugo/Ledger site into _site/
 	bash scripts/build_docs_site.sh
 
+docs-stale: ## Report whether _site/ is older than the documents under docs/
+	python3 scripts/check_docs_site_fresh.py
+
+bytecode: ## Report any __pycache__/.pyc left in the tree, and who could have left it
+	python3 scripts/check_python_hygiene.py --byproducts
+
 test: ## Run all Go tests
 	go test ./...
+
+temp-leak-check: ## Run all Go tests in a fresh TMPDIR and fail on any notrios-* entry left behind
+	bash scripts/check_temp_leaks.sh
 
 validate: ## Run tests plus scaffold/script validation
 	bash scripts/validate-scaffold.sh
@@ -78,7 +112,7 @@ evidence-pre-push: ## Verify the signed checkpoint and external ISO reserve
 g18e-validate: ## Validate the G18e GUI journey manifest and evidence
 	python3 -m unittest discover -s performance/v0.7-g18e -p 'test_*.py'
 	python3 performance/v0.7-g18e/validate_evidence.py
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g18e-gocache}" go run ./cmd/docjourney
+	go run ./cmd/docjourney
 
 g18f-validate: docgen ## Validate G18f generation and committed advisory evidence (no model)
 	python3 -m unittest discover -s performance/v0.7-g18f -p 'test_*.py'
@@ -90,14 +124,14 @@ g18g-validate: docs-site/node_modules docgen ## Build and validate pinned Hugo/L
 	python3 performance/v0.7-g18g/validate_evidence.py --site _site
 
 g19-validate: ## Validate published archive-v2 schemas, goldens, and reader matrix
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g19-gocache}" go test ./internal/archivev2 ./cmd/notriosctl -run 'Compatibility|PublicGolden|PhysicalRefusal|DeclarationProbe|PublishedJSON|PublishedContract|PublishedSyncWire' -count=1
+	go test ./internal/archivev2 ./cmd/notriosctl -run 'Compatibility|PublicGolden|PhysicalRefusal|DeclarationProbe|PublishedJSON|PublishedContract|PublishedSyncWire' -count=1
 	python3 performance/v0.7-g19/validate_evidence.py
 
 g20-validate: ## Validate v0.7 release identity, security boundaries, evidence, and licenses
 	python3 -m unittest discover -s performance/v0.7-g20 -p 'test_*.py'
 	python3 performance/v0.7-g20/check_dependency_licenses.py
 	python3 performance/v0.7-g20/validate_evidence.py
-	GOCACHE="$${GOCACHE:-/tmp/notrios-g20-gocache}" go test ./internal/service ./internal/httpapi ./internal/archive ./internal/synccarrier -count=1
+	go test ./internal/service ./internal/httpapi ./internal/archive ./internal/synccarrier -count=1
 	python3 performance/v0.7-g8/validate_evidence.py
 	python3 performance/v0.7-g14e/validate_evidence.py
 	python3 performance/v0.7-g17/validate_evidence.py

@@ -1,0 +1,109 @@
+{
+  "content_commit": "59889bd7edb7e69d92809ddf59b9ff1d0ed8a744",
+  "counts": {
+    "drills": 8,
+    "passed": 8
+  },
+  "drills": [
+    {
+      "id": "purge-backup-restores-and-excludes-sync-keys",
+      "observations": {
+        "archive_holds_keys": false,
+        "archive_holds_library": true,
+        "restored_hits": 1
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-does-not-delete-through-a-symlink",
+      "observations": {
+        "exit": 0,
+        "neighbour_survived": true,
+        "target_survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-is-not-blocked-by-a-profile-naming-a-parent",
+      "observations": {
+        "library_deleted": true,
+        "named_parent_kept": true,
+        "refused_any_root": false,
+        "says_roots_still_deleted": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-lists-an-external-profile-and-keeps-it",
+      "observations": {
+        "attributed": true,
+        "copied_into_backup": false,
+        "data_root_deleted": true,
+        "listed": true,
+        "notes_readable": 1,
+        "survived": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-a-backup-destination-it-would-delete",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-cannot-be-written",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "purge-refuses-when-the-backup-does-not-fit",
+      "observations": {
+        "exit": 1,
+        "library_intact": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "unattended-purge-refuses-without-confirm",
+      "observations": {
+        "exit": 1,
+        "library_intact": true,
+        "names_the_flag": true
+      },
+      "status": "pass"
+    }
+  ],
+  "item": "J3",
+  "milestone": "v1.0",
+  "not_verified": [
+    "The four I4 drills that are about the installed-file half rather than the data half: uninstall leaving user data, a modified artifact being kept, an external data root, and a purge racing a running daemon. Those exercise `make uninstall` and the half of lifecycle.py that survived delegation, which this command deliberately does not do -- removing the program is apt's job or the Make target's. scripts/test_lifecycle.py runs them there.",
+    "No packaged (.deb) installation was used. The drills install with `make install` into an isolated HOME, because that is what can be done without root; v0.9 I3's container matrix is where the packaged form is exercised.",
+    "Interruption. Nothing kills a purge between the verified backup and the deletion.",
+    "There is no longer a Python backup format to compare against: `make purge` runs this command rather than writing its own archive, so the two formats cannot diverge because there is one. What is untested is reading an archive written by the *previous* Python implementation; no migration path is claimed for a backup taken before this change.",
+    "Profiles on another filesystem. The external-profile drill registers a second profile outside the roots and inside the same HOME, so the enumeration and the refusal are exercised but a real mount boundary is not. The oracle's mount-boundary rule is covered by H3's fixtures rather than here.",
+    "Multiple external profiles, and an external asset store or config path. The drill registers one profile naming one database; the deduplication and the asset-store and config fields are covered by internal/purge's Go tests rather than by a drill.",
+    "The report for an external path is measured with the same walk as a root, so a very large external library makes the plan slower to print. Nothing here measures that cost, and nothing caps it."
+  ],
+  "oracle_equivalence": {
+    "held_by": "internal/purge/oracle_test.go against performance/v0.8-h3/PURGE_ORACLE_FIXTURES.json",
+    "proved_by_breaking": [
+      "following a symlink instead of refusing it",
+      "reclassifying cache as irreplaceable",
+      "dropping /usr from the forbidden roots"
+    ],
+    "why": "The decision procedure for 'may Notrios delete this path' now exists twice -- H3's reference in Python and this port in Go -- because the .deb ships no Python and the user most in need of the safeguards could not reach them. Two implementations of a deletion rule is the worst possible duplication, so the port drives H3's own thirty fixtures by name and reads the expected verdict and rule from them rather than restating them. A fixture case the port does not exercise fails too."
+  },
+  "schema": "notrios.v10.j3-packaged-purge.v1",
+  "still_owed": {
+    "what": "Nothing about the external policy. The owner decided on 2026-09-12 that external libraries are reported and neither deleted nor copied, and that they must never block a purge -- so the copy half of BackupPolicy(\"external\") is declined rather than owed, and the oracle's external-profile rule is deliberately not wired to the enumerated paths.",
+    "why_it_matters": "The rule could only ever fire on the reverse of the case it was written for. Every enumerated path is outside every owned root, so it can never protect a root; the one case it fires on is a profile naming an ancestor of the roots, where it refused the data root and let the library survive a confirmed purge. A purge that silently keeps the library is worse than anything that rule was guarding.",
+    "the_fix": "Done, and drilled both ways: an external library is listed and kept, and a profile naming a parent of the roots does not stop those roots being deleted. The policy name in performance/v0.8-h3 is left alone on purpose -- it is sealed evidence of what H3 intended, and editing archived evidence to match later code is the failure this project's record exists to prevent."
+  },
+  "what_this_is": "The drills v0.9 I4 ran against `make purge`, run against `notriosctl purge`. The point is not that the command works: it is that every safeguard a developer gets, a packaged user now gets too. A drill that passes for the Make target and fails for the command is the gap this item exists to close."
+}

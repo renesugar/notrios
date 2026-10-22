@@ -108,14 +108,60 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 	// needs: verifying a download, upgrading, going back to an earlier version,
 	// backing up and getting the notes back, and a table of what is actually
 	// supported. Six new sections plus a renamed one, and seven new examples.
-	if report.ManualSections != 275 || report.Fragments != 21 || report.Claims != 4 ||
-		report.Executables != 163 || report.Journeys != 9 {
+	// 275 -> 276 sections and 163 executables unchanged in v1.0 J3: docs/features.md
+	// gained the section for `notriosctl purge`. Generated 46 -> 47 and unverified
+	// 339 -> 345 with the denominator 462 -> 469, which is the new feature section,
+	// the new CLI usage form, and the journey that demonstrates it.
+	// 163 -> 164 executables later in v1.0 J3, sections unchanged: the removal
+	// section of docs/installation.md shows `notriosctl purge` as well as
+	// `make purge`, because `make purge` now runs the command rather than
+	// deleting by itself and the packaged reader has no Makefile. Unverified
+	// 345 -> 346 and the denominator 469 -> 470 with it; the body deletes a
+	// library, so it is drilled in performance/v1.0-j3 rather than executed here.
+	//
+	// 276 -> 286 sections in v1.0 J12: docs/configuration.md, ten sections and
+	// no executable example. The README's Configuration section referred a
+	// reader to a detailed document that did not exist, for a surface of 53
+	// settable keys documented by one example file. Unverified 346 -> 356 and
+	// the denominator 470 -> 480 with them; executables are unchanged, because
+	// the page's only generated content is a key table rather than a command.
+	// 164 -> 169 executables in v1.0 J13-C, sections unchanged: five use-case
+	// examples on docs/configuration.md, four of them executed. Unverified
+	// 356 -> 357, executed 73 -> 77, denominator 480 -> 485.
+	// 169 -> 170 executables in v1.0 J28-D, sections unchanged: the
+	// remote-media section of docs/configuration.md shows the security block
+	// stating a refused set and an exception, and it is executed. Executed
+	// 77 -> 78 and the denominator 485 -> 486; unverified is unchanged, because
+	// the new prose sits in a section already counted.
+	// 286 -> 287 sections and 170 -> 172 executables in v1.0 J11:
+	// docs/installation.md gains "Checking that a purge removed everything",
+	// which is where `paths --report` and `scripts/check_purged.sh` are for a
+	// reader who has just been told how to purge. Unverified 357 -> 360 and the
+	// denominator 486 -> 489 with them; the two examples report on and then
+	// delete this user's own installation, so they are drilled against a
+	// disposable HOME in performance/v1.0-j11 rather than executed here.
+	// 287 -> 288 sections in v1.0 J40-B: docs/gui.md gains "Wiki links, and
+	// links that will not open", prose with no example. Unverified 360 -> 361
+	// and the denominator 489 -> 490 with it.
+	// 288 -> 290 sections and 172 -> 173 executables in v1.0 J40-F:
+	// docs/operations.md gains "Reports", the one section listing every report
+	// Notrios produces, and "Finding ambiguous links", whose example runs the
+	// report against a library the adapter gives an ambiguous link. Executed
+	// 78 -> 79, unverified 361 -> 363 for the two prose sections, and the
+	// denominator 490 -> 493.
+	// 173 -> 178 executables in v1.0 J9: docs/installation.md's verification
+	// section becomes four checks in six fences, and going back from 1.0 to 0.8
+	// gains the archive it needs. They need a published release set or this
+	// user's own installation, so all five are unverified with the place they
+	// were run recorded: unverified 363 -> 368, the denominator 493 -> 498.
+	if report.ManualSections != 290 || report.Fragments != 21 || report.Claims != 4 ||
+		report.Executables != 178 || report.Journeys != 9 {
 		t.Fatalf("unexpected coverage surface: %+v", report)
 	}
 	// 71 -> 72 executed in v0.8 H22: the two discovery commands in
 	// docs/query-language.md, which are literal and run.
 	// 72 -> 73 executed in v0.8 H26: the shell existence check.
-	if report.Counts[GradeExecuted] != 73 ||
+	if report.Counts[GradeExecuted] != 79 ||
 		// 272 -> 276 unverified in v0.8 H4 slice D: two new docs/cli.md
 		// sections and their two registered synopsis examples.
 		// 276 -> 285 unverified in v0.8 H4 slice E: five new sections and four
@@ -142,7 +188,7 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// still counted.
 		// 16 -> 46 generated in v0.8 H18: the twenty-nine capability sections
 		// the features page now renders, plus the surface table's fragment.
-		report.Counts[GradeGenerated] != 46 ||
+		report.Counts[GradeGenerated] != 47 ||
 		// 310 -> 311 unverified and 401 -> 402 denominator in v0.8 H15: the new
 		// prose section on docs/gui.md. One unit arrives and none leaves.
 		// 311 -> 312 unverified and 402 -> 433 denominator in v0.8 H18: one new
@@ -169,8 +215,8 @@ func TestRepositoryAuditReportsHonestCoverage(t *testing.T) {
 		// which its unrun reason names -- the container matrix in
 		// performance/v0.9-i3, the recovery drill in performance/v0.9-i7, and
 		// verify_release_set.py in performance/v0.9-i6.
-		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 345 ||
-		report.Denominator != 468 {
+		report.Counts[GradeClaimed] != 4 || report.Counts[GradeUnverified] != 368 ||
+		report.Denominator != 498 {
 		t.Fatalf("coverage counts hide or lose units: counts=%v denominator=%d", report.Counts, report.Denominator)
 	}
 	if len(resolvedTS) == 0 {

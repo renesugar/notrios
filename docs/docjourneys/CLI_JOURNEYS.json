@@ -988,7 +988,7 @@
             "--name",
             "Field notes",
             "--icon",
-            "🌿"
+            "\ud83c\udf3f"
           ]
         },
         {
@@ -1297,7 +1297,7 @@
             "--title",
             "Reed beds",
             "--body",
-            "Seen at dusk.\n\n## Café notes\n\nMore."
+            "Seen at dusk.\n\n## Caf\u00e9 notes\n\nMore."
           ]
         },
         {
@@ -1368,7 +1368,7 @@
         "contains": [
           "title: \"Reed beds\"",
           "collection: \"default\"",
-          "## Café notes"
+          "## Caf\u00e9 notes"
         ]
       }
     },
@@ -2329,6 +2329,51 @@
         ],
         "contains": [
           "\"count\": 2"
+        ]
+      }
+    },
+    {
+      "id": "delete-a-library-on-purpose",
+      "title": "Delete a library, after seeing what that means",
+      "goal": "Remove this library's notes and settings, with a verified backup taken first.",
+      "feature": "remove-your-data",
+      "guessability": "notrios-specific",
+      "note": "The dry run is the point. Nothing about which roots a purge touches is guessable, and the one operation that cannot be undone should be one the user has already seen the shape of before they agree to it.",
+      "steps": [
+        {
+          "narrative": "Write a note, so there is something to lose.",
+          "command": [
+            "notes",
+            "create",
+            "--title",
+            "the note this purge will delete",
+            "--body",
+            "written before the purge"
+          ]
+        },
+        {
+          "narrative": "See exactly what would be deleted, and where the backup would go. Nothing is removed.",
+          "command": [
+            "purge",
+            "--dry-run"
+          ]
+        },
+        {
+          "narrative": "Do it. --confirm is required because nothing here can answer a question; it skips the question, never the backup.",
+          "command": [
+            "purge",
+            "--confirm"
+          ]
+        }
+      ],
+      "postcondition": {
+        "narrative": "the data is gone, and asking again is a no-op rather than an error",
+        "command": [
+          "purge",
+          "--dry-run"
+        ],
+        "contains": [
+          "already absent"
         ]
       }
     }

@@ -179,6 +179,7 @@ func Create(ctx context.Context, options CreateOptions) (Profile, error) {
 	}
 	cfg.Data.StateDir = stateDir
 	cfg.Data.CacheDir = cacheDir
+	cfg.Data.TempDir = filepath.Join(cacheDir, "tmp")
 	cfg.Data.ProjectionDir = filepath.Join(cacheDir, "projections")
 	cfg.SearchSidecar.IndexDir = filepath.Join(cacheDir, "search-index")
 	cfg.RemoteMedia.QuarantineDir = filepath.Join(stateDir, "quarantine")
@@ -600,6 +601,12 @@ func allCollisions(registry Registry, configs map[string]config.Config, identiti
 
 func runtimePaths(profile Profile, cfg config.Config) []string {
 	paths := []string{profile.ConfigPath, cfg.Data.Directory, cfg.Data.DatabasePath, cfg.Data.AssetStore, cfg.Data.ProjectionDir, cfg.SearchSidecar.IndexDir, cfg.RemoteMedia.QuarantineDir}
+	// An instance's temp directory is its own: two profiles sharing one would
+	// sweep each other's crash leftovers (J22). Configs written before temp_dir
+	// existed and without a cache_dir have none to compare.
+	if strings.TrimSpace(cfg.Data.TempDir) != "" {
+		paths = append(paths, cfg.Data.TempDir)
+	}
 	if cfg.Sync.Target == SyncDirectory {
 		paths = append(paths, cfg.Sync.Directory)
 	}

@@ -1,0 +1,339 @@
+# Configuration
+
+Notrios runs with no configuration file at all. Everything below has a default,
+and the defaults are chosen so that a fresh install puts your notes where your
+desktop expects them and listens only on loopback. Read this page when you want
+to move something, not to get started.
+
+This page is task-shaped: each section is a thing you might want to change. The
+complete key table is [at the end](#every-key), generated from the code so it
+cannot drift out of agreement with it.
+
+## Where configuration comes from
+
+`notriosd` takes `-config <path>`. When you do not pass one:
+
+1. it loads `config/config.example.yaml` if you are running from a source
+   checkout and that file exists, then
+2. it falls back to compiled defaults.
+
+So a checkout behaves like the example file and an installed package behaves
+like the defaults. `notriosctl config show` prints what is actually in effect,
+with your home directory replaced by `~` unless you pass `--no-redact` — that
+is the command to reach for before editing anything, because it answers "what
+is the current value" without you having to work out which of the three sources
+won.
+
+`-addr` and `-db` remain as explicit overrides on the command line, and they
+beat the file.
+
+Two flags are worth knowing about together: `notriosctl paths` prints the
+resolved roots and how they were resolved, and `notriosctl doctor` checks that
+they exist, are writable, and that the database opens. Between them they answer
+most "why is it not where I put it" questions without a config change.
+
+## Where your notes are stored
+
+The keys under `data` are the ones people change first, usually to put a library
+on another disk. They are separate keys rather than one root because they have
+genuinely different lifetimes, and `notriosctl purge` treats them differently:
+
+| Key | Holds | What a purge does with it |
+|---|---|---|
+| `data.directory` | the storage root the others default under | — |
+| `data.database_path` | the SQLite library: every note, notebook, tag and revision | backs it up, then deletes |
+| `data.asset_store` | attachments, content-addressed | backs it up, then deletes |
+| `data.state_dir` | what must survive a restart but you did not write: sync spools, sync backups, the catch-up inbox, the remote-media quarantine | backs it up, then deletes |
+| `data.cache_dir` | what can be rebuilt from the library: projections, the search index | deletes **without** a backup |
+| `data.runtime_dir` | work in flight that must not survive a reboot: backup staging, restore review | deletes without a backup |
+| `data.temp_dir` | this instance's own temp directory, `<cache_dir>/tmp` unless stated: import manifests and archive verification spools, one locked subdirectory per process, so instances on one machine never share temp files | not planned on its own |
+| `data.projection_dir` | rendered projections | with the cache |
+
+The distinction is not cosmetic. Anything you put in `cache_dir` is deleted
+without a copy, deliberately, because a purge that backed up a search index
+would spend a user's disk on something rebuildable. Do not move something
+irreplaceable there.
+
+**Moving a library to another disk** needs three keys, not one. `directory` is
+the root the others default under, but `database_path` and `asset_store` are
+resolved independently — so setting only `directory` moves where new roots are
+created and leaves an existing database and asset store where they were:
+
+<!-- notrios:generated:example:configuration-where-your-notes-are-stored-example-1:begin -->
+```bash
+cat > other-disk.yaml <<'YAML'
+data:
+  directory: /mnt/library/notrios
+  database_path: /mnt/library/notrios/notes.sqlite
+  asset_store: /mnt/library/notrios/assets
+YAML
+notriosctl config show --config other-disk.yaml --json
+```
+<!-- notrios:generated:example:configuration-where-your-notes-are-stored-example-1:end -->
+
+`config show` is how you check a file before the service reads it: it prints the
+configuration that *would* take effect and, for each key, where the value came
+from — `file` when your file set it, `compiled` or `resolved` when it did not.
+That `origin` column is the part worth reading, because it turns "I set this"
+into "this is set". Move the files yourself; nothing here copies them for you.
+
+It reports 21 of the 54 keys, chosen as the ones that decide where data lives
+and what is reachable. A key absent from its output is not ignored by the
+service — it is simply not summarised, and the table at the end of this page is
+the complete list.
+
+A library outside these roots is not deleted by a purge — it is listed and left
+alone. See
+[Removing your data as well](installation.md#removing-your-data-as-well).
+
+On startup the service creates the data directory, the database's parent
+directory, the asset store, the projection directory, the search sidecar's
+index directory and the instance's temp directory. It does not create anything
+under a path you have not configured.
+
+## Serving the API and the interface
+
+`server.listen_addr` defaults to loopback, and that is the intended
+configuration: Notrios is a local-first application and the service is not
+hardened for exposure to a network. If you change it, you own what that means.
+
+`server.public_base_url` is what the service believes its own address to be,
+which matters for links it generates rather than for what it binds. Set it when
+Notrios is behind a reverse proxy and the address a browser uses is not the
+address the service listens on.
+
+**Behind a reverse proxy** the two keys have to disagree, and that is the
+point. `listen_addr` stays on loopback, because the proxy is what reaches the
+network; `public_base_url` is the address a browser uses, and without it the
+links Notrios generates point at `127.0.0.1`:
+
+<!-- notrios:generated:example:configuration-serving-the-api-and-the-interface-example-1:begin -->
+```bash
+cat > behind-a-proxy.yaml <<'YAML'
+server:
+  listen_addr: 127.0.0.1:8080
+  public_base_url: https://notes.example.com
+YAML
+notriosctl config show --config behind-a-proxy.yaml --json
+```
+<!-- notrios:generated:example:configuration-serving-the-api-and-the-interface-example-1:end -->
+
+`server.web_dir` is the built interface — the directory with `index.html`.
+Leaving it empty searches the working directory, then the executable's own
+directory and its parent, which covers both a checkout and an installed package.
+Set it when the binary lives apart from its assets.
+
+`mcp` configures the MCP surface served at `/mcp`, for an assistant that speaks
+that protocol.
+
+## Search
+
+`search.default_limit` and `search.max_limit` bound what a query returns.
+`max_limit` is a real limit, not a suggestion: a request asking for more is
+clamped, so raising it is how you allow larger pages rather than how you make
+them faster.
+
+**Larger pages** need both keys. `max_limit` is the ceiling a request may ask
+for and `default_limit` is what a request that asks for nothing gets; raising
+only the default leaves the ceiling where it was, and a request asking for more
+is clamped rather than refused:
+
+<!-- notrios:generated:example:configuration-search-example-1:begin -->
+```yaml
+search:
+  default_limit: 100
+  max_limit: 1000
+```
+<!-- notrios:generated:example:configuration-search-example-1:end -->
+
+There is no command-line example for this one, and the reason is worth knowing
+before you go looking for it: **`config show` reports 21 of the 54 keys**, and
+these two are not among them, while `notriosctl search` takes `--db` but not
+`--config`. So the effect is visible through `/api/v1/status`, which reports the
+active search limits, and not from the command line. Every other example on this
+page ends in a command that proves it took effect; this one cannot, and saying so
+is better than showing a command that appears to check something it does not.
+
+`search_sidecar` configures the optional Recoll-derived sidecar, which adds
+field search over front matter and over the text inside attachments. It is
+optional in the strict sense — everything works without it, using SQLite FTS5 —
+and `search_sidecar.index_dir` is created at startup when the sidecar is
+configured. `notriosctl doctor` reports whether `recollindex` was found.
+
+**Turning it on** is three keys together. `enabled` on its own does nothing
+useful: the sidecar needs a binary to run and a directory to index into, and
+`index_dir` must be somewhere a purge treats as rebuildable — under
+`data.cache_dir`, not beside your notes:
+
+<!-- notrios:generated:example:configuration-search-example-2:begin -->
+```bash
+cat > sidecar-on.yaml <<'YAML'
+search_sidecar:
+  enabled: true
+  binary: /usr/bin/recollindex
+  index_dir: /home/you/.cache/notrios/recoll
+YAML
+notriosctl config show --config sidecar-on.yaml --json
+```
+<!-- notrios:generated:example:configuration-search-example-2:end -->
+
+## Sync
+
+`sync` and `sync.rest` configure synchronisation between your own libraries.
+The keys here are about transport and scheduling; the identities and keys
+themselves are not configuration and never appear in this file. Sync key
+material lives in its own store, and a purge deliberately excludes it from the
+backup it writes, because that file is the password to your synchronised
+traffic.
+
+If you are setting sync up for the first time, the pairing and enrolment
+commands in [the CLI guide](cli.md) come before any of these keys.
+
+## Remote media
+
+`remote_media` governs what happens when an imported note refers to an image or
+a file on the internet. It is the most security-relevant section on this page,
+because localizing remote media means fetching bytes a note asked for.
+
+Fetching goes through a domain policy, a quarantine, exact and perceptual
+hashing, MIME sniffing, a size limit and protections against being pointed at
+your own network. The keys here tune that; they do not switch it off.
+
+**Allowing one domain** means setting the default action as well, or the
+allow-list has nothing to be an exception to. `allow_private_networks` stays
+false: an allowed domain that resolves to your own network is the case the
+protection exists for:
+
+<!-- notrios:generated:example:configuration-remote-media-example-1:begin -->
+```bash
+cat > one-domain.yaml <<'YAML'
+remote_media:
+  default_action: block
+  allowed_domains:
+    - images.example.com
+  allow_private_networks: false
+YAML
+notriosctl config show --config one-domain.yaml --json
+```
+<!-- notrios:generated:example:configuration-remote-media-example-1:end -->
+
+**Refusing address ranges.** Remote media never reaches loopback, private
+networks, link-local addresses (cloud metadata among them) or the other reserved
+ranges listed in `SECURITY_AND_MEDIA_POLICY.md` in the source repository,
+which is the default set. The check applies to an address written in a URL and to the
+address a host name resolves to when Notrios connects, redirects included. An
+IPv4 address carried inside an IPv6 one, such as `::ffff:10.0.0.1` or
+`64:ff9b::7f00:1` on a NAT64 network, is checked as the IPv4 address.
+
+To state the set yourself, write it under `security.remote_media`. The list
+**replaces** the default, so a range you leave out becomes reachable; service
+start and `config show` name every default range the list omits, and `[]`
+refuses nothing. `permitted_address_ranges` makes exceptions, such as a media
+server on your own network. An exception covers that range's IPv4-mapped and
+NAT64 forms too, and can never include loopback or `0.0.0.0/8`:
+
+<!-- notrios:generated:example:configuration-remote-media-example-2:begin -->
+```bash
+cat > address-ranges.yaml <<'YAML'
+security:
+  remote_media:
+    refused_address_ranges:
+      - 127.0.0.0/8
+      - 10.0.0.0/8
+      - 169.254.0.0/16
+      - 192.168.0.0/16
+    permitted_address_ranges:
+      - 192.168.1.0/24
+YAML
+notriosctl config show --config address-ranges.yaml --json
+```
+<!-- notrios:generated:example:configuration-remote-media-example-2:end -->
+
+Each entry is a CIDR range or a single address. An entry that is neither, a
+range with host bits set (`10.0.0.1/8`), or a list key with nothing under it
+stops the configuration from loading, and the error names the entry.
+`allow_private_networks: true` switches all of this off, the `localhost` check
+included. Notrios 1.0 is the first version that reads `security:`; an earlier
+version ignores the section and applies only its narrower built-in check.
+
+If you are deciding what to allow, read
+[the remote-media section of the service guide](service.md) before setting
+anything permissive.
+
+## Retention
+
+`retention` decides how long Notrios keeps things it could remove: resource
+history, sync history and so on. `notriosctl resources report` shows what the
+current settings would collect before you change them, which is the safer order.
+
+## Profiles
+
+`profile` names this library when several exist on one machine. Profiles are
+registered with `notriosctl profile register`, and the registry is a separate
+file from this configuration — see [the CLI guide](cli.md). A profile can keep
+its database anywhere, including outside the roots above.
+
+## Every key
+
+<!-- notrios:generated:config:keys:begin -->
+56 settable keys, generated from `internal/config` by `go run ./cmd/docconfig --write`. A dash means the default is empty, which for a path means "work it out from the XDG roots". The recorded configuration surface counts 68, because it includes the 12 section names that group these.
+
+| Key | Type | Default | Notes |
+|---|---|---|---|
+| `config_path` | string | — |  |
+| `profile.id` | string | — |  |
+| `profile.name` | string | — |  |
+| `profile.registry_path` | string | — |  |
+| `server.listen_addr` | string | `127.0.0.1:8080` |  |
+| `server.public_base_url` | string | `http://127.0.0.1:8080` |  |
+| `server.web_dir` | string | — | WebDir is the directory holding the built web interface (the one with index.html). Empty searches the default locations: the working directory, then the executable's own directory and its parent. Set it when the binary lives apart from its assets. |
+| `data.directory` | string | `./data` |  |
+| `data.database_path` | string | `./data/notes.sqlite` |  |
+| `data.asset_store` | string | `./data/assets` |  |
+| `data.projection_dir` | string | `./data/projections` |  |
+| `data.state_dir` | string | — | StateDir holds what Notrios must remember across runs but the user did not write: sync carrier spools, sync backups, the catch-up inbox, and the remote-media quarantine. It is backed up before a purge. |
+| `data.cache_dir` | string | — | CacheDir holds what can be rebuilt from the library: projections and the search index. A purge disposes of it without backing it up, so nothing irreplaceable may live here. |
+| `data.runtime_dir` | string | — | RuntimeDir holds work in flight that must not survive a reboot: backup staging and restore review, which briefly hold decrypted library contents. |
+| `data.temp_dir` | string | — | TempDir is this instance's own temp directory: import manifests, archive verification spools and other temporary work, one locked subdirectory per process. Several instances can run on one machine, so none of them uses the shared system temp root. Unstated, it is <cache_dir>/tmp. |
+| `sync.target` | string | `none` |  |
+| `sync.directory` | string | — |  |
+| `sync.rest_base_url` | string | — |  |
+| `sync.credential_ref` | string | — |  |
+| `sync.rest.enabled` | bool | `false` | Enabled exposes /api/v1/sync/... to authenticated peers. Nothing else on the API becomes remotely reachable or remotely authorized by it. |
+| `sync.rest.require_tls` | bool | `true` | RequireTLS refuses to serve the sync surface over plaintext on anything but a loopback address. It defaults to true and should stay true: a peer credential is a signature rather than a bearer token, so plaintext does not leak a reusable secret, but every byte of every note would be in the clear once G14 carries data. |
+| `sync.rest.tls_cert_file` | string | — | TLSCertFile and TLSKeyFile enable HTTPS for the whole service. |
+| `sync.rest.tls_key_file` | string | — |  |
+| `sync.rest.max_body_bytes` | int64 | `0` | MaxBodyBytes bounds an authenticated request body. |
+| `sync.rest.requests_per_minute` | int | `0` | RequestsPerMinute and Burst bound one peer; FailuresPerMinute bounds how fast one address can guess. |
+| `sync.rest.burst` | int | `0` |  |
+| `sync.rest.failures_per_minute` | int | `0` |  |
+| `sync.rest.key_file` | string | — | KeyFile is the local sync key material. Empty uses the default path. |
+| `sync.rest.credential_store` | string | — | CredentialStore names where the secret that protects KeyFile lives. Empty means the development file, which is v0.7 behaviour and stays the default until a migration exists: switching an installed profile to the keychain without moving its existing material would strand it. |
+| `search.default_limit` | int | `20` |  |
+| `search.max_limit` | int | `100` |  |
+| `mcp.enabled` | bool | `true` |  |
+| `mcp.default_scope` | string | — | DefaultScope is the MCP tool scope: search-only, read-only, editor, or organizer. Empty means read-only. |
+| `mcp.default_profile` | string | — | DefaultProfile is the deprecated former name of DefaultScope. It is still read so existing configs keep working; when both are set the narrower wins, because a key that silently stops applying must never widen what an agent may do. |
+| `mcp.sync_scope` | string | — | SyncScope is orthogonal to the content scope. Empty/disabled is the default; status permits bounded operational reads and control additionally permits ordinary incremental and resource-fetch jobs. |
+| `mcp.max_results` | int | `10` |  |
+| `mcp.max_document_bytes` | int | `65536` |  |
+| `search_sidecar.enabled` | bool | `false` |  |
+| `search_sidecar.binary` | string | `recollindex` |  |
+| `search_sidecar.index_dir` | string | `./data/search-index` |  |
+| `remote_media.default_action` | string | `review` | DefaultAction applies to URLs matched by no domain list: allow, block, or review. Invalid configured values fall back to "review". |
+| `remote_media.allow_private_networks` | bool | `false` |  |
+| `remote_media.max_redirects` | int | `5` |  |
+| `remote_media.fetch_timeout_seconds` | int | `30` |  |
+| `remote_media.blocked_schemes` | []string | `file, data, javascript, ftp` |  |
+| `remote_media.blocked_domains` | []string | — |  |
+| `remote_media.allowed_domains` | []string | — |  |
+| `remote_media.review_domains` | []string | — |  |
+| `remote_media.max_bytes` | map[string]int64 | `map[image:20971520 pdf:104857600 video:209715200]` | MaxBytes caps download sizes per media class (image/video/pdf), parsed from human-readable values like "20MB". |
+| `remote_media.quarantine_dir` | string | `./data/quarantine` | QuarantineDir holds fetched bytes before policy admission to the content-addressed asset store; it is never served. |
+| `retention.unreferenced_resource_days` | int | `30` |  |
+| `retention.purged_resource_days` | int | `90` |  |
+| `retention.sync_history_days` | int | `90` |  |
+| `retention.sync_peer_warning_days` | int | `30` |  |
+| `security.remote_media.refused_address_ranges` | []string | — | RefusedAddressRanges are the address ranges remote media may not reach, as CIDR ranges or addresses. Left out, the default set in SECURITY_AND_MEDIA_POLICY.md applies; stated, this list replaces it, [] refuses nothing, and service start warns about each default range it omits. |
+| `security.remote_media.permitted_address_ranges` | []string | — | PermittedAddressRanges are exceptions to the refused ranges, empty by default. An exception also covers its IPv4-mapped and NAT64 forms, and none may include loopback or 0.0.0.0/8, which only remote_media.allow_private_networks reaches. |
+<!-- notrios:generated:config:keys:end -->

@@ -83,6 +83,15 @@ func checkDocumentationImportPostcondition(ctx context.Context, fixture *reposit
 // substitution in repositoryExamples.resolve.
 type DocumentationImportFixtures struct {
 	Joplin, Obsidian, Twitter, ChatGPT, Claude, ArchiveV1 string
+	// TwitterZip is the Twitter archive as a user downloads it: the same files
+	// as Twitter, zipped (J25).
+	TwitterZip string
+	// The conversation exports as a user downloads them (J26). ChatGPTPortalZip
+	// is the OpenAI Privacy Portal's shape: the conversations in a ZIP inside
+	// the ZIP.
+	ChatGPTZip       string
+	ChatGPTPortalZip string
+	ClaudeZip        string
 }
 
 // SeedDocumentationImportFixtures creates minimal valid exports beneath root.
@@ -111,6 +120,22 @@ func SeedDocumentationImportFixtures(root string) (DocumentationImportFixtures, 
 		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 			return f, err
 		}
+	}
+	f.TwitterZip = filepath.Join(root, "twitter-archive.zip")
+	if err := zipTwitterFixture(f.Twitter, f.TwitterZip); err != nil {
+		return f, err
+	}
+	f.ChatGPTZip = filepath.Join(root, "chatgpt-export.zip")
+	if err := zipTwitterFixture(f.ChatGPT, f.ChatGPTZip); err != nil {
+		return f, err
+	}
+	f.ChatGPTPortalZip = filepath.Join(root, "OpenAI-export.zip")
+	if err := zipPortalFixture(f.ChatGPT, f.ChatGPTPortalZip); err != nil {
+		return f, err
+	}
+	f.ClaudeZip = filepath.Join(root, "claude-data-export.zip")
+	if err := zipTwitterFixture(f.Claude, f.ClaudeZip); err != nil {
+		return f, err
 	}
 	return f, nil
 }
