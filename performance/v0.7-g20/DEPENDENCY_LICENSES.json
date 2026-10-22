@@ -54,7 +54,7 @@
       "web/package-lock.json": {
         "license_field": "packages[*].license",
         "packages": 357,
-        "sha256": "f6a59f34314f2a11758dda1bbb8083b0dd3b65184de58d61e773cff73885a68f"
+        "sha256": "5b0c356d0fc3863e271f2a64ff9bc2c49149dbaf9b401b315afe9a12758d9b9b"
       }
     }
   },

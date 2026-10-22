@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**50 items: 46 complete, 1 in progress, 3 not started, 0 deferred.**
+**50 items: 46 complete, 2 in progress, 2 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -110,9 +110,13 @@ this section is archived when the plan completes and the rules are not.
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
 | J49. Put everything a stranger verifies with into the release set | not-started | 0/4 | 4 |
-| J50. Clear vitest's mocker advisories | not-started | 0/2 | 2 |
+| J50. Clear vitest's mocker advisories | in-progress | 1/2 | 1 |
 
 ### Started and not finished
+
+**J50. Clear vitest's mocker advisories**
+
+- `J50-B` The release packager produces an archive check_release_zip.py accepts, and J9 is closed from that commit — *not-started*
 
 **J9. Publish the release documentation for the supported matrix**
 
@@ -120,7 +124,7 @@ this section is archived when the plan completes and the rules are not.
 
 ### Not started
 
-Written and not begun: J10, J49, J50. Their slices are listed under each item.
+Written and not begun: J10, J49. Their slices are listed under each item.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete

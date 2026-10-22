@@ -1408,12 +1408,13 @@
     {
       "id": "J50",
       "title": "Clear vitest's mocker advisories",
-      "state": "not-started",
+      "state": "in-progress",
       "slices": [
         {
           "id": "J50-A",
           "statement": "The lockfile moves vitest and its @vitest packages from 4.1.11 to 4.1.12 with package.json unchanged, the web tests, build and licence gate pass, npm audit is clean in web, and the built dist is compared file by file with the one before",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j50/README.md"
         },
         {
           "id": "J50-B",
