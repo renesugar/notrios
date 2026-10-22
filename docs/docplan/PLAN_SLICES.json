@@ -1403,6 +1403,11 @@
           "id": "J49-D",
           "statement": "release.yml builds on ubuntu-24.04, the matrix's row, and a check refuses a runner label the matrix does not support",
           "state": "not-started"
+        },
+        {
+          "id": "J49-E",
+          "statement": "draft_release.sh uploads every file in the release set, SHA256SUMS.asc among them",
+          "state": "not-started"
         }
       ]
     },

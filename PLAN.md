@@ -109,7 +109,7 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
-| J49. Put everything a stranger verifies with into the release set | not-started | 0/4 | 4 |
+| J49. Put everything a stranger verifies with into the release set | not-started | 0/5 | 5 |
 | J50. Clear vitest's mocker advisories | complete | 2/2 | — |
 
 Nothing is half-finished.
@@ -5963,6 +5963,9 @@ updates the instructions it changes.
 - **J49-C, the instructions follow.** J9-C's verification section verifies
   with the bundle as a stranger with no login, and covers the C ABI tarball.
   Each instruction is executed again.
+- **J49-E, the upload carries the whole set.** `draft_release.sh` uploads
+  every file in the set directory, `SHA256SUMS.asc` among them, and its dry run
+  lists them.
 - **J49-D, the release is built on the supported row.** `release.yml` runs on
   `ubuntu-latest`. Run 34697727452 got the `ubuntu-24.04` image, but the label
   moves when GitHub moves it. A package built on a newer Ubuntu computes its
@@ -5971,6 +5974,44 @@ updates the instructions it changes.
   job names `ubuntu-24.04`, the matrix's row. A check derives the runner label
   from the workflow and refuses one the matrix does not support. Found by J9-B
   on 2026-10-21, while recording the runtime rows.
+
+**Found 2026-10-21, before the work, by reading.**
+- **The upload would leave out the checksums' signature.** `draft_release.sh`
+  builds its asset list from `SHA256SUMS`, plus `SHA256SUMS` itself, and
+  `SHA256SUMS.asc` is deliberately absent from the file it signs. The script's
+  own comment records the same mistake once before, for `SHA256SUMS`. A
+  stranger would get a release with no signature over the file everything else
+  is checked against. This is J49-E.
+- **The workflow writes `SHA256SUMS` by glob.** It names the package, its
+  signature files, the SBOM and the provenance. A new file in the set, such as
+  a bundle or the C ABI tarball, would be left out silently, and the verifier
+  would then refuse the set. The checksums are taken over the directory
+  instead, as `build_release_set.py` already does.
+- **J2's refusals were never kept.** J2 proved the verifier with a throwaway
+  key, five refusals in all, and none of it is in the repository. J49 changes
+  the verifier, so the proof becomes a test: `performance/v1.0-j49/` builds
+  sets with a throwaway key and synthetic bundles, in a GnuPG home of its own,
+  and checks each refusal.
+
+**Design.**
+- **Bundles.** Each attest step gets an id, and its `bundle-path` output goes
+  to `build_release_set.py --attestation <artifact>=<path>`. The set carries it
+  as `<artifact>.attestation.jsonl`, one sigstore bundle per line, which is
+  what `gh attestation download` writes and `gh attestation verify --bundle`
+  reads. The provenance records `notrios:attestation`, `attested` or not, the
+  way it records signing. An attested set must carry a bundle for every
+  subject. Each bundle's DSSE payload must be an SLSA provenance statement
+  naming that artifact with its SHA-256. A set that says it is not attested
+  must carry no bundle. Checking the sigstore signature itself is
+  `gh attestation verify`'s job, and the instructions tell the reader to run it.
+- **The C ABI tarball** goes into the release set through
+  `build_release_set.py --abi`. It becomes a second provenance subject, and it
+  is signed and timestamped in the same loop as the package. The separate
+  `notrios-c-abi` run artifact goes, because the set carries the tarball. A
+  signed set must carry a signature and a timestamp reply for every subject.
+- **The runner.** The job names `ubuntu-24.04`. J49's validator reads every
+  `runs-on` in `release.yml` and refuses a label that is not a supported row of
+  J9's matrix.
 
 **Boundaries.**
 - No new third-party action, and the existing ones stay pinned by digest.
