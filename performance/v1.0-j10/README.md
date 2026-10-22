@@ -102,3 +102,34 @@ live page, and so was the backup command. 0.8.0 has `export archive-v2` too, so
 the advice to back up before upgrading can be followed. Run dry against J10-A's
 rehearsal set, the script verified the set, then refused it: `tag v1.0.0: not
 on GitHub`.
+
+## J10-B: tagged, built, drafted (2026-10-22)
+
+**Tagged.** `develop` was pushed (`2aab9a8..1ad8afa`). An annotated tag `v1.0.0`
+was created at `2aab9a8`, the reviewed `main` that the rehearsal built from, and
+pushed.
+
+**Built from the tag.** The tag started
+[39812310020](https://github.com/renesugar/notrios/actions/runs/39812310020),
+green, from head `2aab9a8`:
+- **The tag is the product version:** the check printed `tag=1.0.0 product
+  version=1.0.0`.
+- **The narrowed key signed:** `signing key: 1234C691…D464695E (primary
+  stubbed, signing subkey present)`.
+- **The verifier accepted the set:** `release set verified: 12 artifacts, 3
+  signatures checked, 2 attestation bundles bound to their subjects, …, state
+  signed, attested`.
+
+**Drafted.** The run's set was downloaded into an empty directory of its own.
+`draft_release.sh` verified it and confirmed the provenance's commit is the
+tag's. It then created the draft "Notrios 1.0.0" with all 14 files and
+`RELEASE_NOTES.md`. Read back from GitHub, the draft's 14 assets match the
+verified set by name, size and SHA-256. The draft is not published.
+
+**A finding, recorded and not fixed.** The tag's set and the rehearsal's were
+built from the same commit, yet the package and the C ABI tarball differ byte
+for byte. The package is `e2a80a22…` against the rehearsal's `3f5fb3e6…`; the
+SBOM is identical. Nothing published claims the package is reproducible, and
+each set is consistent with its own signatures, attestations and provenance.
+So it does not block the release. Making the builds reproducible is an item of
+its own, after 1.0.
