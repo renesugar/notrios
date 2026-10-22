@@ -57,7 +57,7 @@ the build when the ledger, this document and the repository disagree.
 this section is archived when the plan completes and the rules are not.
 
 <!-- notrios:generated:plan:progress:begin -->
-**50 items: 48 complete, 1 in progress, 1 not started, 0 deferred.**
+**50 items: 49 complete, 0 in progress, 1 not started, 0 deferred.**
 
 | Item | State | Slices done | Outstanding |
 |---|---|---|---|
@@ -109,18 +109,10 @@ this section is archived when the plan completes and the rules are not.
 | J46. Clear vite's launch-editor advisories | complete | 2/2 | — |
 | J47. Render a working wiki embed in the preview | complete | 2/2 | — |
 | J48. Show attachments in the preview: a sanitiser that leaves its own output alone | complete | 2/2 | — |
-| J49. Put everything a stranger verifies with into the release set | in-progress | 4/5 | 1 |
+| J49. Put everything a stranger verifies with into the release set | complete | 5/5 | — |
 | J50. Clear vitest's mocker advisories | complete | 2/2 | — |
 
-### Started and not finished
-
-**J49. Put everything a stranger verifies with into the release set**
-
-- `J49-C` The verification instructions use the bundle and cover the C ABI tarball, each one run against the rehearsal set, and the ones a workflow-built set is needed for named for J10-A — *not-started*
-
-### Not started
-
-Written and not begun: J10. Their slices are listed under each item.
+Nothing is half-finished.
 <!-- notrios:generated:plan:progress:end -->
 
 ## J1. Build the package in a workflow, and attest what it built — complete
@@ -5944,7 +5936,7 @@ now. A note can already write that pair in raw HTML. Keeping it loads nothing a
 **Working state.** Attachments show in the preview, and a preview that sanitises
 twice gets the same page as one that sanitises once.
 
-## J49. Put everything a stranger verifies with into the release set
+## J49. Put everything a stranger verifies with into the release set — complete
 
 **Goal.** A stranger with the release set, the committed public key and
 the pinned timestamp authority can check every artifact, with no GitHub login.

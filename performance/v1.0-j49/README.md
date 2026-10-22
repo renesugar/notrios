@@ -135,3 +135,18 @@ rehearsal therefore owes these:
   empty.
 
 J10 records each of these.
+
+## Archive
+
+`notrios-v1.0-j49-f8dc72e.zip` was built from commit `f8dc72e`, the commit that
+completed this item's record, with the ledger not yet flipped: 26,799,068
+bytes, 3,043 entries, accepted by `check_release_zip.py`. No usage override was
+needed. The seven-day bucket had 76% remaining and the five-hour bucket 60%.
+
+**Two builds from the same commit stopped first, at `npm audit` in `web/`, on no
+advisory.** Each time the registry's bulk advisory endpoint did not answer
+within npm's five-minute fetch timeout (`npm warn audit network timeout`, then
+`audit endpoint returned an error`). Run by hand in the same worktree, the audit
+timed out once at 302 s and then answered in 2 s, `found 0 vulnerabilities`. The
+third build passed. The gate refuses when it cannot ask, as it should, so this
+is recorded as the network's, not the tree's.

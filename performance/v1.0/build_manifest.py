@@ -72,6 +72,7 @@ TAKEN_AT_CLOSE = {
     "J48": "notrios-v1.0-j48-74d067f.zip",
     "J9": "notrios-v1.0-j9-978c67c.zip",
     "J50": "notrios-v1.0-j50-1a9cdbe.zip",
+    "J49": "notrios-v1.0-j49-f8dc72e.zip",
 }
 
 NOTE = ("Each archive here was built from the commit that closed its item, by the same worktree "

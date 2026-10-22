@@ -1382,7 +1382,7 @@
     {
       "id": "J49",
       "title": "Put everything a stranger verifies with into the release set",
-      "state": "in-progress",
+      "state": "complete",
       "slices": [
         {
           "id": "J49-A",
@@ -1399,7 +1399,8 @@
         {
           "id": "J49-C",
           "statement": "The verification instructions use the bundle and cover the C ABI tarball, each one run against the rehearsal set, and the ones a workflow-built set is needed for named for J10-A",
-          "state": "not-started"
+          "state": "done",
+          "evidence": "file:performance/v1.0-j49/README.md"
         },
         {
           "id": "J49-D",
