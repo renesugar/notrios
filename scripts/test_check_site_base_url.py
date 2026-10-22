@@ -81,6 +81,7 @@ class SiteBaseURLTest(unittest.TestCase):
             "c.md": "Serve it at https://renesugar.github.io/notrios/ instead.\n",
             "d.md": "Or mirror it at https://github.com.example.net/renesugar/notrios/ for a while.\n",
             "e.md": "A fork's https://github.com/someone-else/notrios/ is not ours either.\n",
+            "f.json": '"Error: HTTP 404: Not Found (https://api.github.com/repos/renesugar/notrios/attestations/sha256:00)"\n',
         })
         self.assertEqual(sorted(name for name, _, _, _ in findings), ["c.md", "d.md", "e.md"])
 

@@ -120,14 +120,16 @@ def contradictions(base: str, owner: str, repo: str, custom_domain: str = "") ->
         # Any http(s) URL whose path starts with the repository name, which is
         # what a project-path base looks like, including a local preview.
         #
-        # Except the repository's own hosting: github.com/<owner>/<repo>/… and
-        # raw.githubusercontent.com/<owner>/<repo>/… say where the source and
+        # Except the repository's own hosting: github.com/<owner>/<repo>/…,
+        # raw.githubusercontent.com/<owner>/<repo>/… and the API's
+        # api.github.com/repos/<owner>/<repo>/… say where the source and
         # the releases are, not where the documentation is served. v1.0 J9's
         # installation page points readers at the releases and fetches the
         # public key from the repository, and the old pattern called both a
         # project-path base.
         (re.compile(rf"https?://(?!(?:www\.)?github\.com/{re.escape(owner)}/{name}/"
-                    rf"|raw\.githubusercontent\.com/{re.escape(owner)}/{name}/)[^\s\"\'`)\]]+/{name}/"),
+                    rf"|raw\.githubusercontent\.com/{re.escape(owner)}/{name}/"
+                    rf"|api\.github\.com/repos/{re.escape(owner)}/{name}/)[^\s\"\'`)\]]+/{name}/"),
          f"the build is made for {base}, which is served at the root"),
         # The bare path in prose or a value, as `/<repo>/` or "/<repo>/".
         (re.compile(rf"[`\"\']/{name}/[`\"\']"),
